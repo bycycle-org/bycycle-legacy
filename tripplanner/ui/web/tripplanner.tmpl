@@ -1,0 +1,134 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:v="urn:schemas-microsoft-com:vml">
+<head>
+	<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+	<title>&#171; byCycle &#187; Bicycle Trip Planner (BikeQuest?) - Portland, Oregon</title>
+	<link rel="stylesheet" href="css/base.css" type="text/css"/>
+	<!--[if IE]>
+			<link rel="stylesheet" href="css/base_ie.css" type="text/css"/>
+	<![endif]-->
+
+	<script src="js/util.js" type="text/javascript"></script>
+	<script src="js/ajax.js" type="text/javascript"></script>
+	<script src="js/ui.js" type="text/javascript"></script>
+	<script src="js/gmap.js" type="text/javascript"></script>
+	<script src="js/ginit.js" type="text/javascript"></script>
+</head>
+
+<body>
+
+<table id="vcenter"><tr><td>
+<div id="content_pane">
+		<div id="input_section" class="content_section">
+			<div id="select_input">
+				<a href="javascript:void(0);" id="search_link" class="selected" title="Search the Map" 
+				   onclick="_selectInput('search', true);">Search</a>
+				&#160;&#160;&#183;&#160;&#160;
+				<a href="javascript:void(0);" id="route_link" title="Find a Route" 
+				   onclick="_selectInput('route', true);">Route</a>
+				&#160;&#160;&#183;&#160;&#160;
+				<a href="help.html" title="Help!">Help</a>
+				&#160;&#160;&#183;&#160;&#160;
+				<a href="http://tripplanner.bycycle.org/" title="Information About the Trip Planner">About</a>
+				&#160;&#160;&#183;&#160;&#160;
+				<select id="dmode" name="dmode">
+				    <option value="milwaukee">Milwaukee, WI</option>
+				</select>
+			</div>
+
+			<form id="input_form" action="" method="get" onsubmit="_find(); return false;">
+				<!-- SEARCH INPUT -->
+				<table id="search_input">
+					<tr>
+						<td>
+							<input tabindex="80" name="q" id="q" type="text" value=""/>
+						</td>
+						<td>
+							&#160;<input tabindex="90" name="qButton" id="qButton" type="submit" value="Find"/>
+							&#160;<input tabindex="50" type="reset" value="Reset" onclick="_reset();" 
+							             title="Clear all input fields and remove all markers from the map"/>
+						</td>
+					</tr>
+					<tr>
+						<td colspan="2">
+							Address <a href="javascript:void(0);" tabindex="90" 
+							           title="Center the map on the point you want and then click here" 
+							           onclick="_setElVToMapLonLat('q'); _find('search');">use center of map</a>
+						</td>
+					</tr>
+				</table>
+				<!-- ROUTE INPUT -->
+				<table id="route_input" style="display:none;">
+
+					<tr>
+						<td>
+							<input tabindex="30" name="fr" id="fr" type="text" class="route_field" value=""/>
+						</td>
+						<td id="swapfrto">
+								<a href="javascript:void(0);" onclick="return _swap('fr', 'to');">
+									<img src="images/swapfrto.gif" width="10" height="14"
+										 alt="Swap from and to" title="Swap from and to"/>
+								</a>
+						</td>
+
+						<td>
+							<input tabindex="40" name="to" id="to" type="text" class="route_field" value=""/>
+						</td>
+						<td>
+							&#160;<input tabindex="50" id="rqButton" name="rqButton" type="submit" value="Find"/>
+							&#160;<input tabindex="50"  
+							             title="Clear all input fields and remove all markers from the map" 
+							             type="reset" value="Reset" onclick="_reset();"/>
+						</td>
+					</tr>
+					<tr>
+						<td colspan="2">
+							From
+							<a href="javascript:void(0);" tabindex="60" 
+							   title="Center the map on the point you want and then click here" 
+							   onclick="_setElVToMapLonLat('fr');">use center of map</a>
+						</td>
+						<td colspan="2">
+							To
+							<a href="javascript:void(0);" tabindex="70"
+							   title="Center the map on the point you want and then click here" 
+							   onclick="_setElVToMapLonLat('to');">use center of map</a>
+						</td>
+					</tr>
+				</table>
+			</form>
+	</div>
+
+    <div id="result" class="content_section">
+	    <noscript>
+            <div>
+                <i>The <a href="/" title="byCycle Home Page">byCycle</a> <a href="http://tripplanner.bycycle.org/" title="Information About the Trip Planner">Trip Planner</a> requires JavaScript to be enabled in your browser. Please enable JavaScript and <a href="">try again</a>.</i>
+            </div>
+        </noscript>
+    </div>
+
+
+	<div id="status" class="content_section"></div>
+
+
+	<div id="content" class="content_section">
+		<div id="map"></div>
+	</div>
+
+
+	<!--div class="content_section" id="footer">
+		Copyright &copy; 2005
+		<a style="text-decoration: none" href="http://www.bycycle.org" title="byCycle Home Page">byCycle.org</a>
+		&#183;
+		Version 0.3 alpha
+		&#183;
+		Last modified %(last_modified)s
+	</div-->
+</div>
+</td></tr></table>
+
+</body>
+
+</html>

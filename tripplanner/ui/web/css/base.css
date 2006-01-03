@@ -1,0 +1,179 @@
+html, body {
+	margin: 0;
+	padding: 0;
+	height: 100%;
+	/*overflow: hidden;*/
+}
+
+body, td {
+	font-family: verdana, helvetica, arial, sans-serif;
+	font-size: 12px;
+	background-color: white;
+	color: black;
+}
+
+table {
+	border-collapse: collapse;
+}
+
+td {
+	padding: 0; margin: 0;
+}
+
+#vcenter {
+	/* Hack table to get vertical centering */
+	margin: 0; padding: 0;
+	width: 100%;
+	height: 100%;
+}
+
+img {
+	border: 0;
+}
+
+h1 {
+	font-size: 20px;
+}
+
+h2 {
+	font-size: 16px;
+}
+
+h3 {
+	font-size: 14px;
+}
+
+h4 {
+	font-size: 12px;
+}
+
+a {
+	color: #46d;
+}
+
+a:hover {
+	color: #f08000;
+}
+
+a.selected {
+	font-weight: bold;
+	text-decoration: none;
+	color: black;
+}
+
+
+#content_pane {
+	position: relative;
+	padding: 0; margin: 0 auto;
+	width: 750px;
+	border: 1px solid gray;
+}
+
+.content_section {
+	padding: 4px;
+	border-bottom: 1px solid gray;
+}
+
+/* Header */
+
+#header {
+	border-bottom: 1px solid gray;
+	background: #dddddd;
+	padding: 0;
+}
+
+#logo {
+	padding: 4px;
+	font-size: 12px;
+	font-weight: bold;
+}
+
+#logo * {
+	text-decoration: none;
+	color: black;
+}
+
+#input_section {
+	padding: 4px;
+	background: #ddd;
+}
+
+#input_section td {
+	background: #ddd;
+}
+
+#select_input {
+	padding: 0 0 2px 2px;
+}
+
+.route_field {
+	width: 200px;
+}
+
+#q {
+	width: 424px;
+}
+
+#input_form {
+	margin: 0;
+	padding: 0;
+}
+
+#swapfrto {
+	width: 20px;
+	text-align: center;
+}
+
+
+/* Content */
+
+#content {
+	position: relative;
+	border-bottom: none;
+}
+
+#feedback {
+    border-bottom: 1px solid gray;
+}
+
+#result {
+    height: 100px;
+    overflow: auto;
+}
+
+#status {
+    height: 20px;
+}
+
+#map {
+	height: 300px;
+	border: 1px solid gray;
+}
+
+#loading {
+    padding: 4px;
+    background: green;
+}
+
+#xy {
+	width: 150px;
+	text-align: center;
+	background: white;
+	border: 1px solid black;
+	padding: 2px;
+}
+
+
+/* Footer */
+
+#footer {
+	border-bottom: none;
+	background: #ddd;
+}
+
+
+.disclaimer {
+	font-size: 10px;
+	font-style: italic;
+	color: #444;
+}

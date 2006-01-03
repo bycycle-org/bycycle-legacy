@@ -1,0 +1,39 @@
+Installation directions for byCycle.
+12/30/2005
+
+
+Version
+-------
+0.3 Alpha
+
+
+Software Prerequisites
+----------------------
+There are few necessary pieces of software necessary to run the byCycle system.
+All of these are free and available for just about any platform.
+
+- Python. I'm using version 2.4.2. Earlier versions are untested, but may work.
+- SQLite
+- PySQLite
+- Cheetah
+- A web server. I'm using Apache 2.0.52.
+
+
+Placement of Files
+------------------
+
+
+Setting Up the Database
+-----------------------
+
+
+
+Getting Data Into the Database
+------------------------------
+
+
+
+Problems and Issues
+-------------------
+If you have any problems with any of this, please feel free to contact me:
+wyatt.lee.baldwin@gmail.com.
