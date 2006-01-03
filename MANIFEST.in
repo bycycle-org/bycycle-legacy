@@ -1,0 +1,12 @@
+include LICENSE.txt
+include INSTALL.txt
+include README.txt
+include __init__.py
+include tripplanner/model/*/data/db.db
+include tripplanner/ui/web/*.tmpl
+include tripplanner/ui/web/*.html
+include tripplanner/ui/web/js/*.js
+include tripplanner/ui/web/css/*.css
+include tripplanner/ui/web/images/*.gif
+include tripplanner/ui/web/images/*.jpg
+include tripplanner/ui/web/images/*.png
