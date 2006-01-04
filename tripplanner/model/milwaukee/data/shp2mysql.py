@@ -1,9 +1,6 @@
-import sys
-sys.path.append('../../..')
-
-import os, marshal
+import sys, os
 from pysqlite2 import dbapi2 as sqlite
-import meter
+from byCycle.lib import meter
 
 
 def shpToRawSql():
@@ -13,20 +10,21 @@ def shpToRawSql():
         os.unlink('db.db-journal')
     except OSError, e:
         print e
-    import ogr
-    inlayer = 'route_roads'
+    inlayer = 'route_roads84'
     outdb = 'db.db'
     outtable = 'raw'
-    outsrs = 'WGS84'
+    outsrs = '' #'-t_srs WGS84'
     outformat = 'SQLite'
     ds = os.getcwd()
-    cmd = 'ogr2ogr -t_srs "%s" -f "%s" ' \
-          '-select "TLID,FNODE,TNODE,PREFIX,NAME,TYPE,SUFFIX,CFCC,' \
-          'FRADDL,TOADDL,FRADDR,TOADDR,ZIPL,ZIPR,' \
-          'BIKEMODE,GRADE,LANES,ADT,SPD,FEET,ONE_WAY" ' \
+    cmd = 'ogr2ogr %s -f "%s" ' \
+          '-select "TLID,ID_NODE_F,ID_NODE_T,PREFIX,NAME,TYPE,SUFFIX,CFCC,' \
+          'ADDR_FL,ADDR_TL,ADDR_FR,ADDR_TR,CITY_L,CITY_R,ZIP_L,ZIP_R,' \
+          'BIKEMODE,GRADE,LANES,ADT,SPD,ONEWAY" ' \
           '%s . %s -nln %s'  % (outsrs, outformat, outdb, inlayer, outtable)
     print cmd
-    os.system(cmd)        
+    exit_code = os.system(cmd)
+    if exit_code:
+        sys.exit()
     timer.stopTiming()
 
 
@@ -34,197 +32,206 @@ def sqlToSql():
     def __fixRaw():
         ## Add missing columns
         Q = 'ALTER TABLE raw ADD COLUMN %s'
-        cols = ('cityidl', 'cityidr', 'statecodel', 'statecoder', 'stnameid')
+        cols = ('addr_f', 'addr_t', 'ix_streetname', 'ix_city_l', 'ix_city_r',
+                'id_state_l', 'id_state_r')
         for col in cols:
-            try: cur.execute(Q % col)
-            except Exception, e: print 'Failed: %s' % (Q % col)
-        ## Set NULL values to appropriate zero value for column type
-        ## Also, set TEXT fields to lower case
-        Q = 'UPDATE raw SET %s="" WHERE %s IS NULL'
+            __execute(Q % col)
+        ## Set TEXT NULLs to '' and all TEXT values to lower case
+        Q0 = 'UPDATE raw SET %s="" WHERE %s IS NULL'
         Q1 = 'UPDATE raw SET %s=lower(%s)'
-        cols = ('prefix', 'name', 'type', 'suffix', 'cityl', 'cityr',
-                'statecodel', 'statecoder', 'wkt_geometry',
+        cols = ('prefix', 'name', 'type', 'suffix', 'city_l', 'city_r',
+                'id_state_l', 'id_state_r', 'wkt_geometry',
                 'cfcc', 'bikemode', 'grade')
         for col in cols:
-            try: cur.execute(Q % (col, col))
-            except Exception, e: print 'Failed: %s' % (Q % (col, col))
-            try: cur.execute(Q1 % (col, col))
-            except Exception, e: print 'Failed: %s' % (Q % (col, col))
+            # TEXT NULL to ''
+            __execute(Q0 % (col, col))
+            # TEXT to lower
+            __execute(Q1 % (col, col))
         con.commit()
+        # Set INTEGER NULLs to 0
         Q = 'UPDATE raw SET %s=0 WHERE %s IS NULL'
-        cols = ('fnode', 'tnode', 'fraddl', 'toaddl', 'fraddr', 'toaddr',
-                'stnameid', 'cityidl', 'cityidr', 'zipl', 'zipr',
-                'tlid', 'lanes', 'adt', 'spd', 'feet', 'one_way')
+        cols = ('id_node_f', 'id_node_t',
+                'addr_fl', 'addr_tl', 'addr_fr', 'addr_tr',
+                'ix_streetname', 'ix_city_l', 'ix_city_r', 'zip_l', 'zip_r',
+                'tlid', 'lanes', 'adt', 'spd', 'oneway')
         for col in cols:
-            try: cur.execute(Q % (col, col))
-            except Exception, e: print 'Failed: %s' % (Q % (col, col))
+            __execute(Q % (col, col))
+        con.commit()
+
+    def __unifyAddressRanges():
+        Q = "UPDATE raw SET addr_f=ROUND(addr_fl/10.0)*10 WHERE addr_fl!=0"
+        Q = 'UPDATE raw SET addr_%s=ROUND(addr_%s%s/10.0)*10 ' \
+            'WHERE addr_%s%s!=0'
+        for f in ('f', 't'):
+            for l in ('l', 'r'):
+                __execute(Q % (f, f, l, f, l))
         con.commit()
         
     def __transferStreetNames():
-        ## Transfer street names to their own table...
-        # Convert NULLs to ''
-        Q0 = 'UPDATE raw SET %s="" WHERE %s IS NULL'
-        cols = ('prefix', 'name', 'type', 'suffix')
-        for col in cols:
-            try: cur.execute(Q0 % (col, col))
-            except Exception, e: print Q0 % (col, col)
-        # Do the actual insert
-        Q = 'INSERT INTO streetnames (prefix, name, type, suffix) '\
+        """Transfer street names to their own table."""
+        Q = 'INSERT INTO streetname (prefix, name, type, suffix) '\
             'SELECT DISTINCT prefix, name, type, suffix FROM raw'
-        cur.execute(Q)
+        __execute(Q)
         con.commit()
 
     def __UpdateRawStreetNameIds():
-        ## ...then set the street name ID of each record
+        """Set the street name ID of each raw record."""
         # Get all the distinct street names NEW
         Q = 'SELECT DISTINCT prefix, name, type, suffix FROM raw'
-        cur.execute(Q)
+        __execute(Q)
         rows = cur.fetchall()
-        # Index each street name ID by its street name {(stname)=>stnameid}
+        # Index each street name ID by its street name
+        # {(stname)=>ix_streetname}
         stnames = {}
-        Q = 'SELECT rowid, prefix, name, type, suffix FROM streetnames'
-        cur.execute(Q)
+        Q = 'SELECT ix, prefix, name, type, suffix FROM streetname'
+        __execute(Q)
         for row in cur.fetchall():
             stnames[(row[1],row[2],row[3],row[4])] = row[0]
-        # Index raw row IDs by their street name ID {stnameid=>[row IDs]}
+        # Index raw row IDs by their street name ID {ix_streetname=>[row IDs]}
         stid_rawids = {}
         Q  = 'SELECT rowid, prefix, name, type, suffix FROM raw'
-        cur.execute(Q )
+        __execute(Q)
         for row in cur.fetchall():
             stid = stnames[(row[1],row[2],row[3],row[4])]
             if stid in stid_rawids: stid_rawids[stid].append(row[0])
             else: stid_rawids[stid] = [row[0]]
         # Iterate over street name IDs and set street name IDs of raw records
-        Q = 'UPDATE raw SET stnameid=%s WHERE rowid IN %s'
+        Q = 'UPDATE raw SET ix_streetname=%s WHERE rowid IN %s'
         met = meter.Meter()
         met.setNumberOfItems(len(stid_rawids))
         met.startTimer()
         record_number = 1
         for stid in stid_rawids:
-            rowids = stid_rawids[stid]
-            cur.execute(Q % (stid, tuple(rowids)))
+            ixs = stid_rawids[stid]
+            __execute(Q % (stid, tuple(ixs)))
             met.update(record_number)
             record_number+=1
         print  # newline after the progress meter
         con.commit()
 
     def __transferCityNames():
-        ##    ## Transfer city names to their own table...
-        ##    # Convert NULLs to ''
-        ##    Q0 = 'UPDATE raw SET %s="" WHERE %s IS NULL'
-        ##    cols = ('cityl', 'cityr')
-        ##    for col in cols:
-        ##        try: cur.execute(Q0 % (col, col))
-        ##        except Exception, e: print Q0 % (col, col)
-        ##    # Do the actual insert
-        ##    cities = {}
-
-        ##    Q = 'INSERT INTO cities (city) SELECT DISTINCT %s FROM raw'
-        ##    cur.execute(Q)
-        ##    con.commit()
-        ##    timer.stopTiming()
-
-        ##    ## ...then set the city IDs of each record
-        ##    timer.startTiming('Updating city IDs.')
-        ##    Q0 = 'SELECT DISTINCT cityl FROM raw'
-        ##    Q1 = 'SELECT rowid FROM cities WHERE city="%s"'
-        ##    Q2 = 'UPDATE raw SET cityidl=%s WHERE cityl="%s"'
-
-        ##    # Get all the distinct city names
-        ##    cur.execute(Q0)
-        ##    rows = cur.fetchall()
-
-        ##    # Iterate over city names and set city IDs of raw records
-        ##    met = meter.Meter()
-        ##    met.setNumberOfItems(len(rows))
-        ##    met.startTimer()
-        ##    record_number = 1
-        ##    for row in rows:
-        ##        # Get city ID for current city
-        ##        cur.execute(Q1 % row)
-        ##        stnameid = cur.fetchone()[0]
-        ##        # Set the city IDs of all raw rows having current city name
-        ##        cur.execute(Q2 % (stnameid, rowids))
-        ##        met.update(record_number)
-        ##        record_number+=1
-        ##    print  # newline after the progress meter
-        ##    con.commit()
-        pass
+        """Transfer city names to their own table."""
+        Q = 'INSERT INTO city (city) ' \
+            'SELECT DISTINCT city_l FROM raw'
+        __execute(Q)
+        Q = 'INSERT INTO city (city) ' \
+            'SELECT DISTINCT city_r FROM raw WHERE city_r NOT IN ' \
+            '(SELECT city FROM city)'
+        __execute(Q)
+        con.commit()
+        
+    def __UpdateRawCityIds():
+        """Set the city ID of each raw record."""
+        for side in ('l', 'r'):
+            Q0 = 'SELECT DISTINCT ix, city FROM city'
+            Q1 = 'UPDATE raw SET ix_city_%s=%s WHERE city_%s="%s"' % \
+                 (side, '%s', side, '%s')
+            # Get all the distinct city names
+            __execute(Q0)
+            rows = cur.fetchall()
+            # Iterate over city rows and set city IDs of raw records
+            met = meter.Meter()
+            met.setNumberOfItems(len(rows))
+            met.startTimer()
+            record_number = 1
+            for row in rows:
+                __execute(Q1 % (row[0], row[1]))
+                met.update(record_number)
+                record_number+=1
+            print  # newline after the progress meter
+        con.commit()
             
-    def __creatIntersections():
-        ## Create intersections
-        Q1 = 'SELECT fnode, tnode, wkt_geometry FROM raw'
-        Q2 = 'INSERT INTO intersections (nid, wkt_geometry) VALUES (%s, "%s")'
-        seen_nids = {}
-        # Get nids and geometry from raw table
-        cur.execute(Q1)
-        # Insert nids into intersections, skipping the nids we've already seen
+    def __createNodes():
+        Q1 = 'SELECT id_node_f, id_node_t, wkt_geometry FROM raw'
+        Q2 = 'INSERT INTO layer_node (id, wkt_geometry) VALUES (%s, "%s")'
+        seen_id_nodes = {}
+        # Get id_nodes and geometry from raw table
+        __execute(Q1)
+        # Insert node IDs into layer_node, skipping the ones we've already seen
         for row in cur.fetchall():
-            idx = 0
-            fnode, tnode = row[0], row[1]
+            ix = 0
+            id_node_f, id_node_t = row[0], row[1]
             linestring, points = row[2], None
-            for nid in (fnode, tnode):
-                if nid not in seen_nids:
-                    seen_nids[nid] = 1
+            for id_node in (id_node_f, id_node_t):
+                if id_node not in seen_id_nodes:
+                    seen_id_nodes[id_node] = 1
                     if not points:
                         points = linestring.split(' ', 1)[1][1:-1].split(',')
-                    cur.execute(Q2 % (nid, ('POINT (%s)' % points[idx])))
-                idx = -1
+                    __execute(Q2 % (id_node, ('POINT (%s)' % points[ix])))
+                ix = -1
         con.commit()
 
     def __transferAttrs():
-        ## Transfer core attributes to streets table
-        Q = 'INSERT INTO streets ' \
-            'SELECT NULL,fnode,tnode,fraddl,toaddl,fraddr,toaddr,stnameid,' \
-            'cityidl,cityidr,statecodel,statecoder,zipl,zipr,wkt_geometry ' \
+        ## Transfer core attributes to street table
+        Q = 'INSERT INTO layer_street ' \
+            'SELECT NULL, wkt_geometry, id_node_f, id_node_t, ' \
+            'addr_f, addr_t, ix_streetname, ix_city_l, ix_city_r, ' \
+            'id_state_l, id_state_r, zip_l, zip_r ' \
             'FROM raw'
-        cur.execute(Q)
+        __execute(Q)
         ## Transfer extra attributes to attributes table (attrs)
-        Q = 'INSERT INTO attrs ' \
-            'SELECT NULL,tlid,cfcc,bikemode,grade,lanes,adt,spd,feet,one_way' \
-            ' FROM raw'
-        cur.execute(Q)
+        Q = 'INSERT INTO attr_street ' \
+            'SELECT NULL,tlid,oneway,cfcc,bikemode,grade,lanes,adt,spd ' \
+            'FROM raw'
+        __execute(Q)
         con.commit()
 
+    def __execute(Q):
+        try:
+            cur.execute(Q)
+        except Exception, e:
+            print 'Failed: %s\n\t%s' % (Q, e)
+            sys.exit()
+        
     ## Set up DB connection
     con = sqlite.connect('db.db')
     cur = con.cursor()
-    ## Do work
-    timer.startTiming('Transferring raw table data into byCycle schema.')
-
-    timer.startTiming('Creating byCycle schema tables.')
-    os.system('sqlite3 db.db < ../../schema.sql')
-    timer.stopTiming()
     
-    timer.startTiming('Fixing raw table.')
-    __fixRaw()
-    timer.stopTiming()
+    ## Do work
+    timer.startTiming('Transferring data into byCycle schema...')
 
-    #timer.startTiming('Transferring city names.')
-    #__transferCityNames
-    #timer.stopTiming()
+    pairs = [('Creating byCycle schema tables.',
+              os.system, ('sqlite3 db.db < ./schema.sql',)),
+    
+             ('Fixing raw table: Removing NULLs, adding columns, etc.',
+              __fixRaw),
+             
+             ('Unifying address ranges.',
+              __unifyAddressRanges),
+             
+             ('Transferring street names.',
+              __transferStreetNames),
+             
+             ('Updating street name IDs in raw table.',
+              __UpdateRawStreetNameIds),
+             
+             ('Updating city IDs in raw table.',
+              __UpdateRawCityIds),
+             
+             ('Transferring city names.',
+              __transferCityNames),
+             
+             ('Updating city IDs in raw table.',
+              __UpdateRawCityIds),
+             
+             ('Creating nodes.',
+              __createNodes),
+             
+             ('Transferring attributes.',
+              __transferAttrs),
+             ]
 
-    #timer.startTiming('Updating city IDs in raw table.')
-    #__UpdateRawCityIds()
-    #timer.stopTiming()
-
-    timer.startTiming('Transferring street names.')
-    __transferStreetNames()
-    timer.stopTiming()
-
-    timer.startTiming('Updating street name IDs in raw table.')
-    __UpdateRawStreetNameIds()
-    timer.stopTiming()
-
-    timer.startTiming('Creating intersections.')
-    __creatIntersections()
-    timer.stopTiming()
-
-    timer.startTiming('Transferring attributes.')
-    __transferAttrs()
-    timer.stopTiming()
+    for p in pairs:
+        msg, func = p[0], p[1]
+        try: args = p[2]
+        except IndexError: args = ()
+        timer.startTiming(msg)
+        apply(func, args)
+        timer.stopTiming()
 
     ## Clean up
+    Q = 'DROP TABLE raw'
+    __execute(Q)
     cur.close()
     con.close()
     timer.stopTiming()
@@ -247,7 +254,7 @@ if __name__ == '__main__':
         test()
     else:
         shpToRawSql()
-        sqlToSql()
+        #sqlToSql()
 
     main_timer.stopTiming()
     print 'Done.'
