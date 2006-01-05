@@ -326,11 +326,21 @@ function _setRouteFieldToAddress(id, address)
 	_setElV(id, address);
 }
 
-function _reset()
+function _clearMap()
 {  
+    //_clearStatus();
+    //_setIH('result', default_result);
+    if (map) map.clearOverlays();
+}
+
+function _reset()
+{
     _clearStatus();
     _setIH('result', default_result);
-    if (map) map.clearOverlays();
+    _setIH('fr', '');
+    _setIH('to', '');
+    _setIH('q', '');
+    _clearMap();
 }
 
 function _setElVToAddress(id, address) 

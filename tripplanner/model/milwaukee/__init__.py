@@ -12,8 +12,8 @@ class Mode(mode.Mode):
         # In other words, each edge in the matrix has attributes associated
         # with it in an ordered sequence. This index gives us a way to access
         # the attributes by name while keeping the size of the matrix smaller.
-        attrs = ('feet', 'cfcc', 'bikemode', 'grade', 'lanes', 'adt', 'spd',
-                 'stnameid')
+        attrs = ('length', 'cfcc', 'bikemode', 'grade', 'lanes', 'adt', 'spd',
+                 'ix_streetname')
         self.edge_attrs = attrs
         self.indices = {}
         for i in range(len(attrs)): self.indices[attrs[i]] = i
@@ -28,13 +28,16 @@ class Mode(mode.Mode):
         @return G -- the adjacency matrix
 
         """
-        # Get the edge attributes and index them by index (rowid)
-        # TODO: Filter out attrs that have a "bad" CFCC (highways, etc)
-        Q = 'SELECT * FROM attrs'
+        from byCycle.lib import gis, meter
+
+        lengthFunc = gis.getLengthOfLineString
+        
+        # Get the edge attributes
+        Q = 'SELECT * FROM %s' % self.tables['street_attrs']
         self.executeDict(Q)
         rows = self.fetchAllDict()
+        # Convert all possible values to int or float
         for row in rows:
-            # convert all possible values to int or float
             for k in row: 
                 val = row[k]
                 try:
@@ -47,11 +50,16 @@ class Mode(mode.Mode):
 
         # Get the from and to node IDs of the edges and add them to their
         # respective attr rows
-        Q = 'SELECT fnode, tnode, stnameid FROM streets'
+        Q = 'SELECT wkt_geometry, id_node_f, id_node_t, ix_streetname ' \
+            'FROM %s' % self.tables['edges']
         self.executeDict(Q)
         nrows = self.fetchAllDict()
         for i, nrow in enumerate(nrows):
-            for k in nrow: nrow[k] = int(nrow[k])
+            for k in nrow:
+                try:
+                    nrow[k] = int(nrow[k])
+                except ValueError:
+                    pass
             rows[i].update(nrow)
         del nrows
 
@@ -59,21 +67,35 @@ class Mode(mode.Mode):
         nodes = G['nodes']
         edges = G['edges']
 
+        met = meter.Meter()
+        met.setNumberOfItems(len(rows))
+        met.startTimer()
+        record_number = 1
+        
         for row in rows:
-            rowid = row['rowid']
-            fnode, tnode = row['fnode'], row['tnode']
-            one_way = row['one_way']
-            ft = one_way & 1
-            tf = one_way & 2
-            entry = [row[a] for a in self.edge_attrs]
-            edges[rowid] = entry
+            ix = row['ix']
+            id_node_f, id_node_t = row['id_node_f'], row['id_node_t']
+            oneway = row['oneway']
+            ft = oneway & 1
+            tf = oneway & 2
+            try:
+                length = lengthFunc(gis.importWktGeometry(row['wkt_geometry']))
+            except Exception, e:
+                length = 0
+                
+            entry = [length] + [row[a] for a in self.edge_attrs[1:]]
+            edges[ix] = entry
             if ft:
-                if not fnode in nodes: nodes[fnode] = {}
-                nodes[fnode][tnode] = rowid
+                if not id_node_f in nodes: nodes[id_node_f] = {}
+                nodes[id_node_f][id_node_t] = ix
             if tf:
-                if not tnode in nodes: nodes[tnode] = {}
-                nodes[tnode][fnode] = rowid
+                if not id_node_t in nodes: nodes[id_node_t] = {}
+                nodes[id_node_t][id_node_f] = ix
 
+            met.update(record_number)
+            record_number+=1
+        print
+            
         ## Save a compressed representation of G
         import marshal
         out_file = open(self.matrix_path, 'wb')
