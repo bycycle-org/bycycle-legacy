@@ -59,14 +59,22 @@ def sqlToSql():
         con.commit()
 
     def __unifyAddressRanges():
-        Q = 'UPDATE raw SET addr_f=(ROUND(addr_fl/10.0)*10 + addr_fl % 2) ' \
-            'WHERE addr_fl!=0'
         Q = 'UPDATE raw ' \
-            'SET addr_%s=(ROUND(addr_%s%s / 10.0) * 10 + (addr_%s%s %s 2)) ' \
+            'SET addr_%s=(ROUND(addr_%s%s / 10.0) * 10) ' \
             'WHERE addr_%s%s != 0'
         for f in ('f', 't'):
             for l in ('l', 'r'):
-                __execute(Q % (f, f, l, f, l, '%', f, l))
+                __execute(Q % (f, f, l, f, l))
+        Qs = ('UPDATE raw SET addr_f = (addr_f + (addr_fl % 2)) ' \
+              'WHERE addr_fl != 0 AND (addr_f % 2 = 0)',
+              'UPDATE raw SET addr_f = (addr_f + (1 - (addr_fr % 2))) ' \
+              'WHERE addr_fr != 0 AND (addr_f % 2 = 0)',
+              'UPDATE raw SET addr_f = (addr_f + (addr_tl % 2)) ' \
+              'WHERE addr_tl != 0 AND (addr_f % 2 = 0)',
+              'UPDATE raw SET addr_f = (addr_f + (1 - (addr_tr % 2))) ' \
+              'WHERE addr_tr != 0 AND (addr_f % 2 = 0)')
+        for Q in Qs:
+            __execute(Q)
         con.commit()
         
     def __transferStreetNames():
@@ -76,7 +84,7 @@ def sqlToSql():
         __execute(Q)
         con.commit()
 
-    def __UpdateRawStreetNameIds():
+    def __updateRawStreetNameIds():
         """Set the street name ID of each raw record."""
         # Get all the distinct street names NEW
         Q = 'SELECT DISTINCT prefix, name, type, suffix FROM raw'
@@ -180,6 +188,17 @@ def sqlToSql():
             'FROM raw'
         __execute(Q)
         ## Transfer extra attributes to attributes table (attrs)
+        # Abbreviate bike modes first
+        Qs = ('UPDATE attr_street SET bikemode="bt" ' \
+              'WHERE bikemode="bike trail"',
+              'UPDATE attr_street SET bikemode="br" ' \
+              'WHERE bikemode="bike route"',
+              'UPDATE attr_street SET bikemode="bl" ' \
+              'WHERE bikemode="bike lane"',
+              'UPDATE attr_street SET bikemode="ps" ' \
+              'WHERE bikemode="preferred street"')
+        for Q in Qs:
+            __execute(Q)
         Q = 'INSERT INTO attr_street ' \
             'SELECT NULL,tlid,oneway,cfcc,bikemode,grade,lanes,adt,spd ' \
             'FROM raw'
@@ -213,10 +232,10 @@ def sqlToSql():
               __transferStreetNames),
              
              ('Updating street name IDs in raw table.',
-              __UpdateRawStreetNameIds),
+              __updateRawStreetNameIds),
              
              ('Updating city IDs in raw table.',
-              __UpdateRawCityIds),
+              __updateRawCityIds),
              
              ('Transferring city names.',
               __transferCityNames),

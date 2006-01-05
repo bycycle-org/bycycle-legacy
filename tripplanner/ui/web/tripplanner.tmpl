@@ -47,15 +47,15 @@
 						</td>
 						<td>
 							&#160;<input tabindex="90" name="qButton" id="qButton" type="submit" value="Find"/>
-							&#160;<input tabindex="50" type="reset" value="Reset" onclick="_reset();" 
-							             title="Clear all input fields and remove all markers from the map"/>
+							&#160;<input tabindex="50" type="button" value="Clear Map" onclick="_clearMap();" 
+							             title="Clear everything from the map"/>
 						</td>
 					</tr>
 					<tr>
 						<td colspan="2">
 							Address <a href="javascript:void(0);" tabindex="90" 
 							           title="Center the map on the point you want and then click here" 
-							           onclick="_setElVToMapLonLat('q'); _find('search');">use center of map</a>
+							           onclick="_setElVToMapLonLat('q'); _find('search');">Find address at center of map</a>
 						</td>
 					</tr>
 				</table>
@@ -79,8 +79,8 @@
 						<td>
 							&#160;<input tabindex="50" id="rqButton" name="rqButton" type="submit" value="Find"/>
 							&#160;<input tabindex="50"  
-							             title="Clear all input fields and remove all markers from the map" 
-							             type="reset" value="Reset" onclick="_reset();"/>
+							             title="Clear everything from the map" 
+							             type="button" value="Clear Map" onclick="_clearMap();"/>
 						</td>
 					</tr>
 					<tr>
@@ -88,13 +88,13 @@
 							From
 							<a href="javascript:void(0);" tabindex="60" 
 							   title="Center the map on the point you want and then click here" 
-							   onclick="_setElVToMapLonLat('fr');">use center of map</a>
+							   onclick="_setElVToMapLonLat('fr');">Use center of map</a>
 						</td>
 						<td colspan="2">
 							To
 							<a href="javascript:void(0);" tabindex="70"
 							   title="Center the map on the point you want and then click here" 
-							   onclick="_setElVToMapLonLat('to');">use center of map</a>
+							   onclick="_setElVToMapLonLat('to');">Use center of map</a>
 						</td>
 					</tr>
 				</table>

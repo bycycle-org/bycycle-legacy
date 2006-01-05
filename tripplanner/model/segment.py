@@ -23,7 +23,7 @@ class Segment(object):
         """
         num = int(num)
         left_mod = self.addr_f % 2
-        right_mod = left_mod + 1
+        right_mod = 1 - left_mod
         if left_mod == num % 2: side = 'left'
         elif right_mod == num % 2: side = 'right'
         return self.getAttrsOnSide(side)

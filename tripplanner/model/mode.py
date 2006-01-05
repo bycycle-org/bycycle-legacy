@@ -12,6 +12,7 @@ class Mode(object):
         for i in range(len(edge_fields)): self.indices[edge_fields[i]] = i
         
         self.tables = {'edges': 'layer_street',
+                       'street_attrs': 'attr_street',
                        'vertices': 'layer_node',
                        'streetnames': 'streetname',
                        'cities': 'city',

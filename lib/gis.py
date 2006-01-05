@@ -68,24 +68,6 @@ equator_circumference = 24902
 miles_per_degree_at_equator = equator_circumference/360
 
 
-def getLengthOfLineString(linestring, distance_function=None):
-    if not distance_function:
-        distance_function = getDistanceBetweenTwoPointsOnEarth
-    length = 0
-    for i in range(len(linestring)-1):
-        length += distance_function(linestring[i], linestring[i+1])
-    return length
-
-
-def getDistanceBetweenTwoPoints(p, q):
-    x1, y1 = p.x, p.y
-    x2, y2 = q.x, q.y
-    dx = abs(x2 - x1)
-    dy = abs(y2 - y1)
-    length = math.sqrt(math.pow(dx, 2) + math.pow(dy, 2))
-    return length
-
-
 def getDistanceBetweenTwoPointsOnEarth(lon_lat_a=None, lon_lat_b=None,
                                        lon_a=None, lat_a=None,
                                        lon_b=None, lat_b=None):
@@ -101,6 +83,23 @@ def getDistanceBetweenTwoPointsOnEarth(lon_lat_a=None, lon_lat_b=None,
                 cos(radians(lon_b-lon_a)) + \
                 sin(radians(lat_a)) * \
                 sin(radians(lat_b)))
+
+
+def getLengthOfLineString(linestring,
+                          distanceFunc=getDistanceBetweenTwoPointsOnEarth):
+    length = 0
+    for i, p in enumerate(linestring[:-1]):
+        length += distanceFunc(p, linestring[i+1])
+    return length
+
+
+def getDistanceBetweenTwoPoints(p, q):
+    x1, y1 = p.x, p.y
+    x2, y2 = q.x, q.y
+    dx = abs(x2 - x1)
+    dy = abs(y2 - y1)
+    length = math.sqrt(math.pow(dx, 2) + math.pow(dy, 2))
+    return length
 
 
 def getDistanceBetweenTwoLatitudes(lat_a, lat_b):

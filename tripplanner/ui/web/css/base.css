@@ -200,7 +200,7 @@ a.selected {
 	border-collapse: collapse;
 }
 #summary td, #directions td {
-	border: 1px solid black;
+	border: 1px solid #888;
 	padding: 2px;
 }
 

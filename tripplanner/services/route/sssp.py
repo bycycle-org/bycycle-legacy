@@ -61,7 +61,13 @@ def singleSourceShortestPaths(G, H, s, d=None,
         # In the nodes remaining in G that have a known weight from s,
         # find the node, u, that currently has the shortest path from s
         w_s_to_u, u = heapq.heappop(open)
-        if weightFunction and u != s: E.append(e_attrs)
+
+        # Append the attrs of the segment crossed to get to 
+        if weightFunction:
+            try:
+                prev_e_attrs = P[u][2]
+            except KeyError:
+                prev_e_attrs = None
 
         # Get nodes adjacent to u (preferring matrix H)...
         try:
@@ -86,12 +92,16 @@ def singleSourceShortestPaths(G, H, s, d=None,
             # in one or the other or both directions
             if e is None: continue
 
-            try: e_attrs = H_edges[e]
-            except KeyError: e_attrs = G_edges[e]
+            try:
+                e_attrs = H_edges[e]
+            except KeyError:
+                e_attrs = G_edges[e]
 
             # Get the weight of the edge running from u to v
-            if weightFunction: w_of_e = weightFunction(e_attrs, E)
-            else: w_of_e = e_attrs[0]
+            if weightFunction:
+                w_of_e = weightFunction(e_attrs, prev_e_attrs)
+            else:
+                w_of_e = e_attrs[0]
 
             # Weight of s to u plus the weight of u to v across e--this is *a*
             # weight from s to v that may or may not be less than the current

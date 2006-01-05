@@ -163,7 +163,8 @@ def get(input={}):
             pass
         else:
             # id1 DOES go to id2
-            H_nodes[id1], H_nodes[id] = G_nodes[id1], {}
+            if id not in H_nodes: H_nodes[id] = {}
+            H_nodes[id1] = G_nodes[id1]
             H_nodes[id1][id] = eid1
             H_nodes[id][id2] = eid2
             # override original connection so it won't be used
@@ -596,7 +597,7 @@ def print_key(key):
 
 
 if __name__ == '__main__':
-    q = ['27th and lisbon',
+    q = ['3150 lisbon',
          '35th and north',
          ]
     dm = 'milwaukee'
