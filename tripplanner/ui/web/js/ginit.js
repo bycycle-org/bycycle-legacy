@@ -2,7 +2,7 @@
 
 
 // Switch to indicate whether we're running on localhost
-var local = 0;
+var local = 1;
 
 
 // The base location (domain) of the web interface

@@ -108,16 +108,16 @@ def get(input={}):
 
 
     ## Create the auxillary adjacency matrix, H
-    def __getIntersectionForGeocode(geocode, nid, eid1, eid2):
+    def __getIntersectionForGeocode(geocode, id, eid1, eid2):
         """
         
         Args
-        nid -- shared node ID at split
-        eid1 -- segment id for node-->nid segment
-        eid2 -- segment id for nid-->other_node segment
+        id -- shared node ID at split
+        eid1 -- segment id for node-->id segment
+        eid2 -- segment id for id-->other_node segment
 
         Return
-        An intersection object at at the split with a node ID of nid
+        An intersection object at at the split with a node ID of id
         
         """
         try:
@@ -133,41 +133,41 @@ def get(input={}):
             seg = geocode.segment
             num = geocode.address.number
             fn_seg, nt_seg = seg.splitAtNum(num)
-            fn_seg.rowid, nt_seg.rowid = eid1, eid2
+            fn_seg.ix, nt_seg.ix = eid1, eid2
             split_segs[eid1], split_segs[eid2] = fn_seg, nt_seg
-            fnode, tnode = seg.fnode, seg.tnode
+            id_node_f, id_node_t = seg.id_node_f, seg.id_node_t
             #
             # Create an intersection at the split
             st = seg.street
             st.number = num
-            data = {'nid': nid,
+            data = {'id': id,
                     'cross_streets': [st],
                     'lon_lat': nt_seg.linestring[0]}
             i = intersection.Intersection(data)
             #
             # Update H's nodes
-            __updateHNodes(fnode, nid, tnode, eid1, eid2)
-            __updateHNodes(tnode, nid, fnode, eid2, eid1)
+            __updateHNodes(id_node_f, id, id_node_t, eid1, eid2)
+            __updateHNodes(id_node_t, id, id_node_f, eid2, eid1)
             #
             # Update H's edges
-            eid = seg.rowid
+            eid = seg.ix
             H_edges[eid1] = [fn_seg.getWeight()] + list(G_edges[eid][1:])
             H_edges[eid2] = [nt_seg.getWeight()] + list(G_edges[eid][1:])
         return i
 
-    def __updateHNodes(nid1, nid, nid2, eid1, eid2):
+    def __updateHNodes(id1, id, id2, eid1, eid2):
         try:
-            G_nodes[nid1][nid2]
+            G_nodes[id1][id2]
         except KeyError:
-            # nid1 does NOT go to nid2--nothing to do
+            # id1 does NOT go to id2--nothing to do
             pass
         else:
-            # nid1 DOES go to nid2
-            H_nodes[nid1], H_nodes[nid] = G_nodes[nid1], {}
-            H_nodes[nid1][nid] = eid1
-            H_nodes[nid][nid2] = eid2
+            # id1 DOES go to id2
+            H_nodes[id1], H_nodes[id] = G_nodes[id1], {}
+            H_nodes[id1][id] = eid1
+            H_nodes[id][id2] = eid2
             # override original connection so it won't be used
-            H_nodes[nid1][nid2] = None  
+            H_nodes[id1][id2] = None  
 
     split_segs = {}
     H = {'nodes': {}, 'edges': {}}
@@ -175,13 +175,13 @@ def get(input={}):
     H_nodes, H_edges = H['nodes'], H['edges']
     fint = __getIntersectionForGeocode(fcode, -1, -1, -2)
     tint = __getIntersectionForGeocode(tcode, -2, -3, -4)
-    fnode, tnode = fint.nid, tint.nid
+    id_node_f, id_node_t = fint.id, tint.id
 
     
     ## Try to find a path
     st = time.time()
     try:
-        V, E, W, w = sssp.findPath(G, H, fnode, tnode,
+        V, E, W, w = sssp.findPath(G, H, id_node_f, id_node_t,
                                    weightFunction=mode.getEdgeWeight,
                                    heuristicFunction=None)
     except sssp.SingleSourceShortestPathsNoPathError:
@@ -209,10 +209,12 @@ def get(input={}):
              'to':         {'geocode': tcode, 'original': to},
              'linestring': [],
              'directions': [],
+             'directions_table': '',
              'distance':   {},
              'messages': []
              }
     route.update(directions)
+    route['directions_table'] = _makeDirectionsTable(route)
     messages.append('Total time: %s' % (time.time() - st_tot))
     route['messages'] = messages
     return route
@@ -268,7 +270,6 @@ def makeDirections(I, S):
     # Get bearing of travel for each segment
     bearings = []
     end_bearings = []
-    last_fri = I[-2]
     for (toi, s) in zip(I[1:], S):
         # Get the bearing of the segment--based on whether we are moving
         # toward its start or end
@@ -277,8 +278,7 @@ def makeDirections(I, S):
         e_frlonlat, e_tolonlat = s.linestring[-2], s.linestring[-1]
         sls = s.linestring
 
-        if (toi and s.fnode == toi.nid) or \
-               (not toi and last_fri and s.tnode == last_fri.nid):
+        if toi and s.id_node_f == toi.id:
             # Assumption wrong: moving to => fr
             frlonlat, tolonlat = tolonlat, frlonlat
             e_frlonlat, e_tolonlat = e_tolonlat, e_frlonlat
@@ -377,8 +377,7 @@ def makeDirections(I, S):
 
             # Get a street name for the intersection we're headed toward
             # (one different from the name of the current seg)
-            if toi: toward = getDifferentNameInIntersection(st, toi)
-            else: toward = ''
+            toward = getDifferentNameInIntersection(st, toi)
 
             for item in ('turn', 'street', 'toward'): d[item] = eval(item)
             
@@ -403,8 +402,10 @@ def makeDirections(I, S):
 def getDifferentNameInIntersection(st, i):
     """Get street name from intersection that is different from street st."""
     for i_st in i.cross_streets:
-        if st.name != i_st.name and st.type != i_st.type:
-            return str(st)
+        if st.name == i_st.name and st.type == i_st.type:
+            continue
+        else:
+            return str(i_st)
     return ''
 
 
@@ -450,6 +451,139 @@ def getDirectionFromBearing(bearing):
     elif nw[0] < bearing <= nw[1]: return 'northwest'
 
 
+def _makeDirectionsTable(route):
+##    route = {'from':       {'geocode': fcode, 'original': fr},
+##             'to':         {'geocode': tcode, 'original': to},
+##             'linestring': [],
+##             'directions': [],
+##             'directions_table': '',
+##             'distance':   {},
+##             'messages': []
+##            }
+
+    distance = route['distance']['mi']
+    fr = route['from']['geocode']
+    fr_str = str(fr)
+    to = route['to']['geocode']
+    to_str = str(to)
+    directions = route['directions']
+    linestring = route['linestring']
+
+    fr_point = linestring[0]
+    fr_point_str = '%.6f, %.6f' % (fr_point['x'], fr_point['y'])
+    to_point = linestring[-1]
+    to_point_str = '%.6f, %.6f' % (to_point['x'], to_point['y'])
+
+    last_ls_idx = directions[-1]['ls_index']
+
+    s_table = """
+    <table id='summary'>
+        <tr>
+          <td class='start' rowspan='2'>
+            <h2><a href='javascript:void(0);' class='start'
+                   onclick="map.showMapBlowup(%s)">Start</a>
+            </h2>
+          </td>
+          <td class='start'>%s</a>
+          </td>
+        </tr>
+        <tr>
+          <td class='start'>%s</td>
+        </tr>
+        <tr>
+          <td class='end' rowspan='2'>
+            <h2><a href='javascript:void(0);' class='end'
+                   onclick="map.showMapBlowup(%s)">End</a>
+            </h2>
+          </td>
+          <td class='end'>%s</td>
+        </tr>
+        <tr>
+          <td class='end'>%s</td>
+        </tr>
+        <tr>
+          <td class='total_distance'><h2>Distance</h2></td>
+          <td>%s miles</td>
+        </tr>
+    </table>
+    """ % (fr_point, fr_str, fr_point_str,
+           to_point, to_str, to_point_str,
+           distance)
+
+    d_table = """
+    <!-- Directions -->
+    <table id='directions'>%s</table>
+    """
+
+    d_row = """
+    <tr>
+      <td class='count %s'>
+        <a href='javascript:void(0)'
+           onclick="map.showMapBlowup(%s)">%s.</a>
+      </td>
+      <td class='direction %s'>%s</td>
+    </tr>
+    """
+                      
+
+    # Direction rows
+    row_class = 'a'
+    last = len(directions)
+    i = 1
+    tab = '&nbsp;&nbsp;&nbsp;&nbsp;'
+    d_rows = []
+    row_i = []
+    for d in directions:
+        turn = d['turn']
+        street = d['street']
+        toward = d['toward']
+        jogs = d['jogs']
+        ls_index = d['ls_index']
+        mi = d['distance']['mi']
+
+        row_i = []
+
+        if turn == 'straight':
+            prev = street[0]
+            curr = street[1]
+            row_i.append('%s <b>becomes</b> %s' % (prev, curr))
+        else:
+            if i == 1:
+                cmd = 'Go'
+                on = 'from'
+                onto = '<b>%s</b>' % fr_str.split(',')[0]
+            else:
+                cmd = 'Turn'
+                on = 'onto'
+                onto = '<b>%s</b>' % street
+            row_i.append('%s <b>%s</b> %s %s' % \
+                             (cmd, turn, on, onto))
+
+        if not toward:
+            if i == last: toward = to_str.split(',')[0]
+            else: toward = '?'
+        row_i.append(' toward %s -- %smi' % (toward.title(), mi))
+
+        if jogs:
+            row_i.append('<br/>%sJogs...' % tab)
+            for j in jogs:
+                row_i.append('<br/>%s%s&middot; <i>%s</i> at %s' % \
+                             (tab, tab, j['turn'], j['street']))
+
+        d_rows.append(d_row % (row_class, linestring[ls_index], i,
+                               row_class, ''.join(row_i)))
+        del row_i[:]
+        i += 1
+        if row_class == 'a': row_class = 'b'
+        else: row_class = 'a'
+
+    last_row = d_row  % (row_class, linestring[-1], i, row_class,
+                         '<b>End</b> at %s' % to_str)
+    d_rows.append(last_row)
+    d_table = d_table % ''.join([str(d) for d in d_rows])
+    return ''.join((s_table, d_table))
+    
+
 def print_key(key):
     for k in key:
         print k, 
@@ -462,17 +596,21 @@ def print_key(key):
 
 
 if __name__ == '__main__':
-    q = ['N 8th St & W Juneau Ave, Milwaukee, WI',
-         'N 25th St & W Brown St, Milwaukee, WI 53205'
+    q = ['27th and lisbon',
+         '35th and north',
          ]
     dm = 'milwaukee'
     tm = 'bike'
     try:
-        result = get({'q': q, 'dmode': dm, 'tmode': tm})
+        r = get({'q': q, 'dmode': dm, 'tmode': tm})
     except Exception, e:
         #print e
         raise
     else:
-        fr = result['from']
-        print_key(fr)
-        print_key(result['to'])
+        D = r['directions']
+        print r['from']['geocode']
+        print r['to']['geocode']
+        for d in D:
+            print '%s on %s toward %s -- %s mi' % (d['turn'],
+                                             d['street'], d['toward'],
+                                             d['distance']['mi'])

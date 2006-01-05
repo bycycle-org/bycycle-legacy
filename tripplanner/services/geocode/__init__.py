@@ -11,13 +11,13 @@ class GeocodeError(Exception):
 
 class AddressNotFoundError(GeocodeError):
     def __init__(self, address=''):
-        desc = 'Could not find the address `%s`' % address
+        desc = 'Could not find address `%s`' % address
         GeocodeError.__init__(self, desc=desc)
                 
 class MultipleMatchingAddressesError(GeocodeError):
     def __init__(self, geocodes=[]):
         self.geocodes = geocodes
-        desc = 'Multiple matches found'
+        desc = 'Multiple matching addresses found'
         GeocodeError.__init__(self, desc=desc)
 
  
@@ -79,20 +79,21 @@ if __name__ == "__main__":
     import time
     A = (#' ',
          # Milwaukee
-         #125 n milwaukee',
-         #125 n milwaukee milwaukee wi',
-         #27th and lisbon',
-         #27th and lisbon milwaukee, wi',
-         'lon=-87.894681, lat=43.07765',
-         'N 8th St & W Juneau Ave, Milwaukee, WI 53205',
+         'lon=-87.934399, lat=43.047126',
+         '125 n milwaukee',
+         '125 n milwaukee milwaukee wi',
+         '27th and lisbon',
+         '27th and lisbon milwaukee',
+         '27th and lisbon milwaukee, wi',
+         'lon=-87.961178, lat=43.062993',
+         'lon=-87.921953, lat=43.040791',
+         'n 8th st & w juneau ave, milwaukee, wi ',
          '77th and burleigh',
          '2750 lisbon',
          '(-87.976885, 43.059544)',
-         'lon=-87.961178, lat=43.062993',
          'lon=-87.946243, lat=43.041669',
-         'lon=-87.934399, lat=43.047126',
          '124th and county line',
-         '124th and county line milwaukee wi',
+         '124th and county line wi',
          '5th and center',
          '6th and hadley',
          # Portland

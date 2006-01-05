@@ -39,6 +39,9 @@ function _selectInput(service, focus) {
 }
 
 
+function _showInputSection(service) { _el(service+'_link').onclick(); }
+
+
 function _setStatus(msg, error)
 {
 	if (error) _setElStyle('status', 'color', 'red');
@@ -88,6 +91,9 @@ function _find(alt_service)
 			for (var i = 0; i < fr_to.length; ++i) fr_to[i] = fr_to[i].replace('"', "'");
 			query_str = 'q=["' + escape(fr_to.join('","')) + '"]&tmode=bike';
 		}
+		_setElV('fr', fr_to[0]);
+		_setElV('to', fr_to[1]);
+		_showInputSection('route');
 	} else if (service == 'search') {
 		_webservice = 'geocode';
 		if (q) query_str = 'q=' + escape(q);
@@ -106,8 +112,10 @@ function _find(alt_service)
 		}
 		_setStatus(msg);
 	} else {
-    	doXmlHttpReq('GET', 'http://' + domain + '/tripplanner/webservices/' + _webservice + 
-	                 '/?' + query_str + '&dmode=' + _elV('dmode'), _callback);
+        var url = 'http://' + domain + '/tripplanner/webservices/' + _webservice + 
+	              '/?' + query_str + '&dmode=' + _elV('dmode');
+	    //echo(url);
+        doXmlHttpReq('GET', url, _callback);
 	}
 }
 
@@ -167,7 +175,7 @@ function _geocodeCallback(status, result_set)
 			break;
 		case 300: // Multiple matches
 		    geocodes = result_set['result_set']['result'];
-			result_text = '<b>Multiple Matches Found</b><br/><ul>';
+			result_text = '<b><big>Multiple Matches Found</big></b><br/><ul>';
 			var href = ' href="javascript:void(0);" ';
 			for (var i = 0; i < geocodes.length; ++i) {
 				var code = geocodes[i];
@@ -194,31 +202,31 @@ function _routeCallback(status, result_set)
 	{
 		case 200: // A-OK, one match
 			var route = result_set['result_set']['result'];
-			var f = route['from']['geocode'];
-			var t = route['to']['geocode'];			
-			var linestring = route['linestring'];
-			var D = route['directions'];
-	        var linestring_len = linestring.length;
-			result_text = route['distance']['mi'] + '<br/>';
-			for (var i = 0; i < D.length; ++i)
-				result_text += (D[i]['turn'] + ' ' + D[i]['street'] + '<br/>');
+			result_text = route['directions_table'];
 	        if (map) {
+	           var linestring = route['linestring'];
+	           var linestring_len = linestring.length;
     		   var box = getBoxForPoints(linestring);	
 	           var s_e_markers = placeMarkers([linestring[0],
 	                                          linestring[linestring_len-1]],
 	      			                          [start_icon, end_icon]);
-
 	           var s_mkr = s_e_markers[0];
-	           GEvent.addListener( s_mkr, "click", function() { showMapBlowupAlongRoute(linestring[0]); } );
                var e_mkr = s_e_markers[1];
 	           var e_ord = linestring_len - 1;
+	           GEvent.addListener( s_mkr, "click", function() { showMapBlowupAlongRoute(linestring[0]); } );	           
         	   GEvent.addListener( e_mkr, "click", function() { showMapBlowupAlongRoute(linestring[e_ord]); } );			
 	           centerAndZoomToBox(box);
 			   drawPolyLine(linestring);
 			}
 			break;			 
 		case 300: // Multiple matches
-			result_text = '<b>Multiple Matches Found</b><ul>';
+		    var geocodes_f = result_set['result_set']['result']['from'];
+		    var geocodes_t = result_set['result_set']['result']['to'];
+		    result_text = '<div id="mma">' +
+		                      '<b><big>Multiple Matches Found</big></b><br/>' +
+		                       _makeRouteMultipleMatchList(geocodes_f, geocodes_t, 'fr') +
+		                       _makeRouteMultipleMatchList(geocodes_f, geocodes_f, 'to') +
+		                  '</div>';
 			break;
 		case 400: // Input Error
 		case 404: // Not found
@@ -227,6 +235,44 @@ function _routeCallback(status, result_set)
 	}
 	return {'result_text': result_text, 'error': error};
 }
+
+function _makeRouteMultipleMatchList(geocodes_f, geocodes_t, fr_or_to)
+{
+    fr_or_to == 'fr' ? geocodes = geocodes_f : geocodes = geocodes_t;
+    if (!geocodes) return '';
+    
+    var result = '<div id="mma_'+fr_or_to+'" ';
+    
+    if (fr_or_to == 'fr') {
+        result += '><b>From:</b><br/>';
+    	// Do find after selection of end address, if end address had multiple matches in addition to from address
+        if (geocodes_t) {
+            var find = '_setElStyle(\'mma_fr\', \'display\', \'none\'); ' +
+                       '_setElStyle(\'mma_to\', \'display\', \'block\');';
+        } else {
+            var find = '_find();'
+        }
+    } else {
+        if (geocodes_f) result += 'style="display:none"';
+        result += '><b>To:</b><br/>';
+        var find = '_find()';
+    }
+
+    var href = ' href="javascript:void(0);" ';    
+    var onclick1 = ' onclick="_setElV(\'' + fr_or_to + '\', \'';
+    var onclick2 = '\'); _showInputSection(\'route\'); ' + find + '" ';
+    result += '<ul>';
+	for (var i = 0; i < geocodes.length; ++i) {
+	   var code = geocodes[i];
+	   var addr = _makeAddressFromGeocode(code, false, ', ');
+	   var onclick = onclick1 + addr + onclick2;
+	   var a = '<a'+href+onclick+'>'+addr+'</a>';
+	   result += '<li>'+a+'</li>';
+	}
+	result += '</ul></div>';
+	return result;
+}
+
 
 function _makeAddressFromGeocode(geocode, show_lon_lat, separator)
 {
@@ -246,7 +292,7 @@ function _makeAddressFromGeocode(geocode, show_lon_lat, separator)
 			        _join([st2.prefix, st2.name, st2.type, st2.suffix])
 	}
 	var zc = place.zipcode == '0' ? '' : place.zipcode;
-	var address = full_name + separator + place.city + ', ' + place.statecode  + ' ' + zc;	  
+	var address = full_name + separator + place.city + ', ' + place.id_state  + ' ' + zc;	  
 	if (show_lon_lat)	address += separator + 'long: ' + geocode.x + ', lat: ' + geocode.y;
 	return address;
 }
@@ -286,16 +332,6 @@ function _reset()
     _setIH('result', default_result);
     if (map) map.clearOverlays();
 }
-
-/*def _getMultipleAddressList(self, addr, which):
-	header = "<h3>%s?</h3>" % addr['original']
-	select_list = [header, "<ul style='list-style-type:none;'>"]
-	link = "<li>&middot; <a href='javascript:void(0);' onclick=" \
-		   "'return setAddressFieldToFullAddress(\"%s\", %s);'" \
-		   ">%s</a></li>"
-	select_list += [link % (a, which, a) for a in addr['addrs']]
-	select_list.append("</ul>")
-	return '\n'.join(select_list)*/
 
 function _setElVToAddress(id, address) 
 {

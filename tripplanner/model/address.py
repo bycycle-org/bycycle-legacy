@@ -87,11 +87,11 @@ class Address(object):
 
             # city
             word = words[-1]
-            Q = 'SELECT rowid FROM cities WHERE city="%s"' % (word)
+            Q = 'SELECT ix FROM city WHERE city="%s"' % (word)
             self.mode.execute(Q)
             row = self.mode.fetchRow()
             if row:
-                place.cityid = row[0]
+                place.ix_city = row[0]
                 place.city = word
                 del words[-1]
 
@@ -229,7 +229,7 @@ class Street(object):
         """
         cur = mode.cursor
         Q = 'SELECT %s FROM %s WHERE %s'
-        C = ('rowid', 'prefix', 'name', 'type', 'suffix')
+        C = ('ix', 'prefix', 'name', 'type', 'suffix')
         A = (self.prefix, self.name, self.type, self.suffix)
         where = ['%s="%s"' % (c, a.lower()) for (c, a) in zip(C[1:], A) if a]
         where = ' AND '.join(where)
@@ -267,38 +267,38 @@ class Street(object):
 
 class Place(object):
     def __init__(self,
-                 cityid=0, city='',
-                 countyid=0, county='',
-                 statecode='', state='',
+                 ix_city=0, city='',
+                 id_county=0, county='',
+                 id_state='', state='',
                  zipcode=0):
-        self.cityid = cityid
+        self.ix_city = ix_city
         self.city = city
-        self.countyid = countyid
+        self.id_county = id_county
         self.county = county
-        self.statecode = statecode
+        self.id_state = id_state
         self.state = state
         self.zip = zipcode
 
     def __str__(self):
         result = joinAttrs((self.city.title(),
                             self.county.title(),
-                            self.statecode.upper()),
+                            self.id_state.upper()),
                            ', ')
         return joinAttrs([result, str(self.zip)])
 
     def __repr__(self):
         return repr({'city': str(self.city.title()),
                      'county': str(self.county.title()),
-                     'statecode': str(self.statecode.upper()),
+                     'id_state': str(self.id_state.upper()),
                      'zipcode': str(self.zip)})
         
     def __eq__(self, other):
         if \
-           self.cityid == other.cityid and \
+           self.ix_city == other.ix_city and \
            self.city == other.city and \
-           self.countyid == other.countyid and \
+           self.id_county == other.id_county and \
            self.county == other.county and \
-           self.statecode == other.statecode and \
+           self.id_state == other.id_state and \
            self.state == other.state and \
            self.zip == other.zip:
             return True
@@ -311,9 +311,9 @@ class Place(object):
 
     def __nonzero__(self):
         if \
-           self.cityid or self.city or \
-           self.countyid or self.county or \
-           self.statecode or self.state or \
+           self.ix_city or self.city or \
+           self.id_county or self.county or \
+           self.id_state or self.state or \
            self.zip:
             return True
         else:

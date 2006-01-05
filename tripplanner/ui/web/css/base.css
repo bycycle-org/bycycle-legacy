@@ -66,19 +66,19 @@ a.selected {
 	position: relative;
 	padding: 0; margin: 0 auto;
 	width: 750px;
-	border: 1px solid gray;
+	border: 1px solid #888;
 }
 
 .content_section {
 	padding: 4px;
-	border-bottom: 1px solid gray;
+	border-bottom: 1px solid #888;
 }
 
 /* Header */
 
 #header {
-	border-bottom: 1px solid gray;
-	background: #dddddd;
+	border-bottom: 1px solid #888;
+	background: #ddd;
 	padding: 0;
 }
 
@@ -133,7 +133,7 @@ a.selected {
 }
 
 #feedback {
-    border-bottom: 1px solid gray;
+    border-bottom: 1px solid #888;
 }
 
 #result {
@@ -147,7 +147,7 @@ a.selected {
 
 #map {
 	height: 300px;
-	border: 1px solid gray;
+	border: 1px solid #888;
 }
 
 #loading {
@@ -177,3 +177,52 @@ a.selected {
 	font-style: italic;
 	color: #444;
 }
+
+
+/* Directions Table */
+
+.start {
+	color: green;
+}
+
+.end {
+	color: red;
+}
+
+.start h2, .end h2, .total_distance h2 {
+	padding: 0px;
+	margin: 0px;
+	font-size: 14px;
+}
+
+#summary, #directions {
+	width: 100%;
+	border-collapse: collapse;
+}
+#summary td, #directions td {
+	border: 1px solid black;
+	padding: 2px;
+}
+
+.error {
+	color: red;
+}
+.a {
+	background: #fff;
+}
+.b {
+	background: #eee;
+}
+.count {
+ 	vertical-align: middle;
+}
+
+
+
+
+
+
+
+
+
+

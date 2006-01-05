@@ -22,10 +22,10 @@ class Segment(object):
 
         """
         num = int(num)
-        numl = int(self.fraddl) or int(self.toaddl)
-        numr = int(self.fraddr) or int(self.toaddr)
-        if num % 2 == numl % 2: side = 'left'
-        elif num % 2 == numr % 2: side = 'right'
+        left_mod = self.addr_f % 2
+        right_mod = left_mod + 1
+        if left_mod == num % 2: side = 'left'
+        elif right_mod == num % 2: side = 'right'
         return self.getAttrsOnSide(side)
 
 
@@ -33,7 +33,8 @@ class Segment(object):
         """Get attributes on side. Also get attrs that aren't side-specific.
 
         Return a dict of the attributes. The side-specific attrs will have
-        their last char (l or r) stripped off.
+        their last char (l or r) stripped off. If the attr then ends with '_',
+        that will be stripped off too.
 
         """
         if side.strip().lower() in ('left', 'l'):
@@ -46,34 +47,45 @@ class Segment(object):
         A = {}
         attrs = self.__dict__
         for attr in attrs:
-            if attr[-1] == char: A[attr[:-1]] = attrs[attr]
-            elif attr[-1] != opp_char: A[attr] = attrs[attr]
+            # Side-specific attrs
+            if attr[-1] == char:
+                key =  attr[:-1]
+                if key[-1] == '_':
+                    key = key[:-1]
+                A[key] = attrs[attr]
+            # Non side-specific attrs
+            elif attr[-1] != opp_char:
+                A[attr] = attrs[attr]
         return A
 
 
     def getIDOfSharedIntersection(self, other_segment):
-        if self.fnode in (other_segment.fnode, other_segment.tnode):
-            nid = self.fnode
-        elif self.tnode in (other_segment.fnode, other_segment.tnode):
-            nid = self.tnode
-        return nid
+        try:
+            if self.id_node_f in (other_segment.id_node_f,
+                                  other_segment.id_node_t):
+                id_node = self.id_node_f
+            elif self.id_node_t in (other_segment.id_node_f,
+                                    other_segment.id_node_t):
+                id_node = self.id_node_t
+        except AttributeError:
+            return 0
+        return id_node
 
                     
     def splitAtNum(self, num):
         """Split the segment at num. Return two new segments.
 
-        The first seg is fnode-->num; the second is num-->fnode
+        The first seg is id_node_f-->num; the second is num-->id_node_f
         
         """
         num = int(num)
         sls = self.linestring
         sls_len = len(sls)
 
-        fal, far = self.fraddl, self.fraddr
-        tal, tar = self.toaddl, self.toaddr
+        fa, ta = int(self.addr_f), int(self.addr_t)
 
-        min_add = min([a for a in (fal, far, tal, tar) if a])
-        max_add = max([a for a in (fal, far, tal, tar) if a])
+        min_add = min([a for a in (fa, ta) if a])
+        max_add = max([a for a in (fa, ta) if a])
 
         seg_len = (max_add - min_add + 1) * 1.0
         pct_from_start = (num - min_add) / seg_len
@@ -116,8 +128,8 @@ class Segment(object):
 
         s.linestring, t.linestring = [], []
 
-        # Give s attributes of original from fnode-->num
-        # Give t attributes of original from num-->tnode
+        # Give s attributes of original from id_node_f-->num
+        # Give t attributes of original from num-->id_node_t
         # linestring
         for i in range(ll_idx): s.linestring.append(sls[i])
         s.linestring.append(ll)
@@ -127,10 +139,10 @@ class Segment(object):
         s.getWeight(True)
         t.getWeight(True)
         # address range
-        s.toaddrl = s.toaddr = num
-        t.fraddrl = t.fraddr = num
+        s.addr_t = num
+        t.addr_f = num
         # fake node ID
-        s.tnode, t.fnode = -1, -1
+        s.id_node_t, t.id_node_f = -1, -1
         return s, t
 
 
