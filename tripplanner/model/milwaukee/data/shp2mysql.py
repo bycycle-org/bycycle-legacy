@@ -51,7 +51,7 @@ def sqlToSql():
         # Set INTEGER NULLs to 0
         Q = 'UPDATE raw SET %s=0 WHERE %s IS NULL'
         cols = ('id_node_f', 'id_node_t',
-                'addr_fl', 'addr_tl', 'addr_fr', 'addr_tr',
+                'addr_f', 'addr_t', 'addr_fl', 'addr_tl', 'addr_fr', 'addr_tr',
                 'ix_streetname', 'ix_city_l', 'ix_city_r', 'zip_l', 'zip_r',
                 'tlid', 'lanes', 'adt', 'spd', 'oneway')
         for col in cols:
@@ -59,12 +59,14 @@ def sqlToSql():
         con.commit()
 
     def __unifyAddressRanges():
-        Q = "UPDATE raw SET addr_f=ROUND(addr_fl/10.0)*10 WHERE addr_fl!=0"
-        Q = 'UPDATE raw SET addr_%s=ROUND(addr_%s%s/10.0)*10 ' \
-            'WHERE addr_%s%s!=0'
+        Q = 'UPDATE raw SET addr_f=(ROUND(addr_fl/10.0)*10 + addr_fl % 2) ' \
+            'WHERE addr_fl!=0'
+        Q = 'UPDATE raw ' \
+            'SET addr_%s=(ROUND(addr_%s%s / 10.0) * 10 + (addr_%s%s %s 2)) ' \
+            'WHERE addr_%s%s != 0'
         for f in ('f', 't'):
             for l in ('l', 'r'):
-                __execute(Q % (f, f, l, f, l))
+                __execute(Q % (f, f, l, f, l, '%', f, l))
         con.commit()
         
     def __transferStreetNames():
@@ -120,7 +122,7 @@ def sqlToSql():
         __execute(Q)
         con.commit()
         
-    def __UpdateRawCityIds():
+    def __updateRawCityIds():
         """Set the city ID of each raw record."""
         for side in ('l', 'r'):
             Q0 = 'SELECT DISTINCT ix, city FROM city'
@@ -140,7 +142,15 @@ def sqlToSql():
                 record_number+=1
             print  # newline after the progress meter
         con.commit()
-            
+
+    def __updateRawStateIds():
+        """Set the state ID of each raw record."""
+        Q = 'INSERT INTO state VALUES (NULL, "wi", "wisconsin")'
+        __execute(Q)
+        Q = 'UPDATE raw SET id_state_l="wi", id_state_r="wi"'
+        __execute(Q)
+        con.commit()
+
     def __createNodes():
         Q1 = 'SELECT id_node_f, id_node_t, wkt_geometry FROM raw'
         Q2 = 'INSERT INTO layer_node (id, wkt_geometry) VALUES (%s, "%s")'
@@ -164,7 +174,7 @@ def sqlToSql():
     def __transferAttrs():
         ## Transfer core attributes to street table
         Q = 'INSERT INTO layer_street ' \
-            'SELECT NULL, wkt_geometry, id_node_f, id_node_t, ' \
+            'SELECT rowid, wkt_geometry, id_node_f, id_node_t, ' \
             'addr_f, addr_t, ix_streetname, ix_city_l, ix_city_r, ' \
             'id_state_l, id_state_r, zip_l, zip_r ' \
             'FROM raw'
@@ -212,7 +222,10 @@ def sqlToSql():
               __transferCityNames),
              
              ('Updating city IDs in raw table.',
-              __UpdateRawCityIds),
+              __updateRawCityIds),
+             
+             ('Updating state IDs in raw table.',
+              __updateRawStateIds),
              
              ('Creating nodes.',
               __createNodes),
@@ -254,7 +267,7 @@ if __name__ == '__main__':
         test()
     else:
         shpToRawSql()
-        #sqlToSql()
+        sqlToSql()
 
     main_timer.stopTiming()
     print 'Done.'

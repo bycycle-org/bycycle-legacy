@@ -205,13 +205,6 @@ function centerAndZoomToBox(box)
 }
 
 
-function showMapBlowupAlongRoute(point)
-{
-	map.showMapBlowup(point);
-	map.removeOverlay(center_marker);
-}
-
-
 function hideBikeThereNetwork()
 {
 	network_visible = false;
