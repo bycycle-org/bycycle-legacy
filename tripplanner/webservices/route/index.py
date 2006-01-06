@@ -1,7 +1,7 @@
 #!/usr/local/bin/python2.4
 # Route Web Service
 from byCycle.lib import wsrest
-from byCycle.tripplanner.services import route, excs
+from byCycle.tripplanner.services import route
 
 class Route(wsrest.RestWebService):
     def __init__(self):
@@ -9,9 +9,10 @@ class Route(wsrest.RestWebService):
              
     def GET(self):
         try:
-            self.input['q'] = eval(self.input['q'])
+            q = self.input['q'].replace('\n', ' ')
+            self.input['q'] = eval(q)
             the_route = route.get(self.input)
-        except excs.InputError, e:
+        except route.InputError, e:
             raise wsrest.BadRequestError(reason=e.description)
         except route.MultipleMatchingAddressesError, e:
             self.status = '300'

@@ -1,7 +1,5 @@
 # Geocode Service Module
 
-from byCycle.tripplanner.services import excs
-
 class GeocodeError(Exception):
     def __init__(self, desc=''): 
         if desc: self.description = desc
@@ -20,6 +18,11 @@ class MultipleMatchingAddressesError(GeocodeError):
         desc = 'Multiple matching addresses found'
         GeocodeError.__init__(self, desc=desc)
 
+class InputError(GeocodeError):
+    def __init__(self, errors=[]):
+        desc = '<br/>'.join(errors)
+        GeocodeError.__init__(self, desc=desc)
+
  
 def get(input):
     """Get the geocode of the address, according to the data mode.
@@ -33,14 +36,12 @@ def get(input):
     """
     # Check input
     errors = []
-    params = {'q': 'Address required',
-              'dmode': 'Mode required'}
 
     try:
         val = input['q'].strip().lower()
         if not val: raise ValueError
     except (KeyError, ValueError):
-        errors.append('Address required')
+        errors.append('Please enter an address.')
     else:
         inaddr = val
 
@@ -53,11 +54,11 @@ def get(input):
         else:
             if not val: raise ValueError
     except (KeyError, ValueError):
-        errors.append('Mode required')
+        errors.append('Please select a region.')
     else:
         mode = val
 
-    if errors: raise excs.InputError(errors)
+    if errors: raise InputError(errors)
 
     # See if mode is object (has geocode attr) or string (no geocode attr)
     # If string, instantiate a new data mode object based on the string

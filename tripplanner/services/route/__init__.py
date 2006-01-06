@@ -3,7 +3,7 @@
 import time
 from byCycle.lib import gis
 from byCycle.tripplanner.model import address, intersection
-from byCycle.tripplanner.services import excs, geocode
+from byCycle.tripplanner.services import geocode
 import sssp
 
 travel_modes = {'bike': 'bicycle',
@@ -21,14 +21,18 @@ class RouteError(Exception):
     def __init__(self, desc=''):
         if desc: self.description = desc
         else: self.description = 'Route Error'
-
     def __str__(self):
         return self.description
 
 class NoRouteError(RouteError):
     def __init__(self, desc=''):
         RouteError.__init__(self, desc=desc)
-            
+
+class InputError(RouteError):
+    def __init__(self, errors=[]):
+        desc = '<br/>'.join(errors)
+        RouteError.__init__(self, desc=desc)
+
 class MultipleMatchingAddressesError(RouteError):
     def __init__(self, geocodes={'from': [], 'to': []}):
         self.geocodes = geocodes
@@ -48,25 +52,35 @@ def get(input={}):
     try: q = input['q']
     except KeyError: errors.append('Route query required')
     else:
-        try: fr = q[0]
-        except IndexError: errors.append('Start address required')
-        try: to = q[1]
-        except IndexError: errors.append('End address required')
+        try:
+            fr = q[0].strip()
+            if not fr: raise IndexError
+        except IndexError:
+            errors.append('Start address required')
+        try:
+            to = q[1].strip()
+            if not to: raise IndexError
+        except IndexError:
+            errors.append('End address required')
         
-    try: dmode = input['dmode']
-    except KeyError: errors.append('Data mode required')
+    try:
+        dmode = input['dmode']
+    except KeyError:
+        errors.append('Data mode required')
     else:
         try: dmode = data_modes[dmode]
         except KeyError: errors.append('Unknown data mode')
 
-    try: tmode = input['tmode']
-    except KeyError: errors.append('Travel mode required')
+    try:
+        tmode = input['tmode']
+    except KeyError:
+        errors.append('Travel mode required')
     else:
         try: tmode = travel_modes[tmode]
         except KeyError: errors.append('Unknown travel mode')
 
     # Let multiple input errors fall through to here
-    if errors: raise excs.InputError(errors)
+    if errors: raise InputError(errors)
 
     # The mode is a combination of the data/travel modes
     path = 'byCycle.tripplanner.model.%s.%s'
@@ -90,14 +104,14 @@ def get(input={}):
     if M['from'] or M['to']: raise MultipleMatchingAddressesError(M)
 
     # Let multiple multiple match errors fall through to here
-    if errors: raise excs.InputError(errors)
+    if errors: raise InputError(errors)
 
     # Precise (enough) addresses were entered
     fcode, tcode = fcodes[0], tcodes[0]
 
     # TODO: Make this check actually work
     if fcode == tcode:
-        raise excs.InputError('Start and End appear to be the same')
+        raise InputError('Start and End appear to be the same')
 
 
     ## Made it through that maze--now fetch the main adjacency matrix, G
@@ -464,23 +478,26 @@ def _makeDirectionsTable(route):
 
     distance = route['distance']['mi']
     fr = route['from']['geocode']
+    fr_addr = fr.address
     fr_str = str(fr)
     to = route['to']['geocode']
+    to_addr = to.address
     to_str = str(to)
     directions = route['directions']
     linestring = route['linestring']
 
     fr_point = linestring[0]
-    fr_point_str = '%.6f, %.6f' % (fr_point['x'], fr_point['y'])
     to_point = linestring[-1]
-    to_point_str = '%.6f, %.6f' % (to_point['x'], to_point['y'])
 
-    last_ls_idx = directions[-1]['ls_index']
+    fr_addr = '<br/>'.join([str(a) for a in (fr_addr.street,
+                                             fr_addr.place)])
+    to_addr = '<br/>'.join([str(a) for a in (to_addr.street,
+                                             to_addr.place)])
 
     s_table = """
     <table id='summary'>
         <tr>
-          <td class='start' rowspan='2'>
+          <td class='start'>
             <h2><a href='javascript:void(0);' class='start'
                    onclick="map.showMapBlowup(%s)">Start</a>
             </h2>
@@ -489,10 +506,7 @@ def _makeDirectionsTable(route):
           </td>
         </tr>
         <tr>
-          <td class='start'>%s</td>
-        </tr>
-        <tr>
-          <td class='end' rowspan='2'>
+          <td class='end'>
             <h2><a href='javascript:void(0);' class='end'
                    onclick="map.showMapBlowup(%s)">End</a>
             </h2>
@@ -500,16 +514,11 @@ def _makeDirectionsTable(route):
           <td class='end'>%s</td>
         </tr>
         <tr>
-          <td class='end'>%s</td>
-        </tr>
-        <tr>
           <td class='total_distance'><h2>Distance</h2></td>
           <td>%s miles</td>
         </tr>
     </table>
-    """ % (fr_point, fr_str, fr_point_str,
-           to_point, to_str, to_point_str,
-           distance)
+    """ % (fr_point, fr_addr, to_point, to_addr, distance)
 
     d_table = """
     <!-- Directions -->
@@ -598,7 +607,7 @@ def print_key(key):
 
 if __name__ == '__main__':
     q = ['3150 lisbon',
-         '35th and north',
+         '  ',
          ]
     dm = 'milwaukee'
     tm = 'bike'

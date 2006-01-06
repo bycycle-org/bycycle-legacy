@@ -62,14 +62,8 @@ class Error(Exception):
         return repr(rep)
 
 
-class RouteNotFoundError(Error):
-    def __init__(self, errors=[]):
-        Error.__init__(self, errors)
-        self.description = 'Route Not Found'
-
-
 class InputError(Error):
-    def __init__(self, errors=[]):
+    def __init__(self, errors):
         Error.__init__(self, errors) 
         self.description = 'Bad Input'
 

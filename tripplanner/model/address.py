@@ -173,7 +173,18 @@ class IntersectionAddress(Address):
             if len(streets) >= 2: return streets
         err = 'invalid address for IntersectionAddress: %s' % inaddr
         raise ValueError(err)
-    
+
+    def street(self):
+        return joinAttrs((self.street1, self.street2), ' & ')
+    street = property(street)
+
+    def place(self):
+        if self.place1 == self.place2:
+            return str(self.place1)
+        else:
+            joinAttrs((self.place1, self.place2), ' & ')
+    place = property(place)
+
     def __str__(self):
         if self.place1 == self.place2:
             result = joinAttrs((self.street1, self.street2), ' & ')
