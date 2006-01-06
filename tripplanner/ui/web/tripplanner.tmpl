@@ -19,114 +19,133 @@
 
 <body>
 
-<table id="vcenter"><tr><td>
-<div id="content_pane">
-		<div id="input_section" class="content_section">
-			<div id="select_input">
-				<a href="javascript:void(0);" id="search_link" class="selected" title="Search the Map" 
-				   onclick="_selectInput('search', true);">Search</a>
-				&#160;&#160;&#183;&#160;&#160;
-				<a href="javascript:void(0);" id="route_link" title="Find a Route" 
-				   onclick="_selectInput('route', true);">Route</a>
-				&#160;&#160;&#183;&#160;&#160;
-				<a href="help.html" title="Help!">Help</a>
-				&#160;&#160;&#183;&#160;&#160;
-				<a href="http://tripplanner.bycycle.org/" title="Information About the Trip Planner">About</a>
-				&#160;&#160;&#183;&#160;&#160;
-				<select id="dmode" name="dmode">
-				    <option value="milwaukee">Milwaukee, WI</option>
-				</select>
-			</div>
+<!--a href="javascript:void(0);" onclick="location.href = 'http://yahoo.com'">link</a-->
 
-			<form id="input_form" action="" method="get" onsubmit="_find(); return false;">
-				<!-- SEARCH INPUT -->
-				<table id="search_input">
-					<tr>
-						<td>
-							<input tabindex="80" name="q" id="q" type="text" value=""/>
-						</td>
-						<td>
-							&#160;<input tabindex="90" name="qButton" id="qButton" type="submit" value="Find"/>
-							&#160;<input tabindex="50" type="button" value="Clear Map" onclick="_clearMap();" 
-							             title="Clear everything from the map"/>
-						</td>
-					</tr>
-					<tr>
-						<td colspan="2">
-							Address <a href="javascript:void(0);" tabindex="90" 
-							           title="Center the map on the point you want and then click here" 
-							           onclick="_setElVToMapLonLat('q'); _find('search');">Find address at center of map</a>
-						</td>
-					</tr>
-				</table>
-				<!-- ROUTE INPUT -->
-				<table id="route_input" style="display:none;">
+<table id="vcenter"><tr><td id="vcenter_td">
 
-					<tr>
-						<td>
-							<input tabindex="30" name="fr" id="fr" type="text" class="route_field" value=""/>
-						</td>
-						<td id="swapfrto">
-								<a href="javascript:void(0);" onclick="return _swap('fr', 'to');">
-									<img src="images/swapfrto.gif" width="10" height="14"
-										 alt="Swap from and to" title="Swap from and to"/>
-								</a>
-						</td>
-
-						<td>
-							<input tabindex="40" name="to" id="to" type="text" class="route_field" value=""/>
-						</td>
-						<td>
-							&#160;<input tabindex="50" id="rqButton" name="rqButton" type="submit" value="Find"/>
-							&#160;<input tabindex="50"  
-							             title="Clear everything from the map" 
-							             type="button" value="Clear Map" onclick="_clearMap();"/>
-						</td>
-					</tr>
-					<tr>
-						<td colspan="2">
-							From
-							<a href="javascript:void(0);" tabindex="60" 
-							   title="Center the map on the point you want and then click here" 
-							   onclick="_setElVToMapLonLat('fr');">Use center of map</a>
-						</td>
-						<td colspan="2">
-							To
-							<a href="javascript:void(0);" tabindex="70"
-							   title="Center the map on the point you want and then click here" 
-							   onclick="_setElVToMapLonLat('to');">Use center of map</a>
-						</td>
-					</tr>
-				</table>
-			</form>
+<div id="header">
+	<div id="logo">
+		<h1><a href="/">byCycle</a> Trip Planner 0.3</h1>
 	</div>
-
-    <div id="result" class="content_section">
-	    <noscript>
-            <div>
-                <i>The <a href="/" title="byCycle Home Page">byCycle</a> <a href="http://tripplanner.bycycle.org/" title="Information About the Trip Planner">Trip Planner</a> requires JavaScript to be enabled in your browser. Please enable JavaScript and <a href="">try again</a>.</i>
-            </div>
-        </noscript>
-    </div>
-
-
-	<div id="status" class="content_section"></div>
-
-
-	<div id="content" class="content_section">
-		<div id="map"></div>
-	</div>
-
-
-	<!--div class="content_section" id="footer">
-		Copyright &copy; 2005
-		<a style="text-decoration: none" href="http://www.bycycle.org" title="byCycle Home Page">byCycle.org</a>
-		&#183;
-		Version 0.3 alpha
-		&#183;
-		Last modified %(last_modified)s
-	</div-->
 </div>
+
+<table id="content_pane">
+    <tr>
+        <td id="top_panel" class="panel" colspan="2">
+            <div id="select_input">
+			    <a href="javascript:void(0);" id="search_link" class="selected" title="Search the Map" 
+			       tabindex="10" onclick="_selectInput('search', true);">Search</a>
+			    &#160;&#160;&#183;&#160;&#160;
+			    <a href="javascript:void(0);" id="route_link" title="Find a Route" 
+			       tabindex="20" onclick="_selectInput('route', true);">Find Route</a>
+			    &#160;&#160;&#183;&#160;&#160;			       
+			    <a href="javascript:void(0);" id="feedback_link" title="Send us your comments and suggestions" 
+			       tabindex="30" onclick="_showFeedbackForm()">Send Feedback</a>
+			    <!--&#160;&#160;&#183;&#160;&#160;
+			    <a href="help.html" title="Help!">Help</a>
+			    &#160;&#160;&#183;&#160;&#160;
+			    <a href="http://tripplanner.bycycle.org/" title="Information About the Trip Planner">About</a>
+			    &#160;&#160;&#183;&#160;&#160;-->
+		    </div>
+		    
+		    <form id="input_form" action="" method="get" onsubmit="_find(); return false;">
+			   
+				<!-- SEARCH INPUT -->
+			    <div id="search_input">
+				    <div>
+					    Address <a href="javascript:void(0);" tabindex="40" 
+					               title="Center the map on the point you want and then click here" 
+					               onclick="_setElVToMapLonLat('q'); _find('search');">
+					               Find address at center of map</a>
+					</div>
+					<textarea id="q" name="q" class="input_field" tabindex="50"/></textarea>						
+			    </div>
+			    
+				<!-- ROUTE INPUT -->
+				<div id="route_input" style="display:none;">
+					<table>
+						<tr>
+							<td>
+								From
+								<a href="javascript:void(0);" tabindex="60" 
+						   		   title="Center the map on the point you want and then click here" 
+						   		   onclick="_setElVToMapLonLat('fr');">Use center of map</a>								
+							</td>
+							<td></td>
+							<td>
+								To
+								<a href="javascript:void(0);" tabindex="70"
+						   		   title="Center the map on the point you want and then click here" 
+						   		   onclick="_setElVToMapLonLat('to');">Use center of map</a>
+							</td>
+						</tr>
+						<tr>
+							<td>
+								<textarea id="fr" name="fr" class="input_field" tabindex="80">
+								</textarea>								
+							</td>
+							<td id="swapfrto">
+								<a href="javascript:void(0);" 
+								   onclick="return _swap('fr', 'to');"
+								   title="Swap from and to addresses"
+								   tabindex="90">
+									<img src="images/swapfrto.gif"/>   
+								</a>
+							</td>
+							<td>
+								<textarea id="to" name="to" class="input_field" tabindex="100">
+								</textarea>
+							</td>
+						</tr>
+					</table>
+				</div>
+									
+				<!-- OPTIONS -->
+				<div>
+					<select id="dmode" name="dmode"  tabindex="110">
+			        	<option value="">-- Select Region</option>				
+   	                   	%(regions_option_list)s			    
+			    	</select>
+				    &#160;<input tabindex="1000" id="find_button" name="find_button" type="submit" value="Find"/>
+					&#160;<input tabindex="1010"  
+					             title="Clear everything from the map" 
+					             type="button" value="Clear Map" onclick="_clearMap();"/>
+				</div>
+		    </form>
+		</td>
+	</tr>
+    	
+	<tr>
+        <td id="left_panel" class="panel">
+	    	<div id="result">				
+    			<noscript>
+       			    <div>
+       			        <i>The <a href="/" title="byCycle Home Page">byCycle</a> 
+       			        <a href="http://tripplanner.bycycle.org/" 
+       			           title="Information About the Trip Planner">Trip Planner</a> 
+       			        requires JavaScript to be enabled in your browser. Please enable JavaScript and 
+       			        <a href="">try again</a>.</i>
+           			</div>
+       			</noscript>
+   			</div>                        
+		</td><!-- Left Panel -->
+           
+        <td id="right_panel" class="panel">
+			<div id="map"></div>
+        </td>
+    </tr>	        
+</table>
+
+
+<div id="footer">
+	Copyright &copy; 2004 - 2006
+	<a style="text-decoration: none" href="http://www.bycycle.org" title="byCycle Home Page">byCycle.org</a>
+	&#183;
+	Version 0.3 alpha
+	&#183;
+	Last modified %(last_modified)s
+</div>
+
 </td></tr></table>
 
 </body>

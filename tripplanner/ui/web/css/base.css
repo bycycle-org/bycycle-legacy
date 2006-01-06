@@ -1,8 +1,9 @@
+html, body, table, td, tr {
+	padding: 0; margin: 0;
+}
+
 html, body {
-	margin: 0;
-	padding: 0;
 	height: 100%;
-	/*overflow: hidden;*/
 }
 
 body, td {
@@ -17,14 +18,7 @@ table {
 }
 
 td {
-	padding: 0; margin: 0;
-}
-
-#vcenter {
-	/* Hack table to get vertical centering */
-	margin: 0; padding: 0;
-	width: 100%;
-	height: 100%;
+	vertical-align: top;
 }
 
 img {
@@ -56,36 +50,30 @@ a:hover {
 }
 
 a.selected {
-	font-weight: bold;
 	text-decoration: none;
 	color: black;
 }
 
 
-#content_pane {
-	position: relative;
-	padding: 0; margin: 0 auto;
-	width: 750px;
-	border: 1px solid #888;
+#vcenter {
+	/* Hack of a table for vertical centering of entire page contents */
+	width: 100%;
+	height: 100%;
 }
 
-.content_section {
-	padding: 4px;
-	border-bottom: 1px solid #888;
+#vcenter_td {
+	vertical-align: middle;
 }
 
 /* Header */
 
-#header {
-	border-bottom: 1px solid #888;
-	background: #ddd;
-	padding: 0;
+#header, #footer, #content_pane {
+	margin: 0 auto;
+    width: 98%;
 }
 
 #logo {
-	padding: 4px;
-	font-size: 12px;
-	font-weight: bold;
+
 }
 
 #logo * {
@@ -93,25 +81,43 @@ a.selected {
 	color: black;
 }
 
-#input_section {
+
+/* Content */
+
+#content_pane {
+    border: 1px solid #888;
+}
+
+.panel {
 	padding: 4px;
-	background: #ddd;
+	border: 1px solid #888;
 }
 
-#input_section td {
-	background: #ddd;
+#top_panel {
+    border-bottom: none;
+}
+   
+#left_panel {
+    width: 300px;
+    border-right: none;
 }
 
-#select_input {
-	padding: 0 0 2px 2px;
+/* Left Panel */
+
+#select_input, #status {
+	padding: 0 2px 4px 2px;
+	background: #ccc;
+	border: 1px solid #888;
+	height: 15px;
 }
 
-.route_field {
-	width: 200px;
+#status {
+	margin-top: 4px;
 }
 
-#q {
-	width: 424px;
+#select_input a {
+	font-weight: bold;
+	text-decoration: none;
 }
 
 #input_form {
@@ -119,34 +125,37 @@ a.selected {
 	padding: 0;
 }
 
+.input_field {
+	width: 290px;
+	font-size: 12px;
+	height: 30px;
+}
+
+#q {
+
+}
+
+
 #swapfrto {
 	width: 20px;
 	text-align: center;
-}
-
-
-/* Content */
-
-#content {
-	position: relative;
-	border-bottom: none;
-}
-
-#feedback {
-    border-bottom: 1px solid #888;
+	vertical-align: middle;
 }
 
 #result {
-    height: 100px;
+	height: 600px;
     overflow: auto;
 }
 
-#status {
-    height: 20px;
+#feedback {
+	height: 200px;
 }
 
+
+/* Right Panel */
+
 #map {
-	height: 300px;
+	height: 600px;
 	border: 1px solid #888;
 }
 
@@ -155,20 +164,12 @@ a.selected {
     background: green;
 }
 
-#xy {
-	width: 150px;
-	text-align: center;
-	background: white;
-	border: 1px solid black;
-	padding: 2px;
-}
-
 
 /* Footer */
 
 #footer {
-	border-bottom: none;
-	background: #ddd;
+	margin-top: 10px;
+	font-size: 12px;
 }
 
 
@@ -197,8 +198,8 @@ a.selected {
 
 #summary, #directions {
 	width: 100%;
-	border-collapse: collapse;
 }
+
 #summary td, #directions td {
 	border: 1px solid #888;
 	padding: 2px;

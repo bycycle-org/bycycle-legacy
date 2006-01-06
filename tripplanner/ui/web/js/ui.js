@@ -6,7 +6,10 @@ var _service = _default_service;
 var _webservice = '';
 var default_fields_to_focus = {'route': 'fr',
 	                           'search': 'q'};
-var default_result = '\
+var default_result = 
+	'Welcome to the byCycle Trip Planner. The Trip Planner is under active development and may have some issues. If you find a problem, please send us feedback by <a href="javascript:void(0);" onclick="_showFeedbackForm()">using this form</a> or <a href="mailto:wyatt.lee.baldwin@gmail.com">sending email</a>.';
+
+var x = '\
     <b>Welcome to the <a href="/" title="byCycle Home Page">byCycle</a> \
     <a href="http://tripplanner.bycycle.org/" title="Information About the Trip Planner">Trip Planner</a>.</b>\
     <div class="disclaimer">\
@@ -20,6 +23,41 @@ function ui__init__()
     _el('q').focus();
 }
 
+var saved_result;
+function _showFeedbackForm()
+{
+	var form = 
+		'<form action="" method="get" id="feedback_form" \
+			   onsubmit="_submitFeedback(); return false;">\
+			<p>Send us any comments, criticisms, or suggestions you may have. \
+			If you are reporting an error, please be as detailed as possible. \
+			If you would like us to respond, please include your email address.</p>\
+			<textarea id="feedback" name="feedback" class="input_field"></textarea>\
+			<input type="submit" id="submit_feedback" value="Send Feedback"/>\
+		</form>';
+	saved_result = _elV('result');
+	_setResult(form);
+}
+
+function _submitFeedback()
+{
+	var feedback = _elV('feedback');
+	if (!feedback) return;
+	var data = '{"q":"'      + _elV('q')     + '",' +
+    		   ' "fr":"'     + _elV('fr')    + '",' + 
+    		   ' "to":"'     + _elV('to')    + '",' +
+    		   ' "dmode":"'  + _elV('dmode') + '",' + 
+    		   ' "result":"' + saved_result  + '"}';
+    var query_string = 'feedback=' + escape(feedback) + '&data=' + escape(data);
+    var url = 'http://' + domain + '/tripplanner/webservices/feedback/?' + query_string;
+   	saved_result = '';
+	doXmlHttpReq('GET', url, _feedbackSubmitted);
+}
+
+function _feedbackSubmitted(req)
+{
+	_setResult('Your feedback has been sent. Thanks.');
+}
 
 function _selectInput(service, focus) {
 	if (!service) { service = _default_service; }
@@ -42,15 +80,15 @@ function _selectInput(service, focus) {
 function _showInputSection(service) { _el(service+'_link').onclick(); }
 
 
-function _setStatus(msg, error)
+function _setResult(msg, error)
 {
-	if (error) _setElStyle('status', 'color', 'red');
-	else _setElStyle('status', 'color', 'black');
-	_setIH('status', msg);
+	if (error) _setElStyle('result', 'color', 'red');
+	else _setElStyle('result', 'color', 'black');
+	_setIH('result', msg);
 }
 
 
-function _clearStatus() { _setIH('status', ''); }
+function _clearResult() { _setResult(''); }
 
 
 /**
@@ -58,7 +96,7 @@ function _clearStatus() { _setIH('status', ''); }
  */
 function _find(alt_service)
 {
-	_setStatus('Processing. Please wait...');
+	_setResult('Processing. Please wait...');
 	
 	if (alt_service) service = alt_service;
 	else service = _service;
@@ -79,7 +117,7 @@ function _find(alt_service)
 
 	if (service == 'route' ||
 		(service == 'search' && (fr_to.length >= 2))) {
-		_setStatus('Finding route. Please wait...');
+		_setResult('Finding route. Please wait...');
 		_webservice = 'route';
 		if (service == 'route') {
 			var fr_to = null;
@@ -90,27 +128,27 @@ function _find(alt_service)
 		if (fr_to) {
 			for (var i = 0; i < fr_to.length; ++i) fr_to[i] = fr_to[i].replace('"', "'");
 			query_str = 'q=["' + escape(fr_to.join('","')) + '"]&tmode=bike';
+			_setElV('fr', fr_to[0]);
+			_setElV('to', fr_to[1]);
 		}
-		_setElV('fr', fr_to[0]);
-		_setElV('to', fr_to[1]);
 		_showInputSection('route');
 	} else if (service == 'search') {
 		_webservice = 'geocode';
 		if (q) query_str = 'q=' + escape(q);
 	} else {
-		_setStatus('Unknown service: ' + service);
+		_setResult('Unknown service: ' + service);
 		return;
 	}
 
 	if (!query_str) {
-		var msg = 'More input required.';
+		var msg = '<b>More input required.</b><br/>';
 		if (service == 'search') {
-		  msg += ' Missing address or route query.';
+		  msg += ' Missing address or route query.<br/>';
 		} else if (service == 'route') {
-		  if (!_elV('fr')) msg += ' Missing from address.';
-		  if (!_elV('to')) msg += ' Missing to address.';
+		  if (!_elV('fr')) msg += ' Missing from address.<br/>';
+		  if (!_elV('to')) msg += ' Missing to address.<br/>';
 		}
-		_setStatus(msg);
+		_setResult(msg);
 	} else {
         var url = 'http://' + domain + '/tripplanner/webservices/' + _webservice + 
 	              '/?' + query_str + '&dmode=' + _elV('dmode');
@@ -151,13 +189,12 @@ function _callback(req)
     error = result['error'];
     
 	if (error) {
-	   result_text = 'Error: ' + (result_text ? result_text : reason);
-       status_msg += '!'; 
+	   result_text = (result_text ? result_text : reason);
+       status_msg += '<b>Error</b>'; 
 	} else {
-	   status_msg += 'Done. Took ' + ((new Date() - start_time) / 1000.0) + ' seconds.';
+	   status_msg += ((new Date() - start_time) / 1000.0) + 's';
     }
-	_setStatus(status_msg, error);
-	_setIH('result', result_text);
+	_setResult('<div>'+status_msg+'</div>' + result_text);
 	return !error;
 }
 
@@ -329,14 +366,13 @@ function _setRouteFieldToAddress(id, address)
 function _clearMap()
 {  
     //_clearStatus();
-    //_setIH('result', default_result);
+    //_setResult(default_result);
     if (map) map.clearOverlays();
 }
 
 function _reset()
 {
-    _clearStatus();
-    _setIH('result', default_result);
+    _setResult(default_result);
     _setIH('fr', '');
     _setIH('to', '');
     _setIH('q', '');
