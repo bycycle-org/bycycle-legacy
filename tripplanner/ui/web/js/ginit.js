@@ -10,6 +10,7 @@ var domain;
 if (local) domain = 'localhost';
 else domain = location.href.split('/')[2];
 
+var dir = (domain != 'tripplanner.bycycle.org' ? 'tripplanner/' : '');
 
 // The URL minus the query string
 var base_url = location.href.split('?')[0];
@@ -38,19 +39,18 @@ window.onload = function()
  */
 function getApiKey(base_url)
 {
-	var urls_to_keys_map =
-		{"http://www.bycycle.org/tripplanner/":
-		 "ABQIAAAAd_4WmZlgvQzchd_BQM0MPhQ9bMyOoze7XFWIje4XR3o1o-U-cBTwScNT8SYtwSl70gt4wHCO-23Y3g",
-		 "http://www.bycycle.org/routefinder/":
-		 "ABQIAAAAK1lojbVFd0iN7wam4g8XZhRUJ_a3mhnm0_Lzi5OorAQUylSPBhQS0u0c0I_UZr2P8TOtRApKc8xAoQ",
-		 "http://testsite.bycycle.org/routefinder/":
-		 "ABQIAAAAd_4WmZlgvQzchd_BQM0MPhTdNPmNFsjeptADRw2mjwBZI5k75BQiz9jRiM_xT-aGT3SpF8y6E9CCvQ",
-		 "http://24.22.45.178/routefinder/":
-		 "ABQIAAAAd_4WmZlgvQzchd_BQM0MPhS6wxNuMO_CH7ubezRAq5_s5CDwAhS8nFQy5lWxuSKAABHKY8CIdboQgQ",
-		 "http://24.22.45.178:8080/":
-		 "ABQIAAAAd_4WmZlgvQzchd_BQM0MPhTYxx1LSfXeZjOCBx9xRz8m4aTCzxTba2J_A8BANZ403cGl0LmY5haDjw"};
-	if (urls_to_keys_map[base_url]) return urls_to_keys_map[base_url];
-	else return '';
+        var urls_to_keys_map =
+                {"http://tripplanner.bycycle.org/":
+		 "ABQIAAAAd_4WmZlgvQzchd_BQM0MPhQ8y5tnWrQRsyOlME1eHkOS3wQveBSeFCpOUAfP10H6ec-HcFWPgiJOCA",
+		 "http://www.bycycle.org/tripplanner/":
+                 "ABQIAAAAd_4WmZlgvQzchd_BQM0MPhQ9bMyOoze7XFWIje4XR3o1o-U-cBTwScNT8SYtwSl70gt4wHCO-23Y3g",
+                 "http://portland.bycycle.org/tripplanner/":
+                 "ABQIAAAAd_4WmZlgvQzchd_BQM0MPhTxfRtjDFK1RH4ItxIkvHTr3RlNlRRnpTK8Ufm_fpl2ABQDEMb-MUEDxg",
+                 "http://milwaukee.bycycle.org/tripplanner/":
+                 "ABQIAAAAd_4WmZlgvQzchd_BQM0MPhS5rHkbI6O9fsgqLPrHNXyriM9eehTzAphcSFDyNgwaQRbWLr_bCkisRg"};
+                 
+        if (urls_to_keys_map[base_url]) return urls_to_keys_map[base_url];
+        else return '';
 }
 
 

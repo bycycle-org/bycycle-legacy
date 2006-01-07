@@ -104,11 +104,13 @@ a.selected {
 
 /* Left Panel */
 
-#select_input, #status {
-	padding: 0 2px 4px 2px;
-	background: #ccc;
+#select_input {
+	margin-bottom: 4px;
+	padding: 4px 4px 2px 4px;
+	font-size: 12px;
+	line-height: 12px;
+	background: #eee;
 	border: 1px solid #888;
-	height: 15px;
 }
 
 #status {
@@ -161,7 +163,6 @@ a.selected {
 
 #loading {
     padding: 4px;
-    background: green;
 }
 
 
@@ -217,13 +218,3 @@ a.selected {
 .count {
  	vertical-align: middle;
 }
-
-
-
-
-
-
-
-
-
-
