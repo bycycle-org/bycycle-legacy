@@ -200,7 +200,7 @@ def getPointGeocodes(inaddr, mode):
         else:
             addr.number = s.addr_t
         _setStreetAndPlaceFromSegment(addr.street, addr.place, s)
-        code = IntersectionGeocode(addr, i)
+        code = AddressGeocode(addr, s, i.lon_lat)
         return [code]
 
 

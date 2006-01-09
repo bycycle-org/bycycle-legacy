@@ -25,24 +25,29 @@ class Mode(milwaukee.Mode):
 
         sec = (length * 3600) / self.mph
 
-        if bikemode != 'bt':
-            # Penalize for traffic
+        if bikemode != 'bl' and bikemode != 'bt':
+            # Adjust for traffic
             adt_factor = (adt * .001)
             if adt_factor < 1: adt_factor = 1
-            sec *= adt_factor
-            if 40 <= cat < 50 or cat == 74:   pass        #lt
-            elif 30 <= cat < 40 or cat == 62: sec *= 1.25 #mt
-            elif 20 <= cat < 30 or cat == 64: sec *= 1.50 #ht
-            elif 10 <= cat < 20 or cat == 63: sec *= 1000 #ca
-            lanes_factor = lanes / 2
+            if   40 <= cat < 50 or cat in (71, 73, 74): cfcc_factor = 1.00 #lt
+            elif 30 <= cat < 40 or cat == 62: cfcc_factor = 2.00 #mt
+            elif 20 <= cat < 30 or cat == 64: cfcc_factor = 4.00 #ht
+            elif 10 <= cat < 20 or cat == 63: cfcc_factor = 1000 #ca
+            try:
+                sec *= ((adt_factor + cfcc_factor) / 2.0)
+            except NameError:
+                sec *= adt_factor
+            # Adjust for number of lanes
+            lanes_factor = lanes / 2.0
             if lanes_factor < 1: lanes_factor = 1
             sec *= lanes_factor
 
         if bikemode:
-            # Reward for being on network
-            if bikemode in ('bl', 'bt'): sec *= .50
-            elif bikemode == 'br':       sec *= .70
-            elif bikemode == 'ps':       sec *= .90
+            # Adjust for network
+            if   bikemode == 'bl': pass
+            elif bikemode == 'bt': sec *= 1.10
+            elif bikemode == 'br': sec *= 1.20
+            elif bikemode == 'ps': sec *= 1.50
             
         if prev_edge_attrs is not None:
             # Penalize edge if it has different street name from previous edge

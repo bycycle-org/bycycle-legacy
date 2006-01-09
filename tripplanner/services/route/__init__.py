@@ -354,6 +354,7 @@ def makeDirections(I, S):
     #  the same name and type)
     s_count = 0
     d_count = 0
+    ls_index = 0
     extra = []
     for (toi, s, w) in zip(I[1:], S, W):        
         st = streets[s_count]
@@ -367,11 +368,11 @@ def makeDirections(I, S):
             d = {'turn': '',
                  'street': '',
                  'toward': '',
-                 'ls_index': s_count,
+                 'ls_index': ls_index,
+                 'bikemode': [],
                  'distance': {'mi': '%.2f' % w,
                               'km': '%.2f' % (1.609344 * w),
                               'blocks': 0},
-                 'bikemode': '',
                  'jogs': jogs[d_count]
                  }
 
@@ -394,7 +395,7 @@ def makeDirections(I, S):
             # (one different from the name of the current seg)
             toward = getDifferentNameInIntersection(st, toi)
 
-            for item in ('turn', 'street', 'toward'): d[item] = eval(item)
+            for var in ('turn', 'street', 'toward'): d[var] = eval(var)
             
             directions.append(d)
             d_count += 1
@@ -407,7 +408,17 @@ def makeDirections(I, S):
         except IndexError:
             pass
 
+        bm = str(s.bikemode)
+        dbm = d['bikemode']
+        if bm:
+            try:
+                if bm != dbm[-1]:
+                    dbm.append(bm)
+            except IndexError:
+                dbm.append(bm)
+
         s_count += 1
+        ls_index += len(s.linestring) - 1
 
     return {'directions': directions,
             'linestring': linestring,
@@ -574,6 +585,8 @@ def _makeDirectionsTable(route):
             else: toward = '?'
         row_i.append(' toward %s -- %smi' % (toward.title(), mi))
 
+	if d['bikemode']: row_i.append(' [%s]' % ', '.join([bm for bm in d['bikemode']]))
+
         if jogs:
             row_i.append('<br/>%sJogs...' % tab)
             for j in jogs:
@@ -607,7 +620,7 @@ def print_key(key):
 
 if __name__ == '__main__':
     q = ['3150 lisbon',
-         '  ',
+         'walnut & n 16th ',
          ]
     dm = 'milwaukee'
     tm = 'bike'
@@ -621,6 +634,6 @@ if __name__ == '__main__':
         print r['from']['geocode']
         print r['to']['geocode']
         for d in D:
-            print '%s on %s toward %s -- %s mi' % (d['turn'],
+            print '%s on %s toward %s -- %s mi [%s]' % (d['turn'],
                                              d['street'], d['toward'],
-                                             d['distance']['mi'])
+                                             d['distance']['mi'], d['bikemode'])

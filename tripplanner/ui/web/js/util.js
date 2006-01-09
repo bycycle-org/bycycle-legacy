@@ -8,21 +8,63 @@ function fixScroll()
   _el("fix_scroll").focus();
 }
 
-function _el(id) { return document.getElementById(id); }
+
+
+
+/* Element */
+
+function _el(id)
+{ 
+  return document.getElementById(id); 
+}
 
 function _elV(id) 
 { 
-  var val = _el(id).value;
-  return val;
+  return document.getElementById(id).value;
 }
-function _setElV(id, val) { _el(id).value = val; }
 
-function _elStyle(id, style) { return _el(id).style[style]; }
-function _setElStyle(id, style, value) { eval("_el(id).style."+style+"="+"'"+value+"'"); }
+function _setElV(id, val) 
+{ 
+  document.getElementById(id).value = val; 
+}
+
+
+
+
+/* Style */
+
+function _elStyle(id, style_name, ie_style_name)
+{
+  // use style-sheet naming for standards compliance
+  // use mixed case for IE
+  var el = document.getElementById(id);
+  if (el.currentStyle)
+    {
+      return el.currentStyle[ie_style_name]
+    }
+  else if (document.defaultView.getComputedStyle)
+    {
+      return document.defaultView.getComputedStyle(el, '').getPropertyValue(style_name);
+    }
+  alert('poop');
+  return '';
+}
+
+function _setElStyle(id, style_name, value) 
+{ 
+  // use mixed case for style name
+  document.getElementById(id).style[style_name] = value;
+}
+
+
+
+
+/* Inner HTML */
 
 function _iH(id) { return _el(id).innerHTML; }
 function _setIH(id, val) { _el(id).innerHTML = val; }
 function _appendIH(id, val) { _el(id).innerHTML += val; }
+
 
 /**
  * Swap the values of the two elements with the given IDs.
@@ -35,6 +77,12 @@ function _swapElV(id_a, id_b)
   _setElV(id_a, _elV(id_b));
   _setElV(id_b, av);
 }
+
+
+
+
+/* String */
+
 
 /**
  * Remove leading and trailing whitespace from a string and
@@ -64,10 +112,10 @@ function _cleanString(the_string, keep_newlines)
 }
 
 /**
- * Remove leading and trailing whitespace from a strin.g
+ * Remove leading and trailing whitespace from a string.
+ *
  * @param the_string The string to trim
  * @return The trimmed string
-
  */
 function _trim(the_string)
 {
@@ -75,20 +123,40 @@ function _trim(the_string)
 }
 
 /**
- * Join a list of strings, separated by the given string. Exclude any empty
- * strings. 
+ * Join a list of strings, separated by the given string, excluding any empty
+ * strings in the input list. 
+ *
  * @param the_list The list to join
  * @param the_string The string to insert between each string in the list (default: ' ')
  * @return The joined string
  */
 function _join(the_list, join_string)
 {
-  // Remove empty items and join the rest
+  join_string = join_string || ' ';
   var new_list = [];
-  if (!join_string) join_string = ' ';
   for (var i = 0; i < the_list.length; ++i) {
-    word = the_list[i];
+    word = _trim(the_list[i]);
     if (word) new_list.push(word);
   }
   return new_list.join(join_string);
 }
+
+
+
+/* String Buffer */
+
+function StringBuffer(initial_buf) 
+{ 
+  this.buffer = initial_buf || [];
+} 
+StringBuffer.prototype.append = function append(string) 
+{ 
+  this.buffer.push(string); 
+  return this; 
+}; 
+StringBuffer.prototype.toString = function toString(join_string) 
+{
+  join_string = join_string || '';
+  return this.buffer.join(join_string); 
+}; 
+

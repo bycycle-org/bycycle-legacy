@@ -3,7 +3,7 @@
 var _services = ['search', 'route', 'feedback'];
 var _service_data = {'search': ['q', 'Search'],
 		     'route': ['fr', 'Find Route'],
-		     'feedback': ['feedback', 'Send Feedback']};
+		     'feedback': ['feedback', 'Send']};
 var _default_service = 'search';
 var _service = _default_service;
 var _webservice = '';
@@ -59,7 +59,7 @@ function _setResult(msg, error)
 {
   if (error) _setElStyle('result', 'color', 'red');
   else _setElStyle('result', 'color', 'black');
-  _setIH('result', msg);
+  _setIH('result', msg.toString());
 }
 
 
@@ -69,9 +69,12 @@ function _clearResult() { _setResult(''); }
 /**
  * @param alt_service An alternate service to use, instead of the globally set one
  */
+var start_ms;
 function _find(alt_service)
 {
-  _setElStyle('welcome', 'display', 'none');
+  start_ms = new Date().getTime();
+
+  //_setElStyle('welcome', 'display', 'none');
   _setResult('Processing. Please wait...');
   
   if (alt_service) service = alt_service;
@@ -142,22 +145,22 @@ function _find(alt_service)
 
   if (!query_str) 
     {
-      var msg = '<b>More input required.</b><br/>';
+      var msg = new StringBuffer('<b>More input required.</b><br/>');
       if (service == 'search') 
 	{
-	  msg += ' Missing address or route query.<br/>';
+	  msg.append(' Missing address or route query.<br/>');
 	} 
       else if (service == 'route') 
 	{
-	  if (!_elV('fr')) msg += ' Missing from address.<br/>';
-	  if (!_elV('to')) msg += ' Missing to address.<br/>';
+	  if (!_elV('fr')) msg.append(' Missing from address.<br/>');
+	  if (!_elV('to')) msg.append(' Missing to address.<br/>');
 	}
       _setResult(msg);
     } 
   else 
     {
-      var url = 'http://' + domain + '/' + dir + 'webservices/' + _webservice + 
-	'/?' + query_str;
+      var url = ['http://', domain, dir, '/webservices/', _webservice, 
+		 '/?', query_str].join('');
       doXmlHttpReq('GET', url, _callback);
     }
 }
@@ -172,7 +175,6 @@ function _feedbackCallback(req)
 /* Callbacks */
 
 var geocodes;
-//var geocode_marker;
 
 
 /** 
@@ -180,30 +182,31 @@ var geocodes;
  */
 function _callback(req)
 {
-  var start_time = new Date();
   var result_set = {};
   var status = req.status;
   var reason = req.statusText;
   var status_msg = '';
   var error;
-  var callback;
+  var callback = eval('_'+_webservice+'Callback');
   
-  if (status == 200 || status == 300) {
-    eval("result_set = " + req.responseText + ";");
-    //map.removeOverlay(geocode_marker);
-  }
+  if (status == 200 || status == 300) 
+    {
+      eval("result_set = " + req.responseText + ";");
+    }
   
-  callback = eval('_'+_webservice+'Callback');    
-  result = callback(status, result_set);
-  result_text = result['result_text'];
+  var result = callback(status, result_set);
+  var result_text = result['result_text'];
   error = result['error'];
   
-  if (error) {
-    result_text = (result_text ? result_text : reason);
-    status_msg += '<b>Error</b>'; 
-  } else {
-    status_msg += ((new Date() - start_time) / 1000.0) + 's';
-  }
+  if (error) 
+    {
+      result_text = (result_text ? result_text : reason);
+      status_msg += '<b>Error</b>'; 
+    } 
+  else 
+    {
+      status_msg += ((new Date().getTime() - start_ms) / 1000.0) + 's';
+    }
   _setResult('<div>'+status_msg+'</div>' + result_text);
   return !error;
 }
@@ -217,19 +220,21 @@ function _geocodeCallback(status, result_set)
     {
     case 200: // A-OK, one match
       geocodes = result_set['result_set']['result'];
+      var geocode = geocodes[0];
       _showGeocode(0, true);
-      result_text = _makeAddressFromGeocode(geocodes[0], true);
+      result_text = _makeAddressFromGeocode(geocode, true);
       break;
     case 300: // Multiple matches
       geocodes = result_set['result_set']['result'];
-      result_text = '<b><big>Multiple Matches Found</big></b><br/><ul>';
+      result_text = '<h3>Multiple Matches Found</h3><ul>';
       var href = ' href="javascript:void(0);" ';
-      for (var i = 0; i < geocodes.length; ++i) {
-	var code = geocodes[i];
-	var onclick = ' onclick="_showGeocode('+i+');" ';
-	var a = '<a'+href+onclick+'>'+_makeAddressFromGeocode(code, false, ', ')+'</a>';
-	result_text += '<li>'+a+'</li>';
-      }
+      for (var i = 0; i < geocodes.length; ++i) 
+	{
+	  var code = geocodes[i];
+	  var onclick = ' onclick="_showGeocode('+i+');" ';
+	  var a = '<a'+href+onclick+'>'+_makeAddressFromGeocode(code, false, '<br/>')+'</a>';
+	  result_text += '<li>'+a+'</li>';
+	}
       result_text += '</ul>';
       break;
     case 400: // Input Error
@@ -250,29 +255,29 @@ function _routeCallback(status, result_set)
     case 200: // A-OK, one match
       var route = result_set['result_set']['result'];
       result_text = route['directions_table'];
-      if (map) {
-	var linestring = route['linestring'];
-	var linestring_len = linestring.length;
-	var box = getBoxForPoints(linestring);	
-	var s_e_markers = placeMarkers([linestring[0],
-					linestring[linestring_len-1]],
-				       [start_icon, end_icon]);
-	var s_mkr = s_e_markers[0];
-	var e_mkr = s_e_markers[1];
-	var e_ord = linestring_len - 1;
-	GEvent.addListener( s_mkr, "click", function() { showMapBlowupAlongRoute(linestring[0]); } );	           
-	GEvent.addListener( e_mkr, "click", function() { showMapBlowupAlongRoute(linestring[e_ord]); } );			
-	centerAndZoomToBox(box);
-	drawPolyLine(linestring);
-      }
+      if (map) 
+	{
+	  var linestring = route['linestring'];
+	  var linestring_len = linestring.length;
+	  var box = getBoxForPoints(linestring);	
+	  var s_e_markers = placeMarkers([linestring[0],
+					  linestring[linestring_len-1]],
+					 [start_icon, end_icon]);
+	  var s_mkr = s_e_markers[0];
+	  var e_mkr = s_e_markers[1];
+	  var e_ord = linestring_len - 1;
+	  GEvent.addListener( s_mkr, "click", function() { map.showMapBlowup(linestring[0]); } );	           
+	  GEvent.addListener( e_mkr, "click", function() { map.showMapBlowup(linestring[e_ord]); } );			
+	  centerAndZoomToBox(box);
+	  drawPolyLine(linestring);
+	}
       break;			 
     case 300: // Multiple matches
-      var geocodes_f = result_set['result_set']['result']['from'];
-      var geocodes_t = result_set['result_set']['result']['to'];
+      var geocodes_fr = result_set['result_set']['result']['from'];
+      var geocodes_to = result_set['result_set']['result']['to'];
       result_text = '<div id="mma">' +
-	'<b><big>Multiple Matches Found</big></b><br/>' +
-	_makeRouteMultipleMatchList(geocodes_f, geocodes_t, 'fr') +
-	_makeRouteMultipleMatchList(geocodes_f, geocodes_f, 'to') +
+	'<h3>Multiple Matches Found</h3>' +
+	_makeRouteMultipleMatchList(geocodes_fr, geocodes_to) +
 	'</div>';
       break;
     case 400: // Input Error
@@ -283,88 +288,118 @@ function _routeCallback(status, result_set)
   return {'result_text': result_text, 'error': error};
 }
 
-function _makeRouteMultipleMatchList(geocodes_f, geocodes_t, fr_or_to)
+function _makeRouteMultipleMatchList(geocodes_fr, geocodes_to)
 {
-  fr_or_to == 'fr' ? geocodes = geocodes_f : geocodes = geocodes_t;
-  if (!geocodes) return '';
-    
-  var result = '<div id="mma_'+fr_or_to+'" ';
-    
-  if (fr_or_to == 'fr') {
-    result += '><b>From:</b><br/>';
-    // Do find after selection of end address, if end address had multiple matches in addition to from address
-    if (geocodes_t) {
-      var find = '_setElStyle(\'mma_fr\', \'display\', \'none\'); ' +
-	'_setElStyle(\'mma_to\', \'display\', \'block\');';
-    } else {
-      var find = '_find();'
-        }
-  } else {
-    if (geocodes_f) result += 'style="display:none"';
-    result += '><b>To:</b><br/>';
-    var find = '_find()';
+  var result = [];
+
+  function makeDiv(fr_or_to, style)
+  {
+    var heading = (fr_or_to == 'fr' ? 'From' : 'To');
+    result.push('<div id="mma_', fr_or_to, '" style="display:', style, ';"><h4>', heading, '</h4>');
   }
 
-  var href = ' href="javascript:void(0);" ';    
-  var onclick1 = ' onclick="_setElV(\'' + fr_or_to + '\', \'';
-  var onclick2 = '\'); _showInputSection(\'route\'); ' + find + '" ';
-  result += '<ul>';
-  for (var i = 0; i < geocodes.length; ++i) {
-    var code = geocodes[i];
-    var addr = _makeAddressFromGeocode(code, false, ', ');
-    var onclick = onclick1 + addr + onclick2;
-    var a = '<a'+href+onclick+'>'+addr+'</a>';
-    result += '<li>'+a+'</li>';
+  function makeList(fr_or_to, geocodes, find)
+  {
+    var href = ' href="javascript:void(0);" ';    
+    var onclick1 = ' onclick="_setElV(\'' + fr_or_to + '\', \'';
+    var onclick2 = '\'); _showInputSection(\'route\'); ' + find + '" ';
+    result.push('<ul>');
+    
+    var list;
+    for (var i = 0; i < geocodes.length; ++i) 
+      {
+	addr = _makeAddressFromGeocode(geocodes[i], false, '\\n');
+	list = ['<li>', '<a', href, onclick1, addr, onclick2, '>', addr.replace('\\n', '<br/>'), '</a>', '</li>'];
+	result.push(list.join(''));
+      }
+    result.push('</ul></div>');
   }
-  result += '</ul></div>';
-  return result;
+  
+  if (geocodes_fr.length)
+    {
+      var style = 'block';
+      if (geocodes_to.length) 
+	var find = '_setElStyle(\'mma_fr\', \'display\', \'none\'); _setElStyle(\'mma_to\', \'display\', \'block\');';
+      else
+	var find = '_find()';
+      makeDiv('fr', style);
+      makeList('fr', geocodes_fr, find);
+    }
+
+  if (geocodes_to.length)
+    {
+      var find = '_find()';
+      if (geocodes_fr.length) 
+	var style = 'none';
+      else
+	var style = 'block';
+      makeDiv('to', style);
+      makeList('to', geocodes_to, find);
+    }
+  return result.join('');
 }
 
 
+/**
+ * Concatenate a geocode's address parts into a single string
+ *
+ * @param geocode A geocode object
+ * @param show_lon_lat Flag indicating whether to show the geocode's long/lat as part of the address (default: false)
+ * @param separator The separator that will go between the street, place, and long/lat (default: <br/>)
+ */
 function _makeAddressFromGeocode(geocode, show_lon_lat, separator)
 {
-  if (!separator) separator = '<br/>';  // separates street, place, and long/lat
+  separator = separator || '<br/>';
   var type = geocode.type;
   var place; 
   var full_name;
-  if (type == 'address') {
-    var st = geocode.street;
-    place = geocode.place;
-    full_name = geocode.number + ' ' + _join([st.prefix, st.name, st.type, st.suffix]);				  
-  } else if (type == 'intersection') {
-    var st1 = geocode.street1;
-    var st2 = geocode.street2;
-    place = geocode.place1;
-    full_name = _join([st1.prefix, st1.name, st1.type, st1.suffix]) + ' & ' +
-      _join([st2.prefix, st2.name, st2.type, st2.suffix])
-      }
-  var zc = place.zipcode == '0' ? '' : place.zipcode;
-  var address = full_name + separator + place.city + ', ' + place.id_state  + ' ' + zc;	  
-  if (show_lon_lat)	address += separator + 'long: ' + geocode.x + ', lat: ' + geocode.y;
-  return address;
+  if (type == 'address') 
+    {
+      var st = geocode.street;
+      place = geocode.place;
+      full_name = _join([geocode.number.toString(), st.prefix, st.name, st.type, st.suffix]);
+    } 
+  else if (type == 'intersection') 
+    {
+      var st1 = geocode.street1;
+      var st2 = geocode.street2;
+      place = geocode.place1;
+      full_name = [_join([st1.prefix, st1.name, st1.type, st1.suffix]),
+		   _join([st2.prefix, st2.name, st2.type, st2.suffix])].join(' & ');
+    }
+  var zc = parseInt(place.zipcode);
+  var city = place.city;
+  var state = place.id_state;
+  var address = [full_name, separator, 
+		 city, (city ? ', ' : ''), 
+		 state, (state ? ' ' : ''), 
+		 zc || ''];
+  if (show_lon_lat) address.push(separator, 'long: ', geocode.x, ', lat: ', geocode.y);
+  return address.join('');
 }
 
 function _showGeocode(index, center)
 {
-  var geocode = geocodes[index];
-  var point = {'x': geocode.x, 'y': geocode.y};
-  var waddr = _makeAddressFromGeocode(geocode, true);         // address for info win
-  var faddr = _makeAddressFromGeocode(geocode, false, ', ');  // address for text field
-  var href = ' href="javascript:void(0);" ';
-  var html = '<div style="width:250px;">' +
-    '<b>Address</b><br/>' +
-    waddr + '<br/>' +
-    'Get directions: ' +
-    '<a'+href+' onclick="_setRouteFieldToAddress(\'fr\', \''+faddr+'\');">From</a> &middot; ' +
-    '<a'+href+' onclick="_setRouteFieldToAddress(\'to\', \''+faddr+'\');">To</a>' +
-    '</div>';
-  if (map) {
-    var geocode_marker = placeMarkers([point])[0];
-    GEvent.addListener(geocode_marker, "click",
-		       function() { map.openInfoWindowHtml(point, html); });
-    if (center) map.centerAtLatLng(point);
-    map.openInfoWindowHtml(point, html);
-  }
+  if (map) 
+    {
+      var geocode = geocodes[index];
+      var point = {'x': geocode.x, 'y': geocode.y};
+      var info_addr = _makeAddressFromGeocode(geocode, true);           // address for info win
+      var field_addr = _makeAddressFromGeocode(geocode, false, '\\n');  // address for text field
+      var href = ' href="javascript:void(0);" ';
+      var html = ['<div style="width:250px;">',
+		  '<b>Address</b><br/>',
+		  info_addr, '<hr/>',
+		  'Set as ',
+		  '<a', href, ' onclick="_setRouteFieldToAddress(\'fr\', \'', field_addr, '\');">From</a> or ',
+		  '<a', href, ' onclick="_setRouteFieldToAddress(\'to\', \'', field_addr, '\');">To</a> address for route<br/>',
+		  '<input type="button" value="Find Route" onclick="_find(\'route\');" style="margin-top:4px;"/>',
+		  '</div>'].join('');
+      var geocode_marker = placeMarkers([point])[0];
+      GEvent.addListener(geocode_marker, "click", function() { map.openInfoWindowHtml(point, html); });
+      map.centerAndZoom(point, 3);
+      map.openInfoWindowHtml(point, html);
+    }
 }
 
 function _setRouteFieldToAddress(id, address)
@@ -399,4 +434,25 @@ function _setElVToMapLonLat(id)
   var x = Math.round(lon_lat.x * 1000000) / 1000000;
   var y = Math.round(lon_lat.y * 1000000) / 1000000;
   field = _setElV(id, "lon=" + x + ", " + "lat=" + y);
+}
+
+var _map_height = 300;
+function _adjustMapHeight(taller_or_smaller)
+{
+  if (map) 
+    {
+      if (taller_or_smaller < 0)
+	{
+	  if (_map_height == 200) return;
+	  _map_height -= 50;
+	}
+      else if (taller_or_smaller > 0)
+	{
+	  if (_map_height == 1200) return;
+	  _map_height += 50;
+	}
+      var h = _map_height + 'px';
+      _el('map').style.height = h;
+      _el('result').style.height = h;
+    }
 }
