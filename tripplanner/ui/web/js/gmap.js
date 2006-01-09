@@ -11,6 +11,10 @@ var default_y = 45.523127;
 default_x = -87.906418;
 default_y = 43.038783;
 
+var tl = {'x': -88.069888, 'y': 42.842059};
+var br = {'x': -87.828241, 'y': 43.192647};
+var milwaukee_box = [tl, {'x': br.x, 'y': tl.y}, br, {'x': tl.x, 'y': br.y}, tl];
+
 var default_zoom_level = 3;
 var linestring;
 var center_marker;
@@ -28,75 +32,96 @@ function gmap__init__()
 		_setIH("map", '<div id="loading">Loading<blink>...</blink></div>');
 		if (_noActiveX()) {
 			_setIH("map",
-			       "<p>ActiveX is not enabled in your browser. If your browser is Internet Explorer, you must have ActiveX enabled to use Google Maps.</p>");
+			       '<p>ActiveX is not enabled in your browser. \
+                                If your browser is Internet Explorer, \
+                                you must have ActiveX enabled to use this application.</p>');
 		} else {
 			_createMap();
 		}
 		_setElStyle('loading', 'display', 'none');
 	} else {
-		_setIH("map",
-		       "<p style='margin:10px;'>Your browser is not officially supported by Google Maps. The following browsers are currently supported:<br/><ul><li><a href='http://www.microsoft.com/windows/ie/downloads/default.asp'>IE</a> 5.5+ (Windows)</li><li><a href='http://www.mozilla.org/products/firefox/'>Firefox</a> 0.8+ (Windows, Mac, Linux)</li><li><a href='http://www.apple.com/safari/download/'>Safari</a> 1.2.4+ (Mac)</li><li><a href='http://channels.netscape.com/ns/browsers/download.jsp'>Netscape</a> 7.1+ (Windows, Mac, Linux)</li><li><a href='http://www.mozilla.org/products/mozilla1.x/>Mozilla</a> 1.4+ (Windows, Mac, Linux)</li><li><a href='http://www.opera.com/download/'>Opera</a> 7.5+ (Windows, Mac, Linux)</li></ul></p><p style='margin:20px;'>Google recommends that you download one of the browsers above (they're all free). We recommend that it not be Internet Explorer (<a href='http://www.mozilla.org/products/firefox/'>Firefox</a> is an excellent choice).<br/><br/><!--All other functionality here should still work. You can still find routes and get address info--there just won't be a nice map to go along with it.--></p>");
+		_setIH('map',
+		       '<p style="margin:10px;">\
+		       Your browser doesn\'t seem to meet the requirements for using this application. \
+		       The following browsers are currently supported and are all free to download \
+                       (<a href="http://www.mozilla.org/products/firefox/">Firefox</a> is an excellent choice):<br/>\
+		       <ul>\
+		       <li><a href="http://www.microsoft.com/windows/ie/downloads/default.asp">IE</a> 5.5+ (Windows)</li>\
+		       <li><a href="http://www.mozilla.com/">Firefox</a> 0.8+ (Windows, Mac, Linux)</li>\
+		       <li><a href="http://www.apple.com/safari/download/">Safari</a> 1.2.4+ (Mac)</li>\
+		       <li><a href="http://channels.netscape.com/ns/browsers/download.jsp">Netscape</a> 7.1+ (Windows, Mac, Linux)</li>\
+		       <li><a href="http://www.mozilla.org/products/mozilla1.x/">Mozilla</a> 1.4+ (Windows, Mac, Linux)</li>\
+		       <li><a href="http://www.opera.com/download/">Opera</a> 7.5+ (Windows, Mac, Linux)</li>\
+		       </ul>\
+		       </p>\
+		       <p style="margin:20px;">\
+		       We recommend that it not be Internet Explorer.\
+		       <br/>\
+		       </p>');
 	}
 }
 
 
 function _createMap()
 {
-	map = new GMap(_el("map"));
-	map.addControl(new GLargeMapControl());
-	map.addControl(new GMapTypeControl());
-	map.addControl(new GScaleControl());
+  map = new GMap(_el("map"));
+  map.addControl(new GLargeMapControl());
+  map.addControl(new GMapTypeControl());
+  map.addControl(new GScaleControl());
+  
+  var icon = new GIcon();
+  icon.image = "images/crosshair4.gif";
+  icon.iconSize = new GSize(41, 41);
+  icon.iconAnchor = new GPoint(21, 21);
+  
+  GEvent.addListener(map, "moveend", function() {
+		       if (center_marker) { map.removeOverlay(center_marker); }
+		       center_point = map.getCenterLatLng();
+		       center_point.x = Math.round(center_point.x * 1000000) / 1000000;
+		       center_point.y = Math.round(center_point.y * 1000000) / 1000000;
+		       center_marker = placeMarkers([center_point], [icon])[0];
+		       // TODO: Figure out how to register this listener just once
+		       GEvent.addListener(center_marker, "click", function() {
+					    var html = '<div style="width: 200px;">' + center_point.x + ', ' + center_point.y + '<br/>' +
+					      '    <a href="javascript:void(0);" ' +
+					      '       onclick="_setElVToMapLonLat(\'q\'); _find(\'search\');">' +
+					      '       Find address of closest intersection</a>' + 
+					      '</div>';
+					    map.openInfoWindowHtml(center_point, html);
+					  });
+		       //if (network_visible) showBikeThereNetwork()
+		     });					   
+  
+  base_icon = new GIcon();
+  base_icon.shadow = "images/shadow50.png";
+  base_icon.iconSize = new GSize(20, 34);
+  base_icon.shadowSize = new GSize(37, 34);
+  base_icon.iconAnchor = new GPoint(9, 34);
+  base_icon.infoWindowAnchor = new GPoint(9, 2);
+  base_icon.infoShadowAnchor = new GPoint(18, 25);
+  start_icon = new GIcon(base_icon);
+  start_icon.image = "images/dd-start.png";
+  end_icon = new GIcon(base_icon);
+  end_icon.image = "images/dd-end.png";
 
-	var icon = new GIcon();
-	icon.image = "images/crosshair4.gif";
-	icon.iconSize = new GSize(41, 41);
-	icon.iconAnchor = new GPoint(21, 21);
-		
-	GEvent.addListener(map, "moveend", function() {
-		if (center_marker) { map.removeOverlay(center_marker); }
-		center_point = map.getCenterLatLng();
-		center_point.x = Math.round(center_point.x * 1000000) / 1000000;
-		center_point.y = Math.round(center_point.y * 1000000) / 1000000;
-		center_marker = placeMarkers([center_point], [icon])[0];
-		// TODO: Figure out how to register this listener just once
-		GEvent.addListener(center_marker, "click", function() {
-		  var html = '<div style="width: 200px;">' + center_point.x + ', ' + center_point.y + '<br/>' +
-		             '    <a href="javascript:void(0);" ' +
-		             '       onclick="_setElVToMapLonLat(\'q\'); _find(\'search\');">' +
-		             '       Find address of closest intersection</a>' + 
-		             '</div>';
-		  map.openInfoWindowHtml(center_point, html);
-		});
-		//if (network_visible) showBikeThereNetwork()
-	});					   
-
-	center_point = new GPoint(default_x, default_y);
-	map.centerAndZoom(center_point, default_zoom_level);
-	
-    base_icon = new GIcon();
-    base_icon.shadow = "images/shadow50.png";
-    base_icon.iconSize = new GSize(20, 34);
-    base_icon.shadowSize = new GSize(37, 34);
-    base_icon.iconAnchor = new GPoint(9, 34);
-    base_icon.infoWindowAnchor = new GPoint(9, 2);
-    base_icon.infoShadowAnchor = new GPoint(18, 25);
-    start_icon = new GIcon(base_icon);
-    start_icon.image = "images/dd-start.png";
-    end_icon = new GIcon(base_icon);
-    end_icon.image = "images/dd-end.png";
+  // Draw box and zoom out to full extent
+  var box = getBoxForPoints([tl, br]);
+  centerAndZoomToBox(box);
+  drawPolyLine(milwaukee_box);
 }
 
 
 function parsePointsFromXml(xml_str)
 {
-	var xml_dom = GXml.parse(xml_str);
-	var xml_points = xml_dom.documentElement.getElementsByTagName("point");
-	var points = [];
-	for (var i = 0; i < xml_points.length; i++) {
-	     points.push(new GPoint(parseFloat(xml_points[i].getAttribute("lon")),
-	          					parseFloat(xml_points[i].getAttribute("lat"))));
-	}
-	return points;
+  var xml_dom = GXml.parse(xml_str);
+  var xml_points = xml_dom.documentElement.getElementsByTagName("point");
+  var points = [];
+  for (var i = 0; i < xml_points.length; i++) 
+    {
+      points.push(new GPoint(parseFloat(xml_points[i].getAttribute("lon")),
+			     parseFloat(xml_points[i].getAttribute("lat"))));
+    }
+  return points;
 }
 
 

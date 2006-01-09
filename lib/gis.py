@@ -127,16 +127,15 @@ def getInterpolatedXY(linestring, length, distance_from_start):
     return -- an interpolated point
     """
     ls_len = len(linestring)
-
     if type(linestring) != type([]) or ls_len < 2: return None
-
+    length = length or .000000000000001
     pct_from_start = distance_from_start / length
     pct_from_end = 1.0 - pct_from_start
     
     if ls_len == 2:
         fxy, txy = linestring[0], linestring[-1]
-        lon_lat = (fxy.x * pct_from_end + txy.x * pct_from_start,
-                   fxy.y * pct_from_end + txy.y * pct_from_start)
+        x = fxy.x * pct_from_end + txy.x * pct_from_start
+        y = fxy.y * pct_from_end + txy.y * pct_from_start
     else:
         # TODO: don't assume all the line string piece are equal length        
         pieces = ls_len - 1 * 1.0
@@ -145,70 +144,23 @@ def getInterpolatedXY(linestring, length, distance_from_start):
         try: p = pct_from_start / pct_per_piece
         except ZeroDivisionError:
             fxy, txy = linestring[0], linestring[-1]
-            lon_lat = (fxy.x*pct_from_end + txy.x*pct_from_start,
-                       fxy.y*pct_from_end + txy.y*pct_from_start)
+            x = fxy.x*pct_from_end + txy.x*pct_from_start
+            y = fxy.y*pct_from_end + txy.y*pct_from_start
         else:
             import math
             floor_p = int(math.floor(p))
             ceiling_p = int(math.ceil(p))
             if floor_p == ceiling_p:
                 xy = linestring[floor_p]
-                lon_lat = (xy.x, xy.y)
+                x, y = xy.x, xy.y
             else:
                 ps = p - floor_p
                 pe = ceiling_p - p
                 fxy, txy = linestring[floor_p], linestring[ceiling_p]
-                lon_lat = (fxy.x * pe + txy.x * ps,
-                           fxy.y * pe + txy.y * ps)
+                x = fxy.x * pe + txy.x * ps,
+                y = fxy.y * pe + txy.y * ps
                 
-    return Point(lon_lat)
-
-
-def getInterpolatedLonLatForSegmentAddress(segment, street_number):
-    s = segment
-    num = int(street_number)
-    sls = s.line_string
-    ls_len = len(sls)
-
-    if s.fraddl < s.toaddl:
-        fradd = min(s.fraddl, s.fraddr)
-        toadd = max(s.toaddl, s.toaddr)
-    else: 
-        fradd = min(s.toaddl, s.toaddr)
-        toadd = max(s.fraddl, s.fraddr)
-        
-    length = toadd - fradd * 1.0
-    pct_from_start = (num - fradd) / length
-    pct_from_end = 1.0 - pct_from_start
-    
-    if ls_len == 2:
-        fll, tll = sls[0], sls[-1]
-        lon_lat = (fll.x * pct_from_end + tll.x * pct_from_start,
-                   fll.y * pct_from_end + tll.y * pct_from_start)
-    else:
-        pieces = ls_len - 1 * 1.0
-        pct_per_piece = (length / pieces) / length
-
-        try: p = pct_from_start / pct_per_piece
-        except ZeroDivisionError:
-            fll, tll = sls[0], sls[-1]
-            lon_lat = (fll.x*pct_from_end + tll.x*pct_from_start,
-                       fll.y*pct_from_end + tll.y*pct_from_start)
-        else:
-            import math
-            floor_p = int(math.floor(p))
-            ceiling_p = int(math.ceil(p))
-            if floor_p == ceiling_p:
-                ll = sls[floor_p]
-                lon_lat = (ll.x, ll.y)
-            else:
-                ps = p - floor_p
-                pe = ceiling_p - p
-                fll, tll = sls[floor_p], sls[ceiling_p]
-                lon_lat = (fll.x * pe + tll.x * ps,
-                           fll.y * pe + tll.y * ps)
-                
-    return Point(lon_lat)
+    return Point(x=x, y=y)
 
 
 def importWktGeometry(wkt_geometry):
@@ -218,53 +170,47 @@ def importWktGeometry(wkt_geometry):
     if wkt_type == 'linestring':
         wkt_data = wkt_data.split(',')
         wkt_data = [d.split() for d in wkt_data]
-        linestring = [Point((d[0], d[1])) for d in wkt_data]
+        linestring = [Point(x=d[0], y=d[1]) for d in wkt_data]
         return linestring
     elif wkt_type == 'point':
         wkt_data = wkt_data.split()[0:2]
-        return Point((wkt_data[0], wkt_data[1]))
+        return Point(x=wkt_data[0], y=wkt_data[1])
     else:
         return None
 
     
 class Point(object):
-
-    def __init__(self, x_y):
+    """A very simple Point class."""
+    def __init__(self, x_y=(), x=None, y=None):
         """Create a new Point from the supplied 2-tuple or string.
         
-        @param x_y -- either a 2-tuple of floats (or string representations of
-                      floats), a string that will eval as such a tuple, or
-                      another Point
+        @param x_y Either a 2-tuple of floats (or string representations of
+                   floats), a string that will eval as such a tuple, or
+                   another Point
+        @param x The x-coordinate of the point
+        @param y The y-coordinate of the point
 
-        TODO: Fix this so it just accepts x and y args. Why it accepts a tuple,
-        I don't know???
-        
-        """        
-        if type(x_y) == type(self):
-            # x_y is another point
-            self.x, self.y = x_y.x, x_y.y
-            self.xStr, self.yStr = x_y.xStr, x_y.yStr
+        """
+        if x is not None and y is not None:
+            self.x = float(x)
+            self.y = float(y)
         else:
-            if type(x_y) == type((1,2)):
-                # See if x_y is a 2-tuple (either of floats or string
-                # reprensentations of floats)...
-                self.xStr, self.yStr = str(x_y[0]), str(x_y[1])
-            elif type(x_y) == type("(1,2)"):
-                # See if x_y is a string that will eval as a 2-tuple
-                tmp_x_y = eval(x_y)
-                self.xStr, self.yStr = str(tmp_x_y[0]), str(tmp_x_y[1])    
-            self.x, self.y = float(self.xStr), float(self.yStr)
-            self.xStr, self.yStr = self.xStr.strip(), self.yStr.strip()
+            if type(x_y) == type(self):
+                # x_y is another point
+                self.x, self.y = x_y.x, x_y.y
+                self.xStr, self.yStr = x_y.xStr, x_y.yStr
+            else:
+                if type(x_y) == type((1,2)):
+                    # See if x_y is a 2-tuple (either of floats or string
+                    # reprensentations of floats)...
+                    tmp_x_y = str(x_y[0]), str(x_y[1])
+                elif type(x_y) == type("(1,2)"):
+                    # See if x_y is a string that will evaluate as a 2-tuple
+                    tmp_x_y = eval(x_y)
+                self.x, self.y = float(tmp_x_y[0]), float(tmp_x_y[1])
 
-    def getX(self): return self.x
-    def getY(self): return self.y
-    def getXY(self): return (self.x, self.y)
-
-    def getXStr(self): return self.xStr
-    def getYStr(self): return self.yStr
-
-    def __str__(self):  return "Point: x = %s, y = %s" % (self.x, self.y)
-    def __repr__(self): return "{'x': %s, 'y': %s}" % (self.x, self.y)
+    def __str__(self):  return "Point: x = %.6f, y = %.6f" % (self.x, self.y)
+    def __repr__(self): return "{'x': %f, 'y': %f}" % (self.x, self.y)
 
 
 if __name__ == '__main__':

@@ -10,7 +10,7 @@ var domain;
 if (local) domain = 'localhost';
 else domain = location.href.split('/')[2];
 
-var dir = (domain != 'tripplanner.bycycle.org' ? 'tripplanner/' : '');
+var dir = (domain != 'tripplanner.bycycle.org' ? '/tripplanner' : '');
 
 // The URL minus the query string
 var base_url = location.href.split('?')[0];
