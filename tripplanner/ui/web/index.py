@@ -23,7 +23,7 @@ region = host.split('.')[0]
 region_option = '<option value="%s">%s</option>'
 region_option_selected = '<option value="%s" selected="selected">%s</option>'
 regions_map = {'Milwaukee, WI': 'milwaukee',
-              'Portland, OR': 'portland'}
+              'Portland, OR': 'metro'}
 regions = regions_map.keys()
 regions.sort()
 regions_option_list = []

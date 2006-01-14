@@ -10,16 +10,18 @@ def shpToRawSql():
         os.unlink('db.db-journal')
     except OSError, e:
         print e
-    inlayer = 'route_roads84'
+    inlayer = 'str_prj04aug'
     outdb = 'db.db'
     outtable = 'raw'
     outsrs = '' #'-t_srs WGS84'
     outformat = 'SQLite'
     ds = os.getcwd()
     cmd = 'ogr2ogr %s -f "%s" ' \
-          '-select "TLID,ID_NODE_F,ID_NODE_T,PREFIX,NAME,TYPE,SUFFIX,CFCC,' \
-          'ADDR_FL,ADDR_TL,ADDR_FR,ADDR_TR,CITY_L,CITY_R,ZIP_L,ZIP_R,' \
-          'BIKEMODE,GRADE,LANES,ADT,SPD,ONEWAY" ' \
+          '-select "LOCALID,ID_NODE_F,ID_NODE_T,' \
+          'ADDR_FL,ADDR_TL,ADDR_FR,ADDR_TR,' \
+          'PREFIX,NAME,TYPE,SUFFIX,' \
+          'CITY_L,CITY_R,ZIP_L,ZIP_R,' \
+          'CODE,BIKEMODE,UP_FRAC,ABS_SLP,ONEWAY" ' \
           '%s . %s -nln %s'  % (outsrs, outformat, outdb, inlayer, outtable)
     print cmd
     exit_code = os.system(cmd)
@@ -41,24 +43,33 @@ def sqlToSql():
         Q1 = 'UPDATE raw SET %s=lower(%s)'
         cols = ('prefix', 'name', 'type', 'suffix', 'city_l', 'city_r',
                 'id_state_l', 'id_state_r', 'wkt_geometry',
-                'cfcc', 'bikemode', 'grade')
+                'bikemode')
         for col in cols:
             # TEXT NULL to ''
             __execute(Q0 % (col, col))
             # TEXT to lower
             __execute(Q1 % (col, col))
         con.commit()
-        # Set INTEGER NULLs to 0
+        # Set INTEGER and FLOAT NULLs to 0
         Q = 'UPDATE raw SET %s=0 WHERE %s IS NULL'
-        cols = ('id_node_f', 'id_node_t',
+        cols = ('localid', 'id_node_f', 'id_node_t',
                 'addr_f', 'addr_t', 'addr_fl', 'addr_tl', 'addr_fr', 'addr_tr',
                 'ix_streetname', 'ix_city_l', 'ix_city_r', 'zip_l', 'zip_r',
-                'tlid', 'lanes', 'adt', 'spd', 'oneway')
+                'code', 'oneway', 'up_frac', 'abs_slp')
         for col in cols:
             __execute(Q % (col, col))
         con.commit()
+        # Convert id_node_f/t to integer type
+        Q = 'SELECT rowid, id_node_f, id_node_t FROM raw'
+        __execute(Q)
+        rows = cur.fetchall()
+        Q = 'UPDATE raw SET id_node_f=%s, id_node_t=%s WHERE rowid=%s'
+        for row in rows:
+            cur.execute(Q % (int(row[1]), int(row[2]), row[0]))        
+        con.commit()
 
     def __unifyAddressRanges():
+        """Combine left and right side address number into a single value."""
         Q = 'UPDATE raw ' \
             'SET addr_%s=(ROUND(addr_%s%s / 10.0) * 10) ' \
             'WHERE addr_%s%s != 0'
@@ -153,9 +164,9 @@ def sqlToSql():
 
     def __updateRawStateIds():
         """Set the state ID of each raw record."""
-        Q = 'INSERT INTO state VALUES (NULL, "wi", "wisconsin")'
+        Q = 'INSERT INTO state VALUES (NULL, "or", "oregon")'
         __execute(Q)
-        Q = 'UPDATE raw SET id_state_l="wi", id_state_r="wi"'
+        Q = 'UPDATE raw SET id_state_l="or", id_state_r="or"'
         __execute(Q)
         con.commit()
 
@@ -188,22 +199,17 @@ def sqlToSql():
             'FROM raw'
         __execute(Q)
         ## Transfer extra attributes to attributes table (attrs)
-        # Abbreviate bike modes first
-        Qs = ('UPDATE attr_street SET bikemode="bt" ' \
-              'WHERE bikemode="bike trail"',
-              'UPDATE attr_street SET bikemode="br" ' \
-              'WHERE bikemode="bike route"',
-              'UPDATE attr_street SET bikemode="bl" ' \
-              'WHERE bikemode="bike lane"',
-              'UPDATE attr_street SET bikemode="ps" ' \
-              'WHERE bikemode="preferred street"')
-        for Q in Qs:
-            __execute(Q)
         Q = 'INSERT INTO attr_street ' \
-            'SELECT NULL,tlid,oneway,cfcc,bikemode,grade,lanes,adt,spd ' \
+            'SELECT rowid,localid,oneway,code,bikemode,up_frac,abs_slp ' \
             'FROM raw'
         __execute(Q)
         con.commit()
+
+    def __cleanUp():
+    ## Clean up
+        Qs = ('DROP TABLE raw', 'VACUUM')
+        for Q in Qs: 
+            __execute(Q)
 
     def __execute(Q):
         try:
@@ -251,6 +257,9 @@ def sqlToSql():
              
              ('Transferring attributes.',
               __transferAttrs),
+
+             ('Cleaning up.',
+              __cleanUp),
              ]
 
     for p in pairs:
@@ -261,9 +270,6 @@ def sqlToSql():
         apply(func, args)
         timer.stopTiming()
 
-    ## Clean up
-    Q = 'DROP TABLE raw'
-    __execute(Q)
     cur.close()
     con.close()
     timer.stopTiming()
