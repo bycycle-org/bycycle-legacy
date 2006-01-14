@@ -1,81 +1,109 @@
-# Metro Mode
+# Milwaukee Data Mode
 # 11/07/2005
-import sys
-sys.path += ['../../', '..']
-from model import mode
-
+from byCycle.tripplanner.model import mode
+ 
 
 class Mode(mode.Mode):
     def __init__(self):
+        self.dmode = 'metro'
         mode.Mode.__init__(self)
-        self.g_file_name = './data/adjacency_matrix'
 
-        self.tables.update({})
-                            
-        edge_fields = ('weight', 'stid', 'code', 'flags', 'upfrac', 'slope')
+        # Create an index of adjacency matrix edge attributes.
+        # In other words, each edge in the matrix has attributes associated
+        # with it in an ordered sequence. This index gives us a way to access
+        # the attributes by name while keeping the size of the matrix smaller.
+        attrs = ('length', 'cfcc', 'bikemode', 'grade', 'lanes', 'adt', 'spd',
+                 'ix_streetname')
+        self.edge_attrs = attrs
         self.indices = {}
-        for i in range(len(edge_fields)): self.indices[edge_fields[i]] = i
+        for i in range(len(attrs)): self.indices[attrs[i]] = i
         
-        self.bikemodes = ['mu', 'mm', 'bl',
-                          'lt', 'mt', 'ht',
-                          'xx',
-                          'pb', 'pm', 'up', 'ca']
-        flag_names = ['gos', 'goe'] + self.bikemodes
-        self.flags = {}
-        i = 0
-        for flag in flag_names:
-            self.flags[flag] = 1 << i
-            i += 1
-
-
+        
     def createAdjacencyMatrix(self):
-        # TODO: save adj. mat. to DB
-        """Create this mode's adjacency matrix.
+        """Create this mode's adj. matrix, store it in the DB, and return it.
 
-        For each vertex, u, build a sequence containing each vertex, v,
-        adjacent to u and the edge that connects u to v.
+        Build a matrix suitable for use with the route service. The structure
+        of the matrix is defined by the sssp module of the route service.
 
-        @return -- a compressed adjacency matrix for all intersections
-
-        TODO: store G in DB instead of file?
+        @return G -- the adjacency matrix
 
         """
-        from bycycle import db
-        bdb = db.Db(self)
-        Q = 'SELECT lid, frnid, tonid, code, flags, stid, len, upfrac, slope' \
-            ' FROM %s WHERE code NOT IN (2000, 2100, 2200, 3220, 9000)' % \
-            self.tables['edges']
-        bdb.executeQuery(Q)
-        R = bdb.fetchAllRows()
-        segments = {}
-        for r in R:
-            for k in r: # convert all possible values to ints
-                try: r[k] = int(r[k])
-                except ValueError: pass
-            segments[r['lid']] = r
-        del R
+        from byCycle.lib import gis, meter
+
+        lengthFunc = gis.getLengthOfLineString
         
+        # Get the edge attributes
+        Q = 'SELECT * FROM %s' % self.tables['street_attrs']
+        self.executeDict(Q)
+        rows = self.fetchAllDict()
+        # Convert all possible values to int or float
+        for row in rows:
+            for k in row: 
+                val = row[k]
+                try:
+                    row[k] = int(val)        # int?
+                except ValueError:
+                    try:
+                        row[k] = float(val)  # no. float?
+                    except ValueError:
+                        row[k] = val.strip() # no. must be a string.
+
+        # Get the from and to node IDs of the edges and add them to their
+        # respective attr rows
+        Q = 'SELECT wkt_geometry, id_node_f, id_node_t, ix_streetname ' \
+            'FROM %s' % self.tables['edges']
+        self.executeDict(Q)
+        nrows = self.fetchAllDict()
+        for i, nrow in enumerate(nrows):
+            for k in nrow:
+                try:
+                    nrow[k] = int(nrow[k])
+                except ValueError:
+                    pass
+            rows[i].update(nrow)
+        del nrows
+
         G = {'nodes': {}, 'edges': {}}
         nodes = G['nodes']
         edges = G['edges']
 
-        for lid in segments:
-            row = segments[lid]
-            frnid, tonid = row['frnid'], row['tonid']
-            flags = row['flags']
-            gos = flags & self.flags['gos']
-            goe = flags & self.flags['goe']
-            entry = (row['len'], row['stid'], row['code'], flags,
-                     row['upfrac'], row['slope'])
-            edges[lid] = entry
-            if gos:
-                if not frnid in nodes: nodes[frnid] = {}
-                nodes[frnid][tonid] = lid
-            if goe:
-                if not tonid in nodes: nodes[tonid] = {}
-                nodes[tonid][frnid] = lid
+        met = meter.Meter()
+        met.setNumberOfItems(len(rows))
+        met.startTimer()
+        record_number = 1
+        
+        for row in rows:
+            ix = row['ix']
+            id_node_f, id_node_t = row['id_node_f'], row['id_node_t']
+            oneway = row['oneway']
+            ft = oneway & 1
+            tf = oneway & 2
+            try:
+                length = lengthFunc(gis.importWktGeometry(row['wkt_geometry']))
+            except Exception, e:
+                length = 0
+                
+            entry = [length] + [row[a] for a in self.edge_attrs[1:]]
+            edges[ix] = entry
+            if ft:
+                if not id_node_f in nodes: nodes[id_node_f] = {}
+                nodes[id_node_f][id_node_t] = ix
+            if tf:
+                if not id_node_t in nodes: nodes[id_node_t] = {}
+                nodes[id_node_t][id_node_f] = ix
 
-        g_file = file(self.g_file_name, mode='wb')
-        marshal.dump(G, g_file)
-        g_file.close()
+            met.update(record_number)
+            record_number+=1
+        print
+            
+        ## Save a compressed representation of G
+        import marshal
+        out_file = open(self.matrix_path, 'wb')
+        marshal.dump(G, out_file)
+        out_file.close()
         return G
+
+
+if __name__ == '__main__':
+    md = Mode();
+    G = md.createAdjacencyMatrix()
