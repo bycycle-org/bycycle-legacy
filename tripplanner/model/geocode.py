@@ -120,7 +120,7 @@ def getIntersectionGeocodes(inaddr, mode):
     Q = 'SELECT ix, id_node_f, id_node_t FROM %s WHERE' % mode.tables['edges']
     first = True
     for place, ids in ((place1, ix_streetnames_a),
-                       (place2,  ix_streetnames_b)):
+                       (place2, ix_streetnames_b)):
         where = _getPlaceWhere(place)
         where.append('ix_streetname IN (%s)' % ids)
         where = ' AND '.join(where)
@@ -132,79 +132,7 @@ def getIntersectionGeocodes(inaddr, mode):
             rows_a = rows
         else:
             rows_b = rows
-    return _nodeCommon(addr, mode, rows_a, rows_b)
 
-    
-def getPointGeocodes(inaddr, mode):
-    try:
-        # Special case of node ID supplied directly
-        min_id = int(inaddr)
-        addr = address.PointAddress('(0,0)', mode)
-    except ValueError:
-        addr = address.PointAddress(inaddr, mode)
-        x, y = addr.x, addr.y
-        min_id = None
-        min_dist = 2000000000
-        Q = 'SELECT id, wkt_geometry FROM %s' % (mode.tables['vertices'])
-        mode.execute(Q)
-        row = mode.fetchRow()
-        distFunc = gis.getDistanceBetweenTwoPointsOnEarth
-        while row:
-            id = row[0]
-            point = gis.importWktGeometry(row[1])
-            dist = distFunc(lon_a=x, lat_a=y,
-                            lon_b=point.x, lat_b=point.y)
-            if dist < min_dist:
-                min_id = id
-                min_dist = dist
-                if min_dist < .025: break  # close enough
-            row = mode.fetchRow()
-
-        if min_id is None: return []
-
-    # Get segments that have our min_id as their f or id_node_t
-    Q = 'SELECT ix, id_node_f, id_node_t, ix_streetname ' \
-        'FROM %s ' \
-        'WHERE id_node_f=%s OR id_node_t=%s' % \
-        (mode.tables['edges'], min_id, min_id)
-    mode.executeDict(Q)
-    rows = mode.fetchAllDict()
-
-    # Index rows by street name ID
-    st_rows = {}
-    for row in rows:
-        ix_streetname = row['ix_streetname']
-        if ix_streetname in st_rows:
-            st_rows[ix_streetname].append(row)
-        else:
-            st_rows[ix_streetname] = [row]
-
-    rows_a = st_rows.popitem()[1]
-    try:
-        rows_b = st_rows.popitem()[1]
-    except KeyError:
-        rows_b = []
-
-    if rows_b:
-        # Found point at intersection
-        return _nodeCommon(addr, mode, rows_a, rows_b)
-    else:
-        # Found point at dead end
-        row = rows_a[0]
-        addr = address.AddressAddress('', mode)
-        s = mode.getSegmentById(row['ix'])
-        i = mode.getIntersectionById(min_id)
-        # Set address number to num at min_nid end of segment
-        if min_id == s.id_node_f:
-            addr.number = s.addr_f
-        else:
-            addr.number = s.addr_t
-        _setStreetAndPlaceFromSegment(addr.street, addr.place, s)
-        code = AddressGeocode(addr, s, i.lon_lat)
-        return [code]
-
-
-def _nodeCommon(addr, mode, rows_a, rows_b):
     # Index all segments by their fr/id_node_ts
     ia, ib = {}, {}
     for i, R in ((ia, rows_a), (ib, rows_b)):
@@ -251,6 +179,85 @@ def _nodeCommon(addr, mode, rows_a, rows_b):
         code = IntersectionGeocode(addr, i_dict[node_id])
         geocodes.append(code)
     return geocodes
+
+    
+def getPointGeocodes(inaddr, mode):
+    try:
+        # Special case of node ID supplied directly
+        min_id = int(inaddr)
+        addr = address.PointAddress('(0,0)', mode)
+    except ValueError:
+        addr = address.PointAddress(inaddr, mode)
+        x, y = addr.x, addr.y
+        min_dist = 2000000000
+        Q = 'SELECT id, wkt_geometry FROM %s' % (mode.tables['vertices'])
+        mode.execute(Q)
+        rows = mode.fetchAll()
+        if rows:
+            from math import sin, cos, acos, radians
+            wkt_geoms = [row[1] for row in rows]
+            points = gis.importWktGeometries(wkt_geoms, 'point')
+            earth_radius = gis.earth_radius
+            for i, row in enumerate(rows):
+                id = row[0]
+                point = points[i]
+                dist = earth_radius * \
+                       acos(cos(radians(y)) * \
+                            cos(radians(point.y)) * \
+                            cos(radians(point.x-x)) + \
+                            sin(radians(y)) * \
+                            sin(radians(point.y)))                
+                if dist < min_dist:
+                    min_id = id
+                    min_dist = dist
+                    if min_dist < .025: break  # close enough
+        else:
+            return []
+
+    # Get segment rows that have our min_id as their id_node_f/t
+    Q = 'SELECT ix, ix_streetname ' \
+        'FROM %s WHERE id_node_f=%s OR id_node_t=%s' % \
+        (mode.tables['edges'], min_id, min_id)
+    mode.executeDict(Q)
+    rows = mode.fetchAllDict()
+
+    # Index segment rows by their street name IDs
+    st_ixs = {}
+    for row in rows:
+        ix_streetname = row['ix_streetname']
+        if ix_streetname in st_ixs:
+            st_ixs[ix_streetname].append(row['ix'])
+        else:
+            st_ixs[ix_streetname] = [row['ix']]
+
+    i = mode.getIntersectionById(min_id)
+
+    ixs_a = st_ixs.popitem()[1]
+    if st_ixs:
+        ## Found point at intersection
+        ixs_b = st_ixs.popitem()[1]
+        # Get segments
+        s, t = mode.getSegmentsById((ixs_a[0], ixs_b[0]))
+        # Set address attributes
+        _setStreetAndPlaceFromSegment(addr.street1, addr.place1, s)
+        _setStreetAndPlaceFromSegment(addr.street2, addr.place2, t)
+        # Get intersection
+        code = IntersectionGeocode(addr, i)
+    else:
+        ## Found point at dead end
+        addr = address.AddressAddress('', mode)
+        s = mode.getSegmentById(ixs_a[0])
+        # Set address number to num at min_nid end of segment
+        if min_id == s.id_node_f:
+            addr.number = s.addr_f
+            lon_lat = s.linestring[0]
+        else:
+            addr.number = s.addr_t
+            lon_lat = s.linestring[-1]
+        _setStreetAndPlaceFromSegment(addr.street, addr.place, s)
+        code = AddressGeocode(addr, s, lon_lat)
+        code.intersection = i
+    return [code]
 
 
 ## Helper functions

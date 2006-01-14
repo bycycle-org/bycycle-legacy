@@ -16,7 +16,7 @@ directions_ftoa = {'north'     : 'n',
                    'southeast' : 'se',
                    'southwest' : 'sw'}
 
-directions_atof = {'n'  : '0',
+directions_atod = {'n'  : '0',
                    's'  : '180',
                    'e'  : '90',
                    'w'  : '270',
@@ -25,7 +25,7 @@ directions_atof = {'n'  : '0',
                    'se' : '135',
                    'sw' : '225'}
 
-directions_ftoa = {'0'   : 'n',
+directions_dtoa = {'0'   : 'n',
                    '180' : 's',
                    '90'  : 'e',
                    '270' : 'w',

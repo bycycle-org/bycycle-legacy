@@ -56,7 +56,6 @@ class Address(object):
             elif word in self.directions_ftoa:
                 street.prefix = self.directions_ftoa[word]
             if street.prefix:
-                street.prefix = street.prefix
                 del words[0]
 
             # name
@@ -82,7 +81,6 @@ class Address(object):
             elif word in self.states_ftoa:
                 place.state = self.states_ftoa[word]
             if place.state:
-                place.state = place.state
                 del words[-1]
 
             # city
@@ -101,16 +99,15 @@ class Address(object):
             elif word in self.directions_ftoa:
                 street.suffix = self.directions_ftoa[word]
             if street.suffix:
-                street.suffix = street.suffix
                 del words[-1]
 
             # street type
             word = words[-1]
-            if word in self.street_types_atof: street.type = word
+            if word in self.street_types_atof: 
+                street.type = word
             elif word in self.street_types_ftoa:
                 street.type = self.street_types_ftoa[word]
             if street.type:
-                street.type = street.type
                 del words[-1]
 
         except IndexError: pass

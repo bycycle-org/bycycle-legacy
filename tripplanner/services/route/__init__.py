@@ -46,7 +46,7 @@ def get(input={}):
             
     ## Get necessary data from input
     # q -- list of route points (currently only 2 supported)
-    # dmode -- data mode (TODO: should be determined from place in geocoder)
+    # dmode -- data mode (TODO: should be determined from place in geocoder) 
     # tmode -- travel mode
     # options -- dict of optional user options (sent off to tmode)
     try: q = input['q']
@@ -62,15 +62,14 @@ def get(input={}):
             if not to: raise IndexError
         except IndexError:
             errors.append('End address required')
-        
+
     try:
         dmode = input['dmode']
     except KeyError:
         errors.append('Data mode required')
     else:
         try: dmode = data_modes[dmode]
-        except KeyError: errors.append('Unknown data mode')
-
+        except KeyError: errors.append('Unknown data mode')        
     try:
         tmode = input['tmode']
     except KeyError:
@@ -83,18 +82,25 @@ def get(input={}):
     if errors: raise InputError(errors)
 
     # The mode is a combination of the data/travel modes
+    st = time.time()
     path = 'byCycle.tripplanner.model.%s.%s'
     mode = __import__(path % (dmode, tmode), globals(), locals(), ['']).Mode()
+    messages.append('Time to instantiate mode: %s' % (time.time() - st))
 
 
     ## Get geocodes matching from and to addresses
     M = {'from': [], 'to': []}
+    
+    st = time.time()
     try:
         fcodes = geocode.get({'q': fr, 'dmode': mode})
     except geocode.AddressNotFoundError, e:
         errors.append(e.description)
     except geocode.MultipleMatchingAddressesError, e:
         M['from'] = e.geocodes
+    messages.append('Time to get from address: %s' % (time.time() - st))        
+
+    st = time.time()
     try:
         tcodes = geocode.get({'q': to, 'dmode': mode})
     except geocode.AddressNotFoundError, e:
@@ -102,6 +108,7 @@ def get(input={}):
     except geocode.MultipleMatchingAddressesError, e:
         M['to'] = e.geocodes
     if M['from'] or M['to']: raise MultipleMatchingAddressesError(M)
+    messages.append('Time to get to address: %s' % (time.time() - st))
 
     # Let multiple multiple match errors fall through to here
     if errors: raise InputError(errors)
@@ -121,17 +128,17 @@ def get(input={}):
     messages.append('Time to get G: %s' % (time.time() - st))
 
 
-    ## Create the auxillary adjacency matrix, H
+    ## Get or synthesize the from and to intersections
     def __getIntersectionForGeocode(geocode, id, eid1, eid2):
-        """
-        
-        Args
-        id -- shared node ID at split
-        eid1 -- segment id for node-->id segment
-        eid2 -- segment id for id-->other_node segment
+        """Get or synthesize intersection for geocode.
 
-        Return
-        An intersection object at at the split with a node ID of id
+        If the geocode is at an intersection, just return the intersection;
+        otherwise, synthesize a mid-block intersection.
+        
+        @param id Shared node ID at split
+        @param eid1 Segment id for node-->id segment
+        @param eid2 Segment id for id-->other_node segment
+        @return An intersection object at at the split with a node ID of id
         
         """
         try:
@@ -140,8 +147,7 @@ def get(input={}):
         except AttributeError:
             # Geocode is in a segment--hard case
             # We have to generate an intersection in the middle of the segment
-            # and add data to G (by adding that data to H so G can remain
-            # unmodified)
+            # and add data to G
             #
             # Split the geocode's segment
             seg = geocode.segment
@@ -159,49 +165,54 @@ def get(input={}):
                     'lon_lat': nt_seg.linestring[0]}
             i = intersection.Intersection(data)
             #
-            # Update H's nodes
-            __updateHNodes(id_node_f, id, id_node_t, eid1, eid2)
-            __updateHNodes(id_node_t, id, id_node_f, eid2, eid1)
+            # Update G's nodes
+            __updateNodes(id_node_f, id, id_node_t, eid1, eid2)
+            __updateNodes(id_node_t, id, id_node_f, eid2, eid1)
             #
-            # Update H's edges
+            # Update G's edges
             eid = seg.ix
-            H_edges[eid1] = [fn_seg.getWeight()] + list(G_edges[eid][1:])
-            H_edges[eid2] = [nt_seg.getWeight()] + list(G_edges[eid][1:])
+            edges[eid1] = [fn_seg.getWeight()] + list(edges[eid][1:])
+            edges[eid2] = [nt_seg.getWeight()] + list(edges[eid][1:])
         return i
-
-    def __updateHNodes(id1, id, id2, eid1, eid2):
+    
+    def __updateNodes(id1, id, id2, eid1, eid2):
         try:
-            G_nodes[id1][id2]
+            nodes[id1][id2]
         except KeyError:
             # id1 does NOT go to id2--nothing to do
             pass
         else:
             # id1 DOES go to id2
-            if id not in H_nodes: H_nodes[id] = {}
-            H_nodes[id1] = G_nodes[id1]
-            H_nodes[id1][id] = eid1
-            H_nodes[id][id2] = eid2
-            # override original connection so it won't be used
-            H_nodes[id1][id2] = None  
-
+            if id not in nodes: nodes[id] = {}
+            nodes[id1] = nodes[id1]
+            nodes[id1][id] = eid1
+            nodes[id][id2] = eid2
+            # Override original connection so it won't be used
+            nodes[id1][id2] = None  
+            
     split_segs = {}
-    H = {'nodes': {}, 'edges': {}}
-    G_nodes, G_edges = G['nodes'], G['edges']
-    H_nodes, H_edges = H['nodes'], H['edges']
+    nodes, edges = G['nodes'], G['edges']
+
+    st = time.time()
     fint = __getIntersectionForGeocode(fcode, -1, -1, -2)
+    messages.append('Time to get from intersection: %s' % (time.time() - st))
+
+    st = time.time()
     tint = __getIntersectionForGeocode(tcode, -2, -3, -4)
+    messages.append('Time to get to intersection: %s' % (time.time() - st))
+
     id_node_f, id_node_t = fint.id, tint.id
 
     
     ## Try to find a path
     st = time.time()
     try:
-        V, E, W, w = sssp.findPath(G, H, id_node_f, id_node_t,
+        V, E, W, w = sssp.findPath(G, id_node_f, id_node_t,
                                    weightFunction=mode.getEdgeWeight,
                                    heuristicFunction=None)
     except sssp.SingleSourceShortestPathsNoPathError:
         raise NoRouteError('Could not find a route')
-    messages.append('Time to getPath: %s' % (time.time() - st))
+    messages.append('Time to findPath: %s' % (time.time() - st))
 
 
     ## A path was found
@@ -210,14 +221,17 @@ def get(input={}):
     I = mode.getIntersectionsById(V)
     if I[0] is None: I[0] = fint
     if I[-1] is None: I[-1] = tint
+    messages.append('Time to fetch ints by ID %s' % (time.time()-st))
+
+    st = time.time()
     S = mode.getSegmentsById(E)
     if S[0] is None: S[0] = split_segs[E[0]]
     if S[-1] is None: S[-1] = split_segs[E[-1]]
-    
-    messages.append('Time to fetch ints and segs by ID %s' % (time.time()-st))
+    messages.append('Time to fetch segs by ID %s' % (time.time()-st))
 
 
     ## Convert route data to output format
+    st = time.time()
     directions = makeDirections(I, S)
     messages.append('Time to make directions: %s' % (time.time() - st))
     route = {'from':       {'geocode': fcode, 'original': fr},
@@ -619,21 +633,36 @@ def print_key(key):
 
 
 if __name__ == '__main__':
-    q = ['3150 lisbon',
-         'walnut & n 16th ',
-         ]
+    Qs = (('3150 lisbon', 'walnut & n 16th '),
+          ('124th and county line, franklin', '3150 lisbon'),
+          ('124th and county line, franklin', 'lon=-87.940407, lat=43.05321'))
     dm = 'milwaukee'
     tm = 'bike'
-    try:
-        r = get({'q': q, 'dmode': dm, 'tmode': tm})
-    except Exception, e:
-        #print e
-        raise
-    else:
-        D = r['directions']
-        print r['from']['geocode']
-        print r['to']['geocode']
-        for d in D:
-            print '%s on %s toward %s -- %s mi [%s]' % (d['turn'],
-                                             d['street'], d['toward'],
-                                             d['distance']['mi'], d['bikemode'])
+
+
+    for q in Qs:
+        try:
+            r = get({'q': q, 'dmode': dm, 'tmode': tm})
+        except MultipleMatchingAddressesError, e:
+            print e.geocodes
+        except Exception, e:
+            raise
+        else:
+            D = r['directions']
+            print r['from']['geocode']
+            print r['to']['geocode']
+            for d in D:
+                print '%s on %s toward %s -- %s mi [%s]' % (d['turn'],
+                                                            d['street'],
+                                                            d['toward'],
+                                                            d['distance']['mi'],
+                                                            d['bikemode'])
+            print
+
+            M = r['messages']
+            for m in M:
+                print m
+
+            print '--------------------------------------------------------------------------------'
+            
+        

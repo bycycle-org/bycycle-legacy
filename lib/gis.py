@@ -165,7 +165,7 @@ def getInterpolatedXY(linestring, length, distance_from_start):
 
 def importWktGeometry(wkt_geometry):
     """Return a simple Python object for the given WKT Geometry string."""
-    wkt_type, wkt_data = wkt_geometry.lower().split(' ', 1)
+    wkt_type, wkt_data = wkt_geometry.split(' ', 1)
     wkt_data = wkt_data[1:-1]
     if wkt_type == 'linestring':
         wkt_data = wkt_data.split(',')
@@ -173,10 +173,23 @@ def importWktGeometry(wkt_geometry):
         linestring = [Point(x=d[0], y=d[1]) for d in wkt_data]
         return linestring
     elif wkt_type == 'point':
-        wkt_data = wkt_data.split()[0:2]
-        return Point(x=wkt_data[0], y=wkt_data[1])
+        x, y = wkt_data.split()[0:2]
+        return Point(x=x, y=y)
     else:
         return None
+
+
+def importWktGeometries(wkt_geometries, geom_type):
+    """Return list of simple Python objects for list of WKT Geometry strings."""
+    geoms = []
+    if geom_type == 'point':
+        for p in wkt_geometries:
+            # POINT (x y)
+            x, y = p.split(' ', 1)[1][1:-1].split()[0:2]
+            geoms.append(Point(x=x, y=y))
+    else:
+        return None
+    return geoms
 
     
 class Point(object):
@@ -191,10 +204,10 @@ class Point(object):
         @param y The y-coordinate of the point
 
         """
-        if x is not None and y is not None:
+        try:
             self.x = float(x)
             self.y = float(y)
-        else:
+        except (ValueError, TypeError):
             if type(x_y) == type(self):
                 # x_y is another point
                 self.x, self.y = x_y.x, x_y.y

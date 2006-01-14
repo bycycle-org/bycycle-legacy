@@ -25,7 +25,15 @@ class Mode(milwaukee.Mode):
 
         sec = (length * 3600) / self.mph
 
-        if bikemode != 'bl' and bikemode != 'bt':
+        if bikemode:
+            # Adjust for network
+            if   bikemode == 'bl': pass
+            elif bikemode == 'bt': sec *= 1.10
+            elif bikemode == 'br': sec *= 1.30
+            elif bikemode == 'ps': sec *= 1.50
+        else:
+            # Penalize for not being on bike network
+            sec *= 2.00
             # Adjust for traffic
             adt_factor = (adt * .001)
             if adt_factor < 1: adt_factor = 1
@@ -41,13 +49,6 @@ class Mode(milwaukee.Mode):
             lanes_factor = lanes / 2.0
             if lanes_factor < 1: lanes_factor = 1
             sec *= lanes_factor
-
-        if bikemode:
-            # Adjust for network
-            if   bikemode == 'bl': pass
-            elif bikemode == 'bt': sec *= 1.10
-            elif bikemode == 'br': sec *= 1.20
-            elif bikemode == 'ps': sec *= 1.50
             
         if prev_edge_attrs is not None:
             # Penalize edge if it has different street name from previous edge

@@ -77,24 +77,19 @@ class Mode(object):
     def getIntersectionsById(self, ids):
         if not ids: return []
         intersections = []
-        Q = 'SELECT * FROM %s WHERE id IN (%s)' % \
-            (self.tables['vertices'], ','.join([str(t) for t in ids]))
-        ints = {}
+        id_str = ','.join([str(i) for i in ids])
+        Q = 'SELECT id_node_f, id_node_t, addr_f, addr_t, ix_streetname, ' \
+            'wkt_geometry ' \
+            'FROM %s ' \
+            'WHERE id_node_f IN (%s) OR id_node_t IN (%s)' % \
+            (self.tables['edges'], id_str, id_str)
         self.executeDict(Q)
         rows = self.fetchAllDict()
         if rows:
-            # Index rows by id
-            irows = {}
-            for row in rows: irows[row['id']] = row
-
             # Pre-fetch segments and index by both id_node_f and id_node_t
             seg_rows = {}
             ix_streetnames = {}
-            id_str = ','.join([str(i) for i in ids])
-            Q = 'SELECT * FROM %s WHERE id_node_f IN (%s) OR id_node_t IN (%s)' % \
-                (self.tables['edges'], id_str, id_str)
-            self.executeDict(Q)
-            for row in self.fetchAllDict():
+            for row in rows:
                 id_node_f, id_node_t = row['id_node_f'], row['id_node_t']
                 if id_node_f in seg_rows: seg_rows[id_node_f].append(row)
                 else: seg_rows[id_node_f] = [row]
@@ -103,25 +98,32 @@ class Mode(object):
                 ix_streetnames[row['ix_streetname']] = 1
                 
             # Pre-fetch full street names
-            street_names = self.getRowsById(self.tables['streetnames'],
-                                            ix_streetnames.keys())
+            streetnames = self.getRowsById(self.tables['streetnames'],
+                                           ix_streetnames.keys())
             streets = {}
-            for ix_streetname in street_names:
-                r = street_names[ix_streetname]
+            for ix_streetname in streetnames:
+                r = streetnames[ix_streetname]
                 st = address.Street(r['prefix'], r['name'],
                                     r['type'], r['suffix'])
                 streets[ix_streetname] = st
                 
             # Get intersections with the help of our pre-fetched data
             for id in ids:
+                data = {}
                 try:
-                    row = irows[id]
+                    row = seg_rows[id][0]
                 except KeyError:
                     intersections.append(None)
                     continue
-                # Convert WKT point to Point
-                geom = row['wkt_geometry']
-                row['lon_lat'] = gis.importWktGeometry(geom)            
+                # Get segment linestring and point at id end
+                linestring = gis.importWktGeometry(row['wkt_geometry'])
+                id_node_f, id_node_t =  row['id_node_f'],  row['id_node_t']
+                if id == id_node_f:
+                    data['id'] = id_node_f
+                    data['lon_lat'] = linestring[0]
+                elif id == id_node_t:
+                    data['id'] = id_node_t
+                    data['lon_lat'] = linestring[-1]
                 # Get all segments that have the intersection at one end
                 S = seg_rows[id]
                 # Get the cross streets
@@ -150,8 +152,8 @@ class Mode(object):
                             num = addr_t
                         st.number = num                        
                     cs.append(st)
-                row['cross_streets'] = cs
-                intersections.append(intersection.Intersection(row))        
+                data['cross_streets'] = cs
+                intersections.append(intersection.Intersection(data))        
         return intersections
         
 
