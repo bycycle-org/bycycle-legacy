@@ -9,8 +9,8 @@ class Mode(milwaukee.Mode):
         milwaukee.Mode.__init__(self)
         self.mph = 10
 
-    def getEdgeWeight(self, edge_attrs, prev_edge_attrs):
-        """Calculate a weight for the edge with ID e."""
+    def getEdgeWeight(self, v, edge_attrs, prev_edge_attrs):
+        """Calculate weight for edge given it & last crossed edge's attrs."""
         indices = self.indices
         length = edge_attrs[indices["length"]]
         cfcc = edge_attrs[indices["cfcc"]]
@@ -50,9 +50,11 @@ class Mode(milwaukee.Mode):
             if lanes_factor < 1: lanes_factor = 1
             sec *= lanes_factor
             
-        if prev_edge_attrs is not None:
+        try:
             # Penalize edge if it has different street name from previous edge
             prev_ix_sn = prev_edge_attrs[indices["ix_streetname"]]
             if ix_sn != prev_ix_sn: sec += 20
+        except TypeError:
+            pass
         
         return sec

@@ -75,9 +75,9 @@ CREATE TABLE "attr_street" (
   "id"           INTEGER NOT NULL,  -- LOCALID
   "oneway"       INTEGER NOT NULL,
   "code"         INTEGER NOT NULL,	
-  "up_frac"      INTEGER NOT NULL,	
-  "abs_slp"      INTEGER NOT NULL,	
-  "bikemode"     TEXT    NOT NULL
+  "bikemode"     TEXT    NOT NULL,
+  "up_frac"      REAL    NOT NULL,	
+  "abs_slp"      REAL    NOT NULL	
 );
 
 CREATE TABLE "layer_node" (

@@ -161,6 +161,11 @@ def sqlToSql():
                 record_number+=1
             print  # newline after the progress meter
         con.commit()
+        # Convert abbreviated names to full names
+        from cities import metro_full_cities
+        Q = 'UPDATE city SET city="%s" WHERE city="%s"'
+        for c in metro_full_cities:
+            __execute(Q % (metro_full_cities[c], c))
 
     def __updateRawStateIds():
         """Set the state ID of each raw record."""
