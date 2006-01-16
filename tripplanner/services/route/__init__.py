@@ -639,6 +639,10 @@ if __name__ == '__main__':
     dm = 'milwaukee'
     tm = 'bike'
 
+    Qs = (('633 n alberta', '4408 se stark'),)
+    dm = 'metro'
+    tm = 'bike'
+
 
     for q in Qs:
         try:

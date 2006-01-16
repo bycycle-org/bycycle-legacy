@@ -1,4 +1,4 @@
-# Milwaukee Data Mode
+# Portland Metro Data Mode
 # 11/07/2005
 from byCycle.tripplanner.model import mode
  
@@ -12,8 +12,8 @@ class Mode(mode.Mode):
         # In other words, each edge in the matrix has attributes associated
         # with it in an ordered sequence. This index gives us a way to access
         # the attributes by name while keeping the size of the matrix smaller.
-        attrs = ('length', 'cfcc', 'bikemode', 'grade', 'lanes', 'adt', 'spd',
-                 'ix_streetname')
+        attrs = ('length', 'code', 'bikemode', 'up_frac', 'abs_slp',
+                 'ix_streetname', 'id_node_f')
         self.edge_attrs = attrs
         self.indices = {}
         for i in range(len(attrs)): self.indices[attrs[i]] = i
@@ -75,9 +75,11 @@ class Mode(mode.Mode):
         for row in rows:
             ix = row['ix']
             id_node_f, id_node_t = row['id_node_f'], row['id_node_t']
+
             oneway = row['oneway']
-            ft = oneway & 1
-            tf = oneway & 2
+            ft = bool(oneway in ('ft', ''))
+            tf = bool(oneway in ('tf', ''))
+
             try:
                 length = lengthFunc(gis.importWktGeometry(row['wkt_geometry']))
             except Exception, e:
@@ -85,6 +87,7 @@ class Mode(mode.Mode):
                 
             entry = [length] + [row[a] for a in self.edge_attrs[1:]]
             edges[ix] = entry
+            
             if ft:
                 if not id_node_f in nodes: nodes[id_node_f] = {}
                 nodes[id_node_f][id_node_t] = ix

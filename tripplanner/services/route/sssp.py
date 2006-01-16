@@ -38,7 +38,6 @@ def singleSourceShortestPaths(G, s, d=None,
     W -- the weights of the paths from s to all v in G
 
     """
-    print s, d
     # TODO: use Fibonnaci heap instead of built-in!
     import heapq
 
@@ -92,7 +91,7 @@ def singleSourceShortestPaths(G, s, d=None,
             # Get the weight of the edge running from u to v
             
             try:
-                w_of_e = weightFunction(e_attrs, prev_e_attrs)
+                w_of_e = weightFunction(v, e_attrs, prev_e_attrs)
             except TypeError:
                 w_of_e = e_attrs[0]
 
@@ -139,7 +138,7 @@ def singleSourceShortestPaths(G, s, d=None,
                 open = None
                 break
 
-    print count
+    #print count
     # There is no path from start to d when the weight to d is infinite
     if W[d] == infinity:
         raise SingleSourceShortestPathsNoPathError
