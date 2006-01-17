@@ -639,12 +639,13 @@ if __name__ == '__main__':
     Qs = {'milwaukee': (('3150 lisbon', 'walnut & n 16th '),
                         ('124th and county line, franklin', '3150 lisbon'),
                         ('124th and county line, franklin',
-                         'lon=-87.940407, lat=43.05321')),
+                         'lon=-87.940407, lat=43.05321'),
+                        ('Puetz Rd & 51st St', '841 N Broadway St')),
           'metro': (('4408 se stark', '4803 se kelly'),)}
  
     tm = 'bike'
 
-    for dm in ('metro',):
+    for dm in Qs:
         qs = Qs[dm]
         for q in qs:
             try:
