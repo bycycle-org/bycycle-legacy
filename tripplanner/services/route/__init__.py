@@ -152,10 +152,8 @@ def get(input={}):
             # Split the geocode's segment
             seg = geocode.segment
             num = geocode.address.number
-            fn_seg, nt_seg = seg.splitAtNum(num)
-            fn_seg.ix, nt_seg.ix = eid1, eid2
+            fn_seg, nt_seg = seg.splitAtNum(num, eid1, eid2, id)
             split_segs[eid1], split_segs[eid2] = fn_seg, nt_seg
-            id_node_f, id_node_t = seg.id_node_f, seg.id_node_t
             #
             # Create an intersection at the split
             st = seg.street
@@ -166,6 +164,7 @@ def get(input={}):
             i = intersection.Intersection(data)
             #
             # Update G's nodes
+            id_node_f, id_node_t = seg.id_node_f, seg.id_node_t
             __updateNodes(id_node_f, id, id_node_t, eid1, eid2)
             __updateNodes(id_node_t, id, id_node_f, eid2, eid1)
             #
@@ -219,14 +218,14 @@ def get(input={}):
     ## Get intersections and segments along path
     st = time.time()
     I = mode.getIntersectionsById(V)
-    if I[0] is None: I[0] = fint
-    if I[-1] is None: I[-1] = tint
+    if I[0] is None: I[0] = fint   # When from is in a segment
+    if I[-1] is None: I[-1] = tint # When to is in a segment
     messages.append('Time to fetch ints by ID %s' % (time.time()-st))
 
     st = time.time()
     S = mode.getSegmentsById(E)
-    if S[0] is None: S[0] = split_segs[E[0]]
-    if S[-1] is None: S[-1] = split_segs[E[-1]]
+    if S[0] is None: S[0] = split_segs[E[0]]    # When from is in a segment
+    if S[-1] is None: S[-1] = split_segs[E[-1]] # When to is in a segment
     messages.append('Time to fetch segs by ID %s' % (time.time()-st))
 
 
@@ -307,7 +306,7 @@ def makeDirections(I, S):
         e_frlonlat, e_tolonlat = s.linestring[-2], s.linestring[-1]
         sls = s.linestring
 
-        if toi and s.id_node_f == toi.id:
+        if s.id_node_f == toi.id:
             # Assumption wrong: moving to => fr
             frlonlat, tolonlat = tolonlat, frlonlat
             e_frlonlat, e_tolonlat = e_tolonlat, e_frlonlat
@@ -595,11 +594,14 @@ def _makeDirectionsTable(route):
                              (cmd, turn, on, onto))
 
         if not toward:
-            if i == last: toward = to_str.split(',')[0]
-            else: toward = '?'
+            if i == last:
+                toward = to_str.split(',')[0]
+            else:
+                toward = '?'
         row_i.append(' toward %s -- %smi' % (toward.title(), mi))
 
-	if d['bikemode']: row_i.append(' [%s]' % ', '.join([bm for bm in d['bikemode']]))
+	if d['bikemode']:
+            row_i.append(' [%s]' % ', '.join([bm for bm in d['bikemode']]))
 
         if jogs:
             row_i.append('<br/>%sJogs...' % tab)
@@ -617,6 +619,7 @@ def _makeDirectionsTable(route):
     last_row = d_row  % (row_class, linestring[-1], i, row_class,
                          '<b>End</b> at %s' % to_str)
     d_rows.append(last_row)
+    
     d_table = d_table % ''.join([str(d) for d in d_rows])
     return ''.join((s_table, d_table))
     
@@ -633,40 +636,39 @@ def print_key(key):
 
 
 if __name__ == '__main__':
-    Qs = (('3150 lisbon', 'walnut & n 16th '),
-          ('124th and county line, franklin', '3150 lisbon'),
-          ('124th and county line, franklin', 'lon=-87.940407, lat=43.05321'))
-    dm = 'milwaukee'
+    Qs = {'milwaukee': (('3150 lisbon', 'walnut & n 16th '),
+                        ('124th and county line, franklin', '3150 lisbon'),
+                        ('124th and county line, franklin',
+                         'lon=-87.940407, lat=43.05321')),
+          'metro': (('4408 se stark', '4803 se kelly'),)}
+ 
     tm = 'bike'
 
-    Qs = (('633 n alberta', '4408 se stark'),)
-    dm = 'metro'
-    tm = 'bike'
-
-
-    for q in Qs:
-        try:
-            r = get({'q': q, 'dmode': dm, 'tmode': tm})
-        except MultipleMatchingAddressesError, e:
-            print e.geocodes
-        except Exception, e:
-            raise
-        else:
-            D = r['directions']
-            print r['from']['geocode']
-            print r['to']['geocode']
-            for d in D:
-                print '%s on %s toward %s -- %s mi [%s]' % (d['turn'],
-                                                            d['street'],
-                                                            d['toward'],
-                                                            d['distance']['mi'],
-                                                            d['bikemode'])
-            print
-
-            M = r['messages']
-            for m in M:
-                print m
-
-            print '--------------------------------------------------------------------------------'
+    for dm in ('metro',):
+        qs = Qs[dm]
+        for q in qs:
+            try:
+                r = get({'q': q, 'dmode': dm, 'tmode': tm})
+            except MultipleMatchingAddressesError, e:
+                print e.geocodes
+            except Exception, e:
+                raise
+            else:
+                D = r['directions']
+                print r['from']['geocode']
+                print r['to']['geocode']
+                for d in D:
+                    print '%s on %s toward %s -- %s mi [%s]' % \
+                          (d['turn'],
+                           d['street'],
+                           d['toward'],
+                           d['distance']['mi'],
+                           d['bikemode'])
+                print
+                M = r['messages']
+                for m in M:
+                    print m
+                print '----------------------------------------' \
+                      '----------------------------------------'
             
         

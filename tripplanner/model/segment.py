@@ -72,10 +72,16 @@ class Segment(object):
         return id_node
 
                     
-    def splitAtNum(self, num):
+    def splitAtNum(self, num, fnid=-1, ntid=-2, nid=-1):
         """Split the segment at num. Return two new segments.
 
         The first seg is id_node_f-->num; the second is num-->id_node_f
+
+        @param num The address number to split the segment at
+        @param fnid An optional segment ID for the segment from=>split
+        @param ntid An optional segment ID for the segment split=>to
+        @param nid An optional shared node ID for the split
+        @return s, t The from=>split and split=>to segments
         
         """
         num = int(num)
@@ -141,8 +147,10 @@ class Segment(object):
         # address range
         s.addr_t = num
         t.addr_f = num
+        # fake segment IDs
+        s.ix, t.ix = fnid, ntid
         # fake node ID
-        s.id_node_t, t.id_node_f = -1, -1
+        s.id_node_t, t.id_node_f = nid, nid
         return s, t
 
 
