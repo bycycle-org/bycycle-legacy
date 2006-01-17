@@ -23,17 +23,17 @@ class Mode(milwaukee.Mode):
         spd = edge_attrs[indices["spd"]]
         ix_sn = edge_attrs[indices["ix_streetname"]]
 
-        sec = (length * 3600) / self.mph
+        hours = length / self.mph
 
         if bikemode:
             # Adjust for network
             if   bikemode == 'bl': pass
-            elif bikemode == 'bt': sec *= 1.10
-            elif bikemode == 'br': sec *= 1.30
-            elif bikemode == 'ps': sec *= 1.50
+            elif bikemode == 'bt': hours *= 1.10
+            elif bikemode == 'br': hours *= 1.30
+            elif bikemode == 'ps': hours *= 1.50
         else:
             # Penalize for not being on bike network
-            sec *= 2.00
+            hours *= 2.00
             # Adjust for traffic
             adt_factor = (adt * .001)
             if adt_factor < 1: adt_factor = 1
@@ -42,19 +42,19 @@ class Mode(milwaukee.Mode):
             elif 20 <= cat < 30 or cat == 64: cfcc_factor = 4.00 #ht
             elif 10 <= cat < 20 or cat == 63: cfcc_factor = 1000 #ca
             try:
-                sec *= ((adt_factor + cfcc_factor) / 2.0)
+                hours *= ((adt_factor + cfcc_factor) / 2.0)
             except NameError:
-                sec *= adt_factor
+                hours *= adt_factor
             # Adjust for number of lanes
             lanes_factor = lanes / 2.0
             if lanes_factor < 1: lanes_factor = 1
-            sec *= lanes_factor
+            hours *= lanes_factor
             
-        try:
-            # Penalize edge if it has different street name from previous edge
-            prev_ix_sn = prev_edge_attrs[indices["ix_streetname"]]
-            if ix_sn != prev_ix_sn: sec += 20
-        except TypeError:
-            pass
+            try:
+                # Penalize edge if it has different street name from previous edge
+                prev_ix_sn = prev_edge_attrs[indices["ix_streetname"]]
+                if ix_sn != prev_ix_sn: hours += .0055555555555555
+            except TypeError:
+                pass
         
-        return sec
+        return hours

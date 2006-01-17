@@ -272,7 +272,7 @@ class Mode(object):
             ix_streetnames, cityids = {}, {}
             for row in rows:
                 ix_streetnames[row['ix_streetname']] = 1
-                cityids[row['ix_city_l']], cityids[row['ix_city_l']] = 1, 1
+                cityids[row['ix_city_l']], cityids[row['ix_city_r']] = 1, 1
             street_names = self.getRowsById(self.tables['streetnames'], 
                                             ix_streetnames.keys())
             cities = self.getRowsById(self.tables['cities'], cityids.keys())

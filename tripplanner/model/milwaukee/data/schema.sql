@@ -89,4 +89,3 @@ CREATE TABLE "matrix" (
   "matrix" BLOB NOT NULL
 );
 
-

@@ -10,17 +10,21 @@ def shpToRawSql():
         os.unlink('db.db-journal')
     except OSError, e:
         print e
-    inlayer = 'route_roads84'
+    datasource = 'route_roads84_with_bike_trails'
+    inlayer = 'route_roads84work'
     outdb = 'db.db'
     outtable = 'raw'
     outsrs = '' #'-t_srs WGS84'
     outformat = 'SQLite'
     ds = os.getcwd()
     cmd = 'ogr2ogr %s -f "%s" ' \
-          '-select "TLID,ID_NODE_F,ID_NODE_T,PREFIX,NAME,TYPE,SUFFIX,CFCC,' \
-          'ADDR_FL,ADDR_TL,ADDR_FR,ADDR_TR,CITY_L,CITY_R,ZIP_L,ZIP_R,' \
-          'BIKEMODE,GRADE,LANES,ADT,SPD,ONEWAY" ' \
-          '%s . %s -nln %s'  % (outsrs, outformat, outdb, inlayer, outtable)
+          '-select "TLID,FNODE,TNODE,' \
+          'FRADDL,TOADDL,FRADDR,TOADDR,' \
+          'FEDIRP,FENAME,FETYPE,FEDIRS,' \
+          'CITYL,CITYR,ZIPL,ZIPR,' \
+          'CFCC,Bike_facil,GRADE,LANES,ADT,SPD,one_way" ' \
+          '%s %s %s -nln %s'  % (outsrs, outformat, outdb, datasource,
+                                inlayer, outtable)
     print cmd
     exit_code = os.system(cmd)
     if exit_code:
@@ -39,9 +43,9 @@ def sqlToSql():
         ## Set TEXT NULLs to '' and all TEXT values to lower case
         Q0 = 'UPDATE raw SET %s="" WHERE %s IS NULL'
         Q1 = 'UPDATE raw SET %s=lower(%s)'
-        cols = ('prefix', 'name', 'type', 'suffix', 'city_l', 'city_r',
+        cols = ('fedirp', 'fename', 'fetype', 'fedirs', 'cityl', 'cityr',
                 'id_state_l', 'id_state_r', 'wkt_geometry',
-                'cfcc', 'bikemode', 'grade')
+                'cfcc', 'bike_facil', 'grade')
         for col in cols:
             # TEXT NULL to ''
             __execute(Q0 % (col, col))
@@ -50,29 +54,59 @@ def sqlToSql():
         con.commit()
         # Set INTEGER NULLs to 0
         Q = 'UPDATE raw SET %s=0 WHERE %s IS NULL'
-        cols = ('id_node_f', 'id_node_t',
-                'addr_f', 'addr_t', 'addr_fl', 'addr_tl', 'addr_fr', 'addr_tr',
-                'ix_streetname', 'ix_city_l', 'ix_city_r', 'zip_l', 'zip_r',
-                'tlid', 'lanes', 'adt', 'spd', 'oneway')
+        cols = ('fnode', 'tnode',
+                'addr_f', 'addr_t', 'fraddl', 'toaddl', 'fraddr', 'toaddr',
+                'ix_streetname', 'ix_city_l', 'ix_city_r', 'zipl', 'zipr',
+                'tlid', 'lanes', 'adt', 'spd', 'one_way')
         for col in cols:
             __execute(Q % (col, col))
+        con.commit()
+        # Abbreviate bike modes
+        Qs = ('UPDATE raw SET bike_facil="bt" ' \
+              'WHERE bike_facil="bike trail"',
+              'UPDATE raw SET bike_facil="br" ' \
+              'WHERE bike_facil="bike route"',
+              'UPDATE raw SET bike_facil="bl" ' \
+              'WHERE bike_facil="bike lane"',
+              'UPDATE raw SET bike_facil="ps" ' \
+              'WHERE bike_facil="preferred street"')
+        for Q in Qs:
+            __execute(Q)
+        # Convert fraddl et al to integer type
+        Q = 'SELECT rowid, fraddl, fraddr, toaddl, toaddr, tlid FROM raw'
+        __execute(Q)
+        rows = cur.fetchall()
+        Q = 'UPDATE raw ' \
+            'SET fraddl=%s,fraddr=%s,toaddl=%s,toaddr=%s,tlid="%s" ' \
+            'WHERE rowid=%s'
+        for row in rows:
+            cur.execute(Q % (int(float(row[1])), int(float(row[2])),
+                             int(float(row[3])), int(float(row[4])),
+                             int(float(row[5])),
+                             row[0]))        
         con.commit()
 
     def __unifyAddressRanges():
         Q = 'UPDATE raw ' \
-            'SET addr_%s=(ROUND(addr_%s%s / 10.0) * 10) ' \
-            'WHERE addr_%s%s != 0'
-        for f in ('f', 't'):
+            'SET addr_%s=(ROUND(%sadd%s / 10.0) * 10) ' \
+            'WHERE %sadd%s != 0'
+        for f in (('f', 'fr'), ('t', 'to')):
             for l in ('l', 'r'):
-                __execute(Q % (f, f, l, f, l))
-        Qs = ('UPDATE raw SET addr_f = (addr_f + (addr_fl % 2)) ' \
-              'WHERE addr_fl != 0 AND (addr_f % 2 = 0)',
-              'UPDATE raw SET addr_f = (addr_f + (1 - (addr_fr % 2))) ' \
-              'WHERE addr_fr != 0 AND (addr_f % 2 = 0)',
-              'UPDATE raw SET addr_f = (addr_f + (addr_tl % 2)) ' \
-              'WHERE addr_tl != 0 AND (addr_f % 2 = 0)',
-              'UPDATE raw SET addr_f = (addr_f + (1 - (addr_tr % 2))) ' \
-              'WHERE addr_tr != 0 AND (addr_f % 2 = 0)')
+                __execute(Q % (f[0], f[1], l, f[1], l))
+        # Encode from address
+        #     Ends in 0, left side of segment even
+        #     Ends in 1, left side of segment odd
+        Qs = ('UPDATE raw SET addr_f = (addr_f + (fraddl % 2)) ' \
+              'WHERE fraddl != 0 AND (addr_f % 2 = 0)',
+              
+              'UPDATE raw SET addr_f = (addr_f + (1 - (fraddr % 2))) ' \
+              'WHERE fraddr != 0 AND (addr_f % 2 = 0)',
+              
+              'UPDATE raw SET addr_f = (addr_f + (toaddl % 2)) ' \
+              'WHERE toaddl != 0 AND (addr_f % 2 = 0)',
+
+              'UPDATE raw SET addr_f = (addr_f + (1 - (toaddr % 2))) ' \
+              'WHERE toaddr != 0 AND (addr_f % 2 = 0)')
         for Q in Qs:
             __execute(Q)
         con.commit()
@@ -80,14 +114,14 @@ def sqlToSql():
     def __transferStreetNames():
         """Transfer street names to their own table."""
         Q = 'INSERT INTO streetname (prefix, name, type, suffix) '\
-            'SELECT DISTINCT prefix, name, type, suffix FROM raw'
+            'SELECT DISTINCT fedirp, fename, fetype, fedirs FROM raw'
         __execute(Q)
         con.commit()
 
     def __updateRawStreetNameIds():
         """Set the street name ID of each raw record."""
-        # Get all the distinct street names NEW
-        Q = 'SELECT DISTINCT prefix, name, type, suffix FROM raw'
+        # Get all the distinct street names
+        Q = 'SELECT DISTINCT fedirp, fename, fetype, fedirs FROM raw'
         __execute(Q)
         rows = cur.fetchall()
         # Index each street name ID by its street name
@@ -99,7 +133,7 @@ def sqlToSql():
             stnames[(row[1],row[2],row[3],row[4])] = row[0]
         # Index raw row IDs by their street name ID {ix_streetname=>[row IDs]}
         stid_rawids = {}
-        Q  = 'SELECT rowid, prefix, name, type, suffix FROM raw'
+        Q  = 'SELECT rowid, fedirp, fename, fetype, fedirs FROM raw'
         __execute(Q)
         for row in cur.fetchall():
             stid = stnames[(row[1],row[2],row[3],row[4])]
@@ -122,10 +156,10 @@ def sqlToSql():
     def __transferCityNames():
         """Transfer city names to their own table."""
         Q = 'INSERT INTO city (city) ' \
-            'SELECT DISTINCT city_l FROM raw'
+            'SELECT DISTINCT cityl FROM raw'
         __execute(Q)
         Q = 'INSERT INTO city (city) ' \
-            'SELECT DISTINCT city_r FROM raw WHERE city_r NOT IN ' \
+            'SELECT DISTINCT cityr FROM raw WHERE cityr NOT IN ' \
             '(SELECT city FROM city)'
         __execute(Q)
         con.commit()
@@ -134,7 +168,7 @@ def sqlToSql():
         """Set the city ID of each raw record."""
         for side in ('l', 'r'):
             Q0 = 'SELECT DISTINCT ix, city FROM city'
-            Q1 = 'UPDATE raw SET ix_city_%s=%s WHERE city_%s="%s"' % \
+            Q1 = 'UPDATE raw SET ix_city_%s=%s WHERE city%s="%s"' % \
                  (side, '%s', side, '%s')
             # Get all the distinct city names
             __execute(Q0)
@@ -148,7 +182,7 @@ def sqlToSql():
                 __execute(Q1 % (row[0], row[1]))
                 met.update(record_number)
                 record_number+=1
-            print  # newline after the progress meter
+            #print  # newline after the progress meter
         con.commit()
 
     def __updateRawStateIds():
@@ -160,7 +194,7 @@ def sqlToSql():
         con.commit()
 
     def __createNodes():
-        Q1 = 'SELECT id_node_f, id_node_t, wkt_geometry FROM raw'
+        Q1 = 'SELECT fnode, tnode, wkt_geometry FROM raw'
         Q2 = 'INSERT INTO layer_node (id, wkt_geometry) VALUES (%s, "%s")'
         seen_id_nodes = {}
         # Get id_nodes and geometry from raw table
@@ -182,28 +216,22 @@ def sqlToSql():
     def __transferAttrs():
         ## Transfer core attributes to street table
         Q = 'INSERT INTO layer_street ' \
-            'SELECT rowid, wkt_geometry, id_node_f, id_node_t, ' \
+            'SELECT rowid, wkt_geometry, fnode, tnode, ' \
             'addr_f, addr_t, ix_streetname, ix_city_l, ix_city_r, ' \
-            'id_state_l, id_state_r, zip_l, zip_r ' \
+            'id_state_l, id_state_r, zipl, zipr ' \
             'FROM raw'
         __execute(Q)
         ## Transfer extra attributes to attributes table (attrs)
-        # Abbreviate bike modes first
-        Qs = ('UPDATE attr_street SET bikemode="bt" ' \
-              'WHERE bikemode="bike trail"',
-              'UPDATE attr_street SET bikemode="br" ' \
-              'WHERE bikemode="bike route"',
-              'UPDATE attr_street SET bikemode="bl" ' \
-              'WHERE bikemode="bike lane"',
-              'UPDATE attr_street SET bikemode="ps" ' \
-              'WHERE bikemode="preferred street"')
-        for Q in Qs:
-            __execute(Q)
         Q = 'INSERT INTO attr_street ' \
-            'SELECT NULL,tlid,oneway,cfcc,bikemode,grade,lanes,adt,spd ' \
+            'SELECT rowid,tlid,one_way,cfcc,bike_facil,grade,lanes,adt,spd ' \
             'FROM raw'
         __execute(Q)
         con.commit()
+
+    def __cleanUp():
+        Qs = ('DROP TABLE raw', 'VACUUM')
+        for Q in Qs: 
+            __execute(Q)
 
     def __execute(Q):
         try:
@@ -251,6 +279,9 @@ def sqlToSql():
              
              ('Transferring attributes.',
               __transferAttrs),
+
+             ('Cleaning up.',
+             __cleanUp),
              ]
 
     for p in pairs:
@@ -261,9 +292,6 @@ def sqlToSql():
         apply(func, args)
         timer.stopTiming()
 
-    ## Clean up
-    Q = 'DROP TABLE raw'
-    __execute(Q)
     cur.close()
     con.close()
     timer.stopTiming()
