@@ -1,9 +1,8 @@
 /* User interface */
 
-var _services = ['search', 'route', 'feedback'];
+var _services = ['search', 'route'];
 var _service_data = {'search': ['q', 'Search'],
-		     'route': ['fr', 'Find Route'],
-		     'feedback': ['feedback', 'Send']};
+		     'route': ['fr', 'Find Route']};
 var _default_service = 'search';
 var _service = _default_service;
 var _webservice = '';

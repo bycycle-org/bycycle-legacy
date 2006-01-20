@@ -41,8 +41,8 @@ class Address(object):
 
 
     def _initStreetAndPlace(self, inaddr):
-        if type(inaddr) == type(''): words = inaddr.split() 
-        elif type(inaddr) == type([]): words = inaddr
+        if isinstance(inaddr, basestring): words = inaddr.split() 
+        elif isinstance(inaddr, list): words = inaddr
         name = []
         street = Street()
         place = Place()
@@ -54,7 +54,10 @@ class Address(object):
             if word in self.directions_atof:
                 street.prefix = word
             elif word in self.directions_ftoa:
-                street.prefix = self.directions_ftoa[word]
+                if len(words) == 1:
+                    raise IndexError
+                else:
+                    street.prefix = self.directions_ftoa[word]
             if street.prefix:
                 del words[0]
 
@@ -110,7 +113,8 @@ class Address(object):
             if street.type:
                 del words[-1]
 
-        except IndexError: pass
+        except IndexError:
+            pass
 
         # name
         name += words

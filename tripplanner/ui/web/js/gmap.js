@@ -4,16 +4,21 @@
 var map;
 
 // Burnside Bridge and Willamette River
-var default_x = -122.667847;
-var default_y = 45.523127;
+//var default_x = -122.667847;
+//var default_y = 45.523127;
 
 // Milwaukee
-default_x = -87.906418;
-default_y = 43.038783;
+//default_x = -87.906418;
+//default_y = 43.038783;
 
 var tl = {'x': -88.069888, 'y': 42.842059};
 var br = {'x': -87.828241, 'y': 43.192647};
 var milwaukee_box = [tl, {'x': br.x, 'y': tl.y}, br, {'x': tl.x, 'y': br.y}, tl];
+
+var tl = {'x': -123.485755, 'y': 44.885219};
+var br = {'x': -121.649618, 'y': 45.814153};
+var metro_box = [tl, {'x': br.x, 'y': tl.y}, br, {'x': tl.x, 'y': br.y}, tl];
+
 
 var default_zoom_level = 3;
 var linestring;
@@ -105,9 +110,11 @@ function _createMap()
   end_icon.image = "images/dd-end.png";
 
   // Draw box and zoom out to full extent
-  var box = getBoxForPoints([tl, br]);
+  var box = getBoxForPoints([metro_box[0], milwaukee_box[2]]);
   centerAndZoomToBox(box);
   drawPolyLine(milwaukee_box);
+  drawPolyLine(metro_box);
+  placeMarkers([getCenterOfBox(getBoxForPoints(metro_box)), getCenterOfBox(getBoxForPoints(milwaukee_box))]);
 }
 
 
@@ -127,26 +134,29 @@ function parsePointsFromXml(xml_str)
 
 function drawPolyLine(points, color, weight, opacity)
 {
-	map.addOverlay(new GPolyline(points, color, weight, opacity));
+  map.addOverlay(new GPolyline(points, color, weight, opacity));
 }
 
 
 function placeMarkers(points, icons)
 {
-	// Put some markers on the map
-	// points -- an array of GPoints
-	// icons -- an array of GIcons (optional)
-	var markers = []
-	for (var i = 0; i < points.length; i++) {
-		if (icons) {
-			var marker = new GMarker(points[i], icons[i]);
-		} else {
-			var marker = new GMarker(points[i]);
-		}
-		markers.push(marker);
-		map.addOverlay(marker);
-	}
-	return markers;
+  // Put some markers on the map
+  // points -- an array of GPoints
+  // icons -- an array of GIcons (optional)
+  var markers = [];
+  for (i in points) {
+    if (icons) 
+      {
+	var marker = new GMarker(points[i], icons[i]);
+      } 
+    else 
+      {
+	var marker = new GMarker(points[i]);
+      }
+    markers.push(marker);
+    map.addOverlay(marker);
+  }
+  return markers;
 }
 
 function doAddr()

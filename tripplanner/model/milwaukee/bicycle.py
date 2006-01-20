@@ -12,9 +12,15 @@ class Mode(milwaukee.Mode):
     def getEdgeWeight(self, v, edge_attrs, prev_edge_attrs):
         """Calculate weight for edge given it & last crossed edge's attrs."""
         indices = self.indices
-        length = edge_attrs[indices["length"]]
+        length = edge_attrs[indices["length"]] / 1000000.0
         cfcc = edge_attrs[indices["cfcc"]]
-        cl, cat, ma, mi = cfcc[0], int(cfcc[1:]), int(cfcc[1]), int(cfcc[2])
+        try:
+            cl, cat, ma, mi = cfcc[0], int(cfcc[1:]), int(cfcc[1]), int(cfcc[2])
+        except (IndexError, TypeError):
+            # Empty CFCC field in DB
+            cl, cat, ma, mi = 'x', 0, 0, 0
+            
+            
         bikemode = edge_attrs[indices["bikemode"]]
 
         grade = edge_attrs[indices["grade"]]
