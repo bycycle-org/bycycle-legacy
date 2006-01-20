@@ -29,6 +29,7 @@ class Mode(mode.Mode):
 
         """
         from byCycle.lib import gis, meter
+        import math
 
         lengthFunc = gis.getLengthOfLineString
         
@@ -46,7 +47,7 @@ class Mode(mode.Mode):
                     try:
                         row[k] = float(val)  # no. float?
                     except ValueError:
-                        row[k] = val.strip() # no. must be a string.
+                        row[k] = str(val.strip()) # no. must be a string.
 
         # Get the from and to node IDs of the edges and add them to their
         # respective attr rows
@@ -81,10 +82,13 @@ class Mode(mode.Mode):
             tf = bool(oneway in ('tf', ''))
 
             try:
-                length = lengthFunc(gis.importWktGeometry(row['wkt_geometry']))
+                length = int(math.floor(lengthFunc(gis.importWktGeometry(row['wkt_geometry'])) * 1000000))
             except Exception, e:
                 length = 0
-                
+
+            row['up_frac'] = int(math.floor(row['up_frac'] * 1000000))
+            row['abs_slp'] = int(math.floor(row['abs_slp'] * 1000000))
+            
             entry = [length] + [row[a] for a in self.edge_attrs[1:]]
             edges[ix] = entry
             

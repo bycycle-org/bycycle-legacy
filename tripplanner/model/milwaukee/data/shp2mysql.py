@@ -10,7 +10,7 @@ def shpToRawSql():
         os.unlink('db.db-journal')
     except OSError, e:
         print e
-    datasource = 'route_roads84_with_bike_trails'
+    datasource = 'route_roads84_without_bike_trails'
     inlayer = 'route_roads84work'
     outdb = 'db.db'
     outtable = 'raw'
@@ -69,7 +69,10 @@ def sqlToSql():
               'UPDATE raw SET bike_facil="bl" ' \
               'WHERE bike_facil="bike lane"',
               'UPDATE raw SET bike_facil="ps" ' \
-              'WHERE bike_facil="preferred street"')
+              'WHERE bike_facil="preferred street"',
+              'UPDATE raw SET cfcc="a71" ' \
+              'WHERE bike_facil="bt"',
+              )
         for Q in Qs:
             __execute(Q)
         # Convert fraddl et al to integer type
@@ -80,10 +83,30 @@ def sqlToSql():
             'SET fraddl=%s,fraddr=%s,toaddl=%s,toaddr=%s,tlid="%s" ' \
             'WHERE rowid=%s'
         for row in rows:
-            cur.execute(Q % (int(float(row[1])), int(float(row[2])),
-                             int(float(row[3])), int(float(row[4])),
-                             int(float(row[5])),
-                             row[0]))        
+            __execute(Q % (int(float(row[1])), int(float(row[2])),
+                           int(float(row[3])), int(float(row[4])),
+                           int(float(row[5])),
+                           row[0]))
+        # Fix broken geometry
+        Q = 'SELECT rowid, wkt_geometry FROM raw ' \
+            'WHERE wkt_geometry NOT LIKE "linestring (%)"'
+        __execute(Q)
+        rows = cur.fetchall()
+        for row in rows:
+            id = row[0]
+            geom = row[1]
+            if 'empty' in geom:
+                print 'Found empty street geometry'
+                __execute('UPDATE raw SET wkt_geometry="linestring (0 0,1 1)"' \
+                          'WHERE rowid=%s' % id)
+            else:
+                geom = geom.replace('multilinestring', '')
+                geom = geom.replace('(', '')
+                geom = geom.replace(')', '')
+                geom = geom.strip()
+                geom = 'linestring (%s)' % geom
+                __execute('UPDATE raw SET wkt_geometry="%s"' \
+                          'WHERE rowid=%s' % (geom, id))                
         con.commit()
 
     def __unifyAddressRanges():
@@ -208,8 +231,11 @@ def sqlToSql():
                 if id_node not in seen_id_nodes:
                     seen_id_nodes[id_node] = 1
                     if not points:
-                        points = linestring.split(' ', 1)[1][1:-1].split(',')
-                    __execute(Q2 % (id_node, ('POINT (%s)' % points[ix])))
+                        # '(x y,x y)'
+                        points = linestring.split(' ', 1)[1].strip() 
+                        # ['x y', 'x y']
+                        points = [w.strip() for w in points[1:-1].strip().split(',')]
+                    __execute(Q2 % (id_node, ('point (%s)' % points[ix])))
                 ix = -1
         con.commit()
 

@@ -9,7 +9,38 @@
 	<!--[if IE]>
 	<link rel="stylesheet" href="css/base_ie.css" type="text/css"/>
 	<![endif]-->
-	
+
+	<script>
+	  <!--
+	  function getWindowHeight() 
+	  {
+	  if (window.self && self.innerHeight) 
+	  {
+	  return self.innerHeight;
+	  }
+	  if (document.documentElement && document.documentElement.clientHeight) 
+	  {
+	  return document.documentElement.clientHeight;
+	  }
+	  return 0;
+	  }
+	  
+	  function resizeMap() 
+	  {
+	  var offset = 0;
+	  for (var elem = _el('map'); elem != null; elem = elem.offsetParent) 
+	  {
+	  offset += elem.offsetTop;
+	  }
+	  var height = getWindowHeight() - offset - 50;
+	  if (height >= 0) 
+	  {
+	  _el('map').style.height = height + 'px';
+	  _el('result').style.height = height + 'px';
+	  }
+	  }
+	  //-->
+	</script>	
 	<script src="js/util.js" type="text/javascript"></script>
 	<script src="js/ajax.js" type="text/javascript"></script>
 	<script src="js/ui.js" type="text/javascript"></script>
@@ -17,34 +48,22 @@
 	<script src="js/ginit.js" type="text/javascript"></script>
   </head>
 
-  <body>
-  <table id="vcenter"><tr><td id="vcenter_td">
+  <body onresize="resizeMap()">
     <div id="content_pane">
       
       <div id="header">
 	<div id="logo">
-	  <p>
-	    <a href="http://www.bycycle.org/">byCycle</a> 
-	    <a href="http://tripplanner.bycycle.org/">Trip Planner 0.3</a>
-	  </p>
+	  <h1>
+	    <a href="http://www.bycycle.org/" title="byCycle Home Page">byCycle</a> 
+	    <a href="http://www.bycycle.org/tripplanner" title="Information About the Trip Planner">Trip Planner</a>
+	  </h1>
 	</div>
-	
-	<div>
-	  <p>
-	    Welcome to the byCycle Trip Planner.
-	    The Trip Planner is under active development and may have some issues.
-	    If you find a problem, please send us feedback by
-	    <a href="javascript:void(0);" onclick="_selectInput('feedback', true);">using this form</a> or
-	    <a href="mailto:wyatt.lee.baldwin@gmail.com">sending email</a>.
-	  </p>
-	</div>
-	
       </div>
       
       <table id="content">
 	<colgroup>
-	  <col width="310" />
-	    <col width="*" />
+	  <col width="310"/>
+	    <col width="*"/>
 	</colgroup> 
 	<tr>
 	  <td id="top_panel" class="panel" colspan="2">
@@ -55,8 +74,8 @@
 	      <a href="javascript:void(0);" id="route_link" title="Find a Route" 
 		tabindex="20" onclick="_selectInput('route', true);">Find Route</a>
 	      &#160;&#160;&#183;&#160;&#160;			       
-	      <a href="javascript:void(0);" id="feedback_link" title="Send us your comments and suggestions" 
-		tabindex="30" onclick="_selectInput('feedback', true);">Send Feedback</a>
+	      <a href="http://www.bycycle.org/contact.html" id="feedback_link" title="Send us your comments and suggestions" 
+		tabindex="30">Send Feedback</a>
 	      <!--&#160;&#160;&#183;&#160;&#160;
 	      <a href="help.html" title="Help!">Help</a>
 	      &#160;&#160;&#183;&#160;&#160;
@@ -85,7 +104,7 @@
 		      From
 		      <a href="javascript:void(0);" tabindex="60" 
 			title="Center the map on the point you want and then click here" 
-			onclick="_setElVToMapLonLat('fr');">Use center of map</a>								
+			onclick="_setElVToMapLonLat('fr');">Use center of map</a>
 		    </td>
 		    <td></td>
 		    <td>
@@ -97,7 +116,7 @@
 		  </tr>
 		  <tr>
 		    <td>
-		      <textarea id="fr" name="fr" class="input_field" rows="2" cols="40" tabindex="80"></textarea>								
+		      <textarea id="fr" name="fr" class="input_field" rows="2" cols="40" tabindex="80"></textarea>
 		    </td>
 		    <td id="swapfrto">
 		      <a href="javascript:void(0);" 
@@ -109,21 +128,6 @@
 		    </td>
 		    <td>
 		      <textarea id="to" name="to" class="input_field" rows="2" cols="40" tabindex="100"></textarea>
-		    </td>
-		  </tr>
-		</table>
-	      </div>
-	      
-	      <div id="feedback_input" style="display:none">
-		<table>
-		  <tr>
-		    <td>
-		      <textarea id="feedback" name="feedback" class="input_field" rows="2" cols="40"></textarea>
-		    </td>
-		    <td style="padding-left:4px;">
-		      Send us any comments, criticisms, or suggestions you may have. 
-		      If you are reporting an error, please be as detailed as possible. 
-		      If you would like us to respond, please include your email address.
 		    </td>
 		  </tr>
 		</table>
@@ -154,14 +158,25 @@
 	
 	<tr>
 	  <td id="left_panel" class="panel">
-	    <div id="result">				
+	    <div id="result">
+	      <p>
+		Welcome to the
+		<a href="http://www.bycycle.org/" title="byCycle Home Page">byCycle</a> 
+		<a href="http://www.bycycle.org/tripplanner" title="Information About the Trip Planner">Trip Planner</a>.
+		The Trip Planner is under active development and may have some issues.
+		If you find a problem, please send us feedback by using the form on 
+		<a href="http://www.bycycle.org/contact.html" title="Contact Us">this page</a> or
+		<a href="mailto:wyatt@bycycle.org">sending email</a>.
+	      </p>
+	      
 	      <noscript>
 		<div>
-		  <i>The <a href="/" title="byCycle Home Page">byCycle</a> 
-		    <a href="http://tripplanner.bycycle.org/" 
-		      title="Information About the Trip Planner">Trip Planner</a> 
+		  <i>
+		    The 
+		    <a href="http://www.bycycle.org/tripplanner" title="Information About the Trip Planner">Trip Planner</a> 
 		    requires JavaScript to be enabled in your browser. Please enable JavaScript and 
-		    <a href="">try again</a>.</i>
+		    <a href="">try again</a>.
+		  </i>
 		</div>
 	      </noscript>
 	    </div>                        
@@ -174,15 +189,20 @@
       </table>
       
       <div id="footer">
-	Copyright &copy; 2004 - 2006
-	<a style="text-decoration: none" href="http://www.bycycle.org" title="byCycle Home Page">byCycle.org</a>
+	Trip Planner 0.3alpha
 	&#183;
-	Version 0.3 alpha
+	Copyright &copy; 2004 - 2006
+	<a style="text-decoration: none" href="http://www.bycycle.org/" title="byCycle Home Page">byCycle.org</a>
 	&#183;
 	Last modified %(last_modified)s
-      </div>
-      
+      </div>  
     </div><!-- Content Pane -->
-  </td></tr></table>
+    
+    <script type="text/javascript">
+      <!--
+      resizeMap();
+      //-->
+    </script>
+    
   </body>
 </html>

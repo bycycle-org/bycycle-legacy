@@ -16,11 +16,11 @@ class Mode(metro.Mode):
 
     def getEdgeWeight(self, v, edge_attrs, prev_edge_attrs):
         """Calculate weight for edge given it & last crossed edge's attrs."""
-        length = edge_attrs[self.indices["length"]]
+        length = edge_attrs[self.indices["length"]] / 1000000.0
         code = edge_attrs[self.indices["code"]]
         bikemode = edge_attrs[self.indices["bikemode"]]
-        slope = edge_attrs[self.indices["abs_slp"]]
-        upfrac = edge_attrs[self.indices["up_frac"]]
+        slope = edge_attrs[self.indices["abs_slp"]] / 1000000.0
+        upfrac = edge_attrs[self.indices["up_frac"]] / 1000000.0
         downfrac = 1 - upfrac
         id_node_f = edge_attrs[self.indices["id_node_f"]]
         ix_streetname = edge_attrs[self.indices["ix_streetname"]]

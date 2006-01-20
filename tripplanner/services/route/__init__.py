@@ -636,16 +636,26 @@ def print_key(key):
 
 
 if __name__ == '__main__':
-    Qs = {'milwaukee': (('3150 lisbon', 'walnut & n 16th '),
-                        ('124th and county line, franklin', '3150 lisbon'),
-                        ('124th and county line, franklin',
-                         'lon=-87.940407, lat=43.05321'),
-                        ('Puetz Rd & 51st St', '841 N Broadway St')),
-          'metro': (('4408 se stark', '4803 se kelly'),)}
- 
+    Qs = {'milwaukee':
+          (('Puetz Rd & 51st St', '841 N Broadway St'),
+           ),
+          'none':
+          (('27th and lisbon', '35th and w north'),
+           ('S 84th Street & Greenfield Ave', 'S 84th street & Lincoln Ave'),
+           ('3150 lisbon', 'walnut & n 16th '),
+           ('124th and county line, franklin', '3150 lisbon'),
+           ('124th and county line, franklin', 'lon=-87.940407, lat=43.05321'),
+           ('lon=-87.973645, lat=43.039615', 'lon=-87.978623, lat=43.036086'),
+           ),
+          'metro':
+          (('-122.645488, 45.509475', 'sw hall & denney'),
+           ('4408 se stark', '4803 se kelly'),
+           ),
+          }
+    
     tm = 'bike'
 
-    for dm in Qs:
+    for dm in ('milwaukee',):
         qs = Qs[dm]
         for q in qs:
             try:

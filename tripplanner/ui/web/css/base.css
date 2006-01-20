@@ -1,231 +1,220 @@
 html, body, table, td, tr {
-	padding: 0; margin: 0;
+  padding: 0; margin: 0;
 }
 
 html, body {
-	height: 100%;
+  overflow: hidden;
+  /*height: 100%;*/
 }
 
 body, td {
-	font-family: verdana, helvetica, arial, sans-serif;
-	font-size: 12px;
-	background-color: white;
-	color: black;
+  font-family: verdana, helvetica, arial, sans-serif;
+  font-size: 12px;
+  background-color: white;
+  color: black;
 }
 
 table {
-	border-collapse: collapse;
+  border-collapse: collapse;
 }
 
 td {
-	vertical-align: top;
+  vertical-align: top;
 }
 
 img {
-	border: 0;
+  border: 0;
 }
 
 h1 {
-	font-size: 20px;
+  font-size: 20px;
 }
 
 h2 {
-	font-size: 16px;
+  font-size: 16px;
 }
 
 h3 {
-	font-size: 14px;
+  font-size: 14px;
 }
 
 h4 {
-	font-size: 12px;
+  font-size: 12px;
 }
 
 a {
-	color: #46d;
+  color: #46d;
 }
 
 a:hover {
-	color: #f08000;
+  color: #f08000;
 }
 
 a.selected {
-	text-decoration: none;
-	color: black;
-}
-
-
-#vcenter {
-	/* Hack of a table for vertical centering of entire page contents */
-	width: 100%;
-	height: 100%;
-}
-
-#vcenter_td {
-	vertical-align: middle;
-	background: #eee;
+  text-decoration: none;
+  color: black;
 }
 
 
 /* Content */
 
 #content_pane {
-	margin: 0 auto;
-	width: 98%;
+  margin: 0 auto;
+  width: 98%;
 }
 
 
 /* Header */
 
 #logo {
-        font-size: 20px;
-        font-weight: bold;
+  font-size: 20px;
+  font-weight: bold;
 }
 
 #logo * {
-        text-decoration: none;
-        color: black;
+  text-decoration: none;
+  color: black;
 }
 
 
 /* Content */
 
 #content {
-	width: 100%;
-	table-layout: fixed;
+  width: 100%;
+  table-layout: fixed;
 }
 
 .panel {
-	padding: 4px;
-	border: 1px solid #888;
+  padding: 4px;
+  border: 1px solid #888;
 }
 
 
 /* Top Panel */
 
 #top_panel {
-    border-bottom: none;
+  border-bottom: none;
 }
 
-   
+
 /* Left Panel */
 
 #left_panel {
-    width: 300px;
-    border-right: none;
+  width: 300px;
+  border-right: none;
 }
 
 #select_input {
-	margin-bottom: 4px;
-	padding: 4px 4px 2px 4px;
-	font-size: 12px;
-	line-height: 12px;
-	background: #eee;
-	border: 1px solid #888;
+  margin-bottom: 4px;
+  padding: 4px 4px 2px 4px;
+  font-size: 12px;
+  line-height: 12px;
+  background: #eee;
+  border: 1px solid #888;
 }
 
 #status {
-	margin-top: 4px;
+  margin-top: 4px;
 }
 
 #select_input a {
-	font-weight: bold;
-	text-decoration: none;
+  font-weight: bold;
+  text-decoration: none;
 }
 
 #input_form {
-	margin: 0;
-	padding: 0;
+  margin: 0;
+  padding: 0;
 }
 
 .input_field {
-	width: 290px;
-	font-size: 12px;
-	height: 30px;
+  width: 290px;
+  font-size: 12px;
+  height: 30px;
 }
 
 #q {
-
+  
 }
 
 
 #swapfrto {
-	width: 20px;
-	text-align: center;
-	vertical-align: middle;
+  width: 20px;
+  text-align: center;
+  vertical-align: middle;
 }
 
 #result {
-	height: 600px;
-    overflow: auto;
+  /*height: 600px;*/
+  overflow: auto;
 }
 
 #feedback {
-	height: 44px;
+  height: 44px;
 }
 
 
 /* Right Panel */
 
 #map {
-	height: 600px;
-	border: 1px solid #888;
+  /*height: 600px;*/
+  border: 1px solid #888;
 }
 
 #loading {
-    padding: 4px;
+  padding: 4px;
 }
 
 
 /* Footer */
 
 #footer {
-	margin-top: 10px;
-	font-size: 12px;
+  margin-top: 10px;
+  font-size: 12px;
 }
 
 
 .disclaimer {
-	font-size: 10px;
-	font-style: italic;
-	color: #444;
+  font-size: 10px;
+  font-style: italic;
+  color: #444;
 }
 
 
 /* Directions Table */
 
 .start {
-	color: green;
+  color: green;
 }
 
 .end {
-	color: red;
+  color: red;
 }
 
 .start h2, .end h2, .total_distance h2 {
-	padding: 0px;
-	margin: 0px;
-	font-size: 14px;
+  padding: 0px;
+  margin: 0px;
+  font-size: 14px;
 }
 
 #summary, #directions {
-	width: 100%;
+  width: 100%;
 }
 
 #summary td, #directions td {
-	border: 1px solid #888;
-	padding: 2px;
+  border: 1px solid #888;
+  padding: 2px;
 }
 
 .error {
-	color: red;
+  color: red;
 }
 .a {
-	background: #fff;
+  background: #fff;
 }
 .b {
-	background: #eee;
+  background: #eee;
 }
 .count {
- 	vertical-align: middle;
+  vertical-align: middle;
 }
