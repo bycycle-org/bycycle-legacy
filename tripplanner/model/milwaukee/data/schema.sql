@@ -28,64 +28,64 @@
 -- Street attributes I assume all streets will have
 CREATE TABLE "layer_street" (
   "ix"            INTEGER PRIMARY KEY AUTOINCREMENT,
---"geometry"      BLOB    NOT NULL,
-  "wkt_geometry"  TEXT    NOT NULL,
-  "id_node_f"     INTEGER NOT NULL,
-  "id_node_t"     INTEGER NOT NULL,
-  "addr_f"        INTEGER NOT NULL,
-  "addr_t"        INTEGER NOT NULL,
-  "ix_streetname" INTEGER NOT NULL,
-  "ix_city_l"     INTEGER NOT NULL,
-  "ix_city_r"     INTEGER NOT NULL,
-  "id_state_l"    INTEGER NOT NULL,
-  "id_state_r"    INTEGER NOT NULL,
-  "zip_l"         INTEGER NOT NULL,
-  "zip_r"         INTEGER NOT NULL
+--"geometry"      BLOB,
+  "wkt_geometry"  TEXT,
+  "node_f_id"     INTEGER,
+  "node_t_id"     INTEGER,
+  "addr_f"        INTEGER,
+  "addr_t"        INTEGER,
+  "streetname_id" INTEGER,
+  "city_l_id"     INTEGER,
+  "city_r_id"     INTEGER,
+  "state_l_id"    INTEGER,
+  "state_r_id"    INTEGER,
+  "zip_l"         INTEGER,
+  "zip_r"         INTEGER
 );
 
 -- Milwaukee street attributes
 CREATE TABLE "attr_street" (
   "ix"           INTEGER PRIMARY KEY AUTOINCREMENT,
-  "id"           INTEGER NOT NULL,  -- TLID
-  "oneway"       INTEGER NOT NULL,
-  "cfcc"         TEXT    NOT NULL,	
-  "bikemode"     TEXT    NOT NULL,
-  "grade"        TEXT    NOT NULL,
-  "lanes"        INTEGER NOT NULL,	
-  "adt"          INTEGER NOT NULL,
-  "spd"          INTEGER NOT NULL
+  "id"           INTEGER,  -- TLID
+  "oneway"       INTEGER,
+  "cfcc"         TEXT,	
+  "bikemode"     TEXT,
+  "grade"        TEXT,
+  "lanes"        INTEGER,	
+  "adt"          INTEGER,
+  "spd"          INTEGER
 );
 
 CREATE TABLE "layer_node" (
   "ix"           INTEGER PRIMARY KEY AUTOINCREMENT,
-  "id"           INTEGER NOT NULL, -- TZID
---"geometry"     BLOB    NOT NULL,
-  "wkt_geometry" TEXT    NOT NULL
+  "id"           INTEGER, -- TZID
+--"geometry"     BLOB,
+  "wkt_geometry" TEXT   
 );
 
 CREATE TABLE "streetname" (
   "ix"     INTEGER PRIMARY KEY AUTOINCREMENT,
-  "prefix" TEXT NOT NULL,
-  "name"   TEXT NOT NULL,
-  "type"   TEXT NOT NULL,
-  "suffix" TEXT NOT NULL,
+  "prefix" TEXT,
+  "name"   TEXT,
+  "type"   TEXT,
+  "suffix" TEXT,
   UNIQUE ("prefix","name","type","suffix")
 );
 
 CREATE TABLE "city" (
   "ix"    INTEGER PRIMARY KEY AUTOINCREMENT,
-  "city"  TEXT UNIQUE NOT NULL
+  "city"  TEXT UNIQUE
 );
 
 CREATE TABLE "state" (
   "ix"    INTEGER PRIMARY KEY AUTOINCREMENT,
-  "id"    TEXT UNIQUE NOT NULL, -- Two-letter state code
-  "state" TEXT UNIQUE NOT NULL
+  "id"    TEXT UNIQUE, -- Two-letter state code
+  "state" TEXT UNIQUE
 );
 
-CREATE TABLE "matrix" (
-  "ix"     INTEGER PRIMARY KEY AUTOINCREMENT,
-  "name"   TEXT UNIQUE NOT NULL,
-  "matrix" BLOB NOT NULL
-);
+--CREATE TABLE "matrix" (
+--  "ix"     INTEGER PRIMARY KEY AUTOINCREMENT,
+--  "name"   TEXT UNIQUE,
+--  "matrix" BLOB
+--);
 

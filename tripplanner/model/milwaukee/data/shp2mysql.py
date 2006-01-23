@@ -1,6 +1,20 @@
+# Milwaukee shapefile import
 import sys, os
 from pysqlite2 import dbapi2 as sqlite
 from byCycle.lib import meter
+
+dbf_fields = ('TLID', 'FNODE', 'TNODE',
+              'FRADDL', 'TOADDL', 'FRADDR', 'TOADDR',
+              'FEDIRP', 'FENAME', 'FETYPE', 'FEDIRS',
+              'CITYL', 'CITYR', 'ZIPL', 'ZIPR',
+              'CFCC', 'Bike_facil', 'GRADE', 'LANES', 'ADT', 'SPD', 'one_way')
+
+layre_fields = ('wkt_geometry', 'fnode', 'tnode',
+                'addr_f', 'addr_t', 'streetname_id', 'city_l_id', 'city_r_id',
+                'state_l_id', 'state_r_id', 'zipl', 'zipr')
+
+attr_fields = ('tlid', 'one_way', 'cfcc', 'bike_facil', 'grade', 'lanes',
+               'adt', 'spd')
 
 
 def shpToRawSql():
@@ -18,13 +32,9 @@ def shpToRawSql():
     outformat = 'SQLite'
     ds = os.getcwd()
     cmd = 'ogr2ogr %s -f "%s" ' \
-          '-select "TLID,FNODE,TNODE,' \
-          'FRADDL,TOADDL,FRADDR,TOADDR,' \
-          'FEDIRP,FENAME,FETYPE,FEDIRS,' \
-          'CITYL,CITYR,ZIPL,ZIPR,' \
-          'CFCC,Bike_facil,GRADE,LANES,ADT,SPD,one_way" ' \
-          '%s %s %s -nln %s'  % (outsrs, outformat, outdb, datasource,
-                                inlayer, outtable)
+          '-select "%s" ' \
+          '%s %s %s -nln %s'  % (outsrs, outformat, ','.join(dbf_fields[0:15]), 
+                                 outdb, datasource, inlayer, outtable)
     print cmd
     exit_code = os.system(cmd)
     if exit_code:
@@ -36,19 +46,19 @@ def sqlToSql():
     def __fixRaw():
         ## Add missing columns
         Q = 'ALTER TABLE raw ADD COLUMN %s'
-        cols = ('addr_f', 'addr_t', 'ix_streetname', 'ix_city_l', 'ix_city_r',
-                'id_state_l', 'id_state_r')
+        cols = ('addr_f', 'addr_t', 'streetname_id', 'city_l_id', 'city_r_id',
+                'state_l_id', 'state_r_id')
         for col in cols:
             __execute(Q % col)
         ## Set TEXT NULLs to '' and all TEXT values to lower case
         Q0 = 'UPDATE raw SET %s="" WHERE %s IS NULL'
         Q1 = 'UPDATE raw SET %s=lower(%s)'
         cols = ('fedirp', 'fename', 'fetype', 'fedirs', 'cityl', 'cityr',
-                'id_state_l', 'id_state_r', 'wkt_geometry',
+                'state_l_id', 'state_r_id', 'wkt_geometry',
                 'cfcc', 'bike_facil', 'grade')
         for col in cols:
             # TEXT NULL to ''
-            __execute(Q0 % (col, col))
+            ###__execute(Q0 % (col, col))
             # TEXT to lower
             __execute(Q1 % (col, col))
         con.commit()
@@ -56,19 +66,19 @@ def sqlToSql():
         Q = 'UPDATE raw SET %s=0 WHERE %s IS NULL'
         cols = ('fnode', 'tnode',
                 'addr_f', 'addr_t', 'fraddl', 'toaddl', 'fraddr', 'toaddr',
-                'ix_streetname', 'ix_city_l', 'ix_city_r', 'zipl', 'zipr',
+                'streetname_id', 'city_l_id', 'city_r_id', 'zipl', 'zipr',
                 'tlid', 'lanes', 'adt', 'spd', 'one_way')
-        for col in cols:
-            __execute(Q % (col, col))
-        con.commit()
+        ###for col in cols:
+        ###    __execute(Q % (col, col))
+        ###con.commit()
         # Abbreviate bike modes
-        Qs = ('UPDATE raw SET bike_facil="bt" ' \
+        Qs = ('UPDATE raw SET bike_facil="t" ' \
               'WHERE bike_facil="bike trail"',
-              'UPDATE raw SET bike_facil="br" ' \
+              'UPDATE raw SET bike_facil="r" ' \
               'WHERE bike_facil="bike route"',
-              'UPDATE raw SET bike_facil="bl" ' \
+              'UPDATE raw SET bike_facil="l" ' \
               'WHERE bike_facil="bike lane"',
-              'UPDATE raw SET bike_facil="ps" ' \
+              'UPDATE raw SET bike_facil="p" ' \
               'WHERE bike_facil="preferred street"',
               'UPDATE raw SET cfcc="a71" ' \
               'WHERE bike_facil="bt"',
@@ -96,7 +106,7 @@ def sqlToSql():
             id = row[0]
             geom = row[1]
             if 'empty' in geom:
-                print 'Found empty street geometry'
+                print 'Found empty street geometry: %s' % geom
                 __execute('UPDATE raw SET wkt_geometry="linestring (0 0,1 1)"' \
                           'WHERE rowid=%s' % id)
             else:
@@ -148,13 +158,13 @@ def sqlToSql():
         __execute(Q)
         rows = cur.fetchall()
         # Index each street name ID by its street name
-        # {(stname)=>ix_streetname}
+        # {(stname)=>streetname_id}
         stnames = {}
-        Q = 'SELECT ix, prefix, name, type, suffix FROM streetname'
+        Q = 'SELECT rowid, prefix, name, type, suffix FROM streetname'
         __execute(Q)
         for row in cur.fetchall():
             stnames[(row[1],row[2],row[3],row[4])] = row[0]
-        # Index raw row IDs by their street name ID {ix_streetname=>[row IDs]}
+        # Index raw row IDs by their street name ID {streetname_id=>[row IDs]}
         stid_rawids = {}
         Q  = 'SELECT rowid, fedirp, fename, fetype, fedirs FROM raw'
         __execute(Q)
@@ -163,7 +173,7 @@ def sqlToSql():
             if stid in stid_rawids: stid_rawids[stid].append(row[0])
             else: stid_rawids[stid] = [row[0]]
         # Iterate over street name IDs and set street name IDs of raw records
-        Q = 'UPDATE raw SET ix_streetname=%s WHERE rowid IN %s'
+        Q = 'UPDATE raw SET streetname_id=%s WHERE rowid IN %s'
         met = meter.Meter()
         met.setNumberOfItems(len(stid_rawids))
         met.startTimer()
@@ -190,8 +200,8 @@ def sqlToSql():
     def __updateRawCityIds():
         """Set the city ID of each raw record."""
         for side in ('l', 'r'):
-            Q0 = 'SELECT DISTINCT ix, city FROM city'
-            Q1 = 'UPDATE raw SET ix_city_%s=%s WHERE city%s="%s"' % \
+            Q0 = 'SELECT DISTINCT rowid, city FROM city'
+            Q1 = 'UPDATE raw SET city_%s_id=%s WHERE city%s="%s"' % \
                  (side, '%s', side, '%s')
             # Get all the distinct city names
             __execute(Q0)
@@ -212,45 +222,47 @@ def sqlToSql():
         """Set the state ID of each raw record."""
         Q = 'INSERT INTO state VALUES (NULL, "wi", "wisconsin")'
         __execute(Q)
-        Q = 'UPDATE raw SET id_state_l="wi", id_state_r="wi"'
+        Q = 'UPDATE raw SET state_l_id="wi", state_r_id="wi"'
         __execute(Q)
         con.commit()
 
     def __createNodes():
         Q1 = 'SELECT fnode, tnode, wkt_geometry FROM raw'
         Q2 = 'INSERT INTO layer_node (id, wkt_geometry) VALUES (%s, "%s")'
-        seen_id_nodes = {}
-        # Get id_nodes and geometry from raw table
+        seen_node_ids = {}
+        # Get node_ids and geometry from raw table
         __execute(Q1)
         # Insert node IDs into layer_node, skipping the ones we've already seen
         for row in cur.fetchall():
             ix = 0
-            id_node_f, id_node_t = row[0], row[1]
+            node_f_id, node_t_id = row[0], row[1]
             linestring, points = row[2], None
-            for id_node in (id_node_f, id_node_t):
-                if id_node not in seen_id_nodes:
-                    seen_id_nodes[id_node] = 1
+            for node_id in (node_f_id, node_t_id):
+                if node_id not in seen_node_ids:
+                    seen_node_ids[node_id] = 1
                     if not points:
                         # '(x y,x y)'
                         points = linestring.split(' ', 1)[1].strip() 
                         # ['x y', 'x y']
-                        points = [w.strip() for w in points[1:-1].strip().split(',')]
-                    __execute(Q2 % (id_node, ('point (%s)' % points[ix])))
+                        points = [w.strip()
+                                  for w
+                                  in points[1:-1].strip().split(',')]
+                    __execute(Q2 % (node_id, ('point (%s)' % points[ix])))
                 ix = -1
         con.commit()
 
     def __transferAttrs():
         ## Transfer core attributes to street table
         Q = 'INSERT INTO layer_street ' \
-            'SELECT rowid, wkt_geometry, fnode, tnode, ' \
-            'addr_f, addr_t, ix_streetname, ix_city_l, ix_city_r, ' \
-            'id_state_l, id_state_r, zipl, zipr ' \
-            'FROM raw'
+            'SELECT rowid, %s ' \
+            'FROM raw' % \
+            (','.join(layer_fields))
         __execute(Q)
         ## Transfer extra attributes to attributes table (attrs)
         Q = 'INSERT INTO attr_street ' \
-            'SELECT rowid,tlid,one_way,cfcc,bike_facil,grade,lanes,adt,spd ' \
-            'FROM raw'
+            'SELECT rowid, %s ' \
+            'FROM raw' % \
+            (','.join(attr_fields))
         __execute(Q)
         con.commit()
 

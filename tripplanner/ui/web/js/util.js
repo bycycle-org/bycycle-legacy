@@ -46,7 +46,6 @@ function _elStyle(id, style_name, ie_style_name)
     {
       return document.defaultView.getComputedStyle(el, '').getPropertyValue(style_name);
     }
-  alert('poop');
   return '';
 }
 
@@ -93,13 +92,16 @@ function _swapElV(id_a, id_b)
  */
 function _cleanString(the_string, keep_newlines)
 {
-  if (!the_string) return '';
+  if (!the_string) 
+    return '';
   // Remove leading and trailing whitespace
   the_string = the_string.replace(/^\s+|\s+$/g, '');
   // Reduce internal whitespace
   if (keep_newlines)
     {
-      the_string = the_string.replace(/[ \f\t\u00A0\u2028\u2029]+/, ' ');
+
+  //the_string = the_string.replace(/[ \f\t\u00A0\u2028\u2029]+/, ' ');
+      the_string = the_string.replace(/[^\n^\r\s]+/, ' ');
       the_string = the_string.replace(/\n+/g, '\n');
       the_string = the_string.replace(/\r+/g, '\r');
       the_string = the_string.replace(/(?:\r\n)+/g, '\r\n');
