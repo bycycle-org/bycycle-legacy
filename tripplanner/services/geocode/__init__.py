@@ -80,6 +80,7 @@ if __name__ == "__main__":
     import time
     A = (#' ',
          # Milwaukee
+        '37800 S Hwy 213 Hwy, Clackamas, OR 97362',
          '0 w hayes ave',
          'lon=-87.940407, lat=43.05321',
          'lon=-87.931137, lat=43.101234',
@@ -117,7 +118,7 @@ if __name__ == "__main__":
          )
 
     i = 1
-    I = {'q': None, 'dmode': 'milwaukee'}
+    I = {'q': None, 'dmode': 'metro'}
     for a in A:
         I['q'] = a
         st = time.time()

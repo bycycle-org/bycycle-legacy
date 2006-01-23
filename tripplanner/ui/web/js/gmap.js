@@ -28,8 +28,13 @@ var center_point;
 // Start and end markers for routes
 var base_icon;
 var start_icon;
-var end_icon
+var end_icon;
 
+var center_marker_html = '<div style="width:225px; text-align:center;"><a href="javascript:void(0);" onclick="_setElVToMapLonLat(\'q\'); _find(\'search\');">Find address of closest intersection</a></div>';
+
+var region_markers;
+var milwaukee_line;
+var metro_line;
 
 function gmap__init__()
 {
@@ -37,10 +42,10 @@ function gmap__init__()
 		_setIH("map", '<div id="loading">Loading<blink>...</blink></div>');
 		if (_noActiveX()) {
 			_setIH("map",
-			       '<p>ActiveX is not enabled in your browser. \
-                                If your browser is Internet Explorer, \
+				 '<p>ActiveX is not enabled in your browser. \
+                                If your browser is Internet Explorer,	\
                                 you must have ActiveX enabled to use this application.</p>');
-		} else {
+} else {
 			_createMap();
 		}
 		_setElStyle('loading', 'display', 'none');
@@ -58,10 +63,6 @@ function gmap__init__()
 		       <li><a href="http://www.mozilla.org/products/mozilla1.x/">Mozilla</a> 1.4+ (Windows, Mac, Linux)</li>\
 		       <li><a href="http://www.opera.com/download/">Opera</a> 7.5+ (Windows, Mac, Linux)</li>\
 		       </ul>\
-		       </p>\
-		       <p style="margin:20px;">\
-		       We recommend that it not be Internet Explorer.\
-		       <br/>\
 		       </p>');
 	}
 }
@@ -78,7 +79,7 @@ function _createMap()
   icon.image = "images/crosshair4.gif";
   icon.iconSize = new GSize(41, 41);
   icon.iconAnchor = new GPoint(21, 21);
-  
+
   GEvent.addListener(map, "moveend", function() {
 		       if (center_marker) { map.removeOverlay(center_marker); }
 		       center_point = map.getCenterLatLng();
@@ -87,12 +88,8 @@ function _createMap()
 		       center_marker = placeMarkers([center_point], [icon])[0];
 		       // TODO: Figure out how to register this listener just once
 		       GEvent.addListener(center_marker, "click", function() {
-					    var html = '<div style="width: 200px;">' + center_point.x + ', ' + center_point.y + '<br/>' +
-					      '    <a href="javascript:void(0);" ' +
-					      '       onclick="_setElVToMapLonLat(\'q\'); _find(\'search\');">' +
-					      '       Find address of closest intersection</a>' + 
-					      '</div>';
-					    map.openInfoWindowHtml(center_point, html);
+					    map.openInfoWindowHtml(center_point, 
+								   center_marker_html);
 					  });
 		       //if (network_visible) showBikeThereNetwork()
 		     });					   
@@ -112,9 +109,10 @@ function _createMap()
   // Draw box and zoom out to full extent
   var box = getBoxForPoints([metro_box[0], milwaukee_box[2]]);
   centerAndZoomToBox(box);
-  drawPolyLine(milwaukee_box);
-  drawPolyLine(metro_box);
-  placeMarkers([getCenterOfBox(getBoxForPoints(metro_box)), getCenterOfBox(getBoxForPoints(milwaukee_box))]);
+  milwaukee_line = drawPolyLine(milwaukee_box);
+  metro_line = drawPolyLine(metro_box);
+  region_markers = placeMarkers([getCenterOfBox(getBoxForPoints(metro_box)), 
+				 getCenterOfBox(getBoxForPoints(milwaukee_box))]);
 }
 
 
@@ -134,7 +132,9 @@ function parsePointsFromXml(xml_str)
 
 function drawPolyLine(points, color, weight, opacity)
 {
-  map.addOverlay(new GPolyline(points, color, weight, opacity));
+  var line = new GPolyline(points, color, weight, opacity);
+  map.addOverlay(line);
+  return line;
 }
 
 
@@ -144,18 +144,25 @@ function placeMarkers(points, icons)
   // points -- an array of GPoints
   // icons -- an array of GIcons (optional)
   var markers = [];
-  for (i in points) {
-    if (icons) 
-      {
-	var marker = new GMarker(points[i], icons[i]);
-      } 
-    else 
-      {
-	var marker = new GMarker(points[i]);
-      }
-    markers.push(marker);
-    map.addOverlay(marker);
-  }
+  var len = points.length;
+  if (icons) 
+    {
+      for (var i = 0; i < len; ++i) 
+	{
+	  var marker = new GMarker(points[i], icons[i]);
+	  markers.push(marker);
+	  map.addOverlay(marker);
+	}
+    }
+  else 
+    {
+      for (var i = 0; i < len; ++i) 
+	{
+	  var marker = new GMarker(points[i]);
+	  markers.push(marker);
+	  map.addOverlay(marker);
+	}
+    }
   return markers;
 }
 

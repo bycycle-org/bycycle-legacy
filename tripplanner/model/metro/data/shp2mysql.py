@@ -1,6 +1,36 @@
+# Metro shapefile import
 import sys, os
 from pysqlite2 import dbapi2 as sqlite
 from byCycle.lib import meter
+
+
+def shpToRawSql():
+    timer.startTiming('Converting shapefile to monolithic SQL table.')
+    try:
+        os.unlink('db.db')
+        os.unlink('db.db-journal')
+    except OSError, e:
+        print e
+    datasource = '20061219'
+    inlayer = 'new1'
+    outdb = 'db.db'
+    outtable = 'raw'
+    outsrs = '' '-t_srs WGS84'
+    outformat = 'SQLite'
+    ds = os.getcwd()
+    cmd = 'ogr2ogr %s -f "%s" ' \
+          '-select "LOCALID,FNODE,TNODE,' \
+          'LEFTADD1,LEFTADD2,RGTADD1,RGTADD2,' \
+          'FDPRE,FNAME,FTYPE,FDSUF,' \
+          'LCITY,RCITY,ZIPCOLEF,ZIPRGT,' \
+          'CFCC,BIKEMODE,GRADE,LANES,ADT,SPD,ONE_WAY" ' \
+          '%s %s %s -nln %s'  % (outsrs, outformat, outdb, datasource,
+                                inlayer, outtable)
+    print cmd
+    exit_code = os.system(cmd)
+    if exit_code:
+        sys.exit()
+    timer.stopTiming()
 
 
 def shpToRawSql():

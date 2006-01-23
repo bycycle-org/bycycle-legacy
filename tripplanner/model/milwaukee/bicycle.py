@@ -33,10 +33,10 @@ class Mode(milwaukee.Mode):
 
         if bikemode:
             # Adjust for network
-            if   bikemode == 'bl': pass
-            elif bikemode == 'bt': hours *= 1.10
-            elif bikemode == 'br': hours *= 1.30
-            elif bikemode == 'ps': hours *= 1.50
+            if   bikemode == 'l': pass
+            elif bikemode == 't': hours *= 1.10
+            elif bikemode == 'r': hours *= 1.30
+            elif bikemode == 'p': hours *= 1.50
         else:
             # Penalize for not being on bike network
             hours *= 2.00

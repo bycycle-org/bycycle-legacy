@@ -7,11 +7,11 @@ var _default_service = 'search';
 var _service = _default_service;
 var _webservice = '';
 
-var x = '\
-    <b>Welcome to the <a href="/" title="byCycle Home Page">byCycle</a> \
-    <a href="http://tripplanner.bycycle.org/" title="Information About the Trip Planner">Trip Planner</a>.</b>\
+var disclaimer = '\
     <div class="disclaimer">\
-        No warranty of any kind, either expressed or implied, is given in regard to any route directions or other information presented here. User assumes all risk of use.\
+        No warranty of any kind, either expressed or implied, \
+        is given in regard to any route directions or other information presented here. \
+        User assumes all risk of use.\
     </div>';
 
 
@@ -79,45 +79,49 @@ function _find(alt_service)
   if (alt_service) service = alt_service;
   else service = _service;
   
-  if (map) map.closeInfoWindow();
+  if (map) 
+    map.closeInfoWindow();
+
   var q = _elV('q');
+  var fr_to;
   var query_str = '';
   
-  // See if search query is for a route
+  // See if search query is for a route (if it has " to " in between 
   if (service == 'search') 
     {
-      var fr_to = null;
-      var tos = [' to ', ' TO ', ' To ', ' tO '];
-      for (var i = 0; i < tos.length; ++i) 
+      var words = _trim(q).split(/\s+to\s+/i);
+      if (words.length > 1) 
 	{
-	  fr_to = q.split(tos[i]);
-	  if (fr_to.length >= 2) break;
+	  service = 'route';
+	  fr_to = [];
+	  for (var i = 0; i < words.length; ++i)
+	    fr_to.push(words[i]);
 	}
     }
-  
-  if (service == 'route' ||
-      (service == 'search' && (fr_to.length >= 2))) {
-    _setResult('Finding route. Please wait...');
-    _webservice = 'route';
-    if (service == 'route') 
-      {
-	var fr_to = null;
-	var fr = _elV('fr');
-	var to = _elV('to');
-	if (fr && to) fr_to = [fr, to];
-      }
-    if (fr_to) 
-      {
-	_setElV('fr', fr_to[0]);
-	_setElV('to', fr_to[1]);
-	for (var i = 0; i < fr_to.length; ++i) 
-	  {
+
+  if (service == 'route')     
+    {
+      _setResult('Finding route. Please wait...');
+      _webservice = 'route';
+      if (!fr_to)
+	{
+	  // Found fr/to in route boxes
+	  var fr = _elV('fr');
+	  var to = _elV('to');
+	  if (fr && to) 
+	    fr_to = [fr, to];
+	}
+      if (fr_to) 
+	{
+	  // Found fr/to in search box ("A to B")
+	  _setElV('fr', fr_to[0]);
+	  _setElV('to', fr_to[1]);
+	  for (var i = 0; i < fr_to.length; ++i) 
 	    fr_to[i] = escape(_cleanString(fr_to[i].replace('"', "'")));
-	  }
-	query_str = 'q=["' + fr_to.join('","') + '"]&dmode=' + _elV('dmode') + '&tmode=bike';
-      }
-    _showInputSection('route');
-  } 
+	  query_str = 'q=["' + fr_to.join('","') + '"]&dmode=' + _elV('dmode') + '&tmode=bike';
+	}
+      _showInputSection('route');
+    } 
   else if (service == 'search') 
     {
       _webservice = 'geocode';
@@ -244,7 +248,11 @@ function _geocodeCallback(status, result_set)
   return {'result_text': result_text, 'error': error};
 }
 	
-	
+var colors = ['#0000ff', '#00ff00', '#ff0000', 
+	      '#00ffff', '#ff00ff', '#ffff00',
+	      '#000000', '#ffffff'];	
+var color_index = 0;
+var colors_len = colors.length;
 function _routeCallback(status, result_set)
 {
   error = false;
@@ -268,7 +276,8 @@ function _routeCallback(status, result_set)
 	  GEvent.addListener( s_mkr, "click", function() { map.showMapBlowup(linestring[0]); } );	           
 	  GEvent.addListener( e_mkr, "click", function() { map.showMapBlowup(linestring[e_ord]); } );			
 	  centerAndZoomToBox(box);
-	  drawPolyLine(linestring);
+	  if (color_index == colors_len) color_index = 0;
+	  drawPolyLine(linestring, colors[color_index++]);
 	}
       break;			 
     case 300: // Multiple matches
@@ -409,7 +418,14 @@ function _setRouteFieldToAddress(id, address)
 
 function _clearMap()
 {  
-  if (map) map.clearOverlays();
+  if (map) 
+    {
+      map.clearOverlays();
+      map.addOverlay(metro_line);
+      map.addOverlay(milwaukee_line);
+      for (var i = 0; i < region_markers.length; ++i)
+	map.addOverlay(region_markers[i]);
+    }
 }
 
 function _reset()

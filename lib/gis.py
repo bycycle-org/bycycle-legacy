@@ -156,9 +156,14 @@ def getInterpolatedXY(linestring, length, distance_from_start):
             else:
                 ps = p - floor_p
                 pe = ceiling_p - p
-                fxy, txy = linestring[floor_p], linestring[ceiling_p]
-                x = fxy.x * pe + txy.x * ps,
-                y = fxy.y * pe + txy.y * ps
+                try:
+                    fxy, txy = linestring[floor_p], linestring[ceiling_p]
+                except IndexError:
+                    xy = linestring[floor_p]
+                    x, y = xy.x, xy.y
+                else:
+                    x = fxy.x * pe + txy.x * ps
+                    y = fxy.y * pe + txy.y * ps
                 
     return Point(x=x, y=y)
 
@@ -208,16 +213,15 @@ class Point(object):
             self.x = float(x)
             self.y = float(y)
         except (ValueError, TypeError):
-            if type(x_y) == type(self):
+            try:
                 # x_y is another point
                 self.x, self.y = x_y.x, x_y.y
-                self.xStr, self.yStr = x_y.xStr, x_y.yStr
-            else:
-                if type(x_y) == type((1,2)):
+            except AttributeError:
+                if isinstance(x_y, tuple):
                     # See if x_y is a 2-tuple (either of floats or string
                     # reprensentations of floats)...
-                    tmp_x_y = str(x_y[0]), str(x_y[1])
-                elif type(x_y) == type("(1,2)"):
+                    tmp_x_y = (x_y[0], x_y[1])
+                elif isinstance(x_y, basestring):
                     # See if x_y is a string that will evaluate as a 2-tuple
                     tmp_x_y = eval(x_y)
                 self.x, self.y = float(tmp_x_y[0]), float(tmp_x_y[1])
@@ -227,8 +231,27 @@ class Point(object):
 
 
 if __name__ == '__main__':
-    l = 'LINESTRING (1 2 3, 2 2 4, 3 2 5)'
+    p = Point((-122.0, 45.0))
+    print p
+
+    p = Point(('-122.0', '45.0'))
+    print p
+
+    p = Point("('-122.0', '45.0')")
+    print p
+
+    q = Point(p)
+    print q
+
+    r = Point(x=-122, y=45)
+    print r
+    
+    r = Point(x='-122', y='45')
+    print r
+
+    
+    l = 'linestring (1 2 3, 2 2 4, 3 2 5)'
     for p in importWktGeometry(l): print p,
     print
-    p = 'POINT (1 2)'
+    p = 'point (1 2)'
     print importWktGeometry(p)
