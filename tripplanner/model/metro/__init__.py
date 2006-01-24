@@ -13,7 +13,7 @@ class Mode(mode.Mode):
         # with it in an ordered sequence. This index gives us a way to access
         # the attributes by name while keeping the size of the matrix smaller.
         attrs = ('length', 'code', 'bikemode', 'up_frac', 'abs_slp',
-                 'ix_streetname', 'id_node_f')
+                 'streetname_id', 'node_f_id')
         self.edge_attrs = attrs
         self.indices = {}
         for i in range(len(attrs)): self.indices[attrs[i]] = i
@@ -51,7 +51,7 @@ class Mode(mode.Mode):
 
         # Get the from and to node IDs of the edges and add them to their
         # respective attr rows
-        Q = 'SELECT wkt_geometry, id_node_f, id_node_t, ix_streetname ' \
+        Q = 'SELECT wkt_geometry, node_f_id, node_t_id, streetname_id ' \
             'FROM %s' % self.tables['edges']
         self.executeDict(Q)
         nrows = self.fetchAllDict()
@@ -74,17 +74,16 @@ class Mode(mode.Mode):
         record_number = 1
         
         for row in rows:
-            ix = row['ix']
-            id_node_f, id_node_t = row['id_node_f'], row['id_node_t']
+            ix = row['id']
+            node_f_id, node_t_id = row['node_f_id'], row['node_t_id']
 
             oneway = row['oneway']
-            ft = bool(oneway in ('ft', ''))
-            tf = bool(oneway in ('tf', ''))
+            both_ways = oneway == ''
+            ft = both_ways or (oneway == 'f')
+            tf = both_ways or (oneway == 't')
 
-            try:
-                length = int(math.floor(lengthFunc(gis.importWktGeometry(row['wkt_geometry'])) * 1000000))
-            except Exception, e:
-                length = 0
+            length = int(math.floor(lengthFunc(gis.importWktGeometry(row['wkt_geometry'])) *
+                                    1000000))
 
             row['up_frac'] = int(math.floor(row['up_frac'] * 1000000))
             row['abs_slp'] = int(math.floor(row['abs_slp'] * 1000000))
@@ -93,11 +92,11 @@ class Mode(mode.Mode):
             edges[ix] = entry
             
             if ft:
-                if not id_node_f in nodes: nodes[id_node_f] = {}
-                nodes[id_node_f][id_node_t] = ix
+                if not node_f_id in nodes: nodes[node_f_id] = {}
+                nodes[node_f_id][node_t_id] = ix
             if tf:
-                if not id_node_t in nodes: nodes[id_node_t] = {}
-                nodes[id_node_t][id_node_f] = ix
+                if not node_t_id in nodes: nodes[node_t_id] = {}
+                nodes[node_t_id][node_f_id] = ix
 
             met.update(record_number)
             record_number+=1

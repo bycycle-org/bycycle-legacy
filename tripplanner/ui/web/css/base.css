@@ -145,8 +145,8 @@ a.selected {
 }
 
 #result {
-  /*height: 600px;*/
   overflow: auto;
+  padding: 0 2px 0 1px;
 }
 
 #feedback {
@@ -157,7 +157,6 @@ a.selected {
 /* Right Panel */
 
 #map {
-  /*height: 600px;*/
   border: 1px solid #888;
 }
 
@@ -195,6 +194,10 @@ a.selected {
   padding: 0px;
   margin: 0px;
   font-size: 14px;
+}
+
+#summary { 
+  margin-bottom: 4px;
 }
 
 #summary, #directions {

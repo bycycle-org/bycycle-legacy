@@ -12,8 +12,8 @@ class Mode(mode.Mode):
         # In other words, each edge in the matrix has attributes associated
         # with it in an ordered sequence. This index gives us a way to access
         # the attributes by name while keeping the size of the matrix smaller.
-        attrs = ('length', 'cfcc', 'bikemode', 'grade', 'lanes', 'adt', 'spd',
-                 'ix_streetname')
+        attrs = ('length', 'cfcc', 'bikemode', 'lanes', 'adt', 'spd',
+                 'streetname_id')
         self.edge_attrs = attrs
         self.indices = {}
         for i in range(len(attrs)): self.indices[attrs[i]] = i
@@ -41,17 +41,18 @@ class Mode(mode.Mode):
         for row in rows:
             for k in row: 
                 val = row[k]
-                try:
-                    row[k] = int(val)             # int?
-                except ValueError:
+                if val is not None:
                     try:
-                        row[k] = float(val)       # no. float?
-                    except ValueError:
-                        row[k] = str(val.strip()) # no. must be a string (or unicode).
+                        row[k] = int(val)             # int?
+                    except (TypeError, ValueError):
+                        try:
+                            row[k] = float(val)       # no. float?
+                        except ValueError:
+                            row[k] = str(val.strip()) # no. must be a string.
 
         # Get the from and to node IDs of the edges and add them to their
         # respective attr rows
-        Q = 'SELECT wkt_geometry, id_node_f, id_node_t, ix_streetname ' \
+        Q = 'SELECT wkt_geometry, node_f_id, node_t_id, streetname_id ' \
             'FROM %s' % self.tables['edges']
         self.executeDict(Q)
         nrows = self.fetchAllDict()
@@ -74,24 +75,26 @@ class Mode(mode.Mode):
         record_number = 1
         
         for row in rows:
-            ix = row['ix']
-            id_node_f, id_node_t = row['id_node_f'], row['id_node_t']
+            id = row['id']
+            node_f_id, node_t_id = row['node_f_id'], row['node_t_id']
             oneway = row['oneway']
             ft = oneway & 1
             tf = oneway & 2
             try:
-                length = int(math.floor(lengthFunc(gis.importWktGeometry(row['wkt_geometry'])) * 1000000))
+                length = int(math.floor(
+                    lengthFunc(
+                    gis.importWktGeometry(row['wkt_geometry'])) * 1000000))
             except Exception, e:
                 length = 0
                 
             entry = [length] + [row[a] for a in self.edge_attrs[1:]]
-            edges[ix] = entry
+            edges[id] = entry
             if ft:
-                if not id_node_f in nodes: nodes[id_node_f] = {}
-                nodes[id_node_f][id_node_t] = ix
+                if not node_f_id in nodes: nodes[node_f_id] = {}
+                nodes[node_f_id][node_t_id] = id
             if tf:
-                if not id_node_t in nodes: nodes[id_node_t] = {}
-                nodes[id_node_t][id_node_f] = ix
+                if not node_t_id in nodes: nodes[node_t_id] = {}
+                nodes[node_t_id][node_f_id] = id
 
             met.update(record_number)
             record_number+=1

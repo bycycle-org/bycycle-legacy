@@ -22,14 +22,14 @@ class Mode(metro.Mode):
         slope = edge_attrs[self.indices["abs_slp"]] / 1000000.0
         upfrac = edge_attrs[self.indices["up_frac"]] / 1000000.0
         downfrac = 1 - upfrac
-        id_node_f = edge_attrs[self.indices["id_node_f"]]
-        ix_streetname = edge_attrs[self.indices["ix_streetname"]]
+        node_f_id = edge_attrs[self.indices["node_f_id"]]
+        streetname_id = edge_attrs[self.indices["streetname_id"]]
 
         ## Get time cost
         up_len = length * upfrac
         down_len = length * (1.0 - upfrac)
 
-        if v != id_node_f: up_len, down_len = down_len, up_len
+        if v != node_f_id: up_len, down_len = down_len, up_len
 
         if not slope:
             up_spd = self.mph_up[0]
@@ -55,10 +55,10 @@ class Mode(metro.Mode):
 
         ## Adjust for 'perceptual time'
         if bikemode:
-            # ...and then penalize it
-            if   bikemode == "mu": hours *= .85
-            elif bikemode == "mm": hours *= .90
-            elif bikemode == "bl":
+            # Adjust bike network street
+            if   bikemode == 't': hours *= .85
+            elif bikemode == 'p': hours *= .90
+            elif bikemode == 'b':
                 # Adjust bike lane for traffic (est. from st. type)
                 if   code in (1500, 1521):     hours *=  .750  #lt
                 elif code == 1450:             hours *= .8750  #mt
@@ -67,27 +67,28 @@ class Mode(metro.Mode):
                 elif 1200 <= code < 1300:      hours *= 4.000  #ca+
                 elif 1100 <= code < 1200:      hours *= 8.000  #ca++
                 else:                          hours *= 1000   #?
-            elif bikemode == "lt": hours *= 1.00
-            elif bikemode == "mt": hours *= 1.17
-            elif bikemode == "ht": hours *= 1.33
-            elif bikemode == "ca": hours *= 2.67
-            elif bikemode in ("xx", "pb"):
-                # Penalize xx based on traffic (est. from st. type)
-                if code in (3200, 3230, 3240, 3250): hours *= .95
-                else:
-                    if code in (1500, 1521):       hours *= 1.50   #lt
-                    elif code == 1450:             hours *= 1.75   #mt
-                    elif code == 1400:             hours *= 2.00   #ht
-                    elif code == 1300:             hours *= 4.00   #ca
-                    elif 1200 <= code < 1300:      hours *= 8.00   #ca+
-                    elif 1100 <= code < 1200:      hours *= 16.00  #ca++
-                    else:                          hours *= 1000   #?
-            elif bikemode in ("pm", "up"): hours *= 1000
+            elif bikemode == 'l': hours *= 1.00
+            elif bikemode == 'm': hours *= 1.17
+            elif bikemode == 'h': hours *= 1.33
+            elif bikemode == 'c': hours *= 2.67
+            elif bikemode == 'x': hours *= 1000
+        else:
+            # Adjust normal (i.e., no bikemode) street based on traffic
+            # (est. from st. type)
+            if code in (3200, 3230, 3240, 3250): hours *= .95
+            else:
+                if code in (1500, 1521):       hours *= 1.50   #lt
+                elif code == 1450:             hours *= 1.75   #mt
+                elif code == 1400:             hours *= 2.00   #ht
+                elif code == 1300:             hours *= 4.00   #ca
+                elif 1200 <= code < 1300:      hours *= 8.00   #ca+
+                elif 1100 <= code < 1200:      hours *= 16.00  #ca++
+                else:                          hours *= 1000   #?
 
         try:
             # Penalize edge if it has different street name from previous edge            
-            prev_ix_sn = prev_edge_attrs[self.indices["ix_streetname"]]
-            if ix_streetname != prev_ix_sn: hours += .005555555555555
+            prev_ix_sn = prev_edge_attrs[self.indices['streetname_id']]
+            if streetname_id != prev_ix_sn: hours += .005555555555555
         except TypeError:
             pass        
 
