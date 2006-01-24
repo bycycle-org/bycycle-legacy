@@ -88,11 +88,11 @@ class Address(object):
 
             # city
             word = words[-1]
-            Q = 'SELECT ix FROM city WHERE city="%s"' % (word)
+            Q = 'SELECT id FROM city WHERE city="%s"' % (word)
             self.mode.execute(Q)
             row = self.mode.fetchRow()
             if row:
-                place.ix_city = row[0]
+                place.city_id = row[0]
                 place.city = word
                 del words[-1]
 
@@ -148,7 +148,7 @@ class AddressAddress(Address):
         
     def __str__(self):        
         result = joinAttrs([self.number, str(self.street)])
-        result = joinAttrs([result, str(self.place)], ', ')
+        result = joinAttrs([result, str(self.place)], '\n')
         return result
     
 
@@ -187,14 +187,7 @@ class IntersectionAddress(Address):
     place = property(place)
 
     def __str__(self):
-        if self.place1 == self.place2:
-            result = joinAttrs((self.street1, self.street2), ' & ')
-            result = joinAttrs((result, self.place1), ', ')
-        else:
-            result1 = joinAttrs((self.street1, self.place1), ', ')
-            result2 = joinAttrs((self.street2, self.place2), ', ')
-            result = joinAttrs((result1, result2), ' & ')            
-        return result
+        return joinAttrs((self.street, self.place), '\n')
 
 
 class PointAddress(IntersectionAddress):
@@ -241,7 +234,7 @@ class Street(object):
         """
         cur = mode.cursor
         Q = 'SELECT %s FROM %s WHERE %s'
-        C = ('ix', 'prefix', 'name', 'type', 'suffix')
+        C = ('id', 'prefix', 'name', 'type', 'suffix')
         A = (self.prefix, self.name, self.type, self.suffix)
         where = ['%s="%s"' % (c, a.lower()) for (c, a) in zip(C[1:], A) if a]
         where = ' AND '.join(where)
@@ -256,18 +249,18 @@ class Street(object):
 
     def __str__(self):
         attrs = [self.prefix.upper(),
-                 self.__name(),
+                 self._name(),
                  self.type.title(),
                  self.suffix.upper()]
         return joinAttrs(attrs)
 
     def __repr__(self):
         return repr({'prefix': str(self.prefix.upper()),
-                     'name': str(self.__name()),
+                     'name': str(self._name()),
                      'type': str(self.type.title()),
                      'suffix': str(self.suffix.upper())})        
 
-    def __name(self):
+    def _name(self):
         """If name is like 3rd return lower name, else return title name."""
         name = self.name
         try: int(name[0])
@@ -279,38 +272,38 @@ class Street(object):
 
 class Place(object):
     def __init__(self,
-                 ix_city=0, city='',
-                 id_county=0, county='',
-                 id_state='', state='',
+                 city_id=0, city='',
+                 county_id=0, county='',
+                 state_id='', state='',
                  zipcode=0):
-        self.ix_city = ix_city
+        self.city_id = city_id
         self.city = city
-        self.id_county = id_county
+        self.county_id = county_id
         self.county = county
-        self.id_state = id_state
+        self.state_id = state_id
         self.state = state
         self.zip = zipcode
 
     def __str__(self):
         result = joinAttrs((self.city.title(),
                             self.county.title(),
-                            self.id_state.upper()),
+                            self.state_id.upper()),
                            ', ')
         return joinAttrs([result, str(self.zip)])
 
     def __repr__(self):
         return repr({'city': str(self.city.title()),
                      'county': str(self.county.title()),
-                     'id_state': str(self.id_state.upper()),
+                     'state_id': str(self.state_id.upper()),
                      'zipcode': str(self.zip)})
         
     def __eq__(self, other):
         if \
-           self.ix_city == other.ix_city and \
+           self.city_id == other.city_id and \
            self.city == other.city and \
-           self.id_county == other.id_county and \
+           self.county_id == other.county_id and \
            self.county == other.county and \
-           self.id_state == other.id_state and \
+           self.state_id == other.state_id and \
            self.state == other.state and \
            self.zip == other.zip:
             return True
@@ -323,9 +316,9 @@ class Place(object):
 
     def __nonzero__(self):
         if \
-           self.ix_city or self.city or \
-           self.id_county or self.county or \
-           self.id_state or self.state or \
+           self.city_id or self.city or \
+           self.county_id or self.county or \
+           self.state_id or self.state or \
            self.zip:
             return True
         else:

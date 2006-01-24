@@ -13,6 +13,7 @@ class Mode(milwaukee.Mode):
         """Calculate weight for edge given it & last crossed edge's attrs."""
         indices = self.indices
         length = edge_attrs[indices["length"]] / 1000000.0
+
         cfcc = edge_attrs[indices["cfcc"]]
         try:
             cl, cat, ma, mi = cfcc[0], int(cfcc[1:]), int(cfcc[1]), int(cfcc[2])
@@ -20,14 +21,11 @@ class Mode(milwaukee.Mode):
             # Empty CFCC field in DB
             cl, cat, ma, mi = 'x', 0, 0, 0
             
-            
         bikemode = edge_attrs[indices["bikemode"]]
-
-        grade = edge_attrs[indices["grade"]]
         lanes = edge_attrs[indices["lanes"]]
         adt = edge_attrs[indices["adt"]]
         spd = edge_attrs[indices["spd"]]
-        ix_sn = edge_attrs[indices["ix_streetname"]]
+        ix_sn = edge_attrs[indices["streetname_id"]]
 
         hours = length / self.mph
 
@@ -58,7 +56,7 @@ class Mode(milwaukee.Mode):
             
             try:
                 # Penalize edge if it has different street name from previous edge
-                prev_ix_sn = prev_edge_attrs[indices["ix_streetname"]]
+                prev_ix_sn = prev_edge_attrs[indices["streetname_id"]]
                 if ix_sn != prev_ix_sn: hours += .0055555555555555
             except TypeError:
                 pass

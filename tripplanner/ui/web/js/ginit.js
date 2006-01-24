@@ -1,20 +1,14 @@
-/* This module initializes the interface. It also defines common functions. */
-
-
-// Switch to indicate whether we're running on localhost
-var local = 1;
-
+/* This module initializes the interface. */
 
 // The base location (domain) of the web interface
-var domain;
-if (local) domain = 'localhost';
-else domain = location.href.split('/')[2];
+var domain = location.href.split('/')[2];
+
+var local = 0 || (domain == 'localhost') || (domain == 'dev.bycycle.org');
 
 var dir = (domain != 'tripplanner.bycycle.org' ? '/tripplanner' : '');
 
 // The URL minus the query string
 var base_url = location.href.split('?')[0];
-
     
 // If we're running locally, load local GMap script 
 // If we're running, load "official" script, but only if the URL has an associated API key
@@ -49,8 +43,10 @@ function getApiKey(base_url)
                  "http://milwaukee.bycycle.org/tripplanner/":
                  "ABQIAAAAd_4WmZlgvQzchd_BQM0MPhS5rHkbI6O9fsgqLPrHNXyriM9eehTzAphcSFDyNgwaQRbWLr_bCkisRg"};
                  
-        if (urls_to_keys_map[base_url]) return urls_to_keys_map[base_url];
-        else return '';
+        if (urls_to_keys_map[base_url]) 
+	  return urls_to_keys_map[base_url];
+        else 
+	  return '';
 }
 
 

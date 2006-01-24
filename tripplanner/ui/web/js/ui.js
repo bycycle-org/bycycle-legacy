@@ -377,7 +377,7 @@ function _makeAddressFromGeocode(geocode, show_lon_lat, separator)
     }
   var zc = parseInt(place.zipcode);
   var city = place.city;
-  var state = place.id_state;
+  var state = place.state_id;
   var address = [full_name, separator, 
 		 city, (city ? ', ' : ''), 
 		 state, (state ? ' ' : ''), 

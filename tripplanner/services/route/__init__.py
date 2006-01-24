@@ -164,12 +164,12 @@ def get(input={}):
             i = intersection.Intersection(data)
             #
             # Update G's nodes
-            id_node_f, id_node_t = seg.id_node_f, seg.id_node_t
-            __updateNodes(id_node_f, id, id_node_t, eid1, eid2)
-            __updateNodes(id_node_t, id, id_node_f, eid2, eid1)
+            node_f_id, node_t_id = seg.node_f_id, seg.node_t_id
+            __updateNodes(node_f_id, id, node_t_id, eid1, eid2)
+            __updateNodes(node_t_id, id, node_f_id, eid2, eid1)
             #
             # Update G's edges
-            eid = seg.ix
+            eid = seg.id
             edges[eid1] = [fn_seg.getWeight()] + list(edges[eid][1:])
             edges[eid2] = [nt_seg.getWeight()] + list(edges[eid][1:])
         return i
@@ -200,13 +200,13 @@ def get(input={}):
     tint = __getIntersectionForGeocode(tcode, -2, -3, -4)
     messages.append('Time to get to intersection: %s' % (time.time() - st))
 
-    id_node_f, id_node_t = fint.id, tint.id
+    node_f_id, node_t_id = fint.id, tint.id
 
     
     ## Try to find a path
     st = time.time()
     try:
-        V, E, W, w = sssp.findPath(G, id_node_f, id_node_t,
+        V, E, W, w = sssp.findPath(G, node_f_id, node_t_id,
                                    weightFunction=mode.getEdgeWeight,
                                    heuristicFunction=None)
     except sssp.SingleSourceShortestPathsNoPathError:
@@ -306,7 +306,7 @@ def makeDirections(I, S):
         e_frlonlat, e_tolonlat = s.linestring[-2], s.linestring[-1]
         sls = s.linestring
 
-        if s.id_node_f == toi.id:
+        if s.node_f_id == toi.id:
             # Assumption wrong: moving to => fr
             frlonlat, tolonlat = tolonlat, frlonlat
             e_frlonlat, e_tolonlat = e_tolonlat, e_frlonlat
@@ -513,10 +513,8 @@ def _makeDirectionsTable(route):
     fr_point = linestring[0]
     to_point = linestring[-1]
 
-    fr_addr = '<br/>'.join([str(a) for a in (fr_addr.street,
-                                             fr_addr.place)])
-    to_addr = '<br/>'.join([str(a) for a in (to_addr.street,
-                                             to_addr.place)])
+    fr_addr = str(fr_addr).replace('\n', '<br/>')
+    to_addr = str(to_addr).replace('\n', '<br/>')
 
     s_table = """
     <table id='summary'>
@@ -598,7 +596,7 @@ def _makeDirectionsTable(route):
                 toward = to_str.split(',')[0]
             else:
                 toward = '?'
-        row_i.append(' toward %s -- %smi' % (toward.title(), mi))
+        row_i.append(' toward %s -- %smi' % (toward, mi))
 
 	if d['bikemode']:
             row_i.append(' [%s]' % ', '.join([bm for bm in d['bikemode']]))
@@ -638,9 +636,7 @@ def print_key(key):
 if __name__ == '__main__':
     Qs = {'milwaukee':
           (('Puetz Rd & 51st St', '841 N Broadway St'),
-           ),
-          'none':
-          (('27th and lisbon', '35th and w north'),
+           ('27th and lisbon', '35th and w north'),
            ('S 84th Street & Greenfield Ave', 'S 84th street & Lincoln Ave'),
            ('3150 lisbon', 'walnut & n 16th '),
            ('124th and county line, franklin', '3150 lisbon'),
@@ -648,14 +644,14 @@ if __name__ == '__main__':
            ('lon=-87.973645, lat=43.039615', 'lon=-87.978623, lat=43.036086'),
            ),
           'metro':
-          (('-122.645488, 45.509475', 'sw hall & denney'),
-           ('4408 se stark', '4803 se kelly'),
+           (('633 n alberta', '44th and se stark'),
+            ('-122.645488, 45.509475', 'sw hall & denney'),
            ),
           }
     
     tm = 'bike'
 
-    for dm in ('milwaukee',):
+    for dm in ('milwaukee', 'metro'):
         qs = Qs[dm]
         for q in qs:
             try:

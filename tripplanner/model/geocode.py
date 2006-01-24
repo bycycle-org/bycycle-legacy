@@ -20,7 +20,7 @@ class AddressGeocode(Geocode):
                   'place': self.address.place,
                   'x': '%.6f' % self.xy.x,
                   'y': '%.6f' % self.xy.y,
-                  'e': self.segment.ix}
+                  'e': self.segment.id}
         return repr(result)
     
 class IntersectionGeocode(Geocode):
@@ -79,17 +79,17 @@ def getAddressGeocodes(inaddr, mode):
     where.append('(%s BETWEEN MIN(addr_f, addr_t) AND MAX(addr_f, addr_t))' % \
                  addr.number)
     where += _getPlaceWhere(place)
-    ix_streetnames = ','.join([str(i) for i in street.getIds(mode)])
-    where.append('ix_streetname IN (%s)' % ix_streetnames)
+    streetname_ids = ','.join([str(i) for i in street.getIds(mode)])
+    where.append('streetname_id IN (%s)' % streetname_ids)
     where = ' AND '.join(where)
 
     # Get segments matching inaddr
-    Q = 'SELECT ix FROM %s WHERE %s' % (mode.tables['edges'], where)
+    Q = 'SELECT id FROM %s WHERE %s' % (mode.tables['edges'], where)
     mode.execute(Q)
     rows = mode.fetchAll()
-    if rows: ixs = [r[0] for r in rows]
+    if rows: ids = [r[0] for r in rows]
     else: return []
-    segs = mode.getSegmentsById(ixs)
+    segs = mode.getSegmentsById(ids)
 
     # Make list of geocodes for segments matching inaddr
     geocodes = []
@@ -98,7 +98,7 @@ def getAddressGeocodes(inaddr, mode):
         attrs = s.getAttrsOnNumSide(addr.number)
         for attr in ('prefix', 'name', 'type', 'suffix'):
             s_addr.street.__dict__[attr] = attrs[attr]
-        for attr in ('city', 'id_state', 'zip'):
+        for attr in ('city', 'state_id', 'zip'):
             s_addr.place.__dict__[attr] = attrs[attr]
         xy = gis.getInterpolatedXY(s.linestring,
                                    max(s.addr_f, s.addr_t) -
@@ -114,15 +114,15 @@ def getIntersectionGeocodes(inaddr, mode):
     addr = address.IntersectionAddress(inaddr, mode)
     street1, street2 = addr.street1, addr.street2
     place1, place2 = addr.place1, addr.place2
-    ix_streetnames_a = ','.join([str(i) for i in street1.getIds(mode)])
-    ix_streetnames_b = ','.join([str(i) for i in street2.getIds(mode)])
+    streetname_ids_a = ','.join([str(i) for i in street1.getIds(mode)])
+    streetname_ids_b = ','.join([str(i) for i in street2.getIds(mode)])
     # Create the WHERE clause
-    Q = 'SELECT ix, id_node_f, id_node_t FROM %s WHERE' % mode.tables['edges']
+    Q = 'SELECT id, node_f_id, node_t_id FROM %s WHERE' % mode.tables['edges']
     first = True
-    for place, ids in ((place1, ix_streetnames_a),
-                       (place2, ix_streetnames_b)):
+    for place, ids in ((place1, streetname_ids_a),
+                       (place2, streetname_ids_b)):
         where = _getPlaceWhere(place)
-        where.append('ix_streetname IN (%s)' % ids)
+        where.append('streetname_id IN (%s)' % ids)
         where = ' AND '.join(where)
         mode.executeDict('%s %s' % (Q, where))
         rows = mode.fetchAllDict()
@@ -133,29 +133,29 @@ def getIntersectionGeocodes(inaddr, mode):
         else:
             rows_b = rows
 
-    # Index all segments by their fr/id_node_ts
+    # Index all segments by their fr/node_t_ids
     ia, ib = {}, {}
     for i, R in ((ia, rows_a), (ib, rows_b)):
         for r in R:
-            ix = r['ix']
-            id_node_f, id_node_t = r['id_node_f'], r['id_node_t']
-            if id_node_f in i: i[id_node_f].append(ix)
-            else: i[id_node_f] = [ix]
-            if id_node_t in i: i[id_node_t].append(ix)
-            else: i[id_node_t] = [ix]
+            id = r['id']
+            node_f_id, node_t_id = r['node_f_id'], r['node_t_id']
+            if node_f_id in i: i[node_f_id].append(id)
+            else: i[node_f_id] = [id]
+            if node_t_id in i: i[node_t_id].append(id)
+            else: i[node_t_id] = [id]
 
     # Get IDs of segs with matching id
-    ixs, pairs = {}, []
-    for ix in ia:
-        if ix in ib:
-            ix_a, ix_b = ia[ix][0], ib[ix][0]
-            ixs[ix_a], ixs[ix_b] = 1, 1
-            pairs.append((ix_a, ix_b))
+    ids, pairs = {}, []
+    for id in ia:
+        if id in ib:
+            id_a, id_b = ia[id][0], ib[id][0]
+            ids[id_a], ids[id_b] = 1, 1
+            pairs.append((id_a, id_b))
 
     # Get all the segs and map them by their IDs
-    S = mode.getSegmentsById(ixs.keys())
+    S = mode.getSegmentsById(ids.keys())
     s_dict = {}
-    for s in S: s_dict[s.ix] = s
+    for s in S: s_dict[s.id] = s
 
     # Get the address and shared node ID of each cross street pair
     addrs = []
@@ -214,30 +214,30 @@ def getPointGeocodes(inaddr, mode):
         else:
             return []
 
-    # Get segment rows that have our min_id as their id_node_f/t
-    Q = 'SELECT ix, ix_streetname ' \
-        'FROM %s WHERE id_node_f=%s OR id_node_t=%s' % \
+    # Get segment rows that have our min_id as their node_f_id/t
+    Q = 'SELECT id, streetname_id ' \
+        'FROM %s WHERE node_f_id=%s OR node_t_id=%s' % \
         (mode.tables['edges'], min_id, min_id)
     mode.executeDict(Q)
     rows = mode.fetchAllDict()
 
     # Index segment rows by their street name IDs
-    st_ixs = {}
+    st_ids = {}
     for row in rows:
-        ix_streetname = row['ix_streetname']
-        if ix_streetname in st_ixs:
-            st_ixs[ix_streetname].append(row['ix'])
+        streetname_id = row['streetname_id']
+        if streetname_id in st_ids:
+            st_ids[streetname_id].append(row['id'])
         else:
-            st_ixs[ix_streetname] = [row['ix']]
+            st_ids[streetname_id] = [row['id']]
 
     i = mode.getIntersectionById(min_id)
 
-    ixs_a = st_ixs.popitem()[1]
-    if st_ixs:
+    ids_a = st_ids.popitem()[1]
+    if st_ids:
         ## Found point at intersection
-        ixs_b = st_ixs.popitem()[1]
+        ids_b = st_ids.popitem()[1]
         # Get segments
-        s, t = mode.getSegmentsById((ixs_a[0], ixs_b[0]))
+        s, t = mode.getSegmentsById((ids_a[0], ids_b[0]))
         # Set address attributes
         _setStreetAndPlaceFromSegment(addr.street1, addr.place1, s)
         _setStreetAndPlaceFromSegment(addr.street2, addr.place2, t)
@@ -246,9 +246,9 @@ def getPointGeocodes(inaddr, mode):
     else:
         ## Found point at dead end
         addr = address.AddressAddress('', mode)
-        s = mode.getSegmentById(ixs_a[0])
+        s = mode.getSegmentById(ids_a[0])
         # Set address number to num at min_nid end of segment
-        if min_id == s.id_node_f:
+        if min_id == s.node_f_id:
             addr.number = s.addr_f
             lon_lat = s.linestring[0]
         else:
@@ -266,18 +266,18 @@ def _setStreetAndPlaceFromSegment(street, place, seg):
     attrs = seg.getAttrsOnSide('left')
     for attr in ('prefix', 'name', 'type', 'suffix'):
         street.__dict__[attr] = attrs[attr]
-    for attr in ('city', 'id_state', 'zip'):
+    for attr in ('city', 'state_id', 'zip'):
         place.__dict__[attr] = attrs[attr]
 
 
 def _getPlaceWhere(place):
     where = []
-    if place.ix_city:
-        cid = place.ix_city
-        where.append('(ix_city_l=%s OR ix_city_r=%s)' % (cid, cid))
-    if place.id_state:
+    if place.city_id:
+        cid = place.city_id
+        where.append('(city_l_id=%s OR city_r_id=%s)' % (cid, cid))
+    if place.state_id:
         sc = place.id_state
-        where.append('(id_state_l="%s" OR id_state_r="%s")' % (sc, sc))
+        where.append('(state_l_id="%s" OR state_r_id="%s")' % (sc, sc))
     if place.zip:
         z = place.zip
         where.append('(zip_l=%s OR zip_r=%s)' % (z, z))    

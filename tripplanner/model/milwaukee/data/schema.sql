@@ -25,11 +25,8 @@
 -- The geometry column will contain a binary geometry representation.
 
 
--- Street attributes I assume all streets will have
 CREATE TABLE "layer_street" (
-  "ix"            INTEGER PRIMARY KEY AUTOINCREMENT,
---"geometry"      BLOB,
-  "wkt_geometry"  TEXT,
+  "id"            INTEGER PRIMARY KEY,
   "node_f_id"     INTEGER,
   "node_t_id"     INTEGER,
   "addr_f"        INTEGER,
@@ -37,34 +34,32 @@ CREATE TABLE "layer_street" (
   "streetname_id" INTEGER,
   "city_l_id"     INTEGER,
   "city_r_id"     INTEGER,
-  "state_l_id"    INTEGER,
-  "state_r_id"    INTEGER,
+  "state_l_id"    TEXT,
+  "state_r_id"    TEXT,
   "zip_l"         INTEGER,
-  "zip_r"         INTEGER
+  "zip_r"         INTEGER,
+  "wkt_geometry"  TEXT
 );
 
 -- Milwaukee street attributes
 CREATE TABLE "attr_street" (
-  "ix"           INTEGER PRIMARY KEY AUTOINCREMENT,
-  "id"           INTEGER,  -- TLID
+  "id"           INTEGER PRIMARY KEY,
   "oneway"       INTEGER,
   "cfcc"         TEXT,	
   "bikemode"     TEXT,
-  "grade"        TEXT,
   "lanes"        INTEGER,	
   "adt"          INTEGER,
   "spd"          INTEGER
 );
 
 CREATE TABLE "layer_node" (
-  "ix"           INTEGER PRIMARY KEY AUTOINCREMENT,
-  "id"           INTEGER, -- TZID
+  "id"           INTEGER  PRIMARY KEY,
 --"geometry"     BLOB,
   "wkt_geometry" TEXT   
 );
 
 CREATE TABLE "streetname" (
-  "ix"     INTEGER PRIMARY KEY AUTOINCREMENT,
+  "id"     INTEGER PRIMARY KEY,
   "prefix" TEXT,
   "name"   TEXT,
   "type"   TEXT,
@@ -73,13 +68,12 @@ CREATE TABLE "streetname" (
 );
 
 CREATE TABLE "city" (
-  "ix"    INTEGER PRIMARY KEY AUTOINCREMENT,
+  "id"    INTEGER PRIMARY KEY,
   "city"  TEXT UNIQUE
 );
 
 CREATE TABLE "state" (
-  "ix"    INTEGER PRIMARY KEY AUTOINCREMENT,
-  "id"    TEXT UNIQUE, -- Two-letter state code
+  "id"    TEXT PRIMARY KEY, -- Two-letter state code
   "state" TEXT UNIQUE
 );
 

@@ -28,7 +28,11 @@ class Mode(object):
         self.data_path = '%stripplanner/model/%s/data/' % \
                          (install_path, self.dmode)
         self.db_path = self.data_path + 'db.db'
-        self.matrix_path = self.data_path + 'matrix.pyc'
+        # For ramdisk
+        #self.matrix_path = '%stripplanner/model/data/%s_matrix.pyc' % \
+        #                   (install_path, self.dmode)
+        self.matrix_path = '%smatrix.pyc' % (self.data_path)
+        
         self.connection = sqlite.connect(self.db_path)
         self.cursor = self.connection.cursor()
         def dict_factory(cursor, row):
@@ -78,34 +82,34 @@ class Mode(object):
         if not ids: return []
         intersections = []
         id_str = ','.join([str(i) for i in ids])
-        Q = 'SELECT id_node_f, id_node_t, addr_f, addr_t, ix_streetname, ' \
+        Q = 'SELECT node_f_id, node_t_id, addr_f, addr_t, streetname_id, ' \
             'wkt_geometry ' \
             'FROM %s ' \
-            'WHERE id_node_f IN (%s) OR id_node_t IN (%s)' % \
+            'WHERE node_f_id IN (%s) OR node_t_id IN (%s)' % \
             (self.tables['edges'], id_str, id_str)
         self.executeDict(Q)
         rows = self.fetchAllDict()
         if rows:
-            # Pre-fetch segments and index by both id_node_f and id_node_t
+            # Pre-fetch segments and index by both node_f_id and node_t_id
             seg_rows = {}
-            ix_streetnames = {}
+            streetname_ids = {}
             for row in rows:
-                id_node_f, id_node_t = row['id_node_f'], row['id_node_t']
-                if id_node_f in seg_rows: seg_rows[id_node_f].append(row)
-                else: seg_rows[id_node_f] = [row]
-                if id_node_t in seg_rows: seg_rows[id_node_t].append(row)
-                else: seg_rows[id_node_t] = [row]
-                ix_streetnames[row['ix_streetname']] = 1
+                node_f_id, node_t_id = row['node_f_id'], row['node_t_id']
+                if node_f_id in seg_rows: seg_rows[node_f_id].append(row)
+                else: seg_rows[node_f_id] = [row]
+                if node_t_id in seg_rows: seg_rows[node_t_id].append(row)
+                else: seg_rows[node_t_id] = [row]
+                streetname_ids[row['streetname_id']] = 1
                 
             # Pre-fetch full street names
             streetnames = self.getRowsById(self.tables['streetnames'],
-                                           ix_streetnames.keys())
+                                           streetname_ids.keys())
             streets = {}
-            for ix_streetname in streetnames:
-                r = streetnames[ix_streetname]
+            for streetname_id in streetnames:
+                r = streetnames[streetname_id]
                 st = address.Street(r['prefix'], r['name'],
                                     r['type'], r['suffix'])
-                streets[ix_streetname] = st
+                streets[streetname_id] = st
                 
             # Get intersections with the help of our pre-fetched data
             for id in ids:
@@ -117,38 +121,38 @@ class Mode(object):
                     continue
                 # Get segment linestring and point at id end
                 linestring = gis.importWktGeometry(row['wkt_geometry'])
-                id_node_f, id_node_t =  row['id_node_f'],  row['id_node_t']
-                if id == id_node_f:
-                    data['id'] = id_node_f
+                node_f_id, node_t_id =  row['node_f_id'],  row['node_t_id']
+                if id == node_f_id:
+                    data['id'] = node_f_id
                     data['lon_lat'] = linestring[0]
-                elif id == id_node_t:
-                    data['id'] = id_node_t
+                elif id == node_t_id:
+                    data['id'] = node_t_id
                     data['lon_lat'] = linestring[-1]
                 # Get all segments that have the intersection at one end
                 S = seg_rows[id]
                 # Get the cross streets
                 cs = []
-                seen_ix_streetnames = {}
+                seen_streetname_ids = {}
                 for seg_row in S:
-                    ix_streetname = seg_row['ix_streetname']
+                    streetname_id = seg_row['streetname_id']
                     # Skip the segment if we've already seen a segment
                     # attached to this intersection that has the same
                     # street name (ID)
-                    if ix_streetname in seen_ix_streetnames: continue
-                    else: seen_ix_streetnames[ix_streetname] = 1
+                    if streetname_id in seen_streetname_ids: continue
+                    else: seen_streetname_ids[streetname_id] = 1
                     # Get segment street name
-                    try: st = streets[ix_streetname]
+                    try: st = streets[streetname_id]
                     except KeyError:
                         st = address.Street(name='unknown')
                         st.number = -1
                     else: 
-                        id_node_f = seg_row['id_node_f']
-                        id_node_t = seg_row['id_node_t']
+                        node_f_id = seg_row['node_f_id']
+                        node_t_id = seg_row['node_t_id']
                         addr_f, addr_t = seg_row['addr_f'], seg_row['addr_t']
                         # Determine the street number at the intersection
-                        if id_node_f == id:
+                        if node_f_id == id:
                             num = addr_f
-                        elif id_node_t == id:
+                        elif node_t_id == id:
                             num = addr_t
                         st.number = num                        
                     cs.append(st)
@@ -167,10 +171,10 @@ class Mode(object):
         return self.getIntersectionsById([id])[0]
 
 
-    def getIntersectionClosestToSTIDandNum(self, ix_streetname, num, lon_lat=None):
+    def getIntersectionClosestToSTIDandNum(self, streetname_id, num, lon_lat=None):
         """Get the intersection closest to the specified street address.
 
-        @param ix_streetname -- the id of the addresses's street name
+        @param streetname_id -- the id of the addresses's street name
         @param num -- the street number of the address
         @param lon_lat -- the lon/lat of the address (if known)
         @return -- the closest intersection and the intersection accross from
@@ -178,25 +182,25 @@ class Mode(object):
 
         """
         # First get the distance of the closest intersection (by street number)
-        Q = "SELECT id_node_f, id_node_t, " \
+        Q = "SELECT node_f_id, node_t_id, " \
             "ABS(fraddl-%s) AS fl, ABS(fraddr-%s) AS fr, " \
             "ABS(toaddl-%s) AS tl, ABS(toaddr-%s) AS tr, " \
             "LEAST(ABS(fraddl-%s), ABS(fraddr-%s), " \
             "      ABS(toaddl-%s), ABS(toaddr-%s)) AS m " \
-            "FROM %s WHERE ix_streetname=%s ORDER BY m ASC LIMIT 1" % \
+            "FROM %s WHERE streetname_id=%s ORDER BY m ASC LIMIT 1" % \
             (num, num, num, num, num, num, num, num,
-             self.tables['edges'], ix_streetname)
+             self.tables['edges'], streetname_id)
 
         if not self.executeDict(Q): return None, None
         row = self.fetchRow()
 
         m, fl, fr, tl, tr = row["m"], row["fl"], row["fr"], row["tl"], row["tr"]
         if m in (fl, fr):
-            idc = row["id_node_f"]
-            ida = row["id_node_t"]
+            idc = row["node_f_id"]
+            ida = row["node_t_id"]
         elif m in (tl, tr):
-            idc = row["id_node_t"]
-            ida = row["id_node_f"]
+            idc = row["node_t_id"]
+            ida = row["node_f_id"]
 
         closest = self.getIntersectionById(idc)
         acrossFromClosest = self.getIntersectionById(ida)
@@ -219,9 +223,9 @@ class Mode(object):
         @param addr -- The address to find the closest intersection to
         @return -- The intersection closest to addr
         """
-        ix_streetnames, num = self.getStreetIdsForAddress(addr=addr)
-        ix_streetname, full_name = ix_streetnames.popitem()
-        i = self.getIntersectionClosestToSTIDandNum(ix_streetname, num, lon_lat)
+        streetname_ids, num = self.getStreetIdsForAddress(addr=addr)
+        streetname_id, full_name = streetname_ids.popitem()
+        i = self.getIntersectionClosestToSTIDandNum(streetname_id, num, lon_lat)
         return i
  
 
@@ -243,57 +247,57 @@ class Mode(object):
 
     # Segment Methods ---------------------------------------------------------
 
-    def getSegmentsById(self, ixs):
-        if not ixs: return []
+    def getSegmentsById(self, ids):
+        if not ids: return []
         segments = []
-        ixs_str = ','.join([str(t) for t in ixs])
+        ids_str = ','.join([str(t) for t in ids])
 
-        # Get segments with ix in ixs
-        Q = 'SELECT * FROM %s WHERE ix IN (%s)' % \
-            (self.tables['edges'], ixs_str)
+        # Get segments with id in ids
+        Q = 'SELECT * FROM %s WHERE id IN (%s)' % \
+            (self.tables['edges'], ids_str)
         self.executeDict(Q)
         rows = self.fetchAllDict()
 
         if rows:
-            # Index rows by ix
+            # Index rows by id
             irows = {}
-            for row in rows: irows[row['ix']] = row
+            for row in rows: irows[row['id']] = row
 
             # Add the extra attributes to the row
-            Q = 'SELECT * FROM attr_street WHERE ix IN (%s)' % ixs_str
+            Q = 'SELECT * FROM attr_street WHERE id IN (%s)' % ids_str
             self.executeDict(Q)
             arows = self.fetchAllDict()
             for i, arow in enumerate(arows):
-                ix = arow['ix']
-                irows[ix].update(arow)
+                id = arow['id']
+                irows[id].update(arow)
             del arows
 
             # Pre-fetch street names and cities
-            ix_streetnames, cityids = {}, {}
+            streetname_ids, cityids = {}, {}
             for row in rows:
-                ix_streetnames[row['ix_streetname']] = 1
-                cityids[row['ix_city_l']], cityids[row['ix_city_r']] = 1, 1
+                streetname_ids[row['streetname_id']] = 1
+                cityids[row['city_l_id']], cityids[row['city_r_id']] = 1, 1
             street_names = self.getRowsById(self.tables['streetnames'], 
-                                            ix_streetnames.keys())
+                                            streetname_ids.keys())
             cities = self.getRowsById(self.tables['cities'], cityids.keys())
 
             # Get segments with the help of our pre-fetched data
-            for ix in ixs:
+            for id in ids:
                 try:
-                    row = irows[ix]
+                    row = irows[id]
                 except KeyError:
                     segments.append(None)
                     continue
-                # Get street name components, removing the ix entry first
-                street = street_names[row['ix_streetname']]
-                try: del street['ix']
+                # Get street name components, removing the id entry first
+                street = street_names[row['streetname_id']]
+                try: del street['id']
                 except KeyError: pass
                 row.update(street)
                 row['street'] = address.Street(row['prefix'], row['name'],
                                                row['type'], row['suffix'])
                 # Get city names for each side
-                row['city_l'] = cities[row['ix_city_l']]['city']
-                row['city_r'] = cities[row['ix_city_r']]['city']
+                row['city_l'] = cities[row['city_l_id']]['city']
+                row['city_r'] = cities[row['city_r_id']]['city']
                 # Convert WKT linestring to list of points
                 geom = row['wkt_geometry']
                 row['linestring'] = gis.importWktGeometry(geom)
@@ -302,50 +306,50 @@ class Mode(object):
         return segments
 
     
-    def getSegmentById(self, ix):
+    def getSegmentById(self, id):
         """Get a segment with specified ID.
 
-        @param ix -- segment ID
+        @param id -- segment ID
         @return -- a segment object or None
 
         """
-        return self.getSegmentsById([ix])[0]
+        return self.getSegmentsById([id])[0]
 
 
-    def getSegmentByNumStreetId(self, num, ix_streetname):
-        Q = "SELECT ix FROM %s " \
-            "WHERE ix_streetname=%s AND " \
+    def getSegmentByNumStreetId(self, num, streetname_id):
+        Q = "SELECT id FROM %s " \
+            "WHERE streetname_id=%s AND " \
             "%s BETWEEN LEAST(fraddl,fraddr) AND GREATEST(toaddl,toaddr)" % \
-            (self.tables['edges'], ix_streetname, num)
+            (self.tables['edges'], streetname_id, num)
         if not self.executeDict(Q):
-            Q = "SELECT ix FROM %s " \
-                "WHERE ix_streetname=%s AND " \
+            Q = "SELECT id FROM %s " \
+                "WHERE streetname_id=%s AND " \
                 "%s BETWEEN FLOOR(LEAST(fraddl,fraddr)/100)*100 AND " \
                 "CEILING(GREATEST(toaddl,toaddr)/100)*100" % \
-                (self.tables['edges'], ix_streetname, num)
+                (self.tables['edges'], streetname_id, num)
             if not self.executeDict(Q): return None
-        return self.getSegmentById(self.fetchRow()["ix"])
+        return self.getSegmentById(self.fetchRow()["id"])
 
 
-    def getSegmentByNodeIds(self, id_node_f, id_node_t):
-        Q = "SELECT ix FROM %s WHERE " \
-            "(id_node_f=%s AND id_node_t=%s) OR " \
-            "(id_node_f=%s AND id_node_t=%s)" % \
-            (self.tables['edges'], id_node_f, id_node_t, id_node_t, id_node_f)
+    def getSegmentByNodeIds(self, node_f_id, node_t_id):
+        Q = "SELECT id FROM %s WHERE " \
+            "(node_f_id=%s AND node_t_id=%s) OR " \
+            "(node_f_id=%s AND node_t_id=%s)" % \
+            (self.tables['edges'], node_f_id, node_t_id, node_t_id, node_f_id)
         if not self.executeDict(Q): return None
-        return self.getSegmentById(self.fetchRow()["ix"])
+        return self.getSegmentById(self.fetchRow()["id"])
 
 
     # Utility Methods ---------------------------------------------------------
 
-    def getRowsById(self, table, ixs, dict=True):
-        """Fetch from table rows with row IDs. Return dict of {ixs=>row}."""
+    def getRowsById(self, table, ids, dict=True):
+        """Fetch from table rows with row IDs. Return dict of {ids=>row}."""
         result = {}
-        Q = 'SELECT * FROM %s WHERE ix IN (%s)' % \
-            (table, ','.join([str(i) for i in ixs]))
+        Q = 'SELECT * FROM %s WHERE id IN (%s)' % \
+            (table, ','.join([str(i) for i in ids]))
         if dict:
             self.executeDict(Q)
-            for r in self.fetchAllDict(): result[r['ix']] = r
+            for r in self.fetchAllDict(): result[r['id']] = r
         else:
             self.execute(Q)
             for r in self.fetchAll(): result[r[0]] = r            

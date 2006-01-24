@@ -43,39 +43,50 @@ class Segment(object):
         elif side.strip().lower() in ('right', 'r'):
             char = 'r'
             opp_char = 'l'
-        else: return None
         A = {}
         attrs = self.__dict__
         for attr in attrs:
-            # Side-specific attrs
-            if attr[-1] == char:
-                key =  attr[:-1]
+            words = attr.split('_')
+            if words[-1] == 'id':
+                try:
+                    suffix = words[-2]
+                    del words[-2]
+                except IndexError:
+                    suffix = ''
+            else:
+                suffix = words[-1]
+                del words[-1]
+                
+            # Side-specific attr
+            if suffix == char:
+                key = '_'.join(words)
                 if key[-1] == '_':
                     key = key[:-1]
                 A[key] = attrs[attr]
-            # Non side-specific attrs
-            elif attr[-1] != opp_char:
+                
+            # Non side-specific attr
+            elif suffix != opp_char:
                 A[attr] = attrs[attr]
         return A
 
 
     def getIDOfSharedIntersection(self, other_segment):
         try:
-            if self.id_node_f in (other_segment.id_node_f,
-                                  other_segment.id_node_t):
-                id_node = self.id_node_f
-            elif self.id_node_t in (other_segment.id_node_f,
-                                    other_segment.id_node_t):
-                id_node = self.id_node_t
+            if self.node_f_id in (other_segment.node_f_id,
+                                  other_segment.node_t_id):
+                node_id = self.node_f_id
+            elif self.node_t_id in (other_segment.node_f_id,
+                                    other_segment.node_t_id):
+                node_id = self.node_t_id
         except AttributeError:
             return 0
-        return id_node
+        return node_id
 
                     
     def splitAtNum(self, num, fnid=-1, ntid=-2, nid=-1):
         """Split the segment at num. Return two new segments.
 
-        The first seg is id_node_f-->num; the second is num-->id_node_f
+        The first seg is node_f_id-->num; the second is num-->node_f_id
 
         @param num The address number to split the segment at
         @param fnid An optional segment ID for the segment from=>split
@@ -134,8 +145,8 @@ class Segment(object):
 
         s.linestring, t.linestring = [], []
 
-        # Give s attributes of original from id_node_f-->num
-        # Give t attributes of original from num-->id_node_t
+        # Give s attributes of original from node_f_id-->num
+        # Give t attributes of original from num-->node_t_id
         # linestring
         for i in range(ll_idx): s.linestring.append(sls[i])
         s.linestring.append(ll)
@@ -150,7 +161,7 @@ class Segment(object):
         # fake segment IDs
         s.ix, t.ix = fnid, ntid
         # fake node ID
-        s.id_node_t, t.id_node_f = nid, nid
+        s.node_t_id, t.node_f_id = nid, nid
         return s, t
 
 

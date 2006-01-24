@@ -24,92 +24,63 @@
 --
 -- The geometry column will contain a binary geometry representation.
 
---LOCALID: Real (9.2)
---FNODE: Real (11.0)
---TNODE: Real (11.0)
 
---LEFTADD1: Integer (6.0) ADDR_FL
---LEFTADD2: Integer (6.0) ADDR_TL
---RGTADD1: Integer (6.0)  ADDR_FR
---RGTADD2: Integer (6.0)  ADDR_TR
-
---FDPRE: String (2.0)
---FNAME: String (30.0)
---FTYPE: String (4.0)
---FDSUF: String (2.0)
-
---LCITY: String (4.0)
---RCITY: String (4.0)
-
---ZIPCOLEF: Integer (5.0)
---ZIPCORGT: Integer (5.0)
-
---TYPE: Integer (6.0)
---BIKEMODE: String (2.0)
---UP_FRAC: Real (6.4)
---ABS_SLP: Real (6.4)
---ONE_WAY: String (2.0)
-
-
--- Street attributes I assume all streets will have
 CREATE TABLE "layer_street" (
-  "ix"            INTEGER PRIMARY KEY AUTOINCREMENT,
---"geometry"      BLOB    NOT NULL,
-  "wkt_geometry"  TEXT    NOT NULL,
-  "id_node_f"     INTEGER NOT NULL,
-  "id_node_t"     INTEGER NOT NULL,
-  "addr_f"        INTEGER NOT NULL,
-  "addr_t"        INTEGER NOT NULL,
-  "ix_streetname" INTEGER NOT NULL,
-  "ix_city_l"     INTEGER NOT NULL,
-  "ix_city_r"     INTEGER NOT NULL,
-  "id_state_l"    TEXT    NOT NULL,
-  "id_state_r"    TEXT    NOT NULL,
-  "zip_l"         INTEGER NOT NULL,
-  "zip_r"         INTEGER NOT NULL
+  "id"            INTEGER PRIMARY KEY,
+  "node_f_id"     INTEGER,
+  "node_t_id"     INTEGER,
+  "addr_f"        INTEGER,
+  "addr_t"        INTEGER,
+  "streetname_id" INTEGER,
+  "city_l_id"     INTEGER,
+  "city_r_id"     INTEGER,
+  "state_l_id"    TEXT,
+  "state_r_id"    TEXT,
+  "zip_l"         INTEGER,
+  "zip_r"         INTEGER,
+  "wkt_geometry"  TEXT
+--"geometry"      BLOB,
 );
 
 -- Portland street attributes
 CREATE TABLE "attr_street" (
-  "ix"           INTEGER PRIMARY KEY AUTOINCREMENT,
-  "id"           INTEGER NOT NULL,  -- LOCALID
-  "oneway"       INTEGER NOT NULL,
-  "code"         INTEGER NOT NULL,	
-  "bikemode"     TEXT    NOT NULL,
-  "up_frac"      REAL    NOT NULL,	
-  "abs_slp"      REAL    NOT NULL	
+  "id"           INTEGER PRIMARY KEY,
+  "oneway"       INTEGER,
+  "code"         INTEGER,	
+  "bikemode"     TEXT,
+  "up_frac"      REAL,	
+  "abs_slp"      REAL,
+  "cpd"          INTEGER	
 );
 
 CREATE TABLE "layer_node" (
-  "ix"           INTEGER PRIMARY KEY AUTOINCREMENT,
-  "id"           INTEGER NOT NULL, -- TZID
---"geometry"     BLOB    NOT NULL,
-  "wkt_geometry" TEXT    NOT NULL
+  "id"           INTEGER  PRIMARY KEY,
+--"geometry"     BLOB,
+  "wkt_geometry" TEXT   
 );
 
 CREATE TABLE "streetname" (
-  "ix"     INTEGER PRIMARY KEY AUTOINCREMENT,
-  "prefix" TEXT NOT NULL,
-  "name"   TEXT NOT NULL,
-  "type"   TEXT NOT NULL,
-  "suffix" TEXT NOT NULL,
+  "id"     INTEGER PRIMARY KEY,
+  "prefix" TEXT,
+  "name"   TEXT,
+  "type"   TEXT,
+  "suffix" TEXT,
   UNIQUE ("prefix","name","type","suffix")
 );
 
 CREATE TABLE "city" (
-  "ix"    INTEGER PRIMARY KEY AUTOINCREMENT,
-  "city"  TEXT UNIQUE NOT NULL
+  "id"    INTEGER PRIMARY KEY,
+  "city"  TEXT UNIQUE
 );
 
 CREATE TABLE "state" (
-  "ix"    INTEGER PRIMARY KEY AUTOINCREMENT,
-  "id"    TEXT UNIQUE NOT NULL, -- Two-letter state code
-  "state" TEXT UNIQUE NOT NULL
+  "id"    TEXT PRIMARY KEY, -- Two-letter state code
+  "state" TEXT UNIQUE
 );
 
-CREATE TABLE "matrix" (
-  "ix"     INTEGER PRIMARY KEY AUTOINCREMENT,
-  "name"   TEXT UNIQUE NOT NULL,
-  "matrix" BLOB NOT NULL
-);
+--CREATE TABLE "matrix" (
+--  "id"     INTEGER PRIMARY KEY AUTOINCREMENT,
+--  "name"   TEXT UNIQUE,
+--  "matrix" BLOB
+--);
 
