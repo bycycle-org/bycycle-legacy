@@ -37,11 +37,13 @@ Please see the file LICENSE.txt for details of the GPL.
 
 Installation
 ------------
+
 See the INSTALL file in this directory.
 
 
 More Information
 ----------------
+
 Information about the byCycle project can be found at http://www.byCycle.org/. 
 Information about the Trip Planner in particular can be found at 
 http://www.byCycle.org/tripplanner/.
@@ -49,6 +51,7 @@ http://www.byCycle.org/tripplanner/.
 
 Contact
 -------
+
 You can contact us to ask questions, make comments, offer suggestions, get 
 help, etc at support@bycycle.org or by going to 
 http://www.byCycle.org/contact.html and using the form there (it will allow 

@@ -9,10 +9,11 @@ Version
 
 Software Prerequisites
 ----------------------
+
 There are few pieces of additional software necessary to run the byCycle 
 system. All of these are free and available for just about any platform:
 
-- Python. I'm using version 2.4.2. Earlier versions are untested, but may work.
+- Python. I'm using version 2.4.2. Other versions are untested, but may work.
   <http://www.python.org/>
 - SQLite <http://www.sqlite.org/>
 - PySQLite <http://initd.org/tracker/pysqlite>
@@ -25,6 +26,7 @@ If you want to be able to import data, you will also need:
 
 Placement of Files
 ------------------
+
 Unpack the byCycle package somewhere that's in your PYTHONPATH. 
 
 Maybe the easiest way to do this is to unpack it under 
@@ -69,6 +71,7 @@ or routes just yet...
 
 Data
 ----
+
 Under certain circumstances, the package will be provided with the database 
 and routing matrix included. In this case, you shouldn't have to do anything
 else.
@@ -119,6 +122,7 @@ change metro to timbuktu and add or remove fields as appropriate to your data.
 
 Problems and Issues
 -------------------
+
 If you have any problems with any of this, please feel free to contact us:
 Email: support@bycycle.org
 Web Form: http://www.byCycle.org/contact.html
