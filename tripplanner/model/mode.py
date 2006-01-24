@@ -23,7 +23,6 @@ class Mode(object):
         # What a lon or lat with an implied decimal point has to be multiplied
         # by to get the actual lon or lat
         self.lon_lat_exp = 10 ** -self.lon_lat_fraction_len
-
         # Set up the database connection
         self.data_path = '%stripplanner/model/%s/data/' % \
                          (install_path, self.dmode)

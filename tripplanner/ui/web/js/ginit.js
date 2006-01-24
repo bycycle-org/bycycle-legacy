@@ -3,7 +3,7 @@
 // The base location (domain) of the web interface
 var domain = location.href.split('/')[2];
 
-var local = 0 || (domain == 'localhost') || (domain == 'dev.bycycle.org');
+var local = 0 || (domain == 'localhost') || (domain == 'dev.bycycle.org') || (domain == 'vps.bycycle.org');
 
 var dir = (domain != 'tripplanner.bycycle.org' ? '/tripplanner' : '');
 
