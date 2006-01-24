@@ -249,7 +249,7 @@ function _geocodeCallback(status, result_set)
 }
 	
 var colors = ['#0000ff', '#00ff00', '#ff0000', 
-	      '#00ffff', '#ff00ff', '#ffff00',
+	      '#00ffff', '#ff00ff', '#ff8800',
 	      '#000000', '#ffffff'];	
 var color_index = 0;
 var colors_len = colors.length;
