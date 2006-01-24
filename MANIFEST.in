@@ -2,7 +2,8 @@ include LICENSE.txt
 include INSTALL.txt
 include README.txt
 include __init__.py
-include tripplanner/model/*/data/db.db
+include tripplanner/model/milwaukee/data/db.db
+include tripplanner/model/milwaukee/data/matrix.pyc
 include tripplanner/ui/web/*.tmpl
 include tripplanner/ui/web/*.html
 include tripplanner/ui/web/js/*.js
