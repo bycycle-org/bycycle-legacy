@@ -4,6 +4,7 @@ Installation directions for byCycle Trip Planner
 
 Version
 -------
+
 0.3 Alpha
 
 

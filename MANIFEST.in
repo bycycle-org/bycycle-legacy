@@ -11,3 +11,4 @@ include tripplanner/ui/web/css/*.css
 include tripplanner/ui/web/images/*.gif
 include tripplanner/ui/web/images/*.jpg
 include tripplanner/ui/web/images/*.png
+
