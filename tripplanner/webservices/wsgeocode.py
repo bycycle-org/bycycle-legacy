@@ -1,24 +1,24 @@
-#!/usr/local/bin/python2.4
-# Route Web Service
-from byCycle.lib import wsrest
-from byCycle.tripplanner.services import route
+# Geocode Web Service
 
-class Route(wsrest.RestWebService):
+from byCycle.lib import wsrest
+from byCycle.tripplanner.services import geocode
+
+class Geocode(wsrest.RestWebService):
     def __init__(self):
         wsrest.RestWebService.__init__(self)
-             
+                
     def GET(self):
         try:
-            q = self.input['q'].replace('\n', ' ')
-            self.input['q'] = eval(q)
-            the_route = route.get(self.input)
-        except route.InputError, e:
+            geocodes = geocode.get(self.input)
+        except geocode.InputError, e:
             raise wsrest.BadRequestError(reason=e.description)
-        except route.MultipleMatchingAddressesError, e:
+        except geocode.AddressNotFoundError, e:
+            raise wsrest.NotFoundError(reason=e.description)
+        except geocode.MultipleMatchingAddressesError, e:
             self.status = '300'
             self.reason = e.description
             result = wsrest.ResultSet('geocode', e.geocodes)
-            return repr(result)            
+            return repr(result)
         except Exception, e:
             #import time
             #log = open('error_log', 'a')
@@ -26,7 +26,5 @@ class Route(wsrest.RestWebService):
             #log.close()
             raise
         else:
-            result = wsrest.ResultSet('route', the_route)
+            result = wsrest.ResultSet('geocode', geocodes)
             return repr(result)
-
-Route()

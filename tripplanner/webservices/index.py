@@ -1,3 +1,5 @@
+# Web Services Index
+
 def index():
     result = 'byCycle Trip Planner Web Services<br/>' \
              'Available Services:<br/>' \
@@ -7,8 +9,9 @@ def index():
 
 
 def geocode():
-    return 'Geocode'
-
+    from byCycle.tripplanner.webservices import wsgeocode
+    return 'geocode'
 
 def route():
-    return 'Route'
+    from byCycle.tripplanner.webservices import wsroute
+    return 'route'
