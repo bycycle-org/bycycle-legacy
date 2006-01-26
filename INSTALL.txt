@@ -14,7 +14,7 @@ Software Prerequisites
 There are few pieces of additional software necessary to run the byCycle 
 system. All of these are free and available for just about any platform:
 
-- Python. I'm using version 2.4.2. Other versions are untested, but may work.
+- Python. We are using version 2.4.2. Other versions are untested, but may work.
   <http://www.python.org/>
 - SQLite <http://www.sqlite.org/>
 - PySQLite <http://initd.org/tracker/pysqlite>

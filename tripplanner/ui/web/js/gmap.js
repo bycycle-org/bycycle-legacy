@@ -3,13 +3,14 @@
 
 var map;
 
-// Burnside Bridge and Willamette River
-//var default_x = -122.667847;
-//var default_y = 45.523127;
-
-// Milwaukee
-//default_x = -87.906418;
-//default_y = 43.038783;
+var regions = 
+    {'metro': 
+         {
+         },
+     'milwaukee':
+         {
+         }
+    };
 
 var tl = {'x': -88.069888, 'y': 42.842059};
 var br = {'x': -87.828241, 'y': 43.192647};
@@ -21,20 +22,19 @@ var metro_box = [tl, {'x': br.x, 'y': tl.y}, br, {'x': tl.x, 'y': br.y}, tl];
 
 
 var default_zoom_level = 3;
-var linestring;
 var center_marker;
 var center_point;
+var center_marker_html = '<div style="width:225px; text-align:center;"><a href="javascript:void(0);" onclick="_setElVToMapLonLat(\'q\'); _find(\'search\');">Find address of closest intersection</a></div>';
 
 // Start and end markers for routes
 var base_icon;
 var start_icon;
 var end_icon;
 
-var center_marker_html = '<div style="width:225px; text-align:center;"><a href="javascript:void(0);" onclick="_setElVToMapLonLat(\'q\'); _find(\'search\');">Find address of closest intersection</a></div>';
-
 var region_markers;
 var milwaukee_line;
 var metro_line;
+
 
 function gmap__init__()
 {
@@ -42,10 +42,10 @@ function gmap__init__()
 		_setIH("map", '<div id="loading">Loading<blink>...</blink></div>');
 		if (_noActiveX()) {
 			_setIH("map",
-				 '<p>ActiveX is not enabled in your browser. \
+   			       '<p>ActiveX is not enabled in your browser. \
                                 If your browser is Internet Explorer,	\
                                 you must have ActiveX enabled to use this application.</p>');
-} else {
+        } else {
 			_createMap();
 		}
 		_setElStyle('loading', 'display', 'none');
@@ -81,19 +81,20 @@ function _createMap()
   icon.iconAnchor = new GPoint(21, 21);
 
   GEvent.addListener(map, "moveend", function() {
-		       if (center_marker) { map.removeOverlay(center_marker); }
-		       center_point = map.getCenterLatLng();
-		       center_point.x = Math.round(center_point.x * 1000000) / 1000000;
-		       center_point.y = Math.round(center_point.y * 1000000) / 1000000;
-		       center_marker = placeMarkers([center_point], [icon])[0];
-		       // TODO: Figure out how to register this listener just once
-		       GEvent.addListener(center_marker, "click", function() {
-					    map.openInfoWindowHtml(center_point, 
-								   center_marker_html);
-					  });
-		       //if (network_visible) showBikeThereNetwork()
-		     });					   
-  
+                       if (center_marker)
+                           map.removeOverlay(center_marker);
+                       var center_point = map.getCenterLatLng();
+                       center_point.x = Math.round(center_point.x * 1000000) / 1000000;
+                       center_point.y = Math.round(center_point.y * 1000000) / 1000000;
+                       center_marker = new GMarker(center_point, icon);
+                       map.addOverlay(center_marker);
+  GEvent.clearListeners(center_marker, "click");
+  GEvent.addListener(center_marker, "click", function() {
+      map.openInfoWindowHtml(center_point,
+                             center_marker_html);
+  });
+                     });
+
   base_icon = new GIcon();
   base_icon.shadow = "images/shadow50.png";
   base_icon.iconSize = new GSize(20, 34);
@@ -116,20 +117,6 @@ function _createMap()
 }
 
 
-function parsePointsFromXml(xml_str)
-{
-  var xml_dom = GXml.parse(xml_str);
-  var xml_points = xml_dom.documentElement.getElementsByTagName("point");
-  var points = [];
-  for (var i = 0; i < xml_points.length; i++) 
-    {
-      points.push(new GPoint(parseFloat(xml_points[i].getAttribute("lon")),
-			     parseFloat(xml_points[i].getAttribute("lat"))));
-    }
-  return points;
-}
-
-
 function drawPolyLine(points, color, weight, opacity)
 {
   var line = new GPolyline(points, color, weight, opacity);
@@ -138,11 +125,13 @@ function drawPolyLine(points, color, weight, opacity)
 }
 
 
+/**
+ * Put some markers on the map
+ * @param points An array of GPoints
+ * @param icons An array of GIcons (optional)
+ */
 function placeMarkers(points, icons)
 {
-  // Put some markers on the map
-  // points -- an array of GPoints
-  // icons -- an array of GIcons (optional)
   var markers = [];
   var len = points.length;
   if (icons) 
@@ -164,20 +153,6 @@ function placeMarkers(points, icons)
 	}
     }
   return markers;
-}
-
-function doAddr()
-{
-	map.centerAndZoom(default_point, default_zoom_level);
-	//point = parsePointsFromXml(_el('addr_data').value)[0];
-	//map.centerAndZoom(point, 2);
-	//placeMarkers([point]);
-}
-
-
-function doTransit()
-{
-	map.centerAndZoom(default_point, default_zoom_level);
 }
 
 
