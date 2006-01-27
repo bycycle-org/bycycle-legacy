@@ -1,9 +1,11 @@
 # Base Mode
 # 11/07/2005
+
 from pysqlite2 import dbapi2 as sqlite
 from byCycle import install_path
 from byCycle.lib import gis
 import address, segment, intersection
+
 
 class Mode(object):
     def __init__(self):
@@ -25,11 +27,11 @@ class Mode(object):
         self.lon_lat_exp = 10 ** -self.lon_lat_fraction_len
         # Set up the database connection
         self.data_path = '%stripplanner/model/%s/data/' % \
-                         (install_path, self.dmode)
+                         (install_path, self.region)
         self.db_path = self.data_path + 'db.db'
         # For ramdisk
         #self.matrix_path = '%stripplanner/model/data/%s_matrix.pyc' % \
-        #                   (install_path, self.dmode)
+        #                   (install_path, self.region)
         self.matrix_path = '%smatrix.pyc' % (self.data_path)
         
         self.connection = sqlite.connect(self.db_path)
