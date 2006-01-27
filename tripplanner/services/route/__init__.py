@@ -640,7 +640,7 @@ if __name__ == '__main__':
             else: print key[k]
         print
 
-    Qs = {'milwaukee':
+    Qs = {'milwaukeewi':
           (('Puetz Rd & 51st St', '841 N Broadway St'),
            ('27th and lisbon', '35th and w north'),
            ('S 84th Street & Greenfield Ave', 'S 84th street & Lincoln Ave'),
@@ -649,7 +649,7 @@ if __name__ == '__main__':
            ('124th and county line, franklin', 'lon=-87.940407, lat=43.05321'),
            ('lon=-87.973645, lat=43.039615', 'lon=-87.978623, lat=43.036086'),
            ),
-          'metro':
+          'portlandor':
            (('633 n alberta', '44th and se stark'),
             ('-122.645488, 45.509475', 'sw hall & denney'),
            ),
@@ -657,7 +657,7 @@ if __name__ == '__main__':
     
     tm = 'bike'
 
-    for dm in ('milwaukee', 'metro'):
+    for dm in ('milwaukeewi', 'portlandor'):
         qs = Qs[dm]
         for q in qs:
             try:

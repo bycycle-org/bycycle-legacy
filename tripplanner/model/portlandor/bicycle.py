@@ -1,13 +1,13 @@
-# Metro Bicycle Travel Mode
+# Portland, OR Bicycle Travel Mode
 # 11/07/2005
 
-from byCycle.tripplanner.model import metro
+from byCycle.tripplanner.model import portlandor
 
 
-class Mode(metro.Mode):
+class Mode(portlandor.Mode):
     def __init__(self):
         self.tmode = "bicycle"
-        metro.Mode.__init__(self)
+        portlandor.Mode.__init__(self)
         self.pct_slopes = [p*.01 for p in
                            (0,    0.65, 1.8, 3.7, 7,  12, 21,  500)]
         self.mph_up     =  (12.5, 11,   9.5, 7.5, 5,  3,  2.5, 2.5)
