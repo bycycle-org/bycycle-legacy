@@ -1,4 +1,4 @@
-def index(region=''):
+def index(region='', **params):
     import os, datetime
     import byCycle
 
@@ -28,10 +28,11 @@ def index(region=''):
                 region_display = ' - %s, %s' % (area.title(), state.upper())
             else:
                 opt = region_option 
-            regions_option_list.append(opt % (reg, '%s, %s' % (area.title(), state.upper())))
+            regions_option_list.append(opt % (reg, '%s, %s' % (area.title(),
+                                                               state.upper())))
     regions_option_list = '\n'.join(regions_option_list)
 
-    template = '%stripplanner/ui/web/tripplanner.tmpl' % byCycle.install_path
+    template = '%stripplanner/ui/web/tripplanner.html' % byCycle.install_path
 
     # Get and format the last modified date of the template
     stat = os.stat(template)
