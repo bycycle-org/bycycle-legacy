@@ -49,6 +49,6 @@ window.onload = function()
     _setIH('map', 'Error loading map: Could not find valid API key for ' + base_url + '.');
   resizeMap();
 }
-  
+
 
 function script(src) { echo('<'+'script src="'+src+'"'+' type="text/javascript"><'+'/script>'); }
