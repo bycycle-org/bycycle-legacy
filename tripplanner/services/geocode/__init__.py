@@ -47,7 +47,7 @@ def get(input):
 
     try:
         try:
-            val = input['dmode']
+            val = input['region']
             val = val.strip().lower()
         except AttributeError:
             pass
@@ -80,7 +80,7 @@ if __name__ == "__main__":
     import time
     A = {#' ',
          # Milwaukee
-         'milwaukee':
+         'milwaukeewi':
          ('0 w hayes ave',
           'lon=-87.940407, lat=43.05321',
           'lon=-87.931137, lat=43.101234',
@@ -103,7 +103,7 @@ if __name__ == "__main__":
           '6th and hadley',
          ),
          
-         'metro':
+         'portlandor':
          # Portland
          ('37800 S Hwy 213 Hwy, Clackamas, OR 97362',
           '4550 ne 15',
@@ -128,7 +128,7 @@ if __name__ == "__main__":
         print
         print 'Data mode: %s' % mode
         print '------------------------------'
-        I = {'dmode': mode, 'q': None}
+        I = {'region': mode, 'q': None}
         for a in A[mode]:
             I['q'] = a
             st = time.time()

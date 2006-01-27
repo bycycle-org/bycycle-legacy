@@ -69,8 +69,8 @@ if __name__ == '__main__':
         print content
         print
 
-    #doRequest(geocode, dmode='milwaukee', q='124 and county line')
-    doRequest(route, dmode='milwaukee', tmode='bike',
+    #doRequest(geocode, region='milwaukee', q='124 and county line')
+    doRequest(route, region='milwaukee', tmode='bike',
               q="['35th and north', '124 and county line']")
-    doRequest(route, dmode='milwaukee', tmode='bike',
+    doRequest(route, region='milwaukee', tmode='bike',
               q="['35th and north', '27th and lisbon']")

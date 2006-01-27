@@ -1,10 +1,12 @@
 # Route Service Module
 # 28 Dec 2004
+
 import time
 from byCycle.lib import gis
 from byCycle.tripplanner.model import address, intersection
 from byCycle.tripplanner.services import geocode
 import sssp
+
 
 travel_modes = {'bike': 'bicycle',
                 'bicycle': 'bicycle',
@@ -13,8 +15,13 @@ travel_modes = {'bike': 'bicycle',
                 'drive': 'automobile',
                 'car': 'automobile',
                 'auto': 'automobile'}
-data_modes = {'metro': 'metro',
-              'milwaukee': 'milwaukee'}
+
+data_modes = {'portlandor': 'portlandor',
+              'portland': 'portlandor',
+              'metro': 'portlandor',
+              'milwaukeewi': 'milwaukeewi',
+              'milwaukee': 'milwaukeewi',
+              }
 
 
 class RouteError(Exception):
@@ -46,7 +53,7 @@ def get(input={}):
             
     ## Get necessary data from input
     # q -- list of route points (currently only 2 supported)
-    # dmode -- data mode (TODO: should be determined from place in geocoder) 
+    # region -- data mode (TODO: should be determined from place in geocoder) 
     # tmode -- travel mode
     # options -- dict of optional user options (sent off to tmode)
     try: q = input['q']
@@ -64,11 +71,11 @@ def get(input={}):
             errors.append('End address required')
 
     try:
-        dmode = input['dmode']
+        region = input['region']
     except KeyError:
         errors.append('Data mode required')
     else:
-        try: dmode = data_modes[dmode]
+        try: region = data_modes[region]
         except KeyError: errors.append('Unknown data mode')        
     try:
         tmode = input['tmode']
@@ -84,7 +91,7 @@ def get(input={}):
     # The mode is a combination of the data/travel modes
     st = time.time()
     path = 'byCycle.tripplanner.model.%s.%s'
-    mode = __import__(path % (dmode, tmode), globals(), locals(), ['']).Mode()
+    mode = __import__(path % (region, tmode), globals(), locals(), ['']).Mode()
     messages.append('Time to instantiate mode: %s' % (time.time() - st))
 
 
@@ -93,7 +100,7 @@ def get(input={}):
     
     st = time.time()
     try:
-        fcodes = geocode.get({'q': fr, 'dmode': mode})
+        fcodes = geocode.get({'q': fr, 'region': mode})
     except geocode.AddressNotFoundError, e:
         errors.append(e.description)
     except geocode.MultipleMatchingAddressesError, e:
@@ -102,7 +109,7 @@ def get(input={}):
 
     st = time.time()
     try:
-        tcodes = geocode.get({'q': to, 'dmode': mode})
+        tcodes = geocode.get({'q': to, 'region': mode})
     except geocode.AddressNotFoundError, e:
         errors.append(e.description)
     except geocode.MultipleMatchingAddressesError, e:
@@ -654,7 +661,7 @@ if __name__ == '__main__':
         qs = Qs[dm]
         for q in qs:
             try:
-                r = get({'q': q, 'dmode': dm, 'tmode': tm})
+                r = get({'q': q, 'region': dm, 'tmode': tm})
             except MultipleMatchingAddressesError, e:
                 print e.geocodes
             except Exception, e:

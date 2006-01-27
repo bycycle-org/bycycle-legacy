@@ -1,11 +1,12 @@
-# Milwaukee Data Mode
+# Milwaukee, WI Data Mode
 # 11/07/2005
+
 from byCycle.tripplanner.model import mode
  
 
 class Mode(mode.Mode):
     def __init__(self):
-        self.dmode = 'milwaukee'
+        self.region = 'milwaukeewi'
         mode.Mode.__init__(self)
 
         # Create an index of adjacency matrix edge attributes.
