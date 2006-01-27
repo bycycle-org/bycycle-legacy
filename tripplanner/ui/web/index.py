@@ -8,8 +8,8 @@ region_aliases = {'milwaukee': 'milwaukeewi',
                   }
 
 
-def index(**params):
-    region = params['region'].lower().replace(',', '')
+def index(region='', **params):
+    region = region.lower().replace(',', '')
 
     try:
         region = region_aliases[region]
