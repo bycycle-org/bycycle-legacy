@@ -82,19 +82,19 @@ function _createMap()
 
   GEvent.addListener(map, "moveend", function() {
                        if (center_marker)
-                           map.removeOverlay(center_marker);
+			 map.removeOverlay(center_marker);
                        var center_point = map.getCenterLatLng();
                        center_point.x = Math.round(center_point.x * 1000000) / 1000000;
                        center_point.y = Math.round(center_point.y * 1000000) / 1000000;
                        center_marker = new GMarker(center_point, icon);
                        map.addOverlay(center_marker);
-  GEvent.clearListeners(center_marker, "click");
-  GEvent.addListener(center_marker, "click", function() {
-      map.openInfoWindowHtml(center_point,
-                             center_marker_html);
-  });
+		       GEvent.clearListeners(center_marker, "click");
+		       GEvent.addListener(center_marker, "click", function() {
+					    map.openInfoWindowHtml(center_point,
+								   center_marker_html);
+					  });
                      });
-
+  
   base_icon = new GIcon();
   base_icon.shadow = "images/shadow50.png";
   base_icon.iconSize = new GSize(20, 34);

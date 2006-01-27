@@ -28,6 +28,19 @@ function _setElV(id, val)
   document.getElementById(id).value = val; 
 }
 
+function getWindowHeight() 
+{
+  if (window.self && self.innerHeight) 
+    {
+      return self.innerHeight;
+    }
+  if (document.documentElement && document.documentElement.clientHeight) 
+    {
+      return document.documentElement.clientHeight;
+    }
+  return 0;
+}
+
 
 
 
@@ -142,23 +155,3 @@ function _join(the_list, join_string)
   }
   return new_list.join(join_string);
 }
-
-
-
-/* String Buffer */
-
-function StringBuffer(initial_buf) 
-{ 
-  this.buffer = initial_buf || [];
-} 
-StringBuffer.prototype.append = function append(string) 
-{ 
-  this.buffer.push(string); 
-  return this; 
-}; 
-StringBuffer.prototype.toString = function toString(join_string) 
-{
-  join_string = join_string || '';
-  return this.buffer.join(join_string); 
-}; 
-

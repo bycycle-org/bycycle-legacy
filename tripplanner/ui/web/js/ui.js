@@ -148,30 +148,25 @@ function _find(alt_service)
 
   if (!query_str) 
     {
-      var msg = new StringBuffer('<b>More input required.</b><br/>');
+      var msg = ['<b>More input required.</b><br/>'];
       if (service == 'search') 
 	{
-	  msg.append(' Missing address or route query.<br/>');
+	  msg.push(' Missing address or route query.<br/>');
 	} 
       else if (service == 'route') 
 	{
-	  if (!_elV('fr')) msg.append(' Missing from address.<br/>');
-	  if (!_elV('to')) msg.append(' Missing to address.<br/>');
+	  if (!_elV('fr')) msg.push(' Missing from address.<br/>');
+	  if (!_elV('to')) msg.push(' Missing to address.<br/>');
 	}
-      _setResult(msg);
+      _setResult(msg.join(''));
     } 
   else 
     {
-      var url = ['http://', domain, dir, '/webservices/', _webservice, 
-		 '/?', query_str].join('');
+      var url = ['http://', domain, '/', dir, 'webservices/', _webservice, 
+		 '?', query_str].join('');
+      //alert(url);
       doXmlHttpReq('GET', url, _callback);
     }
-}
-
-
-function _feedbackCallback(req)
-{
-  _setResult('Your feedback has been sent. Thanks.');
 }
 
 
@@ -266,15 +261,22 @@ function _routeCallback(status, result_set)
 	{
 	  var linestring = route['linestring'];
 	  var linestring_len = linestring.length;
+	  var last_point_ix = linestring.length - 1;
 	  var box = getBoxForPoints(linestring);	
 	  var s_e_markers = placeMarkers([linestring[0],
-					  linestring[linestring_len-1]],
+					  linestring[last_point_ix]],
 					 [start_icon, end_icon]);
 	  var s_mkr = s_e_markers[0];
 	  var e_mkr = s_e_markers[1];
 	  var e_ord = linestring_len - 1;
-	  GEvent.addListener( s_mkr, "click", function() { map.showMapBlowup(linestring[0]); } );	           
-	  GEvent.addListener( e_mkr, "click", function() { map.showMapBlowup(linestring[e_ord]); } );			
+	  GEvent.addListener(s_mkr, "click", function() 
+			     { 
+			       map.showMapBlowup(linestring[0]); 
+			     });	           
+	  GEvent.addListener(e_mkr, "click", function() 
+			     { 
+			       map.showMapBlowup(linestring[e_ord]); 
+			     });			
 	  centerAndZoomToBox(box);
 	  if (color_index == colors_len) color_index = 0;
 	  drawPolyLine(linestring, colors[color_index++]);
@@ -295,6 +297,13 @@ function _routeCallback(status, result_set)
     }
   return {'result_text': result_text, 'error': error};
 }
+
+
+function _feedbackCallback(req)
+{
+  _setResult('Your feedback has been sent. Thanks.');
+}
+
 
 function _makeRouteMultipleMatchList(geocodes_fr, geocodes_to)
 {
@@ -469,5 +478,21 @@ function _adjustMapHeight(taller_or_smaller)
       var h = _map_height + 'px';
       _el('map').style.height = h;
       _el('result').style.height = h;
+    }
+}
+
+function resizeMap() 
+{
+  var offset = 0;
+  for (var elem = _el('map'); elem != null; elem = elem.offsetParent) 
+    {
+      offset += elem.offsetTop;
+    }
+  var height = getWindowHeight() - offset - 50;
+  if (height >= 0) 
+    {
+      _el('map').style.height = height + 'px';
+      _el('result').style.height = height + 'px';
+      map.onResize();
     }
 }
