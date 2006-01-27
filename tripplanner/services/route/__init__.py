@@ -620,20 +620,19 @@ def _makeDirectionsTable(route):
     
     d_table = d_table % ''.join([str(d) for d in d_rows])
     return ''.join((s_table, d_table))
+
     
-
-def print_key(key):
-    for k in key:
-        print k, 
-        if type(key[k]) == type({}):
-            print
-            for l in key[k]:
-                print '\t', l, key[k][l]
-        else: print key[k]
-    print
-
-
 if __name__ == '__main__':
+    def print_key(key):
+        for k in key:
+            print k, 
+            if type(key[k]) == type({}):
+                print
+                for l in key[k]:
+                    print '\t', l, key[k][l]
+            else: print key[k]
+        print
+
     Qs = {'milwaukee':
           (('Puetz Rd & 51st St', '841 N Broadway St'),
            ('27th and lisbon', '35th and w north'),
