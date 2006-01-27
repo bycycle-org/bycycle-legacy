@@ -118,14 +118,14 @@ function _find(alt_service)
 	  _setElV('to', fr_to[1]);
 	  for (var i = 0; i < fr_to.length; ++i) 
 	    fr_to[i] = escape(_cleanString(fr_to[i].replace('"', "'")));
-	  query_str = 'q=["' + fr_to.join('","') + '"]&dmode=' + _elV('dmode') + '&tmode=bike';
+	  query_str = 'q=["' + fr_to.join('","') + '"]&region=' + _elV('region') + '&tmode=bike';
 	}
       _showInputSection('route');
     } 
   else if (service == 'search') 
     {
       _webservice = 'geocode';
-      if (q) query_str = 'q=' + escape(_cleanString(q)) + '&dmode=' + _elV('dmode');
+      if (q) query_str = 'q=' + escape(_cleanString(q)) + '&region=' + _elV('region');
     } 
   else if (service == 'feedback') 
     {
@@ -136,7 +136,7 @@ function _find(alt_service)
 	'{"q":"'      + _elV('q')     + '",' +
 	' "fr":"'     + _elV('fr')    + '",' + 
 	' "to":"'     + _elV('to')    + '",' +
-	' "dmode":"'  + _elV('dmode') + '",' + 
+	' "region":"'  + _elV('region') + '",' + 
 	' "result":"' + _elV('result')  + '"}';
       query_str = 'feedback=' + escape(_cleanString(feedback, true)) + '&data=' + escape(data);    
     } 

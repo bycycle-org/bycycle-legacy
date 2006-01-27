@@ -1,12 +1,12 @@
 # Milwaukee Bicycle Travel Mode
 # 11/07/2005
 
-from byCycle.tripplanner.model import milwaukee
+from byCycle.tripplanner.model import milwaukeewi
 
-class Mode(milwaukee.Mode):
+class Mode(milwaukeewi.Mode):
     def __init__(self):
         self.tmode = "bicycle"
-        milwaukee.Mode.__init__(self)
+        milwaukeewi.Mode.__init__(self)
         self.mph = 10
 
     def getEdgeWeight(self, v, edge_attrs, prev_edge_attrs):
