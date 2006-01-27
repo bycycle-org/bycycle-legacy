@@ -1,8 +1,20 @@
-def index(region='', **params):
-    import os, datetime
-    import byCycle
+import os, datetime
+import byCycle
 
-    region = region.lower().replace(',', '')
+
+region_aliases = {'milwaukee': 'milwaukeewi',
+                  'metro': 'portlandor',
+                  'portland': 'portlandor',
+                  }
+
+
+def index(**params):
+    region = params['region'].lower().replace(',', '')
+
+    try:
+        region = region_aliases[region]
+    except KeyError:
+        pass
 
     # Create an options list of regions, setting the selected region if we got
     # here by http://tripplanner.bycycle.org/x where x is the name of some
