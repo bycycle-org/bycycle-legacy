@@ -4,27 +4,21 @@ from byCycle.lib import wsrest
 from byCycle.tripplanner.services import geocode
 
 class Geocode(wsrest.RestWebService):
-    def __init__(self):
-        wsrest.RestWebService.__init__(self)
+    def __init__(self, **params):
+        wsrest.RestWebService.__init__(self, **params)
                 
     def GET(self):
         try:
-            geocodes = geocode.get(self.input)
-        except geocode.InputError, e:
-            raise wsrest.BadRequestError(reason=e.description)
-        except geocode.AddressNotFoundError, e:
-            raise wsrest.NotFoundError(reason=e.description)
-        except geocode.MultipleMatchingAddressesError, e:
-            self.status = '300'
-            self.reason = e.description
-            result = wsrest.ResultSet('geocode', e.geocodes)
-            return repr(result)
-        except Exception, e:
-            #import time
-            #log = open('error_log', 'a')
-            #log.write('%s: %s\n' % (time.asctime(), e))
-            #log.close()
+            geocodes = geocode.get(self.params)
+        except geocode.InputError, exc:
+            raise wsrest.BadRequestError(reason=exc.description)
+        except geocode.AddressNotFoundError, exc:
+            raise wsrest.NotFoundError(reason=exc.description)
+        except geocode.MultipleMatchingAddressesError, exc:
+            choices = repr(wsrest.ResultSet('geocode', exc.geocodes))
+            raise wsrest.MultipleChoicesError(reason=exc.description,
+                                              choices=choices)
+        except Exception, exc:
             raise
         else:
-            result = wsrest.ResultSet('geocode', geocodes)
-            return repr(result)
+            return repr(wsrest.ResultSet('geocode', geocodes))

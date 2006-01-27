@@ -4,27 +4,21 @@ from byCycle.lib import wsrest
 from byCycle.tripplanner.services import route
 
 class Route(wsrest.RestWebService):
-    def __init__(self):
-        wsrest.RestWebService.__init__(self)
-             
-    def GET(self):
+    def __init__(self, **params):
+        wsrest.RestWebService.__init__(self, **params)
+        
+    def GET(self): 
         try:
-            q = self.input['q'].replace('\n', ' ')
-            self.input['q'] = eval(q)
-            the_route = route.get(self.input)
-        except route.InputError, e:
-            raise wsrest.BadRequestError(reason=e.description)
-        except route.MultipleMatchingAddressesError, e:
-            self.status = '300'
-            self.reason = e.description
-            result = wsrest.ResultSet('geocode', e.geocodes)
-            return repr(result)            
-        except Exception, e:
-            #import time
-            #log = open('error_log', 'a')
-            #log.write('%s: %s\n' % (time.asctime(), e))
-            #log.close()
+            q = self.params['q'].replace('\n', ' ')
+            self.params['q'] = eval(q)
+            the_route = route.get(self.params)
+        except route.InputError, exc:
+            raise wsrest.BadRequestError(reason=exc.description)
+        except route.MultipleMatchingAddressesError, exc:
+            choices = repr(wsrest.ResultSet('geocode', exc.geocodes))
+            raise wsrest.MultipleChoicesError(reason=exc.description,
+                                              choices=choices)
+        except Exception:
             raise
         else:
-            result = wsrest.ResultSet('route', the_route)
-            return repr(result)
+            return repr(wsrest.ResultSet('route', the_route))
