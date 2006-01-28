@@ -116,21 +116,35 @@ class Timer(object):
         self.start_time = 0
         self.end_time = 0
         self.elapsed_time = 0
+        self.paused = False        
+        self.pause_time = 0
+        self.time_paused = 0
     
-    def startTiming(self, msg):
+    def start(self):
         self.start_time = time.time()
-        print 'Timer started. %s' % msg
         
-    def stopTiming(self):
+    def stop(self):
         self.end_time = time.time()
-        self.elapsed_time = self.end_time - self.start_time
+        self.elapsed_time = self.end_time - self.start_time - self.time_paused
         units = 'second'
         if self.elapsed_time > 60:
             self.elapsed_time /= 60.0
             units = 'minute'
         if self.elapsed_time != 1:
             units += 's'
-        print "Timer stopped after %.2f %s." % (self.elapsed_time, units)
+        return '%.2f %s' % (self.elapsed_time, units)
 
     def getElapsedTime(self):
-        return 
+        return self.elapsed_time
+
+    def pause(self):
+        if self.paused:
+            return        
+        self.paused = True
+        self.pause_time = time.time()
+
+    def unpause(self):
+        if not self.paused:
+            return
+        self.paused = False
+        self.time_paused += (time.time() - self.pause_time)
