@@ -158,76 +158,76 @@ function placeMarkers(points, icons)
 
 function getBoxForPoints(points)
 {
-	var min_x = 180;
-	var max_x = -180;
-	var min_y = 90;
-	var max_y = -90;
-	for (var i = 0; i < points.length; i++) {
-		var p = points[i]
-		var x = p.x;
-		var y = p.y;
-		min_x = x < min_x ? x : min_x;
-		max_x = x > max_x ? x : max_x;
-		min_y = y < min_y ? y : min_y;
-		max_y = y > max_y ? y : max_y;
-	}
-	return new GBounds(min_x, min_y, max_x, max_y);
+  var min_x = 180;
+  var max_x = -180;
+  var min_y = 90;
+  var max_y = -90;
+  for (var i = 0; i < points.length; i++) {
+    var p = points[i]
+      var x = p.x;
+    var y = p.y;
+    min_x = x < min_x ? x : min_x;
+    max_x = x > max_x ? x : max_x;
+    min_y = y < min_y ? y : min_y;
+    max_y = y > max_y ? y : max_y;
+  }
+  return {'minX': min_x, 'minY': min_y, 'maxX': max_x, 'maxY': max_y};
 }
 
 
 function getCenterOfBox(box)
 {
-	var x = (box.minX + box.maxX) / 2.0;
-	var y = (box.minY + box.maxY) / 2.0;
-	return new GPoint(x, y);
+  var x = (box.minX + box.maxX) / 2.0;
+  var y = (box.minY + box.maxY) / 2.0;
+  return {'x': x, 'y': y};
 }
 
 
 function getBoxDimensions(box)
 {
-	return new GSize(box.maxX - box.minX, box.maxY - box.minY);
+  return {'width': box.maxX - box.minX, 'height': box.maxY - box.minY};
 }
 
 
 function centerAndZoomToBox(box)
 {
-	// Center the map at the box's center
-	// Zoom such that the box fits in the map
-	var center = getCenterOfBox(box);
-	var dims = getBoxDimensions(box);
+  // Center the map at the box's center
+  // Zoom such that the box fits in the map
+  var center = getCenterOfBox(box);
+  var dims = getBoxDimensions(box);
 
-	if (map.spec.getLowestZoomLevel) {
-		var zoom_level = map.spec.getLowestZoomLevel(center, dims, map.viewSize);
-		map.centerAndZoom(center, zoom_level);
-	} else {
-		map.centerAndZoom(center, 0);
+  if (map.spec.getLowestZoomLevel) {
+    var zoom_level = map.spec.getLowestZoomLevel(center, dims, map.viewSize);
+    map.centerAndZoom(center, zoom_level);
+  } else {
+    map.centerAndZoom(center, 0);
 
-		var rw = dims.width * 1.05;
-		var rh = dims.height * 1.05;
+    var rw = dims.width * 1.05;
+    var rh = dims.height * 1.05;
 
-		var wh = map.getSpanLatLng();
-		var w = wh.width;
-		var h = wh.height;
+    var wh = map.getSpanLatLng();
+    var w = wh.width;
+    var h = wh.height;
 
-		var i = 1;
-		while (rw > w || rh > h) {
-			map.zoomTo(i);
-			wh = map.getSpanLatLng();
-			w = wh.width;
-			h = wh.height;
-			if (i == 7) break;
-			++i;
-		}
-	}
+    var i = 1;
+    while (rw > w || rh > h) {
+      map.zoomTo(i);
+      wh = map.getSpanLatLng();
+      w = wh.width;
+      h = wh.height;
+      if (i == 7) break;
+      ++i;
+    }
+  }
 }
 
 
 function hideBikeThereNetwork()
 {
-	network_visible = false;
-	_el('bikeThereToggle').onclick = showBikeThereNetwork;
-	_el('bikeThereToggle').innerHTML = "Show Bike Route Network";
-	map.clearOverlays();
+  network_visible = false;
+  _el('bikeThereToggle').onclick = showBikeThereNetwork;
+  _el('bikeThereToggle').innerHTML = "Show Bike Route Network";
+  map.clearOverlays();
 }
 
 
@@ -235,61 +235,61 @@ var network_visible = false;
 var network = false;
 function showBikeThereNetwork()
 {
-	var processResponse = function(req) {
-		// Note: this is going to get called AFTER the outer function returns!!!
-		var colors = {"mu": "#660099",
-					  "bl": "#0000ff",
-					  "lt": "#006600",
-					  "mt": "#FF9933",
-					  "ht": "#FF6600",
-					  "ca": "#CC0033"}
-		if (!network) { eval("network = " + req.responseText + ";"); }
+  var processResponse = function(req) {
+    // Note: this is going to get called AFTER the outer function returns!!!
+    var colors = {"mu": "#660099",
+		  "bl": "#0000ff",
+		  "lt": "#006600",
+		  "mt": "#FF9933",
+		  "ht": "#FF6600",
+		  "ca": "#CC0033"}
+    if (!network) { eval("network = " + req.responseText + ";"); }
 
 
-		_el("bikeThereMsg").innerHTML = "Drawing network. Please wait...";
-		var modelines;
-		var line;
-		var color;
-		var last_idx;
+    _el("bikeThereMsg").innerHTML = "Drawing network. Please wait...";
+    var modelines;
+    var line;
+    var color;
+    var last_idx;
 
-		// TODO: only draw inside some particular size box, not just whatever size the map happens to be (like inside a square mile centered at map center).
-		// function to determine if a point is in bounds
-		// function to  draw network
+    // TODO: only draw inside some particular size box, not just whatever size the map happens to be (like inside a square mile centered at map center).
+    // function to determine if a point is in bounds
+    // function to  draw network
 
-		var bounds = map.getBoundsLatLng();
-		minX = bounds.minX;
-		maxX = bounds.maxX;
-		minY = bounds.minY;
-		maxY = bounds.maxY;
-		for (var mode in network) {
-			modelines = network[mode];
-			color = colors[mode];
-			for (var i = 0; i < modelines.length; ++i) {
-				line = modelines[i];
-				last_idx = line.length - 1;
-				if (((minX <= line[0].x && line[0].x <= maxX) &&
-					 (minY <= line[0].y && line[0].y <= maxY)) ||
-					((minX <= line[last_idx].x && line[last_idx].x <= maxX) &&
-					 (minY <= line[last_idx].y && line[last_idx].y <= maxY))) {
-					map.addOverlay(new GPolyline(line, color, 3, 1));
-				}
-			}
-		}
-
-		network_visible = true;
-		_el("bikeThereMsg").innerHTML = "";
-		_el('bikeThereToggle').style.display = "";
-		_el('bikeThereToggle').innerHTML = "Hide Bike Route Network";
-	};
-
-	if (map.getZoomLev_el() > 1) map.zoomTo(1);
-	_el('bikeThereToggle').style.display = "none";
-	_el('bikeThereToggle').onclick = hideBikeThereNetwork;
-
-	if (!network) {
-		_el("bikeThereMsg").innerHTML = "Getting network data. Please wait...";
-		doXmlHttpReq("GET", "/static/javascript/bikethere.json", processResponse);
-	} else {
-		processResponse();
+    var bounds = map.getBoundsLatLng();
+    minX = bounds.minX;
+    maxX = bounds.maxX;
+    minY = bounds.minY;
+    maxY = bounds.maxY;
+    for (var mode in network) {
+      modelines = network[mode];
+      color = colors[mode];
+      for (var i = 0; i < modelines.length; ++i) {
+	line = modelines[i];
+	last_idx = line.length - 1;
+	if (((minX <= line[0].x && line[0].x <= maxX) &&
+	     (minY <= line[0].y && line[0].y <= maxY)) ||
+	    ((minX <= line[last_idx].x && line[last_idx].x <= maxX) &&
+	     (minY <= line[last_idx].y && line[last_idx].y <= maxY))) {
+	  map.addOverlay(new GPolyline(line, color, 3, 1));
 	}
+      }
+    }
+
+    network_visible = true;
+    _el("bikeThereMsg").innerHTML = "";
+    _el('bikeThereToggle').style.display = "";
+    _el('bikeThereToggle').innerHTML = "Hide Bike Route Network";
+  };
+
+  if (map.getZoomLev_el() > 1) map.zoomTo(1);
+  _el('bikeThereToggle').style.display = "none";
+  _el('bikeThereToggle').onclick = hideBikeThereNetwork;
+
+  if (!network) {
+    _el("bikeThereMsg").innerHTML = "Getting network data. Please wait...";
+    doXmlHttpReq("GET", "/static/javascript/bikethere.json", processResponse);
+  } else {
+    processResponse();
+  }
 }

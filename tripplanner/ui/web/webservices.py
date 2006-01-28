@@ -31,6 +31,7 @@ def _process(req, service):
     except wsrest.RestError, exc:
         reason = exc.reason
     except Exception, exc:
+        raise
         status = 500
         reason = 'Internal Server Error (%s)' % str(exc)
     else:
@@ -64,12 +65,11 @@ if __name__ == '__main__':
         print req.content_type
         print req.headers_out
         print req.status
-
         #print req.reason
         print content
         print
 
-    #doRequest(geocode, region='milwaukee', q='124 and county line')
+    doRequest(geocode, region='milwaukeewi', q='27th and lisbon')
     doRequest(route, region='milwaukeewi', tmode='bike',
               q="['35th and north', '124 and county line']")
     doRequest(route, region='milwaukeewi', tmode='bike',
