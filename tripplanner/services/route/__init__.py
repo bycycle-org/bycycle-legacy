@@ -135,7 +135,7 @@ def get(region='', tmode='', q=[]):
 
     # TODO: Make this check actually work
     if fcode == tcode:
-        raise InputError('Start and End appear to be the same')
+        raise InputError('From and To appear to be the same')
 
 
     ## Made it through that maze--now fetch the main adjacency matrix, G
