@@ -24,56 +24,50 @@ class InputError(GeocodeError):
         GeocodeError.__init__(self, desc=desc)
 
  
-def get(input):
+def get(region='', q=''):
     """Get the geocode of the address, according to the data mode.
     
-    @param inaddr -- An address string that can be geocoded by the mode
-    @param mode -- Either the name of a mode OR a mode object. In the first
-                   case a mode will be instantiated to geocode the address; in
-                   the second the object will be used directly.
-    @return -- A list of geocodes for the inaddr
+    @param region Either the name of a region mode OR a mode object. In the first
+        case a mode will be instantiated to geocode the address; in the second the
+        object will be used directly.
+    @param q An address string that can be geocoded by the mode
+    @return A list of geocodes for the inaddr
     
     """
     # Check input
     errors = []
 
     try:
-        val = input['q'].strip().lower()
-        if not val: raise ValueError
-    except (KeyError, ValueError):
-        errors.append('Please enter an address.')
+        region.geocode
+    except AttributeError:    
+        region_is_object = False
+        region = region.strip().lower()
     else:
-        inaddr = val
-
-    try:
-        try:
-            val = input['region']
-            val = val.strip().lower()
-        except AttributeError:
-            pass
-        else:
-            if not val: raise ValueError
-    except (KeyError, ValueError):
-        errors.append('Please select a region.')
-    else:
-        mode = val
+        region_is_object = True
+    if not region:
+        errors.append('Region required')
+        
+    inaddr = q.strip().lower()
+    if not q:
+        errors.append('Address required')
 
     if errors: raise InputError(errors)
 
-    # See if mode is object (has geocode attr) or string (no geocode attr)
-    # If string, instantiate a new data mode object based on the string
-    try:
-        mode.geocode
-    except AttributeError:
+    # If region is a string (i.e., it's not an object) instantiate a new data mode
+    # based on the string
+    if not region_is_object:
         path = 'byCycle.tripplanner.model.%s'
-        mode = __import__(path % mode, globals(), locals(), ['']).Mode()
+        region = __import__(path % region, globals(), locals(), ['']).Mode()
 
     # Get geocode(s)
-    geocodes = mode.geocode(inaddr)    
+    geocodes = region.geocode(q)    
     len_geocodes = len(geocodes)
-    if len_geocodes == 0: raise AddressNotFoundError(inaddr)
-    elif len_geocodes > 1: raise MultipleMatchingAddressesError(geocodes)
-    else: return geocodes
+    if len_geocodes == 0:
+        raise AddressNotFoundError(q)
+    elif len_geocodes > 1:
+        raise MultipleMatchingAddressesError(geocodes)
+    else:
+        return geocodes
 
 
 if __name__ == "__main__":
@@ -124,28 +118,27 @@ if __name__ == "__main__":
         }
 
     i = 1
-    for mode in A:
+    for region in A:
         print
-        print 'Data mode: %s' % mode
+        print 'Data region: %s' % region
         print '------------------------------'
-        I = {'region': mode, 'q': None}
-        for a in A[mode]:
-            I['q'] = a
+        for q in A[region]:
             st = time.time()
             try:
-                geocodes = get(I)
+                geocodes = get(region=region, q=q)
             except AddressNotFoundError, e:
-                print i, a
+                print i, q
                 print e
             except MultipleMatchingAddressesError, e:
-                print i, a
+                print i, q
                 print e
-                for code in e.geocodes: print '%s' % code
+                for code in e.geocodes:
+                    print '%s' % code
             except Exception, e:
                 print e
                 raise
             else:
-                print i, a
+                print i, q
                 print '%s' % geocodes[0]
             i+=1
             tt = time.time() - st
