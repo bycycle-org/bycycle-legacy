@@ -23,33 +23,26 @@ def _process(req, service):
     try:
         content = eval('service.%s' % method)()
     except wsrest.MethodNotAllowedError, exc:
-        reason = exc.reason + ' (%s)' % method
+        content = exc.reason + ' (%s)' % method
         req.allow_methods(exc.getAllowMethods(self))
     except wsrest.MultipleChoicesError, exc:
         reason = exc.reason
         content = exc.choices
     except wsrest.RestError, exc:
-        reason = exc.reason
+        content = exc.reason
     except Exception, exc:
-        raise
         status = 500
-        reason = 'Internal Server Error (%s)' % str(exc)
+        content = str(exc)
     else:
         status = 200
-        reason = 'OK'
 
     try:
         req.status = exc.status
-        req.reason = exc.reason
     except (NameError, AttributeError):
         req.status = status
-        req.reason = reason
     
     req.content_type = 'text/plain'
-    try:
-        return content
-    except NameError:
-        return ''
+    return content
 
 
 if __name__ == '__main__':
