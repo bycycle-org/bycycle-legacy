@@ -41,23 +41,47 @@ class InputError(RouteError):
         RouteError.__init__(self, desc=desc)
 
 class MultipleMatchingAddressesError(RouteError):
-    def __init__(self, geocodes={'from': [], 'to': []}):
+    def __init__(self, geocodes={'fr': [], 'to': []}):
         self.geocodes = geocodes
         desc = 'Multiple matches found'
         RouteError.__init__(self, desc=desc)
 
 
-def get(input={}):
+def get(region='', tmode='', q=[]):
+    """Get a route for q in the specified region using the specified mode of travel.
+    
+    @param region Data mode (TODO: Make also determinable from place in geocoder) 
+    @param tmode The travel mode
+    @param q A list of address strings (currently only 2 supported)
+    @param options A dict of optional user options (sent off to tmode)
+
+    """
     st_tot = time.time()
     messages, errors = [], []
             
-    ## Get necessary data from input
-    # q -- list of route points (currently only 2 supported)
-    # region -- data mode (TODO: should be determined from place in geocoder) 
-    # tmode -- travel mode
-    # options -- dict of optional user options (sent off to tmode)
-    try: q = input['q']
-    except KeyError: errors.append('Route query required')
+    # Data mode (region)
+    region = region.strip()
+    if not region:
+        errors.append('Region required')
+    else:
+        try:
+            region = data_modes[region]
+        except KeyError:
+            errors.append('Unknown region: %s' % region)
+
+    # Travel mode
+    tmode = tmode.strip()
+    if not tmode:
+        errors.append('Travel mode required')
+    else:
+        try:
+            tmode = travel_modes[tmode]
+        except KeyError:
+            errors.append('Unknown travel mode: %s' % tmode)
+
+    # Query
+    if not q:
+        errors.append('Route query required')
     else:
         try:
             fr = q[0].strip()
@@ -70,23 +94,9 @@ def get(input={}):
         except IndexError:
             errors.append('End address required')
 
-    try:
-        region = input['region']
-    except KeyError:
-        errors.append('Data mode required')
-    else:
-        try: region = data_modes[region]
-        except KeyError: errors.append('Unknown data mode')        
-    try:
-        tmode = input['tmode']
-    except KeyError:
-        errors.append('Travel mode required')
-    else:
-        try: tmode = travel_modes[tmode]
-        except KeyError: errors.append('Unknown travel mode')
-
     # Let multiple input errors fall through to here
-    if errors: raise InputError(errors)
+    if errors:
+        raise InputError(errors)
 
     # The mode is a combination of the data/travel modes
     st = time.time()
@@ -96,25 +106,25 @@ def get(input={}):
 
 
     ## Get geocodes matching from and to addresses
-    M = {'from': [], 'to': []}
+    M = {'fr': [], 'to': []}
     
     st = time.time()
     try:
-        fcodes = geocode.get({'q': fr, 'region': mode})
+        fcodes = geocode.get(region=mode, q=fr)
     except geocode.AddressNotFoundError, e:
         errors.append(e.description)
     except geocode.MultipleMatchingAddressesError, e:
-        M['from'] = e.geocodes
+        M['fr'] = e.geocodes
     messages.append('Time to get from address: %s' % (time.time() - st))        
 
     st = time.time()
     try:
-        tcodes = geocode.get({'q': to, 'region': mode})
+        tcodes = geocode.get(region=mode, q=to)
     except geocode.AddressNotFoundError, e:
         errors.append(e.description)
     except geocode.MultipleMatchingAddressesError, e:
         M['to'] = e.geocodes
-    if M['from'] or M['to']: raise MultipleMatchingAddressesError(M)
+    if M['fr'] or M['to']: raise MultipleMatchingAddressesError(M)
     messages.append('Time to get to address: %s' % (time.time() - st))
 
     # Let multiple multiple match errors fall through to here
@@ -240,7 +250,7 @@ def get(input={}):
     st = time.time()
     directions = makeDirections(I, S)
     messages.append('Time to make directions: %s' % (time.time() - st))
-    route = {'from':       {'geocode': fcode, 'original': fr},
+    route = {'fr':       {'geocode': fcode, 'original': fr},
              'to':         {'geocode': tcode, 'original': to},
              'linestring': [],
              'directions': [],
@@ -508,7 +518,7 @@ def _makeDirectionsTable(route):
 ##            }
 
     distance = route['distance']['mi']
-    fr = route['from']['geocode']
+    fr = route['fr']['geocode']
     fr_addr = fr.address
     fr_str = str(fr)
     to = route['to']['geocode']
@@ -661,14 +671,14 @@ if __name__ == '__main__':
         qs = Qs[dm]
         for q in qs:
             try:
-                r = get({'q': q, 'region': dm, 'tmode': tm})
+                r = get(region=dm, tmode=tm, q=q)
             except MultipleMatchingAddressesError, e:
                 print e.geocodes
             except Exception, e:
                 raise
             else:
                 D = r['directions']
-                print r['from']['geocode']
+                print r['fr']['geocode']
                 print r['to']['geocode']
                 for d in D:
                     print '%s on %s toward %s -- %s mi [%s]' % \
