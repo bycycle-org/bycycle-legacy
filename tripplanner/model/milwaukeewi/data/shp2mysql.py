@@ -1,4 +1,24 @@
-# Milwaukee shapefile import
+# shp2mysql.py 
+#  Milwaukee shp/dbf import
+#   
+# AUTHOR 
+#  Wyatt Baldwin <wyatt@bycycle.org>
+# DATE 
+#  January 27, 2006
+# VERSION 
+#  0
+# PURPOSE 
+#  Script to import line geometry and associated attributes from a street layer
+#  and import it into a normalized database
+# USAGE 
+#  python shp2mysql.py
+# LICENSE 
+#  GNU Public License (GPL)
+#  See LICENSE in top-level package directory
+# WARRANTY 
+#  This program comes with NO warranty, real or implied.
+# TODO
+#  Turn this into a derived class; create a base class that all regions can use
 import sys, os
 from pysqlite2 import dbapi2 as sqlite
 from byCycle.lib import gis, meter
@@ -19,17 +39,15 @@ attr_fields = ('one_way', 'cfcc', 'bike_facil', 'lanes', 'adt', 'spd')
 con, cur = None, None
     
 
-
 def shpToRawSql():
-    timer.startTiming('Converting shapefile to monolithic SQL table.')
     try:
-        os.unlink('db.db')
-        os.unlink('db.db-journal')
+        os.unlink('raw.db')
+        os.unlink('raw.db-journal')
     except OSError, e:
         print e
-    datasource = 'route_roads84_without_bike_trails'
-    inlayer = 'route_roads84work'
-    outdb = 'db.db'
+    datasource = 'route_roads84psrenode'
+    inlayer = 'route_roads84psrenode'
+    outdb = 'raw.db'
     outtable = 'raw'
     outsrs = '' #'-t_srs WGS84'
     outformat = 'SQLite'
@@ -44,7 +62,6 @@ def shpToRawSql():
     exit_code = os.system(cmd)
     if exit_code:
         sys.exit()
-    timer.stopTiming()
 
 def fixRaw():
     ## Add missing columns
@@ -252,31 +269,44 @@ def createNodes():
 
 def transferAttrs():
     ## Transfer core attributes to street table
-    Q = 'INSERT INTO layer_street ' \
+    Q = 'INSERT INTO db.layer_street ' \
         'SELECT rowid, %s ' \
         'FROM raw' % \
         (','.join(layer_fields))
     execute(Q)
     ## Transfer extra attributes to attributes table (attrs)
-    Q = 'INSERT INTO attr_street ' \
+    Q = 'INSERT INTO db.attr_street ' \
         'SELECT rowid, %s ' \
         'FROM raw' % \
         (','.join(attr_fields))
     execute(Q)
     con.commit()
 
-def cleanUp():
-    ## Clean up
-    Qs = ('DROP TABLE raw', 'VACUUM')
+
+def addIndexes():
+    Qs = ('CREATE INDEX db.addr_f on layer_street (addr_f)',
+          'CREATE INDEX db.addr_t on layer_street (addr_t)',
+          'CREATE INDEX db.node_f_id on layer_street (node_f_id)',
+          'CREATE INDEX db.node_t_id on layer_street (node_t_id)',
+          'CREATE INDEX db.stid on layer_street (streetname_id)',
+          'VACUUM',
+          'ANALYZE',
+          )
     for Q in Qs: 
         execute(Q)
-    cur.close()
-    con.close()
+        
+def cleanUp():
+    try:
+        cur.close()
+        con.close()
+    except AttributeError:
+        print 'Failed: Closing of database (database not open)'
 
 def execute(Q):
     if cur is None:
         openDB()
     try:
+        print 'Executing: "%s"' % Q
         cur.execute(Q)
     except Exception, e:
         print 'Failed: %s\n\t%s' % (Q, e)
@@ -285,67 +315,82 @@ def execute(Q):
 def openDB():
     ## Set up DB connection
     global con, cur
-    con = sqlite.connect('db.db')
+    con = sqlite.connect('raw.db')
     cur = con.cursor()
+    Q = 'ATTACH DATABASE "db.db" AS db'
+    execute(Q)    
 
+def run():
+    overall_timer = meter.Timer()
+    overall_timer.start()
 
-if __name__ == '__main__':
     # This timer gets reused in the functions above
     timer = meter.Timer()    
-    timer.startTiming('Transferring data into byCycle schema...')
+    timer.start()
+    
+    print 'Transferring data into byCycle schema...\n' \
+          '----------------------------------------' \
+          '----------------------------------------'
 
-    pairs = [('Converting shapefile to monolithic SQL table.',
+    pairs = [('Convert shapefile to monolithic SQL table',
               shpToRawSql),
 
-             ('Creating byCycle schema tables.',
+             ('Create byCycle schema tables',
               os.system, ('sqlite3 db.db < ./schema.sql',)),
 
-             ('Opening DB connection', openDB),
+             ('Open DB connection', openDB),
     
-             ('Fixing raw table: Removing NULLs, adding columns, etc.',
+             ('Fix raw table: Remove NULLs, add columns, etc',
               fixRaw),
              
-             ('Unifying address ranges.',
+             ('Unify address ranges',
               unifyAddressRanges),
-             
-             ('Transferring street names.',
+
+             ('Transfer street names',
               transferStreetNames),
              
-             ('Updating street name IDs in raw table.',
+             ('Update street name IDs in raw table',
               updateRawStreetNameIds),
              
-             ('Updating city IDs in raw table.',
-              updateRawCityIds),
-             
-             ('Transferring city names.',
+             ('Transfer city names',
               transferCityNames),
              
-             ('Updating city IDs in raw table.',
+             ('Update city IDs in raw table',
               updateRawCityIds),
              
-             ('Updating state IDs in raw table.',
+             ('Update state IDs in raw table',
               updateRawStateIds),
              
-             ('Creating nodes.',
+             ('Create nodes',
               createNodes),
              
-             ('Transferring attributes.',
+             ('Transfer attributes',
               transferAttrs),
 
-             ('Cleaning up.',
+             ('Add indexes',
+              addIndexes),
+
+             ('Clean up',
              cleanUp),
              ]
 
-    for p in pairs[-4:]:
+    for p in pairs:
         msg, func = p[0], p[1]
         try:
             args = p[2]
         except IndexError:
             args = ()
-        timer.startTiming(msg)
-        apply(func, args)
-        timer.stopTiming()
+        overall_timer.pause()
+        resp = raw_input('====> %s? ' % msg).strip().lower()
+        overall_timer.unpause()
+        if resp in ('', 'y'):
+            timer.start()
+            apply(func, args)
+            print timer.stop()
 
-    timer.stopTiming()
-    print 'Done.'
+    print '----------------------------------------' \
+          '----------------------------------------\n' \
+          'Done. %s total.' % overall_timer.stop()
 
+if __name__ == '__main__':
+    run()
