@@ -86,7 +86,7 @@ function _find(alt_service)
   var fr_to;
   var query_str = '';
   
-  // See if search query is for a route (if it has " to " in between 
+  // See if search query is for a route (if it has " to " between to other strings)
   if (service == 'search') 
     {
       var words = _trim(q).split(/\s+to\s+/i);
@@ -198,14 +198,13 @@ function _callback(req)
   
   if (error) 
     {
-      result_text = (result_text ? result_text : reason);
-      status_msg += '<b>Error</b>'; 
+      result_text = '<h2>Error</h2>' + (result_text ? result_text : reason);
     } 
   else 
     {
-      status_msg += ((new Date().getTime() - start_ms) / 1000.0) + 's';
+      _setIH('elapsed_time', ((new Date().getTime() - start_ms) / 1000.0) + 's');
     }
-  _setResult('<div>'+status_msg+'</div>' + result_text);
+  _setResult(result_text);
   return !error;
 }
 
@@ -220,7 +219,7 @@ function _geocodeCallback(status, result_set)
       geocodes = result_set['result_set']['result'];
       var geocode = geocodes[0];
       _showGeocode(0, true);
-      result_text = _makeAddressFromGeocode(geocode, true);
+      result_text = '<h2>Address</h2>' +_makeAddressFromGeocode(geocode, true);
       break;
     case 300: // Multiple matches
       geocodes = result_set['result_set']['result'];
@@ -283,7 +282,7 @@ function _routeCallback(status, result_set)
 	}
       break;			 
     case 300: // Multiple matches
-      var geocodes_fr = result_set['result_set']['result']['from'];
+      var geocodes_fr = result_set['result_set']['result']['fr'];
       var geocodes_to = result_set['result_set']['result']['to'];
       result_text = '<div id="mma">' +
 	'<h3>Multiple Matches Found</h3>' +
@@ -391,7 +390,7 @@ function _makeAddressFromGeocode(geocode, show_lon_lat, separator)
 		 city, (city ? ', ' : ''), 
 		 state, (state ? ' ' : ''), 
 		 zc || ''];
-  if (show_lon_lat) address.push(separator, 'long: ', geocode.x, ', lat: ', geocode.y);
+  if (show_lon_lat) address.push(separator, geocode.x, ', ', geocode.y);
   return address.join('');
 }
 
@@ -406,7 +405,7 @@ function _showGeocode(index, center)
       var href = ' href="javascript:void(0);" ';
       var html = ['<div style="width:250px;">',
 		  '<b>Address</b><br/>',
-		  info_addr, '<hr/>',
+		  info_addr, '<br/>',
 		  'Set as ',
 		  '<a', href, ' onclick="_setRouteFieldToAddress(\'fr\', \'', field_addr, '\');">From</a> or ',
 		  '<a', href, ' onclick="_setRouteFieldToAddress(\'to\', \'', field_addr, '\');">To</a> address for route<br/>',
