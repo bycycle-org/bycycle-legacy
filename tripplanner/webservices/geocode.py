@@ -9,7 +9,7 @@ class Geocode(wsrest.RestWebService):
                 
     def GET(self):
         try:
-            geocodes = geocode.get(self.params)
+            geocodes = geocode.get(**self.params)
         except geocode.InputError, exc:
             raise wsrest.BadRequestError(reason=exc.description)
         except geocode.AddressNotFoundError, exc:

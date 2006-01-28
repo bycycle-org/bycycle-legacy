@@ -11,7 +11,7 @@ class Route(wsrest.RestWebService):
         try:
             q = self.params['q'].replace('\n', ' ')
             self.params['q'] = eval(q)
-            the_route = route.get(self.params)
+            the_route = route.get(**self.params)
         except route.InputError, exc:
             raise wsrest.BadRequestError(reason=exc.description)
         except route.MultipleMatchingAddressesError, exc:
