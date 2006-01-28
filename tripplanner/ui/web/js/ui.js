@@ -205,7 +205,7 @@ function _find(alt_service)
     } 
   else 
     {
-      var url = ['http://', domain, '/', dir, 'webservices/', _webservice, 
+      var url = ['http://', domain, '/', dir, _webservice, 
 		 '?', query_str].join('');
       //alert(url);
       doXmlHttpReq('GET', url, _callback);
