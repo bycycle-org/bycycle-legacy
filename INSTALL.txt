@@ -11,39 +11,43 @@ Version
 Software Prerequisites
 ----------------------
 
-There are few pieces of additional software necessary to run the byCycle 
+There are few pieces of additional software necessary to run the byCycle
 system. All of these are free and available for just about any platform:
 
-- Python. We are using version 2.4.2. Other versions are untested, but may work.
-  <http://www.python.org/>
-- SQLite <http://www.sqlite.org/>
-- PySQLite <http://initd.org/tracker/pysqlite>
-- A web server. I'm using Apache 2.0.52. <http://www.apache.org/>
+- Python 2.4.2 <http://www.python.org/>
+- Apache web server 2.0.52 <http://www.apache.org/>
+- mod_python 3.1.4 <http://www.modpython.org/>
+- SQLite 3.2.8 <http://www.sqlite.org/>
+- PySQLite 2.0.6 <http://initd.org/tracker/pysqlite>
 
 If you want to be able to import data, you will also need:
 
-- FWTools <http://fwtools.maptools.org/>
+- FWTools 1.0.0a7 <http://fwtools.maptools.org/>
+
+Other versions of the above software may work, but other combinations have not 
+been tested. In general, we are going to keep up with the latest stable 
+releases of all supporting software.
 
 
 Placement of Files
 ------------------
 
-Unpack the byCycle package somewhere that's in your PYTHONPATH. 
+Unpack the byCycle package somewhere that's in your PYTHONPATH.
 
-Maybe the easiest way to do this is to unpack it under 
-/path_to_python2.4_lib/site-packages. For example, we installed python2.4 
-under /usr/local/ so our site-packages directory is 
-/usr/local/lib/python2.4/site-packages. The other likely location is 
-/usr/lib/python2.4/site-packages. 
+Maybe the easiest way to do this is to unpack it under
+/path_to_python2.4_lib/site-packages. For example, we installed python2.4
+under /usr/local/ so our site-packages directory is
+/usr/local/lib/python2.4/site-packages. The other likely location is
+/usr/lib/python2.4/site-packages.
 
 For Windows, this will probably be C:\Python24\Lib\site-packages
 
-If you really wanted to, you could also unpack to some abitrary directory and 
+If you really wanted to, you could also unpack to some abitrary directory and
 then add that directory to your PYTHONPATH.
 
 Whatever you do, make sure that if you have multiple version of Python you are
-installing any and all related Python packages under the same version of 
-Python. At the current time, what that means is, make sure PySQLite is 
+installing any and all related Python packages under the same version of
+Python. At the current time, what that means is, make sure PySQLite is
 installed under the same Python as the byCycle package.
 
 For the Web interface you can do one of two things:
@@ -52,7 +56,7 @@ For the Web interface you can do one of two things:
 somewhere under your web tree to the web interface directory, like so:
 'ln -s /usr/local/lib/python2.4/site-packages/byCycle/tripplanner/ui/web/ /var/www/html/tripplanner'
 
-In this scenario you need to also create a symbolic link from the interface 
+In this scenario you need to also create a symbolic link from the interface
 directory to the web service directory, like so:
 'cd tripplanner/ui/web/'
 'ln -s ../../webservices/ webservices'
@@ -66,21 +70,21 @@ Personally, I would avoid option 2 if possible. On Windows, I have no idea how
 to make symbolic links or something equivalent, so option 2 is what I use.
 
 At this point, you should be able to navigate to the appropriate place in your
-web browser and view the interface, but you may not be able to find addresses 
+web browser and view the interface, but you may not be able to find addresses
 or routes just yet...
 
 
 Data
 ----
 
-Under certain circumstances, the package will be provided with the database 
+Under certain circumstances, the package will be provided with the database
 and routing matrix included. In this case, you shouldn't have to do anything
 else.
 
 When the data is not supplied, here's what you do to add a new data mode and
 its associated travel modes to the model:
 
-- Make sure you have FWTools installed first and that is on your PATH; the 
+- Make sure you have FWTools installed first and that is on your PATH; the
   data import script requires a command line utility called ogr2ogr from it
 
 - Make a new directory in the model for the data and associated scripts
@@ -89,35 +93,39 @@ its associated travel modes to the model:
 - Create a directory to hold your data files
   'mkdir tripplanner/model/timbuktu/data'
 
-- Put your data (e.g., timbuktu.shp, timbuktu.dbf) in the data directory
-  I'll assume you know how to move and copy files
+- Put your data files for import (e.g., timbuktu.shp, timbuktu.dbf) in a 
+  subdirectory of the data directory. It doesn't really matter what the
+  directory is called; just make it something meaningful for you and something
+  that will distinguish it from any future versions of the data.
 
-- Copy the files __init__.py and bicycle.py from tripplanner/model/metro to 
+- Copy the files __init__.py and bicycle.py from tripplanner/model/metro to
   tripplanner/model/timbuktu/
 
-- Copy the files shp2sql.py and schema.sql from tripplanner/model/metro/data 
+- Copy the files shp2sql.py and schema.sql from tripplanner/model/metro/data
   to tripplanner/model/timbuktu/data
+
+- Put your data files for import (shp/dbf probably) into a subdirectory of 
 
 - Here's where it gets hard: now you have to modify schema.sql and shp2sql.py
   to be able to import your data. How you will do this depends on your data. If
-  your data is similar to other datasets we've seen, then it will be fairly 
+  your data is similar to other datasets we've seen, then it will be fairly
   easy; if not, it might be hard, possibly very hard (or just tedious and
   annoying).
 
-- If you get past the above step, you now need to modify __init__.py and 
+- If you get past the above step, you now need to modify __init__.py and
   bicycle.py. You will modify __init__.py to create the adjacency matrix for
-  routing. This shouldn't be too difficult. You just need to specify which 
+  routing. This shouldn't be too difficult. You just need to specify which
   fields from the DB you want to use. To create the adjacency matrix, run
-  __init__.py as a script. Next, you will modify bicycle.py to create the 
-  weight (or cost) function using the fields that should now be in the 
+  __init__.py as a script. Next, you will modify bicycle.py to create the
+  weight (or cost) function using the fields that should now be in the
   adjacency matrix.
 
-If everything went well, you should now be able to look up addresses and find 
-routes using the data you imported and the files modified as detailed above. 
+If everything went well, you should now be able to look up addresses and find
+routes using the data you imported and the files modified as detailed above.
 
-One thing to keep in mind when doing the above is to make sure you keep the 
-structure the same as the other data modes in the model. In other words, you 
-want the same directory structure and the same paths, except you'll 
+One thing to keep in mind when doing the above is to make sure you keep the
+structure the same as the other data modes in the model. In other words, you
+want the same directory structure and the same paths, except you'll
 change metro to timbuktu and add or remove fields as appropriate to your data.
 
 
@@ -127,4 +135,5 @@ Problems and Issues
 If you have any problems with any of this, please feel free to contact us:
 Email: support@bycycle.org
 Web Form: http://www.byCycle.org/contact.html
+
 

@@ -2,26 +2,16 @@ import os, datetime
 import byCycle
 
 
-region_aliases = {'milwaukee': 'milwaukeewi',
-                  'metro': 'portlandor',
-                  'portland': 'portlandor',
-                  }
-
-
-def index(region='', tmode='', q=''):
+def index(region='', tmode='', q='', **params):
     region = region.strip().lower().replace(',', '')
+    region = _getRegionForAlias(region)
     q = ' '.join(q.split())
-
-    try:
-        region = region_aliases[region]
-    except KeyError:
-        pass
 
     # Create an options list of regions, setting the selected region if we got
     # here by http://tripplanner.bycycle.org/x where x is the name of some
-    # region
-    region_option = '<option value="%s">%s</option>'
-    region_option_selected = '<option value="%s" selected="selected">%s</option>'
+    # region (list is sorted by state, then area)
+    region_opt = '<option value="%s">%s</option>'
+    region_opt_selected = '<option value="%s" selected="selected">%s</option>'
     regions = {'wi': ['milwaukee',
                       ],
                'or': ['portland',
@@ -29,7 +19,7 @@ def index(region='', tmode='', q=''):
                }
     states = regions.keys()
     states.sort()
-    regions_option_list = []
+    regions_opt_list = []
     region_display = ''
     for state in states:
         areas = regions[state]
@@ -37,13 +27,13 @@ def index(region='', tmode='', q=''):
         for area in areas:
             reg = '%s%s' % (area, state)
             if reg == region:
-                opt = region_option_selected
+                opt = region_opt_selected
                 region_display = ' - %s, %s' % (area.title(), state.upper())
             else:
-                opt = region_option 
-            regions_option_list.append(opt % (reg, '%s, %s' % (area.title(),
+                opt = region_opt 
+            regions_opt_list.append(opt % (reg, '%s, %s' % (area.title(),
                                                                state.upper())))
-    regions_option_list = '\n'.join(regions_option_list)
+    regions_opt_list = '\n'.join(regions_opt_list)
 
     template = '%stripplanner/ui/web/tripplanner.html' % byCycle.install_path
 
@@ -54,14 +44,14 @@ def index(region='', tmode='', q=''):
 
     template_file = open(template)
     data = {'last_modified': last_modified,
-            'regions_option_list': regions_option_list,
+            'regions_opt_list': regions_opt_list,
             'region': region_display,
             'q': q,
             'fr': '',
             'to': '',
             }
 
-    result, fr_to = _processQuery(region, tmode, q)
+    result, fr_to = _doQuery(region, tmode, q)
 
     data['result'] = result
 
@@ -75,7 +65,7 @@ def index(region='', tmode='', q=''):
     return content
 
 
-def _processQuery(region, tmode, q):
+def _doQuery(region, tmode, q):
     if not q:
         result = '''
         <p>
@@ -103,15 +93,82 @@ def _processQuery(region, tmode, q):
             from byCycle.tripplanner.services import geocode
             geocodes = geocode.get(region=region, q=q)
             address = geocodes[0]
-            result = '<h2>Address</h2><p>%s</p>' % str(address).replace('\n', '<br/>')
+            result = '<h2>Address</h2><p>%s</p>' % \
+                     str(address).replace('\n', '<br/>')
     return result, rq
+
+
+## Web Services
+
+def geocode(req, **params):
+    return _doWebServiceQuery(req, 'geocode', **params)
+
+
+def route(req, **params):
+    return _doWebServiceQuery(req, 'route', **params)
+
+
+def _doWebServiceQuery(req, service, **params):
+    try: 
+        from mod_python import apache
+    except ImportError:
+        pass
+    from byCycle.lib import wsrest
+
+    params['region'] = _getRegionForAlias(params['region'])
+        
+    # Import correct web service module
+    path = 'byCycle.tripplanner.webservices.%s'
+    mod = __import__(path % service, globals(), locals(), [''])
+    # Create web service object
+    obj = getattr(mod, service.title())(**params)
+    
+    method = req.method
+    try:
+        content = eval('obj.%s' % method)()
+    except wsrest.MethodNotAllowedError, exc:
+        content = exc.reason + ' (%s)' % method
+        req.allow_methods(exc.getAllowMethods(self))
+    except wsrest.MultipleChoicesError, exc:
+        content = exc.choices
+    except wsrest.RestError, exc:
+        content = exc.reason
+    except Exception, exc:
+        status = 500
+        content = str(exc)
+    else:
+        status = 200
+
+    try:
+        req.status = status
+    except NameError:
+        req.status = exc.status
+    
+    req.content_type = 'text/plain'
+    return content
+
+
+## Helpers
+
+def _getRegionForAlias(alias):
+    region_aliases = {'mil': 'milwaukeewi',
+                      'milwaukee': 'milwaukeewi',
+                      'metro': 'portlandor',
+                      'por': 'portlandor',
+                      'portland': 'portlandor',
+                      }
+    try:
+        region = region_aliases[alias]
+    except KeyError:
+        return alias
+    else:
+        return region
 
 
 def _isRouteQuery(q):
     fr_to = q.lower().split(' to ')
     if len(fr_to) > 1:
         return fr_to
-    
     try:
         fr_to = eval(q)
     except:
@@ -119,14 +176,90 @@ def _isRouteQuery(q):
     else:
         if isinstance(fr_to, list) and len(fr_to) > 1:
             return fr_to
-
     return None
 
 
+## Testing
+    
 if __name__ == '__main__':
-    content = index(region='milwaukee', q='27th and lisbon')
-    print content
+    import sys
 
-    content = index(region='milwaukee', tmode='bike',
-                    q='27th and lisbon to 35th and north')
-    print content
+    
+    class Req(object):
+        def __init__(self):
+            self.content_type = ''
+            self.headers_out = {}
+
+
+    P = [{'service': geocode,
+          'region': 'milwaukee',
+          'q': '27th and lisbon'
+          },
+         
+         {'service': route,
+          'region': 'milwaukeewi',
+          'tmode': 'bike',
+          'q': "['35th and north', '124 and county line']"
+          },
+         
+         {'service': route,
+          'region': 'milwaukeewi',
+          'tmode': 'bike',
+          'q': "['35th and north', '27th and lisbon']"
+          },
+         ]
+
+
+    print
+    def runTest(func):
+        print 'Running %s tests' % len(P)
+        errs = []
+        show_content = False
+        for i, params in enumerate(P):
+            try:
+                content = func(show_content=show_content, **params)
+            except Exception, exc:
+                content = ''
+                errs.append((i+1, exc))
+                char = '-'
+            else:
+                char = '+'
+            if show_content:
+                print content
+                print
+            else:
+                sys.stdout.write(char)
+                sys.stdout.flush()
+                
+        print '\nDone'
+        if errs:
+            print 'Errors'
+        for i, e in errs:
+            if e:
+                print '%s) %s' % (i, e)
+        print
+
+        
+    ## "CGI" test function
+
+    def doRequest(show_content=False, **params):
+        return index(**params)
+    runTest(doRequest)
+
+
+    ## Web Services test function
+    
+    def doRequest(service=None, show_content=False, **params):
+        req = Req()
+        req.method = 'GET'
+        content = service(req, **params)
+        if show_content:
+            print req.content_type
+            print req.headers_out
+            print req.status
+            #print req.reason
+        return content
+    runTest(doRequest)
+
+
+
