@@ -6,7 +6,7 @@ var domain = location.href.split('/')[2];
 // Decide if we are running locally (where locally means not on the production server)
 if (domain == 'tripplanner.bycycle.org')
   {
-    var local = 0;  // Set to force local
+    var local = 0;
     var dir = '';
   }
 else
@@ -29,26 +29,16 @@ var urls_to_keys_map = {
 // Get the API key associated with the URL
 var api_key = urls_to_keys_map[base_url];
 
-// If we're running locally, load local GMap script 
-// If we're running, load official script, but only if the URL has an associated API key
-if (local) 
+// If we're running locally, load local GMap script. If we're running, load 
+// official script, but only if the URL has an associated API key.
+if (local)
   script('js/G_map.js');
- else if (api_key) 
-   script('http://maps.google.com/maps?file=api&amp;v=1&amp;key=' + api_key);
+else if (api_key)
+  script('http://maps.google.com/maps?file=api&amp;v=1&amp;key=' + api_key);
 
 
-/**
- * Event handler for stuff that should be done after the window has completed loading
- */
-window.onload = function()
-{
-  ui__init__();
-  if (local || api_key) 
-    gmap__init__();
-  else 
-    _setIH('map', 'Error loading map: Could not find valid API key for ' + base_url + '.');
-  resizeMap();
+function script(src) 
+{ 
+  echo('<'+'script src="'+src+'"'+' type="text/javascript"><'+'/script>'); 
 }
 
-
-function script(src) { echo('<'+'script src="'+src+'"'+' type="text/javascript"><'+'/script>'); }

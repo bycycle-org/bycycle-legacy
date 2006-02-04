@@ -20,7 +20,7 @@ def index(region='', tmode='', q='', **params):
     states = regions.keys()
     states.sort()
     regions_opt_list = []
-    region_display = ''
+    region_display = 'All Regions'
     for state in states:
         areas = regions[state]
         #areas.sort()
@@ -28,11 +28,12 @@ def index(region='', tmode='', q='', **params):
             reg = '%s%s' % (area, state)
             if reg == region:
                 opt = region_opt_selected
-                region_display = ' - %s, %s' % (area.title(), state.upper())
+                region_display = '%s, %s' % (area.title(), state.upper())
             else:
                 opt = region_opt 
-            regions_opt_list.append(opt % (reg, '%s, %s' % (area.title(),
-                                                               state.upper())))
+            regions_opt_list.append(opt % (reg, '%s, %s' %
+                                           (area.title(),
+                                            state.upper())))
     regions_opt_list = '\n'.join(regions_opt_list)
 
     template = '%stripplanner/ui/web/tripplanner.html' % byCycle.install_path
@@ -40,12 +41,14 @@ def index(region='', tmode='', q='', **params):
     # Get and format the last modified date of the template
     stat = os.stat(template)
     last_modified = datetime.date.fromtimestamp(stat.st_mtime)
-    last_modified = last_modified.strftime("%B %d, %Y")
+    last_modified = last_modified.strftime('%d %b %Y')
+    if last_modified[0] == '0':
+        last_modified = last_modified[1:]
 
     template_file = open(template)
     data = {'last_modified': last_modified,
             'regions_opt_list': regions_opt_list,
-            'region': region_display,
+            'region_display': region_display,
             'q': q,
             'fr': '',
             'to': '',
@@ -68,19 +71,19 @@ def index(region='', tmode='', q='', **params):
 def _doQuery(region, tmode, q):
     if not q:
         result = '''
-        <p>
         Welcome to the
-        <a href="http://www.bycycle.org/" title="byCycle Home Page">byCycle</a> 
+        <a href="http://www.bycycle.org/" title="byCycle Home Page">byCycle</a>
         <a href="http://www.bycycle.org/tripplanner"
-           title="Information About the Trip Planner"
+           title="Information about the Trip Planner"
            >Trip Planner</a>.
         The Trip Planner is under active development and may have some issues.
         If you find a problem, please send us feedback by using the form on 
         <a href="http://www.bycycle.org/contact.html"
-           title="Contact Us"
+           title="Contact us"
            >this page</a> or
-        <a href="mailto:wyatt@bycycle.org">sending email</a>.
-        </p>
+        <a href="mailto:wyatt@bycycle.org"
+        title="Send us email"
+        >sending email</a>.
         '''
         rq = None
     else:
