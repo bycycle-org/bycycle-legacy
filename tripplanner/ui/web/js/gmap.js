@@ -4,12 +4,12 @@
 var map;
 
 var regions = 
-  {'all':
+  {'all': 
    {
      'text': 'All Regions',
-
+     
      'bounds': {'minX': -123.485755, 'minY': 42.842059, 
-		'maxX': -87.828241,  'maxY': 45.814153},
+		'maxX': -87.828241,  'maxY': 45.814153}
    }, 
    
    'portlandor': 
@@ -17,7 +17,7 @@ var regions =
      'text': 'Portland, OR',
 
      'bounds': {'minX': -123.485755, 'minY': 44.885219,
-		'maxX': -121.649618, 'maxY': 45.814153},
+		'maxX': -121.649618, 'maxY': 45.814153}
    },
    
    'milwaukeewi':
@@ -25,7 +25,7 @@ var regions =
      'text': 'Milwaukee, WI',
 
      'bounds': {'minX': -88.069888, 'minY': 42.842059, 
-		'maxX': -87.828241, 'maxY': 43.192647},
+		'maxX': -87.828241, 'maxY': 43.192647}
    }
   };
 
