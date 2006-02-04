@@ -207,6 +207,8 @@ function centerAndZoomToBox(box, center, dimensions)
   // Zoom such that the box fits in the map
   var cent = center || getCenterOfBox(box);
   var dims = dimensions || getBoxDimensions(box);
+  dims.width *= 1.05;
+  dims.height *= 1.05;
 
   if (map.spec.getLowestZoomLevel) {
     var zoom_level = map.spec.getLowestZoomLevel(cent, dims, map.viewSize);
@@ -214,8 +216,8 @@ function centerAndZoomToBox(box, center, dimensions)
   } else {
     map.centerAndZoom(cent, 0);
 
-    var rw = dims.width * 1.05;
-    var rh = dims.height * 1.05;
+    var rw = dims.width;
+    var rh = dims.height;
 
     var wh = map.getSpanLatLng();
     var w = wh.width;
