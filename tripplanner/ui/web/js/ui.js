@@ -514,7 +514,9 @@ function resizeMap()
       height = height + 'px';
       el('map').style.height = height;
       el('result').style.height = height;
-      if (map) map.onResize();
+      // Tell the map it's been resized
+      if (map) 
+	map.onResize();
     }
 }
 
