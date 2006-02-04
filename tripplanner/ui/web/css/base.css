@@ -76,13 +76,17 @@ a.selected {
 }
 
 #logo {
-  font-size: 20px;
-  font-weight: bold;
+  padding-right: 10px;
 }
 
 #logo * {
   text-decoration: none;
-  color: black;
+  color: #000;
+}
+
+#select_input {
+  padding: 4px 10px;
+  border: 1px solid gray;
 }
 
 #input_form {
