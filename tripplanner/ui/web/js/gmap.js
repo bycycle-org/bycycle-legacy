@@ -4,24 +4,31 @@
 var map;
 
 var regions = 
-    {'metro': 
-         {
-         },
-     'milwaukee':
-         {
-         }
-    };
+  {'all':
+   {
+     'text': 'All Regions',
 
-var tl = {'x': -88.069888, 'y': 42.842059};
-var br = {'x': -87.828241, 'y': 43.192647};
-var milwaukee_box = [tl, {'x': br.x, 'y': tl.y}, br, {'x': tl.x, 'y': br.y}, tl];
+     'bounds': {'minX': -123.485755, 'minY': 42.842059, 
+		'maxX': -87.828241,  'maxY': 45.814153},
+   }, 
+   
+   'portlandor': 
+   {
+     'text': 'Portland, OR',
 
-var tl = {'x': -123.485755, 'y': 44.885219};
-var br = {'x': -121.649618, 'y': 45.814153};
-var metro_box = [tl, {'x': br.x, 'y': tl.y}, br, {'x': tl.x, 'y': br.y}, tl];
+     'bounds': {'minX': -123.485755, 'minY': 44.885219,
+		'maxX': -121.649618, 'maxY': 45.814153},
+   },
+   
+   'milwaukeewi':
+   {
+     'text': 'Milwaukee, WI',
 
+     'bounds': {'minX': -88.069888, 'minY': 42.842059, 
+		'maxX': -87.828241, 'maxY': 43.192647},
+   }
+  };
 
-var default_zoom_level = 3;
 var center_marker;
 var center_point;
 var center_marker_html = '<div style="width:225px; text-align:center;"><a href="javascript:void(0);" onclick="_setElVToMapLonLat(\'q\'); _find(\'search\');">Find address of closest intersection</a></div>';
@@ -31,46 +38,47 @@ var base_icon;
 var start_icon;
 var end_icon;
 
-var region_markers;
-var milwaukee_line;
-var metro_line;
 
-
-function gmap__init__()
+function mapLoad()
 {
-	if (GBrowserIsCompatible()) {
-		_setIH("map", '<div id="loading">Loading<blink>...</blink></div>');
-		if (_noActiveX()) {
-			_setIH("map",
-   			       '<p>ActiveX is not enabled in your browser. \
+  if (GBrowserIsCompatible()) 
+    {
+      el('map').innerHTML = 
+	'<div id="loading">Loading<blink>...</blink></div>';
+      if (_noActiveX()) 
+	{
+	  _setIH("map",
+		 '<p>ActiveX is not enabled in your browser. \
                                 If your browser is Internet Explorer,	\
                                 you must have ActiveX enabled to use this application.</p>');
-        } else {
-			_createMap();
-		}
-		_setElStyle('loading', 'display', 'none');
-	} else {
-		_setIH('map',
-		       '<p style="margin:10px;">\
-		       Your browser doesn\'t seem to meet the requirements for using this application. \
-		       The following browsers are currently supported and are all free to download \
-                       (<a href="http://www.mozilla.org/products/firefox/">Firefox</a> is an excellent choice):<br/>\
-		       <ul>\
-		       <li><a href="http://www.microsoft.com/windows/ie/downloads/default.asp">IE</a> 5.5+ (Windows)</li>\
-		       <li><a href="http://www.mozilla.com/">Firefox</a> 0.8+ (Windows, Mac, Linux)</li>\
-		       <li><a href="http://www.apple.com/safari/download/">Safari</a> 1.2.4+ (Mac)</li>\
-		       <li><a href="http://channels.netscape.com/ns/browsers/download.jsp">Netscape</a> 7.1+ (Windows, Mac, Linux)</li>\
-		       <li><a href="http://www.mozilla.org/products/mozilla1.x/">Mozilla</a> 1.4+ (Windows, Mac, Linux)</li>\
-		       <li><a href="http://www.opera.com/download/">Opera</a> 7.5+ (Windows, Mac, Linux)</li>\
-		       </ul>\
-		       </p>');
+	} 
+      else 
+	{
+	  mapCreate();
+		
 	}
+      _setElStyle('loading', 'display', 'none');
+    } 
+  else 
+    {
+      el('map').innerHTML = 
+	'<p style="margin:10px;">\
+	         Your browser doesn\'t seem to meet the requirements for using this application. The following browsers are currently supported and are all free to download (<a href="http://www.mozilla.com/">Firefox</a> is an excellent choice):</p> \
+               <ul> \
+	         <li><a href="http://www.microsoft.com/windows/ie/downloads/default.asp">IE</a> 5.5+ (Windows)</li> \
+		 <li><a href="http://www.mozilla.com/">Firefox</a> 0.8+ (Windows, Mac, Linux)</li> \
+		 <li><a href="http://www.apple.com/safari/download/">Safari</a> 1.2.4+ (Mac)</li> \
+		 <li><a href="http://channels.netscape.com/ns/browsers/download.jsp">Netscape</a> 7.1+ (Windows, Mac, Linux)</li> \
+		 <li><a href="http://www.mozilla.org/products/mozilla1.x/">Mozilla</a> 1.4+ (Windows, Mac, Linux)</li> \
+		 <li><a href="http://www.opera.com/download/">Opera</a> 7.5+ (Windows, Mac, Linux)</li> \
+	       </ul>';
+    }
 }
 
 
-function _createMap()
+function mapCreate()
 {
-  map = new GMap(_el("map"));
+  map = new GMap(el("map"));
   map.addControl(new GLargeMapControl());
   map.addControl(new GMapTypeControl());
   map.addControl(new GScaleControl());
@@ -83,14 +91,16 @@ function _createMap()
   GEvent.addListener(map, "moveend", function() {
                        if (center_marker)
 			 map.removeOverlay(center_marker);
-                       var center_point = map.getCenterLatLng();
-                       center_point.x = Math.round(center_point.x * 1000000) / 1000000;
-                       center_point.y = Math.round(center_point.y * 1000000) / 1000000;
-                       center_marker = new GMarker(center_point, icon);
+                       var center = map.getCenterLatLng();
+                       center.x = Math.round(center.x * 1000000) /
+			 1000000;
+                       center.y = Math.round(center.y * 1000000) /
+			 1000000;
+                       center_marker = new GMarker(center, icon);
                        map.addOverlay(center_marker);
 		       GEvent.clearListeners(center_marker, "click");
 		       GEvent.addListener(center_marker, "click", function() {
-					    map.openInfoWindowHtml(center_point,
+					    map.openInfoWindowHtml(center,
 								   center_marker_html);
 					  });
                      });
@@ -106,14 +116,8 @@ function _createMap()
   start_icon.image = "images/dd-start.png";
   end_icon = new GIcon(base_icon);
   end_icon.image = "images/dd-end.png";
-
-  // Draw box and zoom out to full extent
-  var box = getBoxForPoints([metro_box[0], milwaukee_box[2]]);
-  centerAndZoomToBox(box);
-  milwaukee_line = drawPolyLine(milwaukee_box);
-  metro_line = drawPolyLine(metro_box);
-  region_markers = placeMarkers([getCenterOfBox(getBoxForPoints(metro_box)), 
-				 getCenterOfBox(getBoxForPoints(milwaukee_box))]);
+  var reg_el = el('region');
+  selectRegion(reg_el[reg_el.selectedIndex].value);
 }
 
 
@@ -124,6 +128,13 @@ function drawPolyLine(points, color, weight, opacity)
   return line;
 }
 
+
+function placeMarker(point, icon)
+{
+  var marker = new GMarker(point, icon);
+  map.addOverlay(marker);
+  return marker;
+}
 
 /**
  * Put some markers on the map
@@ -162,15 +173,16 @@ function getBoxForPoints(points)
   var max_x = -180;
   var min_y = 90;
   var max_y = -90;
-  for (var i = 0; i < points.length; i++) {
-    var p = points[i]
+  for (var i = 0; i < points.length; i++) 
+    {
+      var p = points[i];
       var x = p.x;
-    var y = p.y;
-    min_x = x < min_x ? x : min_x;
-    max_x = x > max_x ? x : max_x;
-    min_y = y < min_y ? y : min_y;
-    max_y = y > max_y ? y : max_y;
-  }
+      var y = p.y;
+      min_x = x < min_x ? x : min_x;
+      max_x = x > max_x ? x : max_x;
+      min_y = y < min_y ? y : min_y;
+      max_y = y > max_y ? y : max_y;
+    }
   return {'minX': min_x, 'minY': min_y, 'maxX': max_x, 'maxY': max_y};
 }
 
@@ -189,18 +201,18 @@ function getBoxDimensions(box)
 }
 
 
-function centerAndZoomToBox(box)
+function centerAndZoomToBox(box, center, dimensions)
 {
   // Center the map at the box's center
   // Zoom such that the box fits in the map
-  var center = getCenterOfBox(box);
-  var dims = getBoxDimensions(box);
+  var cent = center || getCenterOfBox(box);
+  var dims = dimensions || getBoxDimensions(box);
 
   if (map.spec.getLowestZoomLevel) {
-    var zoom_level = map.spec.getLowestZoomLevel(center, dims, map.viewSize);
-    map.centerAndZoom(center, zoom_level);
+    var zoom_level = map.spec.getLowestZoomLevel(cent, dims, map.viewSize);
+    map.centerAndZoom(cent, zoom_level);
   } else {
-    map.centerAndZoom(center, 0);
+    map.centerAndZoom(cent, 0);
 
     var rw = dims.width * 1.05;
     var rh = dims.height * 1.05;
@@ -225,8 +237,8 @@ function centerAndZoomToBox(box)
 function hideBikeThereNetwork()
 {
   network_visible = false;
-  _el('bikeThereToggle').onclick = showBikeThereNetwork;
-  _el('bikeThereToggle').innerHTML = "Show Bike Route Network";
+  el('bikeThereToggle').onclick = showBikeThereNetwork;
+  el('bikeThereToggle').innerHTML = "Show Bike Route Network";
   map.clearOverlays();
 }
 
@@ -246,7 +258,7 @@ function showBikeThereNetwork()
     if (!network) { eval("network = " + req.responseText + ";"); }
 
 
-    _el("bikeThereMsg").innerHTML = "Drawing network. Please wait...";
+    el("bikeThereMsg").innerHTML = "Drawing network. Please wait...";
     var modelines;
     var line;
     var color;
@@ -277,17 +289,17 @@ function showBikeThereNetwork()
     }
 
     network_visible = true;
-    _el("bikeThereMsg").innerHTML = "";
-    _el('bikeThereToggle').style.display = "";
-    _el('bikeThereToggle').innerHTML = "Hide Bike Route Network";
+    el("bikeThereMsg").innerHTML = "";
+    el('bikeThereToggle').style.display = "";
+    el('bikeThereToggle').innerHTML = "Hide Bike Route Network";
   };
 
-  if (map.getZoomLev_el() > 1) map.zoomTo(1);
-  _el('bikeThereToggle').style.display = "none";
-  _el('bikeThereToggle').onclick = hideBikeThereNetwork;
+  if (map.getZoomLevel() > 1) map.zoomTo(1);
+  el('bikeThereToggle').style.display = "none";
+  el('bikeThereToggle').onclick = hideBikeThereNetwork;
 
   if (!network) {
-    _el("bikeThereMsg").innerHTML = "Getting network data. Please wait...";
+    el("bikeThereMsg").innerHTML = "Getting network data. Please wait...";
     doXmlHttpReq("GET", "/static/javascript/bikethere.json", processResponse);
   } else {
     processResponse();

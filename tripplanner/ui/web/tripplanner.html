@@ -4,72 +4,91 @@
       xmlns:v="urn:schemas-microsoft-com:vml">
 <head>
     <meta http-equiv="Content-Type" content="application/xhtml+xml; charset=iso-8859-1" />
-      <title>&#171; byCycle &#187; Bicycle Trip Planner %(region)s</title>
+      <title>byCycle &#187; Bicycle Trip Planner</title>
       <link rel="stylesheet" href="css/base.css" type="text/css"/>
-	<!--[if IE]>
-	<link rel="stylesheet" href="css/base_ie.css" type="text/css"/>
-	<![endif]-->
+
+	<script type="text/javascript">
+          <!--
+	  /**
+           * Event handler for stuff that should be done after the page has completed 
+           * loading
+           */
+	  function afterPageLoad()
+	  {
+	    resizeMap();
+	    if (local || api_key) 
+	      mapLoad();
+	    else 
+	      el('map').innerHTML =  
+	        'Error loading map: Could not find valid API key for ' + 
+	        base_url + 
+	        '.';
+	  }
+
+	  if(window.addEventListener)
+	  {
+	    window.addEventListener('load', afterPageLoad, false);
+	  }
+	  else if(document.addEventListener)
+	  {
+	    document.addEventListener('load', afterPageLoad, false);
+	  }
+	  else if(window.attachEvent)
+	  {
+	    window.attachEvent('onload', afterPageLoad);
+	  }
+	  //-->
+	</script>
+
 	<script src="js/util.js" type="text/javascript"></script>
 	<script src="js/ajax.js" type="text/javascript"></script>
-	<script src="js/ui.js" type="text/javascript"></script>
 	<script src="js/gmap.js" type="text/javascript"></script>
+	<script src="js/ui.js" type="text/javascript"></script>
 	<script src="js/ginit.js" type="text/javascript"></script>
   </head>
 
   <body onresize="resizeMap();">
+
     <div id="content_pane">
-      
-      <div id="header">
-	<div id="logo">
-	  <h1>
-	    <a href="http://www.bycycle.org/" title="byCycle Home Page">byCycle</a> 
-	    <a href="http://www.bycycle.org/tripplanner" title="Information About the Trip Planner">Trip Planner</a>
-	    %(region)s
-	  </h1>
-	</div>
-      </div>
-      
-      <table id="content">
-	<colgroup>
-	  <col width="310"/>
-	    <col width="*"/>
-	</colgroup> 
+      <table id="header" class="page_section">
 	<tr>
-	  <td id="top_panel" class="panel" colspan="2">
-	    <div id="select_input">
-	      <a 
-		href="javascript:void(0);" 
-		id="search_link" class="selected" 
-		title="Search the Map" 
-		tabindex="10" 
-		onclick="_selectInput('search', true);"
-		>Search</a>
-	      &#160;&#160;&#183;&#160;&#160;
-	      <a 
-		href="javascript:void(0);" 
-		id="route_link" 
-		title="Find a Route" 
-		tabindex="20" 
-		onclick="_selectInput('route', true);"
-		>Route</a>
-	      &#160;&#160;&#183;&#160;&#160;			       
-	      <a 
-		href="http://www.bycycle.org/contact.html" 
-		id="feedback_link" 
-		title="Send us your comments and suggestions" 
-		tabindex="30"
-		>Feedback</a>
-	      <!--&#160;&#160;&#183;&#160;&#160;
-	      <a href="help.html" title="Help!">Help</a>
-	      &#160;&#160;&#183;&#160;&#160;
-	      <a 
-	        href="http://tripplanner.bycycle.org/" 
-	        title="Information About the Trip Planner"
-	        >About</a>
-	      &#160;&#160;&#183;&#160;&#160;-->
-	    </div>
-	    
-	    <form id="input_form" action="" method="get" onsubmit="_find(); return false;">
+	  <td id="logo">
+	    <h1>
+	      <a href="http://www.bycycle.org/" title="byCycle Home Page">byCycle</a> 
+	    </h1>
+	  </td>
+
+	  <td id="select_input" 
+	    style="padding: 0 20px;">
+	    <a 
+	      href="javascript:void(0);" 
+	      id="search_link" class="selected" 
+	      title="Find an address or route" 
+	      tabindex="10" 
+	      onclick="_selectInput('search', true);"
+	      >Find</a>
+	    <br/>
+	    <a 
+	      href="javascript:void(0);" 
+	      id="route_link" 
+	      title="Find a route" 
+	      tabindex="20" 
+	      onclick="_selectInput('route', true);"
+	      >Find Route</a>
+	    <br/>	    
+	    <a 
+	      href="http://www.bycycle.org/contact.html" 
+	      id="feedback_link" 
+	      title="Send us your comments and suggestions" 
+	      tabindex="30"
+	      >Feedback</a>
+	  </td>
+
+	  <td style="padding-left: 10px;">
+	    <form id="input_form" 
+	      action="." 
+	      method="get" 
+	      onsubmit="_find(); return false;">
 	      
 	      <!-- SEARCH INPUT -->
 	      <div id="search_input">
@@ -79,7 +98,10 @@
 		    onclick="_setElVToMapLonLat('q'); _find('search');">
 		    Find address at center of map</a>
 		</div>
-		<textarea id="q" name="q" class="input_field" rows="2" cols="40" tabindex="50">%(q)s</textarea>	
+		<textarea id="q" name="q" class="input_field" 
+		  rows="2" cols="40" 
+		  tabindex="50"
+		  >%(q)s</textarea>	
 	      </div>
 	      
 	      <!-- ROUTE INPUT -->
@@ -102,7 +124,9 @@
 		  </tr>
 		  <tr>
 		    <td>
-		      <textarea id="fr" name="fr" class="input_field" rows="2" cols="40" tabindex="80">%(fr)s</textarea>
+		      <textarea id="fr" name="fr" class="input_field" 
+			rows="2" cols="40" 
+			tabindex="80">%(fr)s</textarea>
 		    </td>
 		    <td id="swapfrto">
 		      <a href="javascript:void(0);" 
@@ -113,7 +137,10 @@
 		      </a>
 		    </td>
 		    <td>
-		      <textarea id="to" name="to" class="input_field" rows="2" cols="40" tabindex="100">%(to)s</textarea>
+		      <textarea id="to" name="to" class="input_field" 
+			rows="2" cols="40" 
+			tabindex="100"
+			>%(to)s</textarea>
 		    </td>
 		  </tr>
 		</table>
@@ -121,20 +148,45 @@
 	      
 	      <!-- OPTIONS -->
 	      <div>
-		<select id="region" name="region"  tabindex="110">
-		  <option value="">-- Select Region</option>				
+		<select id="region" name="region" 
+		  tabindex="110"
+		  title="Set the active region and zoom into it"
+		  onchange="selectRegion(this.options[this.selectedIndex].value);"
+		  >
+		  <option value="all">All Regions</option>				
 		  %(regions_opt_list)s			    
 		</select>
-		&#160;<input tabindex="1000" id="find_button" name="find_button" type="submit" value="Search"/>
-		&#160;<input tabindex="1010"  
-		             title="Clear everything from the map" 
-		             type="button" value="Clear Map" onclick="_clearMap();"/>
-		&#160;<span id="elapsed_time"></span>
+		&#160;
+		<input id="find_button" name="find_button" 
+		  tabindex="1000" 
+		  type="submit" value="Find"/>
+		  &#160;
+		  <input tabindex="1010"  
+		    title="Clear everything from the map" 
+		    type="button" value="Clear Map" onclick="_clearMap();"/>
+		    &#160;<span id="elapsed_time"></span>
 	      </div>
 	    </form>
 	  </td>
 	</tr>
-	
+      </table>
+
+
+      <div id="keypoint" class="page_section">
+	<h2>
+	  <a href="http://www.bycycle.org/tripplanner"
+	    title="Information About the Trip Planner"
+	    >Trip Planner</a> &#187; 
+	  <span id="region_display">%(region_display)s</span>
+	</h2>
+      </div>  
+
+      <table id="content" class="page_section">
+
+	<!--[if IE]>
+	<colgroup><col width="310"/><col width="*"/></colgroup>
+	<![endif]-->
+
 	<tr>
 	  <td id="left_panel" class="panel">
 	    <div id="result">
@@ -143,8 +195,11 @@
 		<div>
 		  <i>
 		    The 
-		    <a href="http://www.bycycle.org/tripplanner" title="Information About the Trip Planner">Trip Planner</a> 
-		    requires JavaScript to be enabled in your browser. Please enable JavaScript and 
+		    <a href="http://www.bycycle.org/tripplanner" 
+		      title="Information About the Trip Planner"
+		      >Trip Planner</a> 
+		    requires JavaScript to be enabled in your browser. 
+		    Please enable JavaScript and 
 		    <a href="">try again</a>.
 		  </i>
 		</div>
@@ -157,15 +212,29 @@
 	  </td>
 	</tr>	        
       </table>
-      
-      <div id="footer">
-	Trip Planner 0.3alpha
-	&#183;
-	Copyright &copy; 2004 - 2006
-	<a style="text-decoration: none" href="http://www.bycycle.org/" title="byCycle Home Page">byCycle.org</a>
-	&#183;
+
+      <div id="footer" class="page_section">
+	<a href="http://www.bycycle.org/" 
+	  title="byCycle Home Page"
+	  >byCycle</a> 
+	
+	<a href="http://www.bycycle.org/tripplanner"
+	    title="Information About the Trip Planner"
+	    >Bicycle Trip Planner</a> 
+	0.3 beta 
+	
+	&#183; 
+	
 	Last modified %(last_modified)s
-      </div>  
+	&#183; 
+	
+	&copy; 2006 
+	<a href="http://www.bycycle.org/" 
+	  title="byCycle Home Page"
+	  >byCycle.org</a> 
+      </div>
+
     </div><!-- Content Pane -->
+
   </body>
 </html>

@@ -1,7 +1,7 @@
 /* User interface */
 
 var _services = ['search', 'route'];
-var _service_data = {'search': ['q', 'Search'],
+var _service_data = {'search': ['q', 'Find'],
 		     'route': ['fr', 'Find Route']};
 var _default_service = 'search';
 var _service = _default_service;
@@ -15,12 +15,6 @@ var disclaimer = '\
     </div>';
 
 
-function ui__init__()
-{
-  _el('q').focus();
-}
-
-
 function _selectInput(service, focus) {
   if (!service && !_service_data[service]) 
     {
@@ -32,26 +26,26 @@ function _selectInput(service, focus) {
     {
       next_service = _services[i];
       // Set the link style
-      link_el = _el(next_service + '_link');
+      link_el = el(next_service + '_link');
       link_el.className = (next_service == service) ? 'selected' : '';
       // Hide or  show the input section
-      input_el = _el(next_service + '_input');
+      input_el = el(next_service + '_input');
       input_el.style.display = (next_service == service) ? '' : 'none';
     }
   _setElV('find_button', sd[1]);
   if (focus == true) 
     {
-      _el(sd[0]).focus();
+      el(sd[0]).focus();
     } 
   else if (focus) 
     {
-      _el(focus).focus();
+      el(focus).focus();
     }
   _service = service;
 }
 
 
-function _showInputSection(service) { _el(service+'_link').onclick(); }
+function _showInputSection(service) { el(service+'_link').onclick(); }
 
 
 function _setResult(msg, error)
@@ -82,9 +76,9 @@ function _find(alt_service)
   if (map) 
     map.closeInfoWindow();
 
-  var el_region = _el('region');
+  var el_region = el('region');
   var region = el_region.value;
-  var el_q = _el('q');
+  var el_q = el('q');
   var q = _trim(el_q.value);
   var fr_to;
   var query_str = '';
@@ -107,8 +101,8 @@ function _find(alt_service)
     {
       _setResult('Finding route. Please wait...');
       _webservice = 'route';
-      var el_fr = _el('fr');
-      var el_to = _el('to');
+      var el_fr = el('fr');
+      var el_to = el('to');
       var fr;
       var to;
       if (!fr_to)
@@ -138,7 +132,7 @@ function _find(alt_service)
 	  var clean_fr = _cleanString(fr);
 	  var clean_to = _cleanString(to);
 	  if (clean_fr == clean_to)
-	    errors.push('<a href="javascript:void(0);" onclick="var e = _el(\'fr\'); e.focus(); e.select();"><i>From</i></a> and <a href="javascript:void(0);" onclick="var e = _el(\'to\'); e.focus(); e.select();"><i>To</i></a> appear to be the same');
+	    errors.push('<a href="javascript:void(0);" onclick="var e = el(\'fr\'); e.focus(); e.select();"><i>From</i></a> and <a href="javascript:void(0);" onclick="var e = el(\'to\'); e.focus(); e.select();"><i>To</i></a> appear to be the same');
 	  else if (region)
 	    query_str = ['q=["', escape(clean_fr), '","', escape(clean_to), '"]&region=', region, '&tmode=bike'].join('');
 	}
@@ -147,12 +141,12 @@ function _find(alt_service)
 	  // Only one or neither of from and to supplied
 	  if (!fr)
 	    {
-	      errors.push('Missing <a href="javascript:void(0);" onclick="var e = _el(\'fr\'); e.focus();"><i>From</i></a> address');
+	      errors.push('Missing <a href="javascript:void(0);" onclick="var e = el(\'fr\'); e.focus();"><i>From</i></a> address');
 	      el_fr.focus();
 	    }	      
 	  if (!to)
 	    {
-	      errors.push('Missing <a href="javascript:void(0);" onclick="var e = _el(\'to\'); e.focus();"><i>To</i></a> address');
+	      errors.push('Missing <a href="javascript:void(0);" onclick="var e = el(\'to\'); e.focus();"><i>To</i></a> address');
 	      el_to.focus();
 	    }
 	}
@@ -167,7 +161,7 @@ function _find(alt_service)
 	}
       else if (!q)
 	{
-	  errors.push('Missing address or route <a href="javascript:void(0);" onclick="var e = _el(\'q\'); e.focus();"><i>query</i></a>');
+	  errors.push('Missing address or route <a href="javascript:void(0);" onclick="var e = el(\'q\'); e.focus();"><i>query</i></a>');
 	  el_q.focus();
 	}
     } 
@@ -192,7 +186,7 @@ function _find(alt_service)
 
   if (!region)
     {
-      errors.push('No <a href="javascript:void(0);" onclick="var e = _el(\'region\'); e.focus();"><i>region</i></a> selected');
+      errors.push('No <a href="javascript:void(0);" onclick="var e = el(\'region\'); e.focus();"><i>region</i></a> selected');
       el_region.focus();
     }
 
@@ -414,8 +408,10 @@ function _makeRouteMultipleMatchList(geocodes_fr, geocodes_to)
  * Concatenate a geocode's address parts into a single string
  *
  * @param geocode A geocode object
- * @param show_lon_lat Flag indicating whether to show the geocode's long/lat as part of the address (default: false)
- * @param separator The separator that will go between the street, place, and long/lat (default: <br/>)
+ * @param show_lon_lat Flag indicating whether to show the geocode's long/lat 
+          as part of the address (default: false)
+ * @param separator The separator that will go between the street, place, and 
+          long/lat (default: <br/>)
  */
 function _makeAddressFromGeocode(geocode, show_lon_lat, separator)
 {
@@ -427,7 +423,8 @@ function _makeAddressFromGeocode(geocode, show_lon_lat, separator)
     {
       var st = geocode.street;
       place = geocode.place;
-      full_name = _join([geocode.number.toString(), st.prefix, st.name, st.type, st.suffix]);
+      full_name = _join([geocode.number.toString(), st.prefix, st.name, 
+			 st.type, st.suffix]);
     } 
   else if (type == 'intersection') 
     {
@@ -435,7 +432,8 @@ function _makeAddressFromGeocode(geocode, show_lon_lat, separator)
       var st2 = geocode.street2;
       place = geocode.place1;
       full_name = [_join([st1.prefix, st1.name, st1.type, st1.suffix]),
-		   _join([st2.prefix, st2.name, st2.type, st2.suffix])].join(' & ');
+		   _join([st2.prefix, st2.name, st2.type, 
+			  st2.suffix])].join(' & ');
     }
   var zc = parseInt(place.zipcode);
   var city = place.city;
@@ -444,7 +442,7 @@ function _makeAddressFromGeocode(geocode, show_lon_lat, separator)
 		 city, (city ? ', ' : ''), 
 		 state, (state ? ' ' : ''), 
 		 zc || ''];
-  if (show_lon_lat) address.push(separator, geocode.x, ', ', geocode.y);
+  //if (show_lon_lat) address.push(separator, geocode.x, ', ', geocode.y);
   return address.join('');
 }
 
@@ -478,27 +476,6 @@ function _setRouteFieldToAddress(id, address)
   _setElV(id, address);
 }
 
-function _clearMap()
-{  
-  if (map) 
-    {
-      map.clearOverlays();
-      map.addOverlay(metro_line);
-      map.addOverlay(milwaukee_line);
-      for (var i = 0; i < region_markers.length; ++i)
-	map.addOverlay(region_markers[i]);
-    }
-}
-
-function _reset()
-{
-  _setElStyle('welcome', 'display', 'block');
-  _setIH('fr', '');
-  _setIH('to', '');
-  _setIH('q', '');
-  _clearMap();
-}
-
 function _setElVToAddress(id, address) 
 {
   _setElV(id, address);
@@ -513,39 +490,125 @@ function _setElVToMapLonLat(id)
   field = _setElV(id, "lon=" + x + ", " + "lat=" + y);
 }
 
-var _map_height = 300;
-function _adjustMapHeight(taller_or_smaller)
-{
+
+function _clearMap()
+{  
   if (map) 
     {
-      if (taller_or_smaller < 0)
-	{
-	  if (_map_height == 200) return;
-	  _map_height -= 50;
-	}
-      else if (taller_or_smaller > 0)
-	{
-	  if (_map_height == 1200) return;
-	  _map_height += 50;
-	}
-      var h = _map_height + 'px';
-      _el('map').style.height = h;
-      _el('result').style.height = h;
+      var reg_el = el('region');
+      map.clearOverlays();
+      for (var reg_key in regions)
+	_showRegionOverlays(regions[reg_key], true);
     }
 }
 
 function resizeMap() 
 {
   var offset = 0;
-  for (var elem = _el('map'); elem != null; elem = elem.offsetParent) 
+  for (var e = el('map'); e != null; e = e.offsetParent) 
     {
-      offset += elem.offsetTop;
+      offset += e.offsetTop;
     }
-  var height = getWindowHeight() - offset - 50;
+  var height = getWindowHeight() - offset - 41;
   if (height >= 0) 
     {
-      _el('map').style.height = height + 'px';
-      _el('result').style.height = height + 'px';
-      map.onResize();
+      height = height + 'px';
+      el('map').style.height = height;
+      el('result').style.height = height;
+      if (map) map.onResize();
     }
 }
+
+
+function selectRegion(region)
+{
+  if (!region['bounds'])
+    region = regions[region] || regions['all'];
+
+  var text = region['text'];
+  el('region_display').innerHTML = text;
+
+  if (map)
+    {
+      _zoomToRegion(region);
+      if (text == 'All Regions')
+	{
+	  var reg;
+	  for (var reg_key in regions)
+	    {
+	      reg = regions[reg_key];
+	      _initRegion(reg);
+	      _showRegionOverlays(reg);
+	    }
+	}
+      else
+	{
+	  _initRegion(region);
+	  _showRegionOverlays(region);
+	}
+    }
+}
+
+function _initRegion(region)
+{
+  var bounds = region['bounds'];
+  var center = region['center'];
+  var dimensions = region['dimensions'];
+  var linestring = region['linestring'];
+
+  if (!center)
+    {
+      // Create new region center marker
+      center = getCenterOfBox(bounds);
+      region['center'] = center;
+    }
+
+  if (!dimensions)
+    {
+      dimensions = getBoxDimensions(bounds) ;
+      region['dimensions'] = dimensions;
+    }      
+
+  if (!linestring)
+    {
+      // Create new boundary line
+      var minX = bounds['minX']; var maxX = bounds['maxX'];
+      var minY = bounds['minY']; var maxY = bounds['maxY'];
+      var tl = {'x': minX, 'y': maxY};
+      var tr = {'x': maxX, 'y': maxY};
+      var br = {'x': maxX, 'y': minY};
+      var bl = {'x': minX, 'y': minY};
+      var linestring = [tl, tr, br, bl, tl];
+      region['linestring'] = linestring;
+    }
+}
+
+function _zoomToRegion(region)
+{
+  centerAndZoomToBox(region['bounds'], 
+		     region['center'], 
+		     region['dimensions']);
+}
+
+function _showRegionOverlays(region, use_cached)
+{
+  if (region['text'] == 'All Regions')
+    return;
+
+  var marker = region['marker'];
+  var line = region['line'];
+
+  if (use_cached)
+    {
+      map.addOverlay(region['marker']);
+      map.addOverlay(region['line']);
+    }
+  else
+    {
+      if (!marker)
+	region['marker'] = placeMarker(region['center']); 
+      if (!line)
+	region['line'] = drawPolyLine(region['linestring']);
+    }
+}
+

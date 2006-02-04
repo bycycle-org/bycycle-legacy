@@ -2,10 +2,10 @@ function echo(str) { document.write(str); }
 
 function fixScroll() 
 {
-  var div = _el("content");
+  var div = el("content");
   var content = div.innerHTML;
   div.innerHTML = "<a id='fix_scroll' href=''></a>" + content;
-  _el("fix_scroll").focus();
+  el("fix_scroll").focus();
 }
 
 
@@ -13,7 +13,7 @@ function fixScroll()
 
 /* Element */
 
-function _el(id)
+function el(id)
 { 
   return document.getElementById(id); 
 }
@@ -42,14 +42,18 @@ function getWindowHeight()
 }
 
 
-
-
 /* Style */
 
+
+/**
+ * Get the value of an element's style
+ * @param style_name The CSS name for the style to get the value of (for 
+          standards-compliant browsers)
+ * @param ie_style_name The mixed case name for the style to get the value of 
+          (for IE when the style name has more than 1 word)
+ */
 function _elStyle(id, style_name, ie_style_name)
 {
-  // use style-sheet naming for standards compliance
-  // use mixed case for IE
   var el = document.getElementById(id);
   if (el.currentStyle)
     {
@@ -62,6 +66,12 @@ function _elStyle(id, style_name, ie_style_name)
   return '';
 }
 
+
+/**
+ * Set the value of an element's style
+ * @param style_name The CSS name for style to set value of (mixed-case)
+ * @param value The new value for the style (e.g., "5px")
+ */
 function _setElStyle(id, style_name, value) 
 { 
   // use mixed case for style name
@@ -73,9 +83,9 @@ function _setElStyle(id, style_name, value)
 
 /* Inner HTML */
 
-function _iH(id) { return _el(id).innerHTML; }
-function _setIH(id, val) { _el(id).innerHTML = val; }
-function _appendIH(id, val) { _el(id).innerHTML += val; }
+function _iH(id) { return document.getElementById(id).innerHTML; }
+function _setIH(id, val) { document.getElementById(id).innerHTML = val; }
+function _appendIH(id, val) { document.getElementById(id).innerHTML += val; }
 
 
 /**
