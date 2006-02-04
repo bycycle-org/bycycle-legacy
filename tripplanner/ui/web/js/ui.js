@@ -495,7 +495,6 @@ function _clearMap()
 {  
   if (map) 
     {
-      var reg_el = el('region');
       map.clearOverlays();
       for (var reg_key in regions)
 	_showRegionOverlays(regions[reg_key], true);
@@ -597,18 +596,15 @@ function _showRegionOverlays(region, use_cached)
 
   var marker = region['marker'];
   var line = region['line'];
-
-  if (use_cached)
-    {
-      map.addOverlay(region['marker']);
-      map.addOverlay(region['line']);
-    }
-  else
-    {
-      if (!marker)
-	region['marker'] = placeMarker(region['center']); 
-      if (!line)
-	region['line'] = drawPolyLine(region['linestring']);
-    }
+  
+  if (!marker)
+    region['marker'] = placeMarker(region['center']); 
+  else if (use_cached)
+    map.addOverlay(region['marker']);
+  
+  if (!line)
+    region['line'] = drawPolyLine(region['linestring']); 
+  else if (use_cached)
+    map.addOverlay(region['line']);
 }
 

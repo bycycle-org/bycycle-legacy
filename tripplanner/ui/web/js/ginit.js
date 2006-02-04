@@ -9,7 +9,6 @@ if (domain == 'tripplanner.bycycle.org')
   {
     var local = 0;
     var dir = '';
-    alert('live');
   }
 else
   {
