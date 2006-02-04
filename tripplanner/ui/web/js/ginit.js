@@ -3,11 +3,13 @@
 // The base location (domain) of the web interface
 var domain = location.href.split('/')[2];
 
-// Decide if we are running locally (where locally means not on the production server)
+// Decide if we are running locally (where locally means not on the production
+// server)
 if (domain == 'tripplanner.bycycle.org')
   {
     var local = 0;
     var dir = '';
+    alert('live');
   }
 else
   {
