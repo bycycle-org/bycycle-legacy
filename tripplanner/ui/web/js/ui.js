@@ -523,16 +523,15 @@ function resizeMap()
 
 function selectRegion(region)
 {
-  if (!region['bounds'])
-    region = regions[region] || regions['all'];
+  if (!region.bounds)
+    region = regions[region] || regions.all;
 
-  var text = region['text'];
-  el('region_display').innerHTML = text;
+  el('region_display').innerHTML = region.text;
 
   if (map)
     {
       _zoomToRegion(region);
-      if (text == 'All Regions')
+      if (region.all)
 	{
 	  var reg;
 	  for (var reg_key in regions)
@@ -559,7 +558,6 @@ function _initRegion(region)
 
   if (!center)
     {
-      // Create new region center marker
       center = getCenterOfBox(bounds);
       region['center'] = center;
     }
@@ -572,13 +570,12 @@ function _initRegion(region)
 
   if (!linestring)
     {
-      // Create new boundary line
       var minX = bounds['minX']; var maxX = bounds['maxX'];
       var minY = bounds['minY']; var maxY = bounds['maxY'];
-      var tl = {'x': minX, 'y': maxY};
-      var tr = {'x': maxX, 'y': maxY};
-      var br = {'x': maxX, 'y': minY};
-      var bl = {'x': minX, 'y': minY};
+      var tl = {x: minX, y: maxY};
+      var tr = {x: maxX, y: maxY};
+      var br = {x: maxX, y: minY};
+      var bl = {x: minX, y: minY};
       var linestring = [tl, tr, br, bl, tl];
       region['linestring'] = linestring;
     }
@@ -593,7 +590,7 @@ function _zoomToRegion(region)
 
 function _showRegionOverlays(region, use_cached)
 {
-  if (region['text'] == 'All Regions')
+  if (region.all)
     return;
 
   var marker = region['marker'];
