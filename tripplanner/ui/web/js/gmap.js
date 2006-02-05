@@ -6,6 +6,8 @@ var map;
 var regions = 
   {'all': 
    {
+     'all': true,
+
      'text': 'All Regions',
      
      'bounds': {'minX': -123.485755, 'minY': 42.842059, 
