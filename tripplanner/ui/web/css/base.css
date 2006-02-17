@@ -76,7 +76,7 @@ a.selected {
 }
 
 #logo {
-  padding-right: 10px;
+  padding-right: 20px;
 }
 
 #logo * {
@@ -95,7 +95,13 @@ a.selected {
 }
 
 .input_field {
-  width: 290px;
+  width: 425px;
+  font-size: 12px;
+  height: 30px;
+}
+
+.route_input_field {
+  width: 200px;
   font-size: 12px;
   height: 30px;
 }
@@ -107,7 +113,6 @@ a.selected {
 #swapfrto {
   width: 20px;
   text-align: center;
-  vertical-align: middle;
 }
 
 
@@ -135,16 +140,18 @@ a.selected {
   table-layout: fixed;
 }
 
-.panel {
-
+#content table { 
+  width: 100%;
 }
 
+#left_panel, #right_panel { 
+  vertical-align: top;
+}
 
 /* Left Panel */
 
 #left_panel {
   width: 300px;
-  vertical-align: top;
   padding-right: 10px;
 }
 
@@ -226,5 +233,5 @@ a.selected {
   background: #eee;
 }
 .count {
-  vertical-align: middle;
+
 }

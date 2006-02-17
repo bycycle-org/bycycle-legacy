@@ -1,4 +1,7 @@
-/* This module contains variables and functions relating to the Google Map. */
+/**
+ * This module contains variables and functions relating to the Google Map. It 
+ * should be considered an extension of the ui module.
+ */
 
 
 var map;
@@ -8,7 +11,9 @@ var regions =
    {
      'all': true,
 
-     'text': 'All Regions',
+     'heading': 'All Regions',
+
+     'subheading': '',
      
      'bounds': {'minX': -123.485755, 'minY': 42.842059, 
 		'maxX': -87.828241,  'maxY': 45.814153}
@@ -16,16 +21,20 @@ var regions =
    
    'portlandor': 
    {
-     'text': 'Portland, OR',
+     'heading': 'Portland, OR',
 
+     'subheading': 'Developed in cooperation with <a href="http://www.metro-region.org/">Metro</a>',
+     
      'bounds': {'minX': -123.485755, 'minY': 44.885219,
 		'maxX': -121.649618, 'maxY': 45.814153}
    },
    
    'milwaukeewi':
    {
-     'text': 'Milwaukee, WI',
+     'heading': 'Milwaukee, WI',
 
+     'subheading': 'Developed in cooperation with the <a href="http://www.bfw.org/">Bicycle Federation of Wisconsin</a>',
+     
      'bounds': {'minX': -88.069888, 'minY': 42.842059, 
 		'maxX': -87.828241, 'maxY': 43.192647}
    }
