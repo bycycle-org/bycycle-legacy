@@ -52,6 +52,8 @@
 
   <body onresize="resizeMap();">
     <div id="content_pane">
+
+      <!-- Header -->
       <div id="header" class="page_section">
 	<table>
 	  <tr>
@@ -61,7 +63,7 @@
 	      </h1>
 	    </td>
 	    
-	    <!-- Input Selector Links -->
+	    <!-- Input section selection links -->
 	    <td id="select_input">
 	      <a 
 		href="javascript:void(0);" 
@@ -88,13 +90,13 @@
 	    </td>
 	    
 	    <!-- Input Form -->
-	    <td style="padding-left: 10px;">
+	    <td style="padding: 0 10px;">
 	      <form id="input_form" 
 		action="." 
 		method="get" 
 		onsubmit="_find(); return false;">
 		
-		<!-- search input -->
+		<!-- search input section -->
 		<div id="search_input">
 		  <div>
 		    Address <a href="javascript:void(0);" tabindex="40" 
@@ -108,7 +110,7 @@
 		    >%(q)s</textarea>	
 		</div>
 		
-		<!-- route input -->
+		<!-- route input section -->
 		<div id="route_input" style="display:none;">
 		  <table>
 		    <tr>
@@ -181,10 +183,15 @@
 		</div>
 	      </form>
 	    </td>
+	    
+	    <td>
+	      	<img id="region_logo" src="" width="" height=""/>
+	    </td>
 	  </tr>
 	</table>
       </div>
 
+      <!-- Key Point -->
       <div id="keypoint" class="page_section">
 	<h2 style="display: inline;">
 	  <a href="http://www.bycycle.org/tripplanner"
@@ -195,6 +202,7 @@
 	<span id="region_subheading"></span>
       </div>  
 
+      <!-- Content -->
       <div id="content" class="page_section">
 	<table id="content_table">
 	  <!--[if IE]>
@@ -225,6 +233,7 @@
 	</table>
       </div>
 	
+      <!-- Footer -->
       <div id="footer" class="page_section">
 	<a href="http://www.bycycle.org/" 
 	  title="byCycle Home Page"

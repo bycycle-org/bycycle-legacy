@@ -521,6 +521,21 @@ function selectRegion(region)
   if (!region.bounds)
     region = regions[region] || regions.all;
 
+  var img_src = region.img_src;
+  var reg_logo = el('region_logo');
+  if (img_src) 
+    {
+      reg_logo.src = 'images/' + img_src;
+      reg_logo.width = region.img_width;
+      reg_logo.height = region.img_height;
+    }
+  else 
+    {
+      reg_logo.src = '';
+      reg_logo.width = 0;
+      reg_logo.height = 0;
+    }
+
   el('region_heading').innerHTML = region.heading;
   el('region_subheading').innerHTML = region.subheading;
   document.title = 'byCycle - Bicycle Trip Planner - ' + region.heading;

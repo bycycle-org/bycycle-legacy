@@ -36,7 +36,11 @@ var regions =
      'subheading': 'Developed in cooperation with the <a href="http://www.bfw.org/">Bicycle Federation of Wisconsin</a>',
      
      'bounds': {'minX': -88.069888, 'minY': 42.842059, 
-		'maxX': -87.828241, 'maxY': 43.192647}
+		'maxX': -87.828241, 'maxY': 43.192647},
+
+     'img_src': 'bfw_logo.gif',
+     'img_width': 88,
+     'img_height': 89
    }
   };
 
