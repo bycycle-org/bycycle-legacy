@@ -6,7 +6,7 @@ def index(region='', tmode='', q='', **params):
     region = region.strip().lower().replace(',', '')
     region = _getRegionForAlias(region)
     q = ' '.join(q.split())
-
+    
     # Create an options list of regions, setting the selected region if we got
     # here by http://tripplanner.bycycle.org/x where x is the name of some
     # region (list is sorted by state, then area)
@@ -20,7 +20,7 @@ def index(region='', tmode='', q='', **params):
     states = regions.keys()
     states.sort()
     regions_opt_list = []
-    region_display = 'All Regions'
+    region_heading = 'All Regions'
     for state in states:
         areas = regions[state]
         #areas.sort()
@@ -28,7 +28,7 @@ def index(region='', tmode='', q='', **params):
             reg = '%s%s' % (area, state)
             if reg == region:
                 opt = region_opt_selected
-                region_display = '%s, %s' % (area.title(), state.upper())
+                region_heading = '%s, %s' % (area.title(), state.upper())
             else:
                 opt = region_opt 
             regions_opt_list.append(opt % (reg, '%s, %s' %
@@ -46,12 +46,12 @@ def index(region='', tmode='', q='', **params):
         last_modified = last_modified[1:]
 
     template_file = open(template)
-    data = {'last_modified': last_modified,
-            'regions_opt_list': regions_opt_list,
-            'region_display': region_display,
-            'q': q,
+    data = {'q': q,
             'fr': '',
             'to': '',
+            'regions_opt_list': regions_opt_list,
+            'region_heading': region_heading,
+            'last_modified': last_modified,
             }
 
     result, fr_to = _doQuery(region, tmode, q)
@@ -71,11 +71,12 @@ def index(region='', tmode='', q='', **params):
 def _doQuery(region, tmode, q):
     if not q:
         result = '''
+        <p style="margin-top: 0;">
         Welcome to the
-        <a href="http://www.bycycle.org/" title="byCycle Home Page">byCycle</a>
+        <a href="http://www.bycycle.org/" title="byCycle Home Page">byCycle</a> 
         <a href="http://www.bycycle.org/tripplanner"
            title="Information about the Trip Planner"
-           >Trip Planner</a>.
+           >bicycle trip planner</a>.
         The Trip Planner is under active development and may have some issues.
         If you find a problem, please send us feedback by using the form on 
         <a href="http://www.bycycle.org/contact.html"
@@ -84,6 +85,26 @@ def _doQuery(region, tmode, q):
         <a href="mailto:wyatt@bycycle.org"
         title="Send us email"
         >sending email</a>.
+        </p>
+
+        <p>
+        The Trip Planner is being developed in cooperation with
+        <a href="http://www.metro-region.org/">Metro</a> in the
+        <a href="http://tripplanner.bycycle.org/?region=PortlandOR">Portland, OR
+        </a>, area and
+        the <a href="http://www.bfw.org/">Bicycle Federation of Wisconsin</a>
+        in the <a href="http://tripplanner.bycycle.org/?region=MilwaukeeWI">Milwaukee, WI</a>, area.
+        These organizations provide data and other support to the project.
+        </p>
+
+        <p>
+        Although every reasonable effort is being made to provide accurate and
+        useful routes and
+        other information, no guarantee can be made in regard to such accuracy
+        or usefulness. The Trip Planner is provided AS IS with NO WARRANTY OF
+        ANY KIND. Users assume all risk of use and are advised to verify any
+        information provided here. 
+        </p>
         '''
         rq = None
     else:

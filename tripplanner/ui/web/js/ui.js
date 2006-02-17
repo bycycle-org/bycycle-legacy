@@ -134,7 +134,7 @@ function _find(alt_service)
 	  if (clean_fr == clean_to)
 	    errors.push('<a href="javascript:void(0);" onclick="var e = el(\'fr\'); e.focus(); e.select();"><i>From</i></a> and <a href="javascript:void(0);" onclick="var e = el(\'to\'); e.focus(); e.select();"><i>To</i></a> appear to be the same');
 	  else if (region)
-	    query_str = ['q=["', escape(clean_fr), '","', escape(clean_to), '"]&region=', region, '&tmode=bike'].join('');
+	    query_str = ['q=["', escape(clean_fr), '","', escape(clean_to), '"]&region=', region, '&tmode=', el('tmode').value].join('');
 	}
       else
 	{
@@ -476,11 +476,6 @@ function _setRouteFieldToAddress(id, address)
   _setElV(id, address);
 }
 
-function _setElVToAddress(id, address) 
-{
-  _setElV(id, address);
-}
-
 function _setElVToMapLonLat(id)
 {
   if (!map) return;
@@ -508,7 +503,7 @@ function resizeMap()
     {
       offset += e.offsetTop;
     }
-  var height = getWindowHeight() - offset - 41;
+  var height = getWindowHeight() - offset - 65;
   if (height >= 0) 
     {
       height = height + 'px';
@@ -526,7 +521,9 @@ function selectRegion(region)
   if (!region.bounds)
     region = regions[region] || regions.all;
 
-  el('region_display').innerHTML = region.text;
+  el('region_heading').innerHTML = region.heading;
+  el('region_subheading').innerHTML = region.subheading;
+  document.title = 'byCycle - Bicycle Trip Planner - ' + region.heading;
 
   if (map)
     {
