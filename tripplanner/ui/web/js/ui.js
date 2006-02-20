@@ -503,7 +503,7 @@ function resizeMap()
     {
       offset += e.offsetTop;
     }
-  var height = getWindowHeight() - offset - 65;
+  var height = getWindowHeight() - offset - 50;
   if (height >= 0) 
     {
       height = height + 'px';
