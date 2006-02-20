@@ -523,17 +523,20 @@ function selectRegion(region)
 
   var img_src = region.img_src;
   var reg_logo = el('region_logo');
+  var reg_link = el('region_link');
   if (img_src) 
     {
       reg_logo.src = 'images/' + img_src;
       reg_logo.width = region.img_width;
       reg_logo.height = region.img_height;
+      reg_link.href = region.href;
     }
   else 
     {
       reg_logo.src = '';
       reg_logo.width = 0;
       reg_logo.height = 0;
+      reg_link.href = '';
     }
 
   el('region_heading').innerHTML = region.heading;
