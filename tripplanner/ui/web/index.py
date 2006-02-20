@@ -71,41 +71,50 @@ def index(region='', tmode='', q='', **params):
 def _doQuery(region, tmode, q):
     if not q:
         result = '''
-        <p style="margin-top: 0;">
-        Welcome to the
-        <a href="http://www.bycycle.org/" title="byCycle Home Page">byCycle</a> 
-        <a href="http://www.bycycle.org/tripplanner"
-           title="Information about the Trip Planner"
-           >bicycle trip planner</a>.
-        The Trip Planner is under active development and may have some issues.
-        If you find a problem, please send us feedback by using the form on 
-        <a href="http://www.bycycle.org/contact.html"
-           title="Contact us"
-           >this page</a> or
-        <a href="mailto:wyatt@bycycle.org"
-        title="Send us email"
-        >sending email</a>.
-        </p>
+<p style="margin-top: 0;">
+  Welcome to the
+  <a href="http://www.bycycle.org/"
+    title="byCycle Home Page"
+    >byCycle</a> 
+  <a href="http://www.bycycle.org/tripplanner"
+    title="Information about the Trip Planner"
+    >Trip Planner</a>,
+  an interactive trip planning application that aims to help encourage
+  bicycling and other alternative modes of transportation. The Trip Planner is
+  under active development. If you find a problem or have any comments,
+  questions, or suggestions, please
+  <a href="http://www.bycycle.org/contact.html"
+    title="Contact us"
+    >contact us</a>.
+</p>
 
-        <p>
-        The Trip Planner is being developed in cooperation with
-        <a href="http://www.metro-region.org/">Metro</a> in the
-        <a href="http://tripplanner.bycycle.org/?region=PortlandOR">Portland, OR
-        </a>, area and
-        the <a href="http://www.bfw.org/">Bicycle Federation of Wisconsin</a>
-        in the <a href="http://tripplanner.bycycle.org/?region=MilwaukeeWI">Milwaukee, WI</a>, area.
-        These organizations provide data and other support to the project.
-        </p>
+<p>
+  The Trip Planner is being developed in cooperation with the following
+  organizations that provide data and other support to the project:
+  <ul>
+    <li>
+      <a href="http://www.metro-region.org/">Metro</a> in the 
+      <a href="http://tripplanner.bycycle.org/?region=PortlandOR"
+        >Portland, OR</a>, area
+    </li>
+    <li>    
+      <a href="http://www.bfw.org/">Bicycle Federation of Wisconsin</a> in the 
+      <a href="http://tripplanner.bycycle.org/?region=MilwaukeeWI"
+        >Milwaukee, WI</a>, area
+    </li>
+  </ul>
+</p>
 
-        <p>
-        Although every reasonable effort is being made to provide accurate and
-        useful routes and
-        other information, no guarantee can be made in regard to such accuracy
-        or usefulness. The Trip Planner is provided AS IS with NO WARRANTY OF
-        ANY KIND. Users assume all risk of use and are advised to verify any
-        information provided here. 
-        </p>
-        '''
+<p>
+  Although every reasonable effort is being made to provide accurate and
+  useful routes and other information, no guarantee can be made in regard to
+  such accuracy or usefulness. Users are advised to independently verify any
+  information presented here and are encouraged to 
+  <a href="http://www.bycycle.org/contact.html"
+    title="Send us your feedback"
+    >provide feedback</a>. 
+</p>
+'''
         rq = None
     else:
         rq = _isRouteQuery(q)
