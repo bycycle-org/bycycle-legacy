@@ -39,8 +39,9 @@ var regions =
 		'maxX': -87.828241, 'maxY': 43.192647},
 
      'img_src': 'bfw_logo.gif',
-     'img_width': 88,
-     'img_height': 89
+     'img_width': 70,
+     'img_height': 71,
+     'href': 'http://www.bfw.org/'
    }
   };
 
