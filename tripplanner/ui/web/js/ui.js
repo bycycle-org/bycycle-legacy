@@ -1,206 +1,64 @@
-/* User interface */
-
-var _services = ['search', 'route'];
-var _service_data = {'search': ['q', 'Find'],
-		     'route': ['fr', 'Find Route']};
-var _default_service = 'search';
-var _service = _default_service;
-var _webservice = '';
-
-var disclaimer = '\
-    <div class="disclaimer">\
-        No warranty of any kind, either expressed or implied, \
-        is given in regard to any route directions or other information presented here. \
-        User assumes all risk of use.\
-    </div>';
+/* User Interface */
 
 
-function _selectInput(service, focus) {
-  if (!service && !_service_data[service]) 
-    {
-      service = _default_service;
-    }
-  var sd = _service_data[service];
-  var next_service, link_el, input_el;
-  for (var i = 0; i < _services.length; i++) 
-    {
-      next_service = _services[i];
-      // Set the link style
-      link_el = el(next_service + '_link');
-      link_el.className = (next_service == service) ? 'selected' : '';
-      // Hide or  show the input section
-      input_el = el(next_service + '_input');
-      input_el.style.display = (next_service == service) ? '' : 'none';
-    }
-  _setElV('find_button', sd[1]);
-  if (focus == true) 
-    {
-      el(sd[0]).focus();
-    } 
-  else if (focus) 
-    {
-      el(focus).focus();
-    }
-  _service = service;
-}
+/* Data dictionary */
 
+// User data
+var q;
+var fr;
+var to;
 
-function _showInputSection(service) { el(service+'_link').onclick(); }
+// Result data
+var result_set;
+var geocodes;
 
+// Map data
+var center;
 
-function _setResult(msg, error)
-{
-  if (error) _setElStyle('result', 'color', 'red');
-  else _setElStyle('result', 'color', 'black');
-  _setIH('result', msg.toString());
-}
-
-
-function _clearResult() { _setResult(''); }
-
-
-/**
- * @param alt_service An alternate service to use, instead of the globally set one
- */
 var start_ms;
-function _find(alt_service)
+
+
+/* Functions */
+
+function doFind()
 {
   start_ms = new Date().getTime();
-  _setResult('Processing. Please wait...');
+  _setResult('Processing. Please wait<blink>...</blink>');
   
-  if (alt_service) 
-    service = alt_service;
-  else 
-    service = _service;
-  
-  if (map) 
+  if (map)
     map.closeInfoWindow();
 
   var el_region = el('region');
   var region = el_region.value;
   var el_q = el('q');
-  var q = _trim(el_q.value);
-  var fr_to;
-  var query_str = '';
+  var q = _trim(el_q.value, true);
   var errors = [];
   
-  // See if search query is for a route (if it has " to " between to other strings)
-  if (service == 'search') 
+  if (!q)
     {
-      var words = _trim(q).split(/\s+to\s+/i);
-      if (words.length > 1) 
-	{
-	  service = 'route';
-	  fr_to = [];
-	  for (var i = 0; i < words.length; ++i)
-	    fr_to.push(words[i]);
-	}
+      errors.push('Missing address or route <a href="javascript:void(0);" onclick="el(\'q\').focus();"><i>query</i></a>');
+      el_q.focus();
     }
-
-  if (service == 'route')     
-    {
-      _setResult('Finding route. Please wait...');
-      _webservice = 'route';
-      var el_fr = el('fr');
-      var el_to = el('to');
-      var fr;
-      var to;
-      if (!fr_to)
-	{
-	  // Route panel selected ("A", "B")
-	  fr = _trim(el_fr.value);
-	  to = _trim(el_to.value);
-	  if (fr && to) 
-	    {
-	      fr_to = [fr, to];
-	    }
-	}
-      else
-	{
-	  // Query panel selected ("A to B")
-	  _showInputSection('route');
-	}
-
-      if (fr_to) 
-	{
-	  // From and to both supplied
-	  el_q.value = fr_to.join(' to ');
-	  fr = fr_to[0];
-	  to = fr_to[1];
-	  el_fr.value = fr;
-	  el_to.value = to;
-	  var clean_fr = _cleanString(fr);
-	  var clean_to = _cleanString(to);
-	  if (clean_fr == clean_to)
-	    errors.push('<a href="javascript:void(0);" onclick="var e = el(\'fr\'); e.focus(); e.select();"><i>From</i></a> and <a href="javascript:void(0);" onclick="var e = el(\'to\'); e.focus(); e.select();"><i>To</i></a> appear to be the same');
-	  else if (region)
-	    query_str = ['q=["', escape(clean_fr), '","', escape(clean_to), '"]&region=', region, '&tmode=', el('tmode').value].join('');
-	}
-      else
-	{
-	  // Only one or neither of from and to supplied
-	  if (!fr)
-	    {
-	      errors.push('Missing <a href="javascript:void(0);" onclick="var e = el(\'fr\'); e.focus();"><i>From</i></a> address');
-	      el_fr.focus();
-	    }	      
-	  if (!to)
-	    {
-	      errors.push('Missing <a href="javascript:void(0);" onclick="var e = el(\'to\'); e.focus();"><i>To</i></a> address');
-	      el_to.focus();
-	    }
-	}
-    } 
-  else if (service == 'search') 
-    {
-      _webservice = 'geocode';
-      el_q.value = q;
-      if (q && region)
-	{
-	  query_str = ['q=', escape(_cleanString(q)), '&region=', region].join('');
-	}
-      else if (!q)
-	{
-	  errors.push('Missing address or route <a href="javascript:void(0);" onclick="var e = el(\'q\'); e.focus();"><i>query</i></a>');
-	  el_q.focus();
-	}
-    } 
-  else if (service == 'feedback') 
-    {
-      _webservice = 'feedback';
-      var feedback = _elV('feedback');
-      if (!feedback) return;
-      var data = 
-	[' "region":"', region,         '",', 
-	 '{"q":"',      q,              '",',
-	 ' "fr":"',     _elV('fr'),     '",', 
-	 ' "to":"',     _elV('to'),     '",',
-	 ' "result":"', _elV('result'), '"}'].join('');
-      query_str = ['feedback=', escape(_cleanString(feedback, true)), '&data=', escape(data)].join('');
-    } 
-  else 
-    {
-      _setResult('Unknown service: ' + service);
-      return;
-    }
-
+  
   if (!region)
     {
-      errors.push('No <a href="javascript:void(0);" onclick="var e = el(\'region\'); e.focus();"><i>region</i></a> selected');
+      errors.push('No <a href="javascript:void(0);" onclick="el(\'region\').focus();"><i>region</i></a> selected');
       el_region.focus();
     }
 
   if (errors.length) 
     {
-      errors = ['<h2>Errors</h2><ul><li>',
-		errors.join('</li><li>'),
+      errors = ['<h2>Errors</h2><ul><li>', errors.join('</li><li>'),
 		'</li></ul>'].join('');
+      _showLPanel();
       _setResult(errors);
     } 
   else 
     {
-      var url = ['http://', domain, '/', dir, _webservice, 
-		 '?', query_str].join('');
+      var url = ['http://', domain, '/', dir, 
+		 '?region=', region, '&tmode=bike&q=', 
+		 escape(q), 
+		 '&async=1'].join('');
       //alert(url);
       doXmlHttpReq('GET', url, _callback);
     }
@@ -209,9 +67,6 @@ function _find(alt_service)
 
 /* Callbacks */
 
-var geocodes;
-
-
 /** 
  * Do stuff that's common to all callbacks in here
  */
@@ -219,73 +74,46 @@ function _callback(req)
 {
   var result_set = {};
   var status = req.status;
-  var reason = req.statusText;
   var response_text = req.responseText;
-  var status_msg = '';
-  var error;
-  var callback = eval('_'+_webservice+'Callback');
-  
-  if (status == 200 || status == 300) 
+  if (status < 400)
     {
       eval("result_set = " + response_text + ";");
+      eval('_' + result_set.result_set.type + 'Callback')(status, result_set);
+      if (start_ms)
+	_setIH('elapsed_time', 
+	       ((new Date().getTime() - start_ms) / 1000.0) + 's');
+      var result = result_set.result_set.html;
     }
-  
-  var result = callback(status, result_set);
-  var result_text = result['result_text'];
-  error = result['error'];
-  
-  if (error) 
+  else
     {
-      result_text = '<h2>Error</h2>' + response_text;
-    } 
-  else 
-    {
-      _setIH('elapsed_time', ((new Date().getTime() - start_ms) / 1000.0) + 's');
+      _showLPanel();
+      var result = response_text;
     }
-  _setResult(result_text);
-  return !error;
+  if (result)
+    _setResult(result);
 }
-
 
 function _geocodeCallback(status, result_set)
 {
-  error = false;
-  var result_text = '';
+  geocodes = result_set['result_set']['result'];
   switch (status)
     {
     case 200: // A-OK, one match
-      geocodes = result_set['result_set']['result'];
-      var geocode = geocodes[0];
-      _showGeocode(0, true);
-      result_text = ['<h2>Address</h2><p>',
-		     _makeAddressFromGeocode(geocode, true),
-		     '</p>'];
-      result_text = result_text.join('')
-      break;
-    case 300: // Multiple matches
-      geocodes = result_set['result_set']['result'];
-      result_text = ['<h2>Multiple Matches Found</h2><ul>'];
-      var code;
-      for (var i = 0; i < geocodes.length; ++i) 
+      if (map)
 	{
-	  code = geocodes[i];
-	  result_text.push('<li>',
-			   '<a href="javascript:void(0);" ',
-			   ' onclick="_showGeocode(', i, ');" ', '>', 
-			   _makeAddressFromGeocode(code, false, '<br/>'), 
-			   '</a>',
-			   '</li>');
+	  _hideLPanel();
+	  _showGeocode(0, true);
 	}
-      result_text.push('</ul>');
-      result_text = result_text.join('')
       break;
-    case 400: // Input Error
-    case 404: // Not found
-    case 405: // Method not allowed (POST, etc)
-    default: 
-      error = true;
+    case 300:
+      if (map)
+	{
+	  _showLPanel();
+	  for (var i = 0; i < geocodes.length; ++i)
+	    _showGeocode(i, false);
+	}
+      break;
     }
-  return {'result_text': result_text, 'error': error};
 }
 	
 var colors = ['#0000ff', '#00ff00', '#ff0000', 
@@ -295,16 +123,16 @@ var color_index = 0;
 var colors_len = colors.length;
 function _routeCallback(status, result_set)
 {
-  error = false;
-  var result_text = '';
+  var route = result_set.result_set.result;
+  fr = route.fr.original;
+  to = route.to.original;
   switch (status)
     {
     case 200: // A-OK, one match
-      var route = result_set['result_set']['result'];
-      result_text = route['directions_table'];
       if (map) 
 	{
-	  var linestring = route['linestring'];
+	  _showLPanel();
+	  var linestring = route.linestring;
 	  var linestring_len = linestring.length;
 	  var last_point_ix = linestring.length - 1;
 	  var box = getBoxForPoints(linestring);	
@@ -328,153 +156,50 @@ function _routeCallback(status, result_set)
 	}
       break;			 
     case 300: // Multiple matches
-      var geocodes_fr = result_set['result_set']['result']['fr'];
-      var geocodes_to = result_set['result_set']['result']['to'];
-      result_text = _makeRouteMultipleMatchList(geocodes_fr, geocodes_to);
       break;
-    case 400: // Input Error
-    case 404: // Not found
-    case 405: // Method not allowed (POST, etc)
-    default: 
-      error = true;
-    }
-  return {'result_text': result_text, 'error': error};
-}
-
-
-function _feedbackCallback(req)
-{
-  _setResult('Your feedback has been sent. Thanks.');
-}
-
-
-function _makeRouteMultipleMatchList(geocodes_fr, geocodes_to)
-{
-  var result = ['<div id="mma"><h2>Multiple Matches Found</h2>'];
-
-  function makeDiv(fr_or_to, style)
-  {
-    var heading = (fr_or_to == 'fr' ? 'From' : 'To');
-    result.push('<div id="mma_', fr_or_to, '" style="display:', style, ';"><h3>', heading, '</h3>');
-  }
-
-  function makeList(fr_or_to, geocodes, find)
-  {
-    var onclick1 = [' onclick="_setElV(\'', fr_or_to, '\', \''].join('');
-    var onclick2 = ['\'); _showInputSection(\'route\'); ', find, '" '].join('');
-    result.push('<ul>');
-    
-    var list;
-    for (var i = 0; i < geocodes.length; ++i) 
-      {
-	addr = _makeAddressFromGeocode(geocodes[i], false, '\\n');
-	list = ['<li>', 
-		'<a href="javascript:void(0);"', 
-		onclick1, addr, onclick2, 
-		'>', addr.replace('\\n', '<br/>'), '</a>', 
-		'</li>'];
-	result.push(list.join(''));
-      }
-    result.push('</ul></div>');
-  }
-  
-  if (geocodes_fr.length)
-    {
-      var style = 'block';
-      if (geocodes_to.length) 
-	var find = '_setElStyle(\'mma_fr\', \'display\', \'none\'); _setElStyle(\'mma_to\', \'display\', \'block\');';
-      else
-	var find = '_find()';
-      makeDiv('fr', style);
-      makeList('fr', geocodes_fr, find);
-    }
-
-  if (geocodes_to.length)
-    {
-      var find = '_find()';
-      if (geocodes_fr.length) 
-	var style = 'none';
-      else
-	var style = 'block';
-      makeDiv('to', style);
-      makeList('to', geocodes_to, find);
-    }
-  result.push('</div>');
-  return result.join('');
-}
-
-
-/**
- * Concatenate a geocode's address parts into a single string
- *
- * @param geocode A geocode object
- * @param show_lon_lat Flag indicating whether to show the geocode's long/lat 
-          as part of the address (default: false)
- * @param separator The separator that will go between the street, place, and 
-          long/lat (default: <br/>)
- */
-function _makeAddressFromGeocode(geocode, show_lon_lat, separator)
-{
-  separator = separator || '<br/>';
-  var type = geocode.type;
-  var place; 
-  var full_name;
-  if (type == 'address') 
-    {
-      var st = geocode.street;
-      place = geocode.place;
-      full_name = _join([geocode.number.toString(), st.prefix, st.name, 
-			 st.type, st.suffix]);
-    } 
-  else if (type == 'intersection') 
-    {
-      var st1 = geocode.street1;
-      var st2 = geocode.street2;
-      place = geocode.place1;
-      full_name = [_join([st1.prefix, st1.name, st1.type, st1.suffix]),
-		   _join([st2.prefix, st2.name, st2.type, 
-			  st2.suffix])].join(' & ');
-    }
-  var zc = parseInt(place.zipcode);
-  var city = place.city;
-  var state = place.state_id;
-  var address = [full_name, separator, 
-		 city, (city ? ', ' : ''), 
-		 state, (state ? ' ' : ''), 
-		 zc || ''];
-  //if (show_lon_lat) address.push(separator, geocode.x, ', ', geocode.y);
-  return address.join('');
-}
-
-function _showGeocode(index, center)
-{
-  if (map) 
-    {
-      var geocode = geocodes[index];
-      var point = {'x': geocode.x, 'y': geocode.y};
-      var info_addr = _makeAddressFromGeocode(geocode, true);           // address for info win
-      var field_addr = _makeAddressFromGeocode(geocode, false, '\\n');  // address for text field
-      var href = ' href="javascript:void(0);" ';
-      var html = ['<div style="width:250px;">',
-		  '<b>Address</b><br/>',
-		  info_addr, '<br/>',
-		  'Set as ',
-		  '<a', href, ' onclick="_setRouteFieldToAddress(\'fr\', \'', field_addr, '\');">From</a> or ',
-		  '<a', href, ' onclick="_setRouteFieldToAddress(\'to\', \'', field_addr, '\');">To</a> address for route<br/>',
-		  '<input type="button" value="Find Route" onclick="_find(\'route\');" style="margin-top:4px;"/>',
-		  '</div>'].join('');
-      var geocode_marker = placeMarkers([point])[0];
-      GEvent.addListener(geocode_marker, "click", function() { map.openInfoWindowHtml(point, html); });
-      map.centerAndZoom(point, 3);
-      map.openInfoWindowHtml(point, html);
     }
 }
 
-function _setRouteFieldToAddress(id, address)
+
+/* UI Manipulation */
+
+function _setResult(content, error)
 {
-  _selectInput('route', id == 'fr' ? 'to' : 'fr');
-  _setElV(id, address);
+  if (error) 
+    _setElStyle('result', 'color', 'red');
+  else 
+    _setElStyle('result', 'color', 'black');
+  _setIH('result', content.toString());
 }
+
+function _setRouteFieldToAddress(fr_or_to, address)
+{
+  eval([fr_or_to, ' = "', address, '";'].join(''));
+  _setElV('q', [fr, '\nTO\n', to].join(''));
+}
+
+function swapFromAndTo()
+{
+  var temp = fr;
+  fr = to;
+  to = temp;
+  _setElV('q', [fr, '\nTO\n', to].join(''));
+}
+
+function _showLPanel()
+{
+  _setElStyle('left_panel', 'display', '');
+  map.onResize();
+}
+
+function _hideLPanel()
+{
+  _setElStyle('left_panel', 'display', 'none');
+  map.onResize();
+}
+
+
+/* Map */
 
 function _setElVToMapLonLat(id)
 {
@@ -482,9 +207,8 @@ function _setElVToMapLonLat(id)
   var lon_lat = map.getCenterLatLng();
   var x = Math.round(lon_lat.x * 1000000) / 1000000;
   var y = Math.round(lon_lat.y * 1000000) / 1000000;
-  field = _setElV(id, "lon=" + x + ", " + "lat=" + y);
+  document.getElementById(id).value = "lon=" + x + ", " + "lat=" + y;
 }
-
 
 function _clearMap()
 {  
@@ -503,7 +227,10 @@ function resizeMap()
     {
       offset += e.offsetTop;
     }
-  var height = getWindowHeight() - offset - 50;
+  var height = getWindowHeight() - 
+    offset - 
+    parseInt(_elStyle('footer', 'height')) - 
+    15;
   if (height >= 0) 
     {
       height = height + 'px';
@@ -515,6 +242,28 @@ function resizeMap()
     }
 }
 
+function _showGeocode(index, open_info_win)
+{
+  if (map) 
+    {
+      var geocode = geocodes[index];
+      var point = {'x': geocode.x, 'y': geocode.y};
+      var html = ['<div style="width:250px;">', 
+		  geocode.address, 
+		  '</div>'].join('');
+      var geocode_marker = placeMarkers([point])[0];
+      GEvent.addListener(geocode_marker, "click", 
+			 function() { map.openInfoWindowHtml(point, html); });
+      if (open_info_win)
+	{
+	  map.centerAndZoom(point, 3);
+	  map.openInfoWindowHtml(point, html);
+	}
+    }
+}
+
+
+/* Regions */
 
 function selectRegion(region)
 {
@@ -539,12 +288,13 @@ function selectRegion(region)
       reg_link.href = '';
     }
 
-  el('region_heading').innerHTML = region.heading;
-  el('region_subheading').innerHTML = region.subheading;
+  //el('region_heading').innerHTML = region.heading;
+  //el('region_subheading').innerHTML = region.subheading;
   document.title = 'byCycle - Bicycle Trip Planner - ' + region.heading;
 
   if (map)
     {
+      _hideLPanel();
       _zoomToRegion(region);
       if (region.all)
 	{

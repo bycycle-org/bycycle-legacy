@@ -4,12 +4,14 @@
       xmlns:v="urn:schemas-microsoft-com:vml">
 
   <head>
-    <meta http-equiv="Content-Type" content="application/xhtml+xml; charset=iso-8859-1" />
+    <meta http-equiv="Content-Type" content="application/xhtml+xml; charset=iso-8859-1"/>
       <title>byCycle - Bicycle Trip Planner</title>
 
-      <meta name="keywords" content="bicycle, bike, bicycle trip planner, bicycle route finder, bike trip planner, bike route finder, bicycle route, bicycle trip, bike route, bike trip, bicycle routing, bike routing, maps, bicycle maps, bike maps, bicycle advocacy, community, sustainability, portland, oregon, milwaukee, wisconsin"/>
+      <meta name="keywords" 
+	content="bicycle, bike, bicycle trip planner, bicycle route finder, bike trip planner, bike route finder, bicycle route, bicycle trip, bike route, bike trip, bicycle routing, bike routing, maps, bicycle maps, bike maps, bicycle advocacy, community, sustainability, portland, oregon, milwaukee, wisconsin"/>
 
-	<meta name="description" content="byCycle Trip Planner -- An online, interactive, bicycle trip planner (route finder) for the Portland, Oregon, Milwaukee, Wisconsin, and, soon, other regions."/>
+	<meta name="description" 
+	  content="byCycle Trip Planner -- A web-based, interactive, bicycle trip planner (route finder) for the Portland, Oregon, Milwaukee, Wisconsin, and, soon, other regions."/>
 	  
       <link rel="stylesheet" href="css/base.css" type="text/css"/>
       <!--[if IE]>
@@ -18,12 +20,9 @@
 
 	<script type="text/javascript">
           <!--
-	  /**
-           * Event handler for stuff that should be done after the page has 
-	   * completed loading
-           */
 	  function afterPageLoad()
 	  {
+	    el('js').value = '1';
 	    resizeMap();
 	    if (local || api_key) 
 	      mapLoad();
@@ -31,20 +30,21 @@
 	      el('map').innerHTML =  
 	        'Error loading map: Could not find valid API key for ' + 
 	        base_url + '.';
+	    var status = el('status').value;
+	    var response_text = el('response_text').value;
+	    if (status && response_text)
+	      {
+	        var req = {status: parseInt(status), responseText: response_text}
+	        _callback(req);
+	      }
 	  }
 
 	  if(window.addEventListener)
-	  {
 	    window.addEventListener('load', afterPageLoad, false);
-	  }
 	  else if(document.addEventListener)
-	  {
 	    document.addEventListener('load', afterPageLoad, false);
-	  }
 	  else if(window.attachEvent)
-	  {
 	    window.attachEvent('onload', afterPageLoad);
-	  }
 	  //-->
 	</script>
 
@@ -63,149 +63,95 @@
 	<table>
 	  <tr>
 	    <td id="logo">
-	      <h1>
-		<a href="http://www.bycycle.org/" title="byCycle Home Page">byCycle</a> 
-	      </h1>
-	    </td>
-	    
-	    <!-- Input section selection links -->
-	    <td id="select_input">
-	      <a 
-		href="javascript:void(0);" 
-		id="search_link" class="selected" 
-		title="Find an address or route" 
-		tabindex="10" 
-		onclick="_selectInput('search', true);"
-		>Find</a>
-	      <br/>
-		<a 
-		  href="javascript:void(0);" 
-		  id="route_link" 
-		  title="Find a route" 
-		  tabindex="20" 
-		  onclick="_selectInput('route', true);"
-		  >Find Route</a>
-		<br/>	    
-		  <a 
-		    href="http://www.bycycle.org/contact.html" 
-		    id="feedback_link" 
-		    title="Send us your comments and suggestions" 
-		    tabindex="30"
-		    >Feedback</a>
-	    </td>
-	    
+	      <h1><a href="http://www.bycycle.org/" title="byCycle Home Page">byCycle</a></h1>
+	      <h2><a href="http://tripplanner.bycycle.org/">Trip Planner</h2>
+	    </td>	 
+
 	    <!-- Input Form -->
-	    <td style="padding: 0 10px;">
+	    <td>
 	      <form id="input_form" 
 		action="." 
 		method="get" 
-		onsubmit="_find(); return false;">
-		
-		<!-- search input section -->
-		<div id="search_input">
-		  <div>
-		    Address <a href="javascript:void(0);" tabindex="40" 
-		      title="Center the map on the point you want and then click here" 
-		      onclick="_setElVToMapLonLat('q'); _find('search');"
-		      >Find address at center of map</a>
-		  </div>
+		onsubmit="doFind(); return false;">
+
+		<!-- input -->
+		<div>
 		  <textarea id="q" name="q" class="input_field" 
-		    rows="2" cols="40" 
-		    tabindex="50"
+		    tabindex="1"
 		    >%(q)s</textarea>	
 		</div>
-		
-		<!-- route input section -->
-		<div id="route_input" style="display:none;">
-		  <table>
-		    <tr>
-		      <td>
-			From
-			<a href="javascript:void(0);" tabindex="60" 
-			  title="Center the map on the point you want and then click here" 
-			  onclick="_setElVToMapLonLat('fr');">Use center of map</a>
-		      </td>
-		      <td></td>
-		      <td>
-			To
-			<a href="javascript:void(0);" tabindex="70"
-			  title="Center the map on the point you want and then click here" 
-			  onclick="_setElVToMapLonLat('to');">Use center of map</a>
-		      </td>
-		    </tr>
-		    <tr>
-		      <td>
-			<textarea id="fr" name="fr" class="route_input_field" 
-			  rows="2" cols="40" 
-			  tabindex="80">%(fr)s</textarea>
-		      </td>
-		      <td id="swapfrto">
-			<a href="javascript:void(0);" 
-			  onclick="return _swapElV('fr', 'to');"
-			  title="Swap from and to addresses"
-			  tabindex="90">
-			  <img src="images/swapfrto.gif" alt="Swap from and to addresses"/>   
-			</a>
-		      </td>
-		      <td>
-			<textarea id="to" name="to" class="route_input_field" 
-			  rows="2" cols="40" 
-			  tabindex="100"
-			  >%(to)s</textarea>
-		      </td>
-		    </tr>
-		  </table>
-		  <input type="hidden" id="tmode" name="tmode" value="bike"/>
-		</div>
-		
-		<!-- options -->
+
+		<!-- control -->
 		<div>
 		  <select id="region" name="region" 
-		    tabindex="110"
+		    tabindex="2"
 		    title="Set the active region and zoom into it"
-		    onchange="selectRegion(this.options[this.selectedIndex].value);"
-		    >
+		    onchange="selectRegion(this.options[this.selectedIndex].value);">
 		    <option value="">All Regions</option>				
 		    %(regions_opt_list)s			    
 		  </select>
-
+		  
 		  &#160;
-
-		  <input id="find_button" name="find_button" 
+		  
+		  <input
 		    title="Click to find the address or route you entered"
-		    tabindex="1000" 
+		    tabindex="3" 
 		    type="submit" 
-		    value="Find"/>
+		    value="Go!"/>
 		    
-		    &#160;
-		    
-		    <input tabindex="1010"  
-		      title="Clear everything from the map" 
-		      type="button" 
-		      value="Clear Map" 
-		      onclick="_clearMap();"/>
-		      &#160;<span id="elapsed_time"></span>
+		  &#160;
+		  
+		  <input tabindex="4"  
+		    title="Swap from and to addresses"
+		    type="button" 
+		    value="Swap" 
+		    onclick="swapFromAndTo();"/>
+
+		  &#160;			  
+
+		  <input tabindex="4"  
+		    title="Clear your markers and routes from the map" 
+		    type="button" 
+		    value="Clear Map" 
+		    onclick="_clearMap();"/>
+		  
+		  &#160;
+		  
+		  <span id="elapsed_time"></span>
 		</div>
+
+		<input type="hidden" id="tmode" name="tmode" value="bike"/>
+		<input type="hidden" id="m" name="m" value=""/>
+		<input type="hidden" id="js" name="js" value=""/>
 	      </form>
 	    </td>
 	    
 	    <td>
-	      <a id="region_link" href=""><img id="region_logo" src="" width="" height=""/></a>
+	      <a href="help.html"
+		title="How do I work this thing!?"
+		tabindex="5"
+		>Help &#187;</a>
+
+	      <br/>
+
+	      <a href="http://www.bycycle.org/contact.html" 
+		title="Send us problem reports, comments, questions, and suggestions"
+		tabindex="5"
+		>Feedback &#187;</a>
+
+	      <br/>
+
+	      <a href="http://www.bycycle.org/tripplanner"
+		    title="Get more information about this project"
+		    >About This Project &#187;</a>
+	    </td>
+
+	    <td>
+	      <a id="region_link" href=""><img id="region_logo" src="" width="0" height="0" alt=""/></a>
 	    </td>
 	  </tr>
 	</table>
       </div>
-
-      <!-- Key Point -->
-      <div id="keypoint" class="page_section">
-	<h2 style="display: inline;">
-	  <a href="http://www.bycycle.org/tripplanner"
-	    title="Information About the Trip Planner"
-	    >Trip Planner</a> &#187; 
-	  <span id="region_heading">%(region_heading)s</span> 
-	</h2>
-	<span id="region_subheading"></span>
-      </div>  
 
       <!-- Content -->
       <div id="content" class="page_section">
@@ -259,11 +205,15 @@
 	&#183; 
 	
 	Last modified %(last_modified)s	
+	
 	<br/>
-	  The Trip Planner is provided AS IS with NO WARRANTY OF ANY KIND. 
-	  Users assume all risk of use.
+	
+	The Trip Planner is provided AS IS with NO WARRANTY OF ANY KIND.
       </div>
       
-    </div><!-- Content Pane -->      
+    </div><!-- Content Pane --> 
+
+    <input type="hidden" id="status" name="status" value="%(status)s"/>
+    <input type="hidden" id="response_text" name="response_text" value="%(response_text)s"/> 
   </body>
 </html>

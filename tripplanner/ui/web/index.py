@@ -1,164 +1,168 @@
-import os, datetime
+import os
+import datetime
 import byCycle
 
 
-def index(region='', tmode='', q='', **params):
-    region = region.strip().lower().replace(',', '')
-    region = _getRegionForAlias(region)
-    q = ' '.join(q.split())
+welcome_message = '''
+<p style="margin-top:0;">
+Welcome to the
+<a href="http://www.bycycle.org/"
+title="byCycle Home Page"
+>byCycle</a> 
+<a href="http://www.bycycle.org/tripplanner"
+title="Information about the Trip Planner"
+>Trip Planner</a>,
+an interactive trip planning application that aims to help encourage
+bicycling and other alternative modes of transportation. The Trip Planner is
+under active development. If you find a problem or have any comments,
+questions, or suggestions, please
+<a href="http://www.bycycle.org/contact.html"
+title="Send us problem reports, comments, questions, and suggestions"
+>contact us</a>.
+</p>
+
+<p>
+The Trip Planner is being developed in cooperation with the following
+organizations that provide data and other support to the project:
+<ul>
+  <li>
+    <a href="http://www.metro-region.org/">Metro</a> in the 
+    <a href="http://tripplanner.bycycle.org/?region=PortlandOR"
+    >Portland, OR</a>, area
+  </li>
+  <li>    
+    <a href="http://www.bfw.org/">Bicycle Federation of Wisconsin</a> in the 
+    <a href="http://tripplanner.bycycle.org/?region=MilwaukeeWI"
+    >Milwaukee, WI</a>, area
+  </li>
+</ul>
+</p>
+
+<p>
+Although every reasonable effort is being made to provide accurate and
+useful routes and other information, anything presented here is
+<i>not</i> guaranteed to be accurate <i>or</i> useful. Users are advised to
+independently verify all information presented here and are encouraged to 
+<a href="http://www.bycycle.org/contact.html"
+title="Send us your feedback"
+>provide feedback</a>.
+</p>
+'''
+
+
+def index(req, **params):
+    # - Normal request
+    #   - No query string
+    #     Return the template with default values
     
-    # Create an options list of regions, setting the selected region if we got
-    # here by http://tripplanner.bycycle.org/x where x is the name of some
-    # region (list is sorted by state, then area)
-    region_opt = '<option value="%s">%s</option>'
-    region_opt_selected = '<option value="%s" selected="selected">%s</option>'
-    regions = {'wi': ['milwaukee',
-                      ],
-               'or': ['portland',
-                      ],
-               }
-    states = regions.keys()
-    states.sort()
-    regions_opt_list = []
-    region_heading = 'All Regions'
-    for state in states:
-        areas = regions[state]
-        #areas.sort()
-        for area in areas:
-            reg = '%s%s' % (area, state)
-            if reg == region:
-                opt = region_opt_selected
-                region_heading = '%s, %s' % (area.title(), state.upper())
+    #   - Query string, region only
+    #     Return the template with default values, region selected
+
+    #   - Query string
+    #     Process the query
+    #     Return the template with values filled in
+    #     Move the map if there's not an error
+
+    # - Asynchronous request
+    #   - Query string
+    #     Process the query
+    #     Return processing results
+
+    try:
+        async = params['async'] == '1'
+    except KeyError:
+        async = False
+
+    try:
+        params['region'] = _getRegionForAlias(params['region'])
+    except KeyError:
+        pass
+
+    if async:
+        # Asynchronous request
+        req.content_type = 'text/plain'
+        
+        response_text = _processQuery(req, params)
+        status = req.status
+        if req.status < 400:
+            result_set = eval(response_text)
+            type_ = result_set['result_set']['type']
+            callback = '_%sCallback' % type_
+            result = eval(callback)(req.status, result_set, **params)
+
+            result_set['result_set']['html'] = result;
+            content = repr(result_set)
+        else:
+            content = '<h2>Error</h2>%s' % response_text
+    else:
+        # Normal request
+        req.content_type = 'text/html'
+
+        try:
+            q = params['q'].strip()
+        except KeyError:
+            status = ''
+            response_text = ''
+            q = ''
+            fr = ''
+            to = ''
+            result = welcome_message
+        else:
+            fr = to = ''
+
+            response_text = _processQuery(req, params)            
+            status = req.status
+            if req.status < 400:
+                result_set = eval(response_text)
+                type_ = result_set['result_set']['type']
+                callback = '_%sCallback' % type_
+                result = eval(callback)(req.status, result_set, **params)
             else:
-                opt = region_opt 
-            regions_opt_list.append(opt % (reg, '%s, %s' %
-                                           (area.title(),
-                                            state.upper())))
-    regions_opt_list = '\n'.join(regions_opt_list)
+                result = '<h2>Error</h2>%s' % response_text
 
-    template = '%stripplanner/ui/web/tripplanner.html' % byCycle.install_path
-
-    # Get and format the last modified date of the template
-    stat = os.stat(template)
-    last_modified = datetime.date.fromtimestamp(stat.st_mtime)
-    last_modified = last_modified.strftime('%d %b %Y')
-    if last_modified[0] == '0':
-        last_modified = last_modified[1:]
-
-    template_file = open(template)
-    data = {'q': q,
-            'fr': '',
-            'to': '',
-            'regions_opt_list': regions_opt_list,
-            'region_heading': region_heading,
-            'last_modified': last_modified,
+        template = '%stripplanner/ui/web/tripplanner.html' % \
+                   byCycle.install_path
+                                
+        data = {
+            'status': status,
+            'response_text': response_text,
+            'q': q,
+            'fr': fr,
+            'to': to,
+            'regions_opt_list': _makeRegionsOptionList(**params),
+            'result': result ,
+            'last_modified': _getLastModified(template),
             }
 
-    result, fr_to = _doQuery(region, tmode, q)
-
-    data['result'] = result
-
-    if fr_to:
-        q = ' to '.join(fr_to)
-        data['q'] = q
-        data['fr'], data['to'] = fr_to[:]
-
-    content = template_file.read() % data
-    template_file.close()
+        template_file = open(template)
+        content = template_file.read() % data
+        template_file.close()
     return content
 
 
-def _doQuery(region, tmode, q):
-    if not q:
-        result = '''
-<p style="margin-top: 0;">
-  Welcome to the
-  <a href="http://www.bycycle.org/"
-    title="byCycle Home Page"
-    >byCycle</a> 
-  <a href="http://www.bycycle.org/tripplanner"
-    title="Information about the Trip Planner"
-    >Trip Planner</a>,
-  an interactive trip planning application that aims to help encourage
-  bicycling and other alternative modes of transportation. The Trip Planner is
-  under active development. If you find a problem or have any comments,
-  questions, or suggestions, please
-  <a href="http://www.bycycle.org/contact.html"
-    title="Contact us"
-    >contact us</a>.
-</p>
-
-<p>
-  The Trip Planner is being developed in cooperation with the following
-  organizations that provide data and other support to the project:
-  <ul>
-    <li>
-      <a href="http://www.metro-region.org/">Metro</a> in the 
-      <a href="http://tripplanner.bycycle.org/?region=PortlandOR"
-        >Portland, OR</a>, area
-    </li>
-    <li>    
-      <a href="http://www.bfw.org/">Bicycle Federation of Wisconsin</a> in the 
-      <a href="http://tripplanner.bycycle.org/?region=MilwaukeeWI"
-        >Milwaukee, WI</a>, area
-    </li>
-  </ul>
-</p>
-
-<p>
-  Although every reasonable effort is being made to provide accurate and
-  useful routes and other information, no guarantee can be made in regard to
-  such accuracy or usefulness. Users are advised to independently verify any
-  information presented here and are encouraged to 
-  <a href="http://www.bycycle.org/contact.html"
-    title="Send us your feedback"
-    >provide feedback</a>. 
-</p>
-'''
-        rq = None
-    else:
-        rq = _isRouteQuery(q)
-        if rq:
-            from byCycle.tripplanner.services import route
-            route = route.get(region=region, tmode=tmode, q=rq)
-            result = route['directions_table']
-        else:
-            from byCycle.tripplanner.services import geocode
-            geocodes = geocode.get(region=region, q=q)
-            address = geocodes[0]
-            result = '<h2>Address</h2><p>%s</p>' % \
-                     str(address).replace('\n', '<br/>')
-    return result, rq
-
-
-## Web Services
-
-def geocode(req, **params):
-    return _doWebServiceQuery(req, 'geocode', **params)
-
-
-def route(req, **params):
-    return _doWebServiceQuery(req, 'route', **params)
-
-
-def _doWebServiceQuery(req, service, **params):
-    try: 
-        from mod_python import apache
-    except ImportError:
-        pass
+def _processQuery(req, params, service=''):
     from byCycle.lib import wsrest
 
-    params['region'] = _getRegionForAlias(params['region'])
-        
-    # Import correct web service module
+    # Normalize query
+    params['q'] = ' '.join(params['q'].split())
+
+    # Analyze the query to determine the service and prepare the query for the
+    # service. If a service was explicitly given, use it; otherwise, use the
+    # service determined by the semantic analysis.
+    s = _analyzeQuery(params)
+    service = service or s
+
+    # Import web service module
     path = 'byCycle.tripplanner.webservices.%s'
     mod = __import__(path % service, globals(), locals(), [''])
-    # Create web service object
-    obj = getattr(mod, service.title())(**params)
     
+    # Create web service object
+    ws_obj = getattr(mod, service.title())(**params)
+
+    # Process the query according to the request method
     method = req.method
     try:
-        content = eval('obj.%s' % method)()
+        content = eval('ws_obj.%s' % method)()
     except wsrest.MethodNotAllowedError, exc:
         content = exc.reason + ' (%s)' % method
         req.allow_methods(exc.getAllowMethods(self))
@@ -177,8 +181,132 @@ def _doWebServiceQuery(req, service, **params):
     except NameError:
         req.status = exc.status
     
-    req.content_type = 'text/plain'
     return content
+
+
+def _analyzeQuery(params):
+    q = params['q']
+    service = 'geocode'
+
+    try:
+        q = eval(q)
+    except:
+        words = q.lower().split(' to ') 
+        if len(words) > 1:
+            service = 'route'
+            q = words
+    else:
+        if isinstance(q, list):
+            service = 'route'
+           
+    try:
+        service = params['service']
+    except KeyError:
+        params['service'] = service
+
+    params['q'] = q
+    return service
+
+
+## Callbacks
+
+def _geocodeCallback(status, result_set, **params):
+    geocodes = result_set['result_set']['result']
+    if status == 200:    # A-OK, one match
+        geocode = geocodes[0]
+        addr = geocode['address'].replace('\n', '<br/>')
+        field_addr = geocode['address'].replace('\n', ', ')
+        href = ' href="javascript:void(0);" '        
+        result = '<h2 style="margin-top:0">Address</h2>%s<br/>' \
+                 'Set as ' \
+                 '<a %s onclick="_setRouteFieldToAddress(\'fr\', \'%s\');"' \
+                 '>From</a> or ' \
+                 '<a %s onclick="_setRouteFieldToAddress(\'to\', \'%s\');"' \
+                 '>To</a> address<br/>' % \
+                 (addr, href, field_addr, href, field_addr,)
+    elif status == 300:  # Multiple matches
+        result = ['<h2>Multiple Matches Found</h2><ul>']
+        for i, geocode in enumerate(geocodes):
+            addr = geocode['address']
+            result.append('<li>'
+                          '  <a href="./?region=%s&q=%s" '
+                          '    onclick="_showGeocode(%s);"'
+                          '    >%s</a>'
+                          '</li>' %
+                          (params['region'],
+                           addr.replace('\n', ', ').replace(' ', '+'),
+                           i,
+                           addr.replace('\n', '<br/> ')))
+        result.append('</ul>')
+        result = ''.join(result)
+    return result
+
+
+def _routeCallback(status, result_set, **params):
+    route = result_set['result_set']['result']
+    if status == 200:    # A-OK, one match
+        result = _makeDirectionsTable(route)
+    elif status == 300:  # Multiple matches
+        print route['fr']
+        geocodes_fr = route['fr']['geocode']
+        geocodes_to = route['to']['geocode']
+        result = _makeRouteMultipleMatchList(geocodes_fr, geocodes_to)
+    return result
+
+def _makeRouteMultipleMatchList(geocodes_fr, geocodes_to):
+    result = ['<div id="mma"><h2>Multiple Matches Found</h2>']
+
+    def makeDiv(fr_or_to, style):
+        if fr_or_to == 'fr':
+            heading = 'From Address:'
+        else:
+            heading = 'To Address:'
+        result.append('<div id="mma_%s" style="display:%s;"><h3>%s</h3>' % \
+                      (fr_or_to, style, heading))
+
+    def makeList(fr_or_to, geocodes, find):
+        onclick1 = " onclick=\"_setRouteFieldToAddress(\'%s\', \'" % fr_or_to
+        onclick2 = "\'); %s;\" " % find
+        result.append('<ul>')
+        for geocode in geocodes:
+            addr = geocode['address']
+            li = '<li><a href="javascript:void(0);" %s%s%s>%s</a></li>' % \
+                 (onclick1, addr.replace('\n', ', '),
+                  onclick2, addr.replace('\n', '<br/>'))
+            result.append(li)
+        result.append('</ul></div>')
+  
+    if geocodes_fr:
+        style = 'block'
+        if geocodes_to:
+            find = '_setElStyle(\'mma_fr\', \'display\', \'none\'); ' \
+                   '_setElStyle(\'mma_to\', \'display\', \'block\')'
+        else:
+            find = 'doFind()'
+        makeDiv('fr', style)
+        makeList('fr', geocodes_fr, find)
+
+    if geocodes_to:
+        find = 'doFind()'
+        if geocodes_fr:
+            style = 'none'
+        else:
+            style = 'block'
+        makeDiv('to', style)
+        makeList('to', geocodes_to, find)
+      
+    result.append('</div>')
+    return ''.join(result)
+
+
+## Web Services
+
+def geocode(req, **params):
+    return _processQuery(req, params, 'geocode')
+
+
+def route(req, **params):
+    return _processQuery(req, params, 'route')
 
 
 ## Helpers
@@ -197,20 +325,191 @@ def _getRegionForAlias(alias):
     else:
         return region
 
+    
+def _makeRegionsOptionList(region='', **params):
+    """Create an HTML options list of regions.
 
-def _isRouteQuery(q):
-    fr_to = q.lower().split(' to ')
-    if len(fr_to) > 1:
-        return fr_to
-    try:
-        fr_to = eval(q)
-    except:
-        pass
-    else:
-        if isinstance(fr_to, list) and len(fr_to) > 1:
-            return fr_to
-    return None
+    Set the selected region if we got here by
+    http://tripplanner.bycycle.org/?region=x where x is the name of a region.
 
+    @return An HTML options list of regions sorted by state, then area
+    
+    """
+    regions = {'or': ['portland',
+                      ],
+               'wi': ['milwaukee',
+                      ],
+               'pa': ['pittsburgh',
+                      ],
+               }
+
+    states = regions.keys()
+    states.sort()
+
+    region = region.strip().lower().replace(',', '')
+
+    region_opt = '<option value="%s">%s</option>'
+    region_opt_selected = '<option value="%s" selected="selected">%s</option>'
+
+    regions_opt_list = []
+    region_heading = 'All Regions'
+
+    for state in states:
+        areas = regions[state]
+        #areas.sort()
+        for area in areas:
+            reg = '%s%s' % (area, state)
+            if reg == region:
+                opt = region_opt_selected
+                #region_heading = '%s, %s' % (area.title(), state.upper())
+            else:
+                opt = region_opt 
+            regions_opt_list.append(opt % (reg, '%s, %s' %
+                                           (area.title(),
+                                            state.upper())))
+            
+    return '\n'.join(regions_opt_list)
+
+
+def _getLastModified(file_name=None):
+    """Get and format the last modified date of file_name."""
+    stat = os.stat(file_name)
+    last_modified = datetime.date.fromtimestamp(stat.st_mtime)
+    last_modified = last_modified.strftime('%d %b %Y')
+    if last_modified[0] == '0':
+        last_modified = last_modified[1:]
+
+
+## Output
+
+def _makeDirectionsTable(route):
+##    route = {'from':       {'geocode': fcode, 'original': fr},
+##             'to':         {'geocode': tcode, 'original': to},
+##             'linestring': [],
+##             'directions': [],
+##             'directions_table': '',
+##             'distance':   {},
+##             'messages': []
+##            }
+
+    distance = route['distance']['mi']
+    fr = route['fr']['geocode']
+    fr_addr = fr['address']
+    to = route['to']['geocode']
+    to_addr = to['address']
+    directions = route['directions']
+    linestring = route['linestring']
+ 
+    fr_point = linestring[0]
+    to_point = linestring[-1]
+
+    fr_addr = str(fr_addr).replace('\n', '<br/>')
+    to_addr = str(to_addr).replace('\n', '<br/>')
+
+    s_table = """
+    <table id='summary'>
+        <tr>
+          <td class='start'>
+            <h2><a href='javascript:void(0);' class='start'
+                   onclick="map.showMapBlowup(%s)">Start</a>
+            </h2>
+          </td>
+          <td class='start'>%s</a>
+          </td>
+        </tr>
+        <tr>
+          <td class='end'>
+            <h2><a href='javascript:void(0);' class='end'
+                   onclick="map.showMapBlowup(%s)">End</a>
+            </h2>
+          </td>
+          <td class='end'>%s</td>
+        </tr>
+        <tr>
+          <td class='total_distance'><h2>Distance</h2></td>
+          <td>%s miles</td>
+        </tr>
+    </table>
+    """ % (fr_point, fr_addr, to_point, to_addr, distance)
+
+    d_table = """
+    <!-- Directions -->
+    <table id='directions'>%s</table>
+    """
+
+    d_row = """
+    <tr>
+      <td class='count %s'>
+        <a href='javascript:void(0)'
+           onclick="map.showMapBlowup(%s)">%s.</a>
+      </td>
+      <td class='direction %s'>%s</td>
+    </tr>
+    """               
+
+    # Direction rows
+    row_class = 'a'
+    last_i = len(directions)
+    last_street = to_addr.split('\n')[0]
+    tab = '&nbsp;' * 4
+    d_rows = []
+    row_i = []
+    i = 1
+    for d in directions:
+        turn = d['turn']
+        street = d['street']
+        toward = d['toward']
+        jogs = d['jogs']
+        ls_index = d['ls_index']
+        mi = d['distance']['mi']
+
+        row_i = []
+
+        if turn == 'straight':
+            prev = street[0]
+            curr = street[1]
+            row_i.append('%s <b>becomes</b> %s' % (prev, curr))
+        else:
+            if i == 1:
+                cmd = 'Go'
+                on = 'on'
+                onto = '<b>%s</b>' % street
+            else:
+                cmd = 'Turn'
+                on = 'onto'
+                onto = '<b>%s</b>' % street
+            row_i.append('%s <b>%s</b> %s %s' % (cmd, turn, on, onto))
+
+        if not toward:
+            if i == last_i:
+                toward = last_street
+            else:
+                toward = '?'
+        row_i.append(' toward %s -- %smi' % (toward, mi))
+
+	if d['bikemode']:
+            row_i.append(' [%s]' % ', '.join([bm for bm in d['bikemode']]))
+
+        if jogs:
+            row_i.append('<br/>%sJogs...' % tab)
+            for j in jogs:
+                row_i.append('<br/>%s%s&middot; <i>%s</i> at %s' % \
+                             (tab, tab, j['turn'], j['street']))
+
+        d_rows.append(d_row % (row_class, linestring[ls_index], i,
+                               row_class, ''.join(row_i)))
+        del row_i[:]
+        if row_class == 'a': row_class = 'b'
+        else: row_class = 'a'
+        i += 1
+
+    last_row = d_row  % (row_class, linestring[-1], i, row_class,
+                         '<b>End</b> at <b>%s</b>' % last_street)
+    d_rows.append(last_row)
+    
+    d_table = d_table % ''.join([str(d) for d in d_rows])
+    return ''.join((s_table, d_table))            
+        
 
 ## Testing
     
@@ -224,21 +523,24 @@ if __name__ == '__main__':
             self.headers_out = {}
 
 
-    P = [{'service': geocode,
-          'region': 'milwaukee',
+    P = [
+        {'region': 'portlandor',
+         'tmode': 'bike',
+         'q': '300 main to 4807 se kelly'
+         },
+
+        {'region': 'milwaukee',
           'q': '27th and lisbon'
           },
          
-         {'service': route,
-          'region': 'milwaukeewi',
+         {'region': 'portlandor',
           'tmode': 'bike',
-          'q': "['35th and north', '124 and county line']"
+          'q': '4807 se kelly to 45th and kelly'
           },
          
-         {'service': route,
-          'region': 'milwaukeewi',
+         {'region': 'milwaukeewi',
           'tmode': 'bike',
-          'q': "['35th and north', '27th and lisbon']"
+          'q': '35th and north to 27th and lisbon'
           },
          ]
 
@@ -247,7 +549,7 @@ if __name__ == '__main__':
     def runTest(func):
         print 'Running %s tests' % len(P)
         errs = []
-        show_content = False
+        show_content = 1
         for i, params in enumerate(P):
             try:
                 content = func(show_content=show_content, **params)
@@ -258,7 +560,7 @@ if __name__ == '__main__':
             else:
                 char = '+'
             if show_content:
-                print content
+                print #content
                 print
             else:
                 sys.stdout.write(char)
@@ -276,7 +578,15 @@ if __name__ == '__main__':
     ## "CGI" test function
 
     def doRequest(show_content=False, **params):
-        return index(**params)
+        req = Req()
+        req.method = 'GET'
+        content = index(req, **params)
+        if show_content:
+            print req.content_type
+            print req.headers_out
+            print req.status
+            #print req.reason
+        return content
     runTest(doRequest)
 
 
@@ -285,12 +595,12 @@ if __name__ == '__main__':
     def doRequest(service=None, show_content=False, **params):
         req = Req()
         req.method = 'GET'
-        content = service(req, **params)
+        params['async'] = '1'
+        content = index(req, **params)
         if show_content:
             print req.content_type
             print req.headers_out
             print req.status
-            #print req.reason
         return content
     runTest(doRequest)
 

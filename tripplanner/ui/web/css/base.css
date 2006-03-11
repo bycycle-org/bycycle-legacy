@@ -57,26 +57,29 @@ a.selected {
 }
 
 
-/* Content */
+/* General */
 
 #content_pane {
-  margin: 0 auto;
-  width: 98%;
+  margin: 5px;
 }
 
 .page_section {
-  margin-top: 10px;
+  padding: 5px 0;
 }
 
 
 /* Header */
 
 #header { 
+  padding-top: 0;
+}
 
+#header table td { 
+  padding: 0 5px;
 }
 
 #logo {
-  padding-right: 20px;
+  padding-left: 5px;
 }
 
 #logo * {
@@ -84,9 +87,9 @@ a.selected {
   color: #000;
 }
 
-#select_input {
-  padding: 4px 10px;
-  border: 1px solid gray;
+#logo h1, #logo h2, #logo h3 { 
+  padding: 0;
+  margin: 0;
 }
 
 #input_form {
@@ -94,65 +97,35 @@ a.selected {
   padding: 0;
 }
 
-.input_field {
-  width: 425px;
-  font-size: 12px;
-  height: 30px;
-}
-
-.route_input_field {
-  width: 200px;
-  font-size: 12px;
-  height: 30px;
-}
-
 #q {
-  
+  width: 400px;
+  font-size: 12px;
+  height: 45px;
 }
 
-#swapfrto {
-  width: 20px;
-  text-align: center;
-}
-
-
-/* Keypoint */
-
-#keypoint {
-  background: #ddd;
-  padding: 5px 0 2px 4px;
-}
-
-#keypoint h2 {
-  margin: 0; 
-  padding: 0;
-}
-
-#keypoint h2 a {
-  text-decoration: none; 
-  color: #000;
-}
 
 /* Content */
 
 #content {
-  width: 100%;
-  table-layout: fixed;
+  border: solid gray;
+  border-width: 1px 0;
 }
 
-#content table { 
+#content_table { 
   width: 100%;
+  table-layout: fixed;
 }
 
 #left_panel, #right_panel { 
   vertical-align: top;
 }
 
+
 /* Left Panel */
 
 #left_panel {
   width: 300px;
-  padding-right: 10px;
+  padding-right: 5px;
 }
 
 #result {
@@ -176,10 +149,8 @@ a.selected {
 
 #footer {
   font-size: 10px;
-  margin-bottom: 10px;
   text-align: center;
-  border-top: 1px solid gray;
-  padding-top: 5px;
+  padding-bottom: 0;
 }
 
 #footer a {

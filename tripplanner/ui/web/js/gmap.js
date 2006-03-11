@@ -29,6 +29,7 @@ var regions =
 		'maxX': -121.649618, 'maxY': 45.814153}
    },
    
+
    'milwaukeewi':
    {
      'heading': 'Milwaukee, WI',
@@ -42,12 +43,23 @@ var regions =
      'img_width': 70,
      'img_height': 71,
      'href': 'http://www.bfw.org/'
+   },
+
+
+   'pittsburghpa':
+   {
+     'heading': 'Pittsburgh, PA',
+
+     'subheading': 'Developed in cooperation with Jessi',
+
+     'bounds': {'minX': -80.088957, 'minY': 40.362070,
+		'maxX': -79.866439, 'maxY': 40.500887}
    }
   };
 
 var center_marker;
 var center_point;
-var center_marker_html = '<div style="width:225px; text-align:center;"><a href="javascript:void(0);" onclick="_setElVToMapLonLat(\'q\'); _find(\'search\');">Find address of closest intersection</a></div>';
+var center_marker_html = '<div style="width:225px; text-align:center;"><a href="javascript:void(0);" onclick="_setElVToMapLonLat(\'q\'); doFind();">Find address of closest intersection</a></div>';
 
 // Start and end markers for routes
 var base_icon;
@@ -70,8 +82,8 @@ function mapLoad()
 	} 
       else 
 	{
+	  el('m').value = '1';
 	  mapCreate();
-		
 	}
       _setElStyle('loading', 'display', 'none');
     } 
@@ -100,9 +112,9 @@ function mapCreate()
   map.addControl(new GScaleControl());
   
   var icon = new GIcon();
-  icon.image = "images/crosshair4.gif";
-  icon.iconSize = new GSize(41, 41);
-  icon.iconAnchor = new GPoint(21, 21);
+  icon.image = "images/reddot15.gif";
+  icon.iconSize = new GSize(15, 15);
+  icon.iconAnchor = new GPoint(6, 6);
 
   GEvent.addListener(map, "moveend", function() {
                        if (center_marker)

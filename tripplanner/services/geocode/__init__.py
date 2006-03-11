@@ -24,12 +24,12 @@ class InputError(GeocodeError):
         GeocodeError.__init__(self, desc=desc)
 
  
-def get(region='', q=''):
+def get(region='', q='', **params):
     """Get the geocode of the address, according to the data mode.
     
-    @param region Either the name of a region mode OR a mode object. In the first
-        case a mode will be instantiated to geocode the address; in the second the
-        object will be used directly.
+    @param region Either the name of a region mode OR a mode object. In the
+           first case a mode will be instantiated to geocode the address; in
+           the second the object will be used directly.
     @param q An address string that can be geocoded by the mode
     @return A list of geocodes for the inaddr
     
@@ -96,8 +96,12 @@ if __name__ == "__main__":
           '5th and center',
           '6th and hadley',
          ),
-         
+
          'portlandor':
+         ('300 main',
+          ),
+         
+         'portland':
          # Portland
          ('37800 S Hwy 213 Hwy, Clackamas, OR 97362',
           '4550 ne 15',
@@ -118,7 +122,7 @@ if __name__ == "__main__":
         }
 
     i = 1
-    for region in A:
+    for region in ('portlandor',):
         print
         print 'Data region: %s' % region
         print '------------------------------'

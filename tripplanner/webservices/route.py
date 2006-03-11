@@ -9,13 +9,11 @@ class Route(wsrest.RestWebService):
         
     def GET(self): 
         try:
-            q = self.params['q'].replace('\n', ' ')
-            self.params['q'] = eval(q)
             the_route = route.get(**self.params)
         except route.InputError, exc:
             raise wsrest.BadRequestError(reason=exc.description)
         except route.MultipleMatchingAddressesError, exc:
-            choices = repr(wsrest.ResultSet('geocode', exc.geocodes))
+            choices = repr(wsrest.ResultSet('route', exc.route))
             raise wsrest.MultipleChoicesError(reason=exc.description,
                                               choices=choices)
         except Exception:
