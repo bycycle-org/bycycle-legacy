@@ -18,6 +18,7 @@ class AddressGeocode(Geocode):
                   'number': self.address.number,
                   'street': self.address.street,
                   'place': self.address.place,
+                  'address': str(self.address),
                   'x': '%.6f' % self.xy.x,
                   'y': '%.6f' % self.xy.y,
                   'e': self.segment.id}
@@ -35,6 +36,7 @@ class IntersectionGeocode(Geocode):
                   'street2': self.address.street2,
                   'place1': self.address.place1,
                   'place2': self.address.place2,
+                  'address': str(self.address),                  
                   'x': '%.6f' % self.xy.x,
                   'y': '%.6f' % self.xy.y,
                   'v': self.intersection.id}
@@ -49,22 +51,36 @@ def geocode(inaddr, mode):
     """ 
     func = None
 
-    try: int(inaddr)
-    except ValueError: pass
-    else: func = getPointGeocodes
+    try:
+        int(inaddr)
+    except ValueError:
+        pass
+    else:
+        func = getPointGeocodes
         
-    try: address.IntersectionAddress.getCrossStreets(inaddr)
-    except ValueError: pass
-    else: func = getIntersectionGeocodes
+    try:
+        address.IntersectionAddress.getCrossStreets(inaddr)
+    except ValueError:
+        pass
+    else:
+        func = getIntersectionGeocodes
     
-    try: address.PointAddress.getXY(inaddr)
-    except ValueError: pass
-    else: func = getPointGeocodes
+    try:
+        address.PointAddress.getXY(inaddr)
+    except ValueError:
+        pass
+    else:
+        func = getPointGeocodes
 
-    if not func: func = getAddressGeocodes #default
-    try: geocodes = func(inaddr, mode) 
-    except address.AddressNotFoundError: return []
-    else: return geocodes #list of geocode objects
+    if not func:
+        func = getAddressGeocodes #default
+        
+    try:
+        geocodes = func(inaddr, mode) 
+    except address.AddressNotFoundError:
+        return []
+    else:
+        return geocodes #list of geocode objects
 
 
 # Each get*Geocode returns a list of possible geocodes for the input address
@@ -74,7 +90,7 @@ def getAddressGeocodes(inaddr, mode):
     street = addr.street
     place = addr.place
 
-    # Create the WHERE clause
+    # Build the WHERE clause
     where = []
     where.append('(%s BETWEEN MIN(addr_f, addr_t) AND MAX(addr_f, addr_t))' % \
                  addr.number)

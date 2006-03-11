@@ -41,16 +41,16 @@ class InputError(RouteError):
         RouteError.__init__(self, desc=desc)
 
 class MultipleMatchingAddressesError(RouteError):
-    def __init__(self, geocodes={'fr': [], 'to': []}):
-        self.geocodes = geocodes
+    def __init__(self, route):
+        self.route = route
         desc = 'Multiple matches found'
         RouteError.__init__(self, desc=desc)
 
 
-def get(region='', tmode='', q=[]):
-    """Get a route for q in the specified region using the specified mode of travel.
+def get(return_messages=False, region='', tmode='', q=[], **params):
+    """Get a route for q in specified region using specified mode of travel.
     
-    @param region Data mode (TODO: Make also determinable from place in geocoder) 
+    @param region Data mode (TODO: Make determinable from place in geocoder) 
     @param tmode The travel mode
     @param q A list of address strings (currently only 2 supported)
     @param options A dict of optional user options (sent off to tmode)
@@ -85,12 +85,14 @@ def get(region='', tmode='', q=[]):
     else:
         try:
             fr = q[0].strip()
-            if not fr: raise IndexError
+            if not fr:
+                raise IndexError
         except IndexError:
             errors.append('Start address required')
         try:
             to = q[1].strip()
-            if not to: raise IndexError
+            if not to:
+                raise IndexError
         except IndexError:
             errors.append('End address required')
 
@@ -106,26 +108,29 @@ def get(region='', tmode='', q=[]):
 
 
     ## Get geocodes matching from and to addresses
-    M = {'fr': [], 'to': []}
-    
+    route = {'fr': {'geocode': [], 'original': fr},
+             'to': {'geocode': [], 'original': to}}
+         
     st = time.time()
     try:
         fcodes = geocode.get(region=mode, q=fr)
     except geocode.AddressNotFoundError, e:
         errors.append(e.description)
     except geocode.MultipleMatchingAddressesError, e:
-        M['fr'] = e.geocodes
-    messages.append('Time to get from address: %s' % (time.time() - st))        
-
+        route['fr']['geocode'] = e.geocodes
+    messages.append('Time to get from address: %s' % (time.time() - st))
+    
     st = time.time()
     try:
         tcodes = geocode.get(region=mode, q=to)
     except geocode.AddressNotFoundError, e:
         errors.append(e.description)
     except geocode.MultipleMatchingAddressesError, e:
-        M['to'] = e.geocodes
-    if M['fr'] or M['to']: raise MultipleMatchingAddressesError(M)
+        route['to']['geocode'] = e.geocodes
     messages.append('Time to get to address: %s' % (time.time() - st))
+          
+    if route['fr']['geocode'] or route['to']['geocode']:
+        raise MultipleMatchingAddressesError(route)
 
     # Let multiple multiple match errors fall through to here
     if errors: raise InputError(errors)
@@ -250,18 +255,22 @@ def get(region='', tmode='', q=[]):
     st = time.time()
     directions = makeDirections(I, S)
     messages.append('Time to make directions: %s' % (time.time() - st))
-    route = {'fr':       {'geocode': fcode, 'original': fr},
-             'to':         {'geocode': tcode, 'original': to},
-             'linestring': [],
-             'directions': [],
-             'directions_table': '',
-             'distance':   {},
-             'messages': []
-             }
+    route = {
+        'fr': {'geocode': fcode,
+               'original': fr,
+               },
+        'to': {'geocode': tcode,
+               'original': to,
+               },
+        'linestring': [],
+        'directions': [],
+        'distance': {},
+        'messages': [],
+        }
     route.update(directions)
-    route['directions_table'] = _makeDirectionsTable(route)
-    messages.append('Total time: %s' % (time.time() - st_tot))
-    route['messages'] = messages
+    if return_messages:
+        messages.append('Total time: %s' % (time.time() - st_tot))
+        route['messages'] = messages
     return route
 
 
@@ -507,138 +516,6 @@ def getDirectionFromBearing(bearing):
     elif nw[0] < bearing <= nw[1]: return 'northwest'
 
 
-def _makeDirectionsTable(route):
-##    route = {'from':       {'geocode': fcode, 'original': fr},
-##             'to':         {'geocode': tcode, 'original': to},
-##             'linestring': [],
-##             'directions': [],
-##             'directions_table': '',
-##             'distance':   {},
-##             'messages': []
-##            }
-
-    distance = route['distance']['mi']
-    fr = route['fr']['geocode']
-    fr_addr = fr.address
-    fr_str = str(fr)
-    to = route['to']['geocode']
-    to_addr = to.address
-    to_str = str(to)
-    directions = route['directions']
-    linestring = route['linestring']
-
-    fr_point = linestring[0]
-    to_point = linestring[-1]
-
-    fr_addr = str(fr_addr).replace('\n', '<br/>')
-    to_addr = str(to_addr).replace('\n', '<br/>')
-
-    s_table = """
-    <table id='summary'>
-        <tr>
-          <td class='start'>
-            <h2><a href='javascript:void(0);' class='start'
-                   onclick="map.showMapBlowup(%s)">Start</a>
-            </h2>
-          </td>
-          <td class='start'>%s</a>
-          </td>
-        </tr>
-        <tr>
-          <td class='end'>
-            <h2><a href='javascript:void(0);' class='end'
-                   onclick="map.showMapBlowup(%s)">End</a>
-            </h2>
-          </td>
-          <td class='end'>%s</td>
-        </tr>
-        <tr>
-          <td class='total_distance'><h2>Distance</h2></td>
-          <td>%s miles</td>
-        </tr>
-    </table>
-    """ % (fr_point, fr_addr, to_point, to_addr, distance)
-
-    d_table = """
-    <!-- Directions -->
-    <table id='directions'>%s</table>
-    """
-
-    d_row = """
-    <tr>
-      <td class='count %s'>
-        <a href='javascript:void(0)'
-           onclick="map.showMapBlowup(%s)">%s.</a>
-      </td>
-      <td class='direction %s'>%s</td>
-    </tr>
-    """
-                      
-
-    # Direction rows
-    row_class = 'a'
-    last = len(directions)
-    i = 1
-    tab = '&nbsp;&nbsp;&nbsp;&nbsp;'
-    d_rows = []
-    row_i = []
-    for d in directions:
-        turn = d['turn']
-        street = d['street']
-        toward = d['toward']
-        jogs = d['jogs']
-        ls_index = d['ls_index']
-        mi = d['distance']['mi']
-
-        row_i = []
-
-        if turn == 'straight':
-            prev = street[0]
-            curr = street[1]
-            row_i.append('%s <b>becomes</b> %s' % (prev, curr))
-        else:
-            if i == 1:
-                cmd = 'Go'
-                on = 'from'
-                onto = '<b>%s</b>' % fr_str.split(',')[0]
-            else:
-                cmd = 'Turn'
-                on = 'onto'
-                onto = '<b>%s</b>' % street
-            row_i.append('%s <b>%s</b> %s %s' % \
-                             (cmd, turn, on, onto))
-
-        if not toward:
-            if i == last:
-                toward = to_str.split(',')[0]
-            else:
-                toward = '?'
-        row_i.append(' toward %s -- %smi' % (toward, mi))
-
-	if d['bikemode']:
-            row_i.append(' [%s]' % ', '.join([bm for bm in d['bikemode']]))
-
-        if jogs:
-            row_i.append('<br/>%sJogs...' % tab)
-            for j in jogs:
-                row_i.append('<br/>%s%s&middot; <i>%s</i> at %s' % \
-                             (tab, tab, j['turn'], j['street']))
-
-        d_rows.append(d_row % (row_class, linestring[ls_index], i,
-                               row_class, ''.join(row_i)))
-        del row_i[:]
-        i += 1
-        if row_class == 'a': row_class = 'b'
-        else: row_class = 'a'
-
-    last_row = d_row  % (row_class, linestring[-1], i, row_class,
-                         '<b>End</b> at %s' % to_str)
-    d_rows.append(last_row)
-    
-    d_table = d_table % ''.join([str(d) for d in d_rows])
-    return ''.join((s_table, d_table))
-
-    
 if __name__ == '__main__':
     def print_key(key):
         for k in key:
@@ -660,20 +537,21 @@ if __name__ == '__main__':
            ('lon=-87.973645, lat=43.039615', 'lon=-87.978623, lat=43.036086'),
            ),
           'portlandor':
-           (('633 n alberta', '44th and se stark'),
-            ('-122.645488, 45.509475', 'sw hall & denney'),
+           (('300 main', '4807 se kelly'),
+            #('633 n alberta', '44th and se stark'),
+            #('-122.645488, 45.509475', 'sw hall & denney'),
            ),
           }
     
     tm = 'bike'
 
-    for dm in ('milwaukeewi', 'portlandor'):
+    for dm in ('portlandor',):
         qs = Qs[dm]
         for q in qs:
             try:
                 r = get(region=dm, tmode=tm, q=q)
             except MultipleMatchingAddressesError, e:
-                print e.geocodes
+                print e.route
             except Exception, e:
                 raise
             else:
@@ -693,5 +571,3 @@ if __name__ == '__main__':
                     print m
                 print '----------------------------------------' \
                       '----------------------------------------'
-            
-        
