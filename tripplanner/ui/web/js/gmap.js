@@ -5,58 +5,6 @@
 
 
 var map;
-
-var regions = 
-  {'all': 
-   {
-     'all': true,
-
-     'heading': 'All Regions',
-
-     'subheading': '',
-     
-     'bounds': {'minX': -123.485755, 'minY': 42.842059, 
-		'maxX': -87.828241,  'maxY': 45.814153}
-   }, 
-   
-   'portlandor': 
-   {
-     'heading': 'Portland, OR',
-
-     'subheading': 'Developed in cooperation with <a href="http://www.metro-region.org/">Metro</a>',
-     
-     'bounds': {'minX': -123.485755, 'minY': 44.885219,
-		'maxX': -121.649618, 'maxY': 45.814153}
-   },
-   
-
-   'milwaukeewi':
-   {
-     'heading': 'Milwaukee, WI',
-
-     'subheading': 'Developed in cooperation with the <a href="http://www.bfw.org/">Bicycle Federation of Wisconsin</a>',
-     
-     'bounds': {'minX': -88.069888, 'minY': 42.842059, 
-		'maxX': -87.828241, 'maxY': 43.192647},
-
-     'img_src': 'bfw_logo.gif',
-     'img_width': 70,
-     'img_height': 71,
-     'href': 'http://www.bfw.org/'
-   },
-
-
-   'pittsburghpa':
-   {
-     'heading': 'Pittsburgh, PA',
-
-     'subheading': 'Developed in cooperation with Jessi',
-
-     'bounds': {'minX': -80.088957, 'minY': 40.362070,
-		'maxX': -79.866439, 'maxY': 40.500887}
-   }
-  };
-
 var center_marker;
 var center_point;
 var center_marker_html = '<div style="width:225px; text-align:center;"><a href="javascript:void(0);" onclick="_setElVToMapLonLat(\'q\'); doFind();">Find address of closest intersection</a></div>';
@@ -69,6 +17,7 @@ var end_icon;
 
 function mapLoad()
 {
+  var bRet = false;
   if (GBrowserIsCompatible()) 
     {
       el('map').innerHTML = 
@@ -82,8 +31,8 @@ function mapLoad()
 	} 
       else 
 	{
-	  el('m').value = '1';
 	  mapCreate();
+	  bRet = true;
 	}
       _setElStyle('loading', 'display', 'none');
     } 
@@ -101,6 +50,7 @@ function mapLoad()
 		 <li><a href="http://www.opera.com/download/">Opera</a> 7.5+ (Windows, Mac, Linux)</li> \
 	       </ul>';
     }
+  return bRet;
 }
 
 
@@ -112,9 +62,9 @@ function mapCreate()
   map.addControl(new GScaleControl());
   
   var icon = new GIcon();
-  icon.image = "images/reddot15.gif";
+  icon.image = "images/reddot15.png";
   icon.iconSize = new GSize(15, 15);
-  icon.iconAnchor = new GPoint(6, 6);
+  icon.iconAnchor = new GPoint(7, 7);
 
   GEvent.addListener(map, "moveend", function() {
                        if (center_marker)

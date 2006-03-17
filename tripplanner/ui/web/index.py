@@ -3,51 +3,8 @@ import datetime
 import byCycle
 
 
-welcome_message = '''
-<p style="margin-top:0;">
-Welcome to the
-<a href="http://www.bycycle.org/"
-title="byCycle Home Page"
->byCycle</a> 
-<a href="http://www.bycycle.org/tripplanner"
-title="Information about the Trip Planner"
->Trip Planner</a>,
-an interactive trip planning application that aims to help encourage
-bicycling and other alternative modes of transportation. The Trip Planner is
-under active development. If you find a problem or have any comments,
-questions, or suggestions, please
-<a href="http://www.bycycle.org/contact.html"
-title="Send us problem reports, comments, questions, and suggestions"
->contact us</a>.
-</p>
-
-<p>
-The Trip Planner is being developed in cooperation with the following
-organizations that provide data and other support to the project:
-<ul>
-  <li>
-    <a href="http://www.metro-region.org/">Metro</a> in the 
-    <a href="http://tripplanner.bycycle.org/?region=PortlandOR"
-    >Portland, OR</a>, area
-  </li>
-  <li>    
-    <a href="http://www.bfw.org/">Bicycle Federation of Wisconsin</a> in the 
-    <a href="http://tripplanner.bycycle.org/?region=MilwaukeeWI"
-    >Milwaukee, WI</a>, area
-  </li>
-</ul>
-</p>
-
-<p>
-Although every reasonable effort is being made to provide accurate and
-useful routes and other information, anything presented here is
-<i>not</i> guaranteed to be accurate <i>or</i> useful. Users are advised to
-independently verify all information presented here and are encouraged to 
-<a href="http://www.bycycle.org/contact.html"
-title="Send us your feedback"
->provide feedback</a>.
-</p>
-'''
+template = '%stripplanner/ui/web/tripplanner.html' % \
+           byCycle.install_path
 
 
 def index(req, **params):
@@ -106,7 +63,7 @@ def index(req, **params):
             q = ''
             fr = ''
             to = ''
-            result = welcome_message
+            result = _getWelcomeMessage()
         else:
             fr = to = ''
 
@@ -119,9 +76,6 @@ def index(req, **params):
                 result = eval(callback)(req.status, result_set, **params)
             else:
                 result = '<h2>Error</h2>%s' % response_text
-
-        template = '%stripplanner/ui/web/tripplanner.html' % \
-                   byCycle.install_path
                                 
         data = {
             'status': status,
@@ -130,8 +84,7 @@ def index(req, **params):
             'fr': fr,
             'to': to,
             'regions_opt_list': _makeRegionsOptionList(**params),
-            'result': result ,
-            'last_modified': _getLastModified(template),
+            'result': result,
             }
 
         template_file = open(template)
@@ -253,6 +206,7 @@ def _routeCallback(status, result_set, **params):
         result = _makeRouteMultipleMatchList(geocodes_fr, geocodes_to)
     return result
 
+
 def _makeRouteMultipleMatchList(geocodes_fr, geocodes_to):
     result = ['<div id="mma"><h2>Multiple Matches Found</h2>']
 
@@ -325,6 +279,8 @@ def _getRegionForAlias(alias):
     else:
         return region
 
+
+## Output
     
 def _makeRegionsOptionList(region='', **params):
     """Create an HTML options list of regions.
@@ -368,19 +324,57 @@ def _makeRegionsOptionList(region='', **params):
                                            (area.title(),
                                             state.upper())))
             
-    return '\n'.join(regions_opt_list)
+    return ''.join(regions_opt_list)
 
 
-def _getLastModified(file_name=None):
+def _getWelcomeMessage():
+    welcome_message = '''
+    <p style="margin-top:0;">
+    The Trip Planner is under active development. Please
+    <a href="http://www.bycycle.org/contact.html"
+    title="Send us problem reports, comments, questions, and suggestions"
+    >contact us</a>
+    with any problems, comments, questions, or suggestions.
+    </p>
+    
+    <p>
+    Users should independently verify all information presented here 
+    and are encouraged to
+    <a href="http://www.bycycle.org/contact.html"
+    title="Send us your feedback"
+    >provide feedback</a>.
+    </p>
+    
+    <p>
+    &copy; 2006 
+    <a href="http://www.bycycle.org/" 
+    title="byCycle Home Page"
+    >byCycle.org</a>
+    &middot
+    <a href="http://www.bycycle.org/tripplanner/"
+    >About</a>
+    &middot;
+    <a href="help.html"
+    title="How do I work this thing!?"
+    >Help</a>
+    <br/>
+    Last modified: %s
+    <br/>
+    Provided AS IS with NO WARRANTY of any kind
+    </p>
+    ''' % (_getLastModified(template))
+    return welcome_message
+
+
+def _getLastModified(file_name=''):
     """Get and format the last modified date of file_name."""
     stat = os.stat(file_name)
     last_modified = datetime.date.fromtimestamp(stat.st_mtime)
-    last_modified = last_modified.strftime('%d %b %Y')
+    last_modified = last_modified.strftime('%B %d, %Y')
     if last_modified[0] == '0':
         last_modified = last_modified[1:]
+    return last_modified
 
-
-## Output
 
 def _makeDirectionsTable(route):
 ##    route = {'from':       {'geocode': fcode, 'original': fr},

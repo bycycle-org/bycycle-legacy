@@ -11,6 +11,7 @@ class Mode(pittsburghpa.Mode):
 
     def getEdgeWeight(self, v, edge_attrs, prev_edge_attrs):
         """Calculate weight for edge given it & last crossed edge's attrs."""
+        #print 'edgeAttr' + str(edge_attrs)
         indices = self.indices
         length = edge_attrs[indices["length"]] / 1000000.0
 
@@ -27,7 +28,7 @@ class Mode(pittsburghpa.Mode):
         #adt = edge_attrs[indices["adt"]]
         #spd = edge_attrs[indices["spd"]]
         #ix_sn = edge_attrs[indices["streetname_id"]]
-
+        ix_sn = edge_attrs[indices["streetname_id"]]
         hours = length / self.mph
 
        # if bikemode:
@@ -67,10 +68,18 @@ class Mode(pittsburghpa.Mode):
 
 
 
+      # to add: width?, lanes?, combo?, topo, pavement quality index,
+      # streets on city bike plan
+      # trails
 
+                
         prev_ix_sn = prev_edge_attrs[indices["streetname_id"]]
 
         if ix_sn != prev_ix_sn: hours += .0055555555555555
+        #test to make turn less
+        #if ix_sn != prev_ix_sn: hours += 500.5185555555555555
+        #makes a different only when huge because wrong projection (?)
+        #makes distances very off (so adding a few hours is insignificant)
           #  except TypeError:
            #     pass
         return hours

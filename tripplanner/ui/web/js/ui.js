@@ -50,7 +50,6 @@ function doFind()
     {
       errors = ['<h2>Errors</h2><ul><li>', errors.join('</li><li>'),
 		'</li></ul>'].join('');
-      _showLPanel();
       _setResult(errors);
     } 
   else 
@@ -86,7 +85,6 @@ function _callback(req)
     }
   else
     {
-      _showLPanel();
       var result = response_text;
     }
   if (result)
@@ -101,14 +99,12 @@ function _geocodeCallback(status, result_set)
     case 200: // A-OK, one match
       if (map)
 	{
-	  _hideLPanel();
 	  _showGeocode(0, true);
 	}
       break;
     case 300:
       if (map)
 	{
-	  _showLPanel();
 	  for (var i = 0; i < geocodes.length; ++i)
 	    _showGeocode(i, false);
 	}
@@ -131,7 +127,6 @@ function _routeCallback(status, result_set)
     case 200: // A-OK, one match
       if (map) 
 	{
-	  _showLPanel();
 	  var linestring = route.linestring;
 	  var linestring_len = linestring.length;
 	  var last_point_ix = linestring.length - 1;
@@ -186,18 +181,6 @@ function swapFromAndTo()
   _setElV('q', [fr, '\nTO\n', to].join(''));
 }
 
-function _showLPanel()
-{
-  _setElStyle('left_panel', 'display', '');
-  map.onResize();
-}
-
-function _hideLPanel()
-{
-  _setElStyle('left_panel', 'display', 'none');
-  map.onResize();
-}
-
 
 /* Map */
 
@@ -207,7 +190,7 @@ function _setElVToMapLonLat(id)
   var lon_lat = map.getCenterLatLng();
   var x = Math.round(lon_lat.x * 1000000) / 1000000;
   var y = Math.round(lon_lat.y * 1000000) / 1000000;
-  document.getElementById(id).value = "lon=" + x + ", " + "lat=" + y;
+  _setElV(id, "lon=" + x + ", " + "lat=" + y);
 }
 
 function _clearMap()
@@ -222,24 +205,26 @@ function _clearMap()
 
 function resizeMap() 
 {
-  var offset = 0;
-  for (var e = el('map'); e != null; e = e.offsetParent) 
+  var margin = 5;
+  var win_height = getWindowHeight();
+  var height = win_height - _getOffset('map') - margin;
+  if (height >= 0)
     {
-      offset += e.offsetTop;
-    }
-  var height = getWindowHeight() - 
-    offset - 
-    parseInt(_elStyle('footer', 'height')) - 
-    15;
-  if (height >= 0) 
-    {
-      height = height + 'px';
-      el('map').style.height = height;
-      el('result').style.height = height;
-      // Tell the map it's been resized
-      if (map) 
+      el('map').style.height = height + 'px';
+      if (map)
 	map.onResize();
     }
+  height = win_height - _getOffset('result') - margin;
+  if (height >= 0)
+    el('result').style.height =  height + 'px'; 
+}
+
+function _getOffset(id)
+{
+  var offset = 0;
+  for (var e = el(id); e != null; e = e.offsetParent) 
+    offset += e.offsetTop;
+  return offset;
 }
 
 function _showGeocode(index, open_info_win)
@@ -270,31 +255,30 @@ function selectRegion(region)
   if (!region.bounds)
     region = regions[region] || regions.all;
 
-  var img_src = region.img_src;
-  var reg_logo = el('region_logo');
-  var reg_link = el('region_link');
-  if (img_src) 
-    {
-      reg_logo.src = 'images/' + img_src;
-      reg_logo.width = region.img_width;
-      reg_logo.height = region.img_height;
-      reg_link.href = region.href;
-    }
-  else 
-    {
-      reg_logo.src = '';
-      reg_logo.width = 0;
-      reg_logo.height = 0;
-      reg_link.href = '';
-    }
+//   var img_src = region.img_src;
+//   var reg_logo = el('region_logo');
+//   var reg_link = el('region_link');
+//   if (img_src) 
+//     {
+//       reg_logo.src = 'images/' + img_src;
+//       reg_logo.width = region.img_width;
+//       reg_logo.height = region.img_height;
+//       reg_link.href = region.href;
+//     }
+//   else 
+//     {
+//       reg_logo.src = '';
+//       reg_logo.width = 0;
+//       reg_logo.height = 0;
+//       reg_link.href = '';
+//    }
 
   //el('region_heading').innerHTML = region.heading;
-  //el('region_subheading').innerHTML = region.subheading;
+  el('status').innerHTML = region.subheading;
   document.title = 'byCycle - Bicycle Trip Planner - ' + region.heading;
 
   if (map)
     {
-      _hideLPanel();
       _zoomToRegion(region);
       if (region.all)
 	{
@@ -316,41 +300,41 @@ function selectRegion(region)
 
 function _initRegion(region)
 {
-  var bounds = region['bounds'];
-  var center = region['center'];
-  var dimensions = region['dimensions'];
-  var linestring = region['linestring'];
+  var bounds = region.bounds;
+  var center = region.center;
+  var dimensions = region.dimensions;
+  var linestring = region.linestring;
 
   if (!center)
     {
       center = getCenterOfBox(bounds);
-      region['center'] = center;
+      region.center = center;
     }
 
   if (!dimensions)
     {
       dimensions = getBoxDimensions(bounds) ;
-      region['dimensions'] = dimensions;
+      region.dimensions = dimensions;
     }      
 
   if (!linestring)
     {
-      var minX = bounds['minX']; var maxX = bounds['maxX'];
-      var minY = bounds['minY']; var maxY = bounds['maxY'];
+      var minX = bounds['minX']; var maxY = bounds['maxY'];
+      var maxX = bounds['maxX']; var minY = bounds['minY']; 
       var tl = {x: minX, y: maxY};
       var tr = {x: maxX, y: maxY};
       var br = {x: maxX, y: minY};
       var bl = {x: minX, y: minY};
       var linestring = [tl, tr, br, bl, tl];
-      region['linestring'] = linestring;
+      region.linestring = linestring;
     }
 }
 
 function _zoomToRegion(region)
 {
-  centerAndZoomToBox(region['bounds'], 
-		     region['center'], 
-		     region['dimensions']);
+  centerAndZoomToBox(region.bounds, 
+		     region.center, 
+		     region.dimensions);
 }
 
 function _showRegionOverlays(region, use_cached)
@@ -358,17 +342,41 @@ function _showRegionOverlays(region, use_cached)
   if (region.all)
     return;
 
-  var marker = region['marker'];
-  var line = region['line'];
+  var marker = region.marker;
+  var line = region.line;
   
   if (!marker)
-    region['marker'] = placeMarker(region['center']); 
+    {
+      icon = new GIcon();
+      icon.image = "images/x.png";
+      icon.iconSize = new GSize(17, 19);
+      icon.iconAnchor = new GPoint(9, 10);
+      icon.infoWindowAnchor = new GPoint(9, 10);
+      icon.infoShadowAnchor = new GPoint(9, 10);
+      region.marker = placeMarker(region.center, icon);
+      GEvent.addListener(region.marker, "click", function() { 
+			   var id = region.id;
+			   var sel = el('region');
+			   for (var i = 0; i < sel.length; ++i)
+			     {
+			       var opt = sel.options[i];
+			       if (opt.value == id)
+				 {
+				   sel.selectedIndex = i;
+				   selectRegion(id);
+				   break;
+				 }
+			     }
+			 });
+    } 
   else if (use_cached)
-    map.addOverlay(region['marker']);
+    {
+      map.addOverlay(region.marker);
+    }
   
   if (!line)
-    region['line'] = drawPolyLine(region['linestring']); 
+    region.line = drawPolyLine(region.linestring); 
   else if (use_cached)
-    map.addOverlay(region['line']);
+    map.addOverlay(region.line);
 }
 

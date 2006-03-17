@@ -86,21 +86,24 @@ class Mode(mode.Mode):
             id = row['id']
             node_f_id, node_t_id = row['node_f_id'], row['node_t_id']
             oneway = row['oneway']
+            opdir = row['opdir']
+                        
+           # ft =  not oneway or opdir
+           # tf = not oneway or not opdir
 
-            #
-            #ft = oneway & 1
-            #tf = oneway & 2
-            #simplify to test. FIX
-            ft = 1
-            tf = 1
+            ft = (oneway == "n") or (opdir == "y")
+            tf = (oneway == "n") or (opdir == "n")
 
+            
             try:
                 length = int(math.floor(
                     lengthFunc(
                     gis.importWktGeometry(row['wkt_geometry'])) * 1000000))
+                
             except Exception, e:
                 length = 0
-                
+
+       
             entry = [length] + [row[a] for a in self.edge_attrs[1:]]
             edges[id] = entry
             if ft:

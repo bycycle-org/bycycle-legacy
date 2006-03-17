@@ -1,7 +1,8 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 
-<html xmlns="http://www.w3.org/1999/xhtml"
-      xmlns:v="urn:schemas-microsoft-com:vml">
+<html id="html" 
+  xmlns="http://www.w3.org/1999/xhtml"
+  xmlns:v="urn:schemas-microsoft-com:vml">
 
   <head>
     <meta http-equiv="Content-Type" content="application/xhtml+xml; charset=iso-8859-1"/>
@@ -22,16 +23,25 @@
           <!--
 	  function afterPageLoad()
 	  {
-	    el('js').value = '1';
+	    _setElV('gjs', '1');
+	    _setElV('rjs', '1');
 	    resizeMap();
-	    if (local || api_key) 
-	      mapLoad();
-	    else 
-	      el('map').innerHTML =  
-	        'Error loading map: Could not find valid API key for ' + 
-	        base_url + '.';
-	    var status = el('status').value;
-	    var response_text = el('response_text').value;
+	    if (local || api_key)
+	      {
+	        if (mapLoad())
+	          {
+	            _setElV('gm', '1');
+	            _setElV('rm', '1');
+	          }
+	      }
+	    else
+	      {
+	        el('map').innerHTML =  
+	          'Error loading map: Could not find valid API key for ' + 
+	          base_url + '.';
+	      }
+	    var status = _elV('status');
+	    var response_text = _elV('response_text');
 	    if (status && response_text)
 	      {
 	        var req = {status: parseInt(status), responseText: response_text}
@@ -50,109 +60,75 @@
 
 	<script src="js/util.js" type="text/javascript"></script>
 	<script src="js/ajax.js" type="text/javascript"></script>
+	<script src="js/regions.js" type="text/javascript"></script>
 	<script src="js/gmap.js" type="text/javascript"></script>
 	<script src="js/ui.js" type="text/javascript"></script>
 	<script src="js/ginit.js" type="text/javascript"></script>
+
+	<noscript>
+	  <style>
+	    body {overflow: auto;}
+	  </style>
+	</noscript>
   </head>
 
-  <body onresize="resizeMap();">
+  <body id="body" onresize="resizeMap();">
     <div id="content_pane">
-
       <!-- Header -->
       <div id="header" class="page_section">
 	<table>
 	  <tr>
-	    <td id="logo">
-	      <h1><a href="http://www.bycycle.org/" title="byCycle Home Page">byCycle</a></h1>
-	      <h2><a href="http://tripplanner.bycycle.org/">Trip Planner</h2>
-	    </td>	 
-
-	    <!-- Input Form -->
 	    <td>
-	      <form id="input_form" 
-		action="." 
-		method="get" 
-		onsubmit="doFind(); return false;">
-
-		<!-- input -->
-		<div>
-		  <textarea id="q" name="q" class="input_field" 
-		    tabindex="1"
-		    >%(q)s</textarea>	
-		</div>
-
-		<!-- control -->
-		<div>
-		  <select id="region" name="region" 
-		    tabindex="2"
-		    title="Set the active region and zoom into it"
-		    onchange="selectRegion(this.options[this.selectedIndex].value);">
-		    <option value="">All Regions</option>				
-		    %(regions_opt_list)s			    
-		  </select>
-		  
-		  &#160;
-		  
-		  <input
-		    title="Click to find the address or route you entered"
-		    tabindex="3" 
-		    type="submit" 
-		    value="Go!"/>
-		    
-		  &#160;
-		  
-		  <input tabindex="4"  
-		    title="Swap from and to addresses"
-		    type="button" 
-		    value="Swap" 
-		    onclick="swapFromAndTo();"/>
-
-		  &#160;			  
-
-		  <input tabindex="4"  
-		    title="Clear your markers and routes from the map" 
-		    type="button" 
-		    value="Clear Map" 
-		    onclick="_clearMap();"/>
-		  
-		  &#160;
-		  
-		  <span id="elapsed_time"></span>
-		</div>
-
-		<input type="hidden" id="tmode" name="tmode" value="bike"/>
-		<input type="hidden" id="m" name="m" value=""/>
-		<input type="hidden" id="js" name="js" value=""/>
-	      </form>
-	    </td>
-	    
-	    <td>
-	      <a href="help.html"
-		title="How do I work this thing!?"
-		tabindex="5"
-		>Help &#187;</a>
-
-	      <br/>
-
-	      <a href="http://www.bycycle.org/contact.html" 
-		title="Send us problem reports, comments, questions, and suggestions"
-		tabindex="5"
-		>Feedback &#187;</a>
-
-	      <br/>
-
-	      <a href="http://www.bycycle.org/tripplanner"
-		    title="Get more information about this project"
-		    >About This Project &#187;</a>
+	      <!-- Logo -->
+	      <div id="logo">
+		<a href="http://www.bycycle.org/" title="byCycle Home Page">byCycle</a>
+		<a href="">Trip Planner</a>
+	      </div>
 	    </td>
 
+	    <td style="vertical-align: middle;">
+	      <div>
+		<select id="region" name="region" 
+		  tabindex="2"
+		  title="Set the active region and zoom into it"
+		  onchange="selectRegion(this.options[this.selectedIndex].value);">
+		  <option value="">-- Select Region --</option>				
+		  <option value="">All Regions</option>				
+		  %(regions_opt_list)s			    
+		</select>
+	      </div>	      
+	    </td>
+ 
 	    <td>
-	      <a id="region_link" href=""><img id="region_logo" src="" width="0" height="0" alt=""/></a>
+	      <!-- Links -->
+	      <div id="links">
+		<a href="http://www.bycycle.org/tripplanner"
+		  title="Get more information about the Trip Planner"
+		  >About</a>
+		
+		&middot;
+		
+		<a href="http://www.bycycle.org/contact.html" 
+		  title="Send us problem reports, comments, questions, and suggestions"
+		  >Feedback</a>
+		
+		&middot;
+		
+		<a href="help.html"
+		  title="How do I work this thing!?"
+		  >Help</a>
+	      </div>
 	    </td>
 	  </tr>
 	</table>
       </div>
 
+      <div id="status" class="page_section">
+	Welcome to the 
+	<a href="http://www.bycycle.org/" title="byCycle Home Page">byCycle</a> 
+	interactive bicycle trip planner, version 0.3.5 beta
+      </div>
+      
       <!-- Content -->
       <div id="content" class="page_section">
 	<table id="content_table">
@@ -161,56 +137,85 @@
 	  <![endif]-->
 	  
 	  <tr>
-	    <td id="left_panel" class="panel">
+	    <td id="left_panel" class="panel">		  
+
+	      <!-- Input -->
+	      <div id="input">
+		
+		<form id="geocode_form" class="input_form"
+		  action="." 
+		  method="get" 
+		  onsubmit="doFind('geocode'); return false;">
+		  
+		  <div class="input_title">Look Up an Address</div>
+		  
+		  <div>
+		    <input type="text" id="q" name="q" class="input_field" tabindex="1" value="%(q)s"/>
+		      <input name="gb"
+			class="input_button"
+			title="Click to look up address"
+			tabindex="3" 
+			type="submit" 
+			value="Go!"/>
+		  </div>
+		  <input type="hidden" id="gm" name="m" value=""/>
+		    <input type="hidden" id="gjs" name="js" value=""/>		    
+		</form>
+		
+		<form id="route_form" class="input_form"
+		  action="." 
+		  method="get" 
+		  onsubmit="doFind('route'); return false;">		
+		  
+		  <div class="input_title">Find a Route</div>
+		  
+		  <div style="margin-bottom: 5px;">
+		    <input type id="fr" name="fr" class="input_field" tabindex="1" value=""/>
+		      <a href="#Swap_from_and_to_addresses" 
+			onclick="return _swapElV('fr', 'to');"
+			title="Swap from and to addresses"
+			tabindex="90"
+			><img src="images/swapfrto.gif" alt="Swap from and to addresses"/></a>
+		  </div>
+		  
+		  <div>
+		    <input type id="to" name="to" class="input_field" tabindex="1" value=""/>
+		      <input name="rb"
+			class="input_button"
+			title="Click to find route"
+			tabindex="3" 
+			type="submit" 
+			value="Go!"/>
+		  </div>
+		  
+		  <input type="hidden" id="tmode" name="tmode" value="bike"/>
+		    <input type="hidden" id="rm" name="m" value=""/>
+		      <input type="hidden" id="rjs" name="js" value=""/>
+		</form>
+	      </div><!-- Input -->
+	      
 	      <div id="result">
 		%(result)s	      
-	      </div>                        
-	    </td><!-- Left Panel -->
+	      </div>
+	      
+	    </td><!-- left_panel -->
 	    
 	    <td id="right_panel" class="panel">
 	      <div id="map">
 		<noscript>
 		  <div>
-		    <i>
-		      To display a map here, JavaScript must be enabled in your browser. 
+		    <p style="padding: 5px;">
+		      <i>To display a map here, JavaScript must be enabled in your browser. 
 		      If you would like to view the map, please enable JavaScript and 
-		      <a href="">try again</a>.
-		    </i>
+		      <a href="">try again</a>.</i>
+		    </p>
 		  </div>
 		</noscript>
 	      </div>
-	    </td>
+	    </td><!-- right_panel -->
 	  </tr>	        
 	</table>
-      </div>
-	
-      <!-- Footer -->
-      <div id="footer" class="page_section">
-	<a href="http://www.bycycle.org/" 
-	  title="byCycle Home Page"
-	  >byCycle</a> 
-	
-	<a href="http://www.bycycle.org/tripplanner"
-	  title="Information About the Trip Planner"
-	  >Bicycle Trip Planner</a> 
-	0.3 beta 
-	
-	&#183; 
-	
-	&copy; 2006 
-	<a href="http://www.bycycle.org/" 
-	  title="byCycle Home Page"
-	  >byCycle.org</a> 
-
-	&#183; 
-	
-	Last modified %(last_modified)s	
-	
-	<br/>
-	
-	The Trip Planner is provided AS IS with NO WARRANTY OF ANY KIND.
-      </div>
-      
+      </div><!-- Content -->
     </div><!-- Content Pane --> 
 
     <input type="hidden" id="status" name="status" value="%(status)s"/>

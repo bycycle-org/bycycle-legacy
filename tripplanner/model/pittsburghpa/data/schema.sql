@@ -65,8 +65,10 @@ CREATE TABLE "layer_street" (
 
 CREATE TABLE "attr_street" (
   "id"           INTEGER PRIMARY KEY,
-  "oneway"       INTEGER,
-  "cfcc"         TEXT	
+  "oneway"       TEXT,
+  "cfcc"         TEXT,
+  "opdir"	 TEXT
+
 );
 
 CREATE TABLE "layer_node" (
