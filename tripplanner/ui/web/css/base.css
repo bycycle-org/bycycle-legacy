@@ -1,5 +1,6 @@
-html, body, table, td, tr {
-  padding: 0; margin: 0;
+html, body, table, td, tr, form {
+  padding: 0; 
+  margin: 0;
 }
 
 html, body {
@@ -19,7 +20,7 @@ table {
 }
 
 td {
-  
+  vertical-align: top;  
 }
 
 img {
@@ -56,6 +57,13 @@ a.selected {
   color: black;
 }
 
+hr {
+  color: gray;
+  background-color: gray;
+  height: 1px;
+  border: none;
+}
+
 
 /* General */
 
@@ -64,22 +72,24 @@ a.selected {
 }
 
 .page_section {
-  padding: 5px 0;
+  margin-bottom: 5px;
 }
 
 
 /* Header */
 
-#header { 
-  padding-top: 0;
+#header {
+
 }
 
-#header table td { 
-  padding: 0 5px;
+#header table { 
+  width: 100%;
 }
 
 #logo {
-  padding-left: 5px;
+  font-weight: bold;
+  font-size: 20px;
+  margin-right: 10px;
 }
 
 #logo * {
@@ -87,28 +97,24 @@ a.selected {
   color: #000;
 }
 
-#logo h1, #logo h2, #logo h3 { 
-  padding: 0;
-  margin: 0;
+#links {
+  text-align: right;
 }
 
-#input_form {
-  margin: 0;
-  padding: 0;
-}
 
-#q {
-  width: 400px;
-  font-size: 12px;
-  height: 45px;
+/* Status */
+
+#status {  
+  background: #fffa73; /*99b3cc;*/
+  border: 1px solid gray;
+  padding: 2px 5px;
 }
 
 
 /* Content */
 
 #content {
-  border: solid gray;
-  border-width: 1px 0;
+  margin-bottom: 0;
 }
 
 #content_table { 
@@ -117,7 +123,7 @@ a.selected {
 }
 
 #left_panel, #right_panel { 
-  vertical-align: top;
+
 }
 
 
@@ -126,6 +132,36 @@ a.selected {
 #left_panel {
   width: 300px;
   padding-right: 5px;
+}
+
+/* Input */
+
+#input {  
+  background: #a7cc95;
+  border: 1px solid gray;
+  margin-bottom: 5px;
+  padding: 5px;
+}
+
+.input_form {
+
+}
+
+.input_title {  
+  font-weight: bold;
+}
+
+.input_field { 
+  width: 241px;
+  margin-right: 5px;
+}
+
+.input_button { 
+  width: 35px;
+}
+
+#geocode_form {  
+  margin-bottom: 5px;
 }
 
 #result {

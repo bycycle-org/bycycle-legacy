@@ -11,13 +11,13 @@ dbf_fields = ('FNODE_', 'TNODE_',
               'LEFTADD1', 'LEFTADD2', 'RGTADD1', 'RGTADD2',
               # 'LCITY', 'RCITY', 'ZIPCOLEF', 'ZIPCORGT',
                'ZIPLEFT', 'ZIPRGT', 'CFCC',
-            'ONEWAY')#, '?BIKEMODE', 'UP_FRAC', 'ABS_SLP', 'CPD')
+            'ONEWAY', 'OPDIR')#, '?BIKEMODE', 'UP_FRAC', 'ABS_SLP', 'CPD')
 
 
 layer_fields = ('fnode_', 'tnode_',
                 'addr_f', 'addr_t', 'streetname_id', 'city_l_id', 'city_r_id',
                 'state_l_id', 'state_r_id', 'zipleft', 'ziprgt', 'wkt_geometry')
-attr_fields = ('oneway', 'cfcc')
+attr_fields = ('oneway', 'cfcc', 'opdir')
 
 
 # DB connection and cursor
@@ -31,19 +31,18 @@ def shpToRawSql():
         print e
 
     datasource = 'files'
-    inlayer = 'streetnt'
+    inlayer = 'streetntProjected4'
+    #inlayer = 'street4269'
+    #inlayer = 'streetnt'
+    #inlayer = 'streetntLATLONG'
     outdb = 'raw.db'
     outtable = 'raw'
-    outsrs = ''  '-t_srs WGS84'
+    outsrs = ''  #'-t_srs WGS84'
     outformat = 'SQLite'
     ds = os.getcwd()
-    # ouput SRS, output format
-    # fields to select from DBF
-    # DB name, data directory, layer, DB table
-    cmd = '/home/vhosts/org/bycycle/FWTools-linux-1.0.0a7/bin_safe/ogr2ogr ' \
-          '%s -f "%s" ' \
+    cmd = 'ogr2ogr %s -f "%s" ' \
           '-select "%s" ' \
-          '%s %s %s -nln %s' % \
+          '%s %s %s -nln %s'  % \
           (outsrs, outformat,
            ','.join(dbf_fields), 
            outdb, datasource, inlayer, outtable)
@@ -53,6 +52,8 @@ def shpToRawSql():
         sys.exit()
 
 def fixRaw():
+    
+
     ## Add missing columns
     Q = 'ALTER TABLE raw ADD COLUMN %s'
     cols = ('addr_f', 'addr_t', 'streetname_id', 'city_l_id', 'city_r_id',
@@ -61,13 +62,16 @@ def fixRaw():
         execute(Q % col)
     ## Import missing street types field
 
-    ## Set TEXT NULLs to '' and all TEXT values to lower case
+
+
+ ## Set TEXT NULLs to '' and all TEXT values to lower case
     Q0 = 'UPDATE raw SET %s="" WHERE %s IS NULL'
     Q1 = 'UPDATE raw SET %s=lower(%s)'
 
     cols = ('prefix', 'name', 'type', 'suffix', #'cityl ', 'cityr',
            # 'state_l_id', 'state_r_id',
-            'wkt_geometry', 'cfcc'
+            'wkt_geometry', 'cfcc',
+            #'oneway', 'opdir'
             #, 'bike_facil'
             )
     
@@ -77,48 +81,98 @@ def fixRaw():
         # TEXT to lower
         execute(Q1 % (col, col))
     con.commit()
+
+    # Set BOOLEAN NULLs to f
+    Q = 'UPDATE raw SET %s="n" WHERE %s IS NULL'
+    cols = ('oneway', 'opdir')
+    
+    for col in cols:
+        execute(Q % (col, col))
+        execute(Q1 % (col, col)) 
+    con.commit()
+
+
     # Set INTEGER NULLs to 0
     Q = 'UPDATE raw SET %s=0 WHERE %s IS NULL'
 
     cols = ('fnode_', 'tnode_',
             'addr_f', 'addr_t', 'leftadd1', 'leftadd2', 'rgtadd1', 'rgtadd2',
-            'streetname_id', 'city_l_id', 'city_r_id', 'zipleft', 'ziprgt',
+            'streetname_id', 'city_l_id', 'city_r_id', 'zipleft', 'ziprgt'
             #'tlid', 'lanes', 'adt', 'spd',
-            'oneway')
+            #'oneway', 'opdir'
+            )
     for col in cols:
         execute(Q % (col, col))
     con.commit()
-    # Abbreviate bike modes
-    # Qs = ('UPDATE raw SET bike_facil="t" ' \
-    #      'WHERE bike_facil="bike trail"',
-    #     'UPDATE raw SET bike_facil="r" ' \
-    #    'WHERE bike_facil="bike route"',
-    #   'UPDATE raw SET bike_facil="l" ' \
-    #  'WHERE bike_facil="bike lane"',
-    # 'UPDATE raw SET bike_facil="p" ' \
-    #'WHERE bike_facil="preferred street"',
-    # 'UPDATE raw SET cfcc="a71" ' \
-    # 'WHERE bike_facil="bt"',
-    # )
-    # for Q in Qs:
-    #    execute(Q)
+
+
+
     
+    # Abbreviate bike modes
+   # Qs = ('UPDATE raw SET bike_facil="t" ' \
+    #      'WHERE bike_facil="bike trail"',
+     #     'UPDATE raw SET bike_facil="r" ' \
+      #    'WHERE bike_facil="bike route"',
+       #   'UPDATE raw SET bike_facil="l" ' \
+        #  'WHERE bike_facil="bike lane"',
+         # 'UPDATE raw SET bike_facil="p" ' \
+          #'WHERE bike_facil="preferred street"',
+         # 'UPDATE raw SET cfcc="a71" ' \
+         # 'WHERE bike_facil="bt"',
+         # )
+   # for Q in Qs:
+    #    execute(Q)
+
     #because one piece of data is screwed up & has random j.
     Q = 'UPDATE raw SET rgtadd1="1016" WHERE rgtadd1="1016j"'
     execute(Q)
-    # con.commit()
+   # con.commit()
     # Convert fraddl et al to integer type
-    Q = 'SELECT rowid, leftadd1, leftadd2, rgtadd1, rgtadd2 FROM raw'
+#    Q = 'SELECT rowid, leftadd1, leftadd2, rgtadd1, rgtadd2 FROM raw'
+ #   execute(Q)
+  #  rows = cur.fetchall()
+    #Q = 'UPDATE raw ' \
+     #   'SET leftadd1=%s,leftadd2=%s,rgtadd1=%s,rgtadd2=%s' \
+      #  'WHERE rowid=%s'
+    #for row in rows:
+     #   execute(Q % (int(float(row[1])), int(float(row[2])),
+      #                 int(float(row[3])), int(float(row[4])),
+       ##               # int(float(row[5])),
+         #              row[0]))
+
+
+
+   
+#        print 'row 2 type: '
+ #       print type(row[2])
+  #      print row[2]
+   #     print 'encoded'
+    #    blah = row[2].encode()
+     #   print blah
+      #  print type(blah)
+       # blahInt = int(blah)
+        #print type(blahInt)
+   
+        
+   
+   
+
+
+
+    
+    Q = 'SELECT rowid, fnode_, tnode_, leftadd1, leftadd2, rgtadd1, rgtadd2 FROM raw'
     execute(Q)
     rows = cur.fetchall()
     Q = 'UPDATE raw ' \
-        'SET leftadd1=%s,leftadd2=%s,rgtadd1=%s,rgtadd2=%s' \
+        'SET fnode_=%s,tnode_=%s,leftadd1=%s,leftadd2=%s,rgtadd1=%s,rgtadd2=%s' \
         'WHERE rowid=%s'
     for row in rows:
         execute(Q % (int(float(row[1])), int(float(row[2])),
                        int(float(row[3])), int(float(row[4])),
-                      # int(float(row[5])),
+                       int(float(row[5])), int(float(row[6])),
                        row[0]))
+
+
 
     # Fix broken geometry
     Q = 'SELECT rowid, wkt_geometry FROM raw ' \
@@ -147,9 +201,17 @@ def unifyAddressRanges():
     Q = 'UPDATE raw ' \
         'SET addr_%s=(ROUND(%sadd%s / 10.0) * 10) ' \
         'WHERE %sadd%s != 0'
-    for f in (('f', 'left'), ('t', 'rgt')):
-        for l in ('1', '2'):
-            execute(Q % (f[0], f[1], l, f[1], l))
+
+#    for f in (('f', 'fr'), ('t', 'to')):
+ #       for l in ('l', 'r')
+    
+    for f in (('f', '1'), ('t', '2')):
+        for l in ('left', 'rgt'):
+            #execute(Q % (f[0], f[1], l, f[1], l))
+            execute(Q % (f[0], l, f[1], l, f[1]))
+
+
+            
     # Encode from address
 
     Qs = ('UPDATE raw SET addr_f = (addr_f + (leftadd1 % 2)) ' \
@@ -164,7 +226,7 @@ def unifyAddressRanges():
           'UPDATE raw SET addr_f = (addr_f + (1 - (rgtadd2 % 2))) ' \
           'WHERE rgtadd2 != 0 AND (addr_f % 2 = 0)')
     for Q in Qs:
-        execute(Q)
+        execute(Q)      
     con.commit()
 
 def transferStreetNames():
@@ -212,12 +274,12 @@ def updateRawStreetNameIds():
 def transferCityNames():
     """Transfer city names to their own table."""
     Q = 'INSERT INTO city (city) ' \
-        'pittsburgh'  #wlb -- Pittsburgh to pittsburgh
+        'Pittsburgh'
         #'SELECT DISTINCT cityl FROM raw'
     execute(Q)
     #Q = 'INSERT INTO city (city) ' \
-    #   'SELECT DISTINCT cityr FROM raw WHERE cityr NOT IN ' \
-    #  '(SELECT city FROM city)'
+     #   'SELECT DISTINCT cityr FROM raw WHERE cityr NOT IN ' \
+      #  '(SELECT city FROM city)'
     #execute(Q)
     con.commit()
 
@@ -234,6 +296,7 @@ def updateRawCityIds():
         for row in rows:
             execute(Q1 % (row[0], row[1]))
     con.commit()
+
 
 def updateSimpleCity():
     """Set the city ID of each raw record."""
@@ -301,7 +364,7 @@ def addIndexes():
           'CREATE INDEX db.node_t_id on layer_street (node_t_id)',
           'CREATE INDEX db.stid on layer_street (streetname_id)',
           'VACUUM',
-          'ANALYZE',
+         # 'ANALYZE',
           )
     for Q in Qs: 
         execute(Q)
@@ -348,6 +411,7 @@ def run():
 
              ('Create byCycle schema tables',
              os.system, ('sqlite3 db.db < ./schema.sql',)),
+  #           os.system, ('sqlite db.db < ./schema.sql',)),
 
              ('Open DB connection', openDB),
     
@@ -363,12 +427,12 @@ def run():
              ('Update street name IDs in raw table',
               updateRawStreetNameIds),
              
-             # ('Transfer city names',
+            # ('Transfer city names',
              # transferCityNames),
              
              #('Update city IDs in raw table',
              # updateRawCityIds),
-             
+
              ('Update one city in raw table',
               updateSimpleCity),
              
@@ -395,6 +459,7 @@ def run():
         except IndexError:
             args = ()
         overall_timer.pause()
+        print('test' + msg)
         resp = raw_input('====> %s? ' % msg).strip().lower()
         overall_timer.unpause()
         if resp in ('', 'y'):

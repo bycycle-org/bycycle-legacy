@@ -16,13 +16,6 @@ travel_modes = {'bike': 'bicycle',
                 'car': 'automobile',
                 'auto': 'automobile'}
 
-data_modes = {'portlandor': 'portlandor',
-              'portland': 'portlandor',
-              'metro': 'portlandor',
-              'milwaukeewi': 'milwaukeewi',
-              'milwaukee': 'milwaukeewi',
-              }
-
 
 class RouteError(Exception):
     def __init__(self, desc=''):
@@ -63,11 +56,6 @@ def get(return_messages=False, region='', tmode='', q=[], **params):
     region = region.strip()
     if not region:
         errors.append('Region required')
-    else:
-        try:
-            region = data_modes[region]
-        except KeyError:
-            errors.append('Unknown region: %s' % region)
 
     # Travel mode
     tmode = tmode.strip()
@@ -447,14 +435,19 @@ def makeDirections(I, S):
         except IndexError:
             pass
 
-        bm = str(s.bikemode)
-        dbm = d['bikemode']
-        if bm:
-            try:
-                if bm != dbm[-1]:
+        # Add segment's bikemode to list of bikemodes for current stretch
+        try:
+            bm = str(s.bikemode)
+        except AttributeError:
+            pass
+        else:
+            dbm = d['bikemode']
+            if bm:
+                try:
+                    if bm != dbm[-1]:
+                        dbm.append(bm)
+                except IndexError:
                     dbm.append(bm)
-            except IndexError:
-                dbm.append(bm)
 
         s_count += 1
         ls_index += len(s.linestring) - 1
