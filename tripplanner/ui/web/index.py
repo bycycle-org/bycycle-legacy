@@ -46,8 +46,7 @@ def index(req, **params):
             type_ = result_set['result_set']['type']
             callback = '_%sCallback' % type_
             result = eval(callback)(req.status, result_set, **params)
-
-            result_set['result_set']['html'] = result;
+            result_set['result_set']['html'] = result
             content = repr(result_set)
         else:
             content = '<h2>Error</h2>%s' % response_text
@@ -56,7 +55,7 @@ def index(req, **params):
         req.content_type = 'text/html'
 
         try:
-            q = params['q'].strip()
+            q = ' '.join(params['q'].split())
         except KeyError:
             status = ''
             response_text = ''
@@ -66,7 +65,6 @@ def index(req, **params):
             result = _getWelcomeMessage()
         else:
             fr = to = ''
-
             response_text = _processQuery(req, params)            
             status = req.status
             if req.status < 400:
@@ -78,7 +76,7 @@ def index(req, **params):
                 result = '<h2>Error</h2>%s' % response_text
                                 
         data = {
-            'status': status,
+            'http_status': status,
             'response_text': response_text,
             'q': q,
             'fr': fr,
@@ -97,7 +95,7 @@ def _processQuery(req, params, service=''):
     from byCycle.lib import wsrest
 
     # Normalize query
-    params['q'] = ' '.join(params['q'].split())
+    params['q'] = ' '.join(params['q'].split()).lower()
 
     # Analyze the query to determine the service and prepare the query for the
     # service. If a service was explicitly given, use it; otherwise, use the
@@ -144,7 +142,7 @@ def _analyzeQuery(params):
     try:
         q = eval(q)
     except:
-        words = q.lower().split(' to ') 
+        words = q.split(' to ') 
         if len(words) > 1:
             service = 'route'
             q = words
@@ -170,20 +168,14 @@ def _geocodeCallback(status, result_set, **params):
         addr = geocode['address'].replace('\n', '<br/>')
         field_addr = geocode['address'].replace('\n', ', ')
         href = ' href="javascript:void(0);" '        
-        result = '<h2 style="margin-top:0">Address</h2>%s<br/>' \
-                 'Set as ' \
-                 '<a %s onclick="_setRouteFieldToAddress(\'fr\', \'%s\');"' \
-                 '>From</a> or ' \
-                 '<a %s onclick="_setRouteFieldToAddress(\'to\', \'%s\');"' \
-                 '>To</a> address<br/>' % \
-                 (addr, href, field_addr, href, field_addr,)
+        result = '<h2 style="margin-top:0">Address</h2><p>%s</p>' % addr
     elif status == 300:  # Multiple matches
         result = ['<h2>Multiple Matches Found</h2><ul>']
         for i, geocode in enumerate(geocodes):
             addr = geocode['address']
             result.append('<li>'
-                          '  <a href="./?region=%s&q=%s" '
-                          '    onclick="_showGeocode(%s);"'
+                          '  <a href="?region=%s&q=%s" '
+                          '    onclick="_showGeocode(%s, 1); return false;"'
                           '    >%s</a>'
                           '</li>' %
                           (params['region'],
@@ -200,14 +192,14 @@ def _routeCallback(status, result_set, **params):
     if status == 200:    # A-OK, one match
         result = _makeDirectionsTable(route)
     elif status == 300:  # Multiple matches
-        print route['fr']
         geocodes_fr = route['fr']['geocode']
         geocodes_to = route['to']['geocode']
-        result = _makeRouteMultipleMatchList(geocodes_fr, geocodes_to)
+        result = _makeRouteMultipleMatchList(geocodes_fr, geocodes_to, params)
     return result
 
 
-def _makeRouteMultipleMatchList(geocodes_fr, geocodes_to):
+def _makeRouteMultipleMatchList(geocodes_fr, geocodes_to, params):
+    region = params['region']
     result = ['<div id="mma"><h2>Multiple Matches Found</h2>']
 
     def makeDiv(fr_or_to, style):
@@ -219,15 +211,20 @@ def _makeRouteMultipleMatchList(geocodes_fr, geocodes_to):
                       (fr_or_to, style, heading))
 
     def makeList(fr_or_to, geocodes, find):
-        onclick1 = " onclick=\"_setRouteFieldToAddress(\'%s\', \'" % fr_or_to
-        onclick2 = "\'); %s;\" " % find
         result.append('<ul>')
+        if fr_or_to == 'fr':
+            q_temp = '%s to ' + params['q'][1]
+        else:
+            q_temp = params['q'][0] + ' to %s'
         for geocode in geocodes:
             addr = geocode['address']
-            li = '<li><a href="javascript:void(0);" %s%s%s>%s</a></li>' % \
-                 (onclick1, addr.replace('\n', ', '),
-                  onclick2, addr.replace('\n', '<br/>'))
-            result.append(li)
+            q = q_temp % addr.replace('\n', ', ')
+            result.append('<li>'
+                          '<a href="?region=%s&q=%s&tmode=bike">%s</a>'
+                          '</li>' % 
+                          (region,
+                           q.replace(' ', '+'),
+                           addr.replace('\n', '<br/>')))
         result.append('</ul></div>')
   
     if geocodes_fr:
@@ -338,11 +335,7 @@ def _getWelcomeMessage():
     </p>
     
     <p>
-    Users should independently verify all information presented here 
-    and are encouraged to
-    <a href="http://www.bycycle.org/contact.html"
-    title="Send us your feedback"
-    >provide feedback</a>.
+    Users should independently verify all information presented here. This service is provided AS IS with NO WARRANTY of any kind. 
     </p>
     
     <p>
@@ -350,17 +343,9 @@ def _getWelcomeMessage():
     <a href="http://www.bycycle.org/" 
     title="byCycle Home Page"
     >byCycle.org</a>
-    &middot
-    <a href="http://www.bycycle.org/tripplanner/"
-    >About</a>
-    &middot;
-    <a href="help.html"
-    title="How do I work this thing!?"
-    >Help</a>
     <br/>
     Last modified: %s
     <br/>
-    Provided AS IS with NO WARRANTY of any kind
     </p>
     ''' % (_getLastModified(template))
     return welcome_message

@@ -7,7 +7,7 @@
 var map;
 var center_marker;
 var center_point;
-var center_marker_html = '<div style="width:225px; text-align:center;"><a href="javascript:void(0);" onclick="_setElVToMapLonLat(\'q\'); doFind();">Find address of closest intersection</a></div>';
+var center_marker_html = '<div style="width:225px; text-align:center;"><a href="javascript:void(0);" onclick="setElVToMapLonLat(\'q\'); doFind();">Find address of closest intersection</a></div>';
 
 // Start and end markers for routes
 var base_icon;
@@ -24,7 +24,7 @@ function mapLoad()
 	'<div id="loading">Loading<blink>...</blink></div>';
       if (_noActiveX()) 
 	{
-	  _setIH("map",
+	  setIH("map",
 		 '<p>ActiveX is not enabled in your browser. \
                                 If your browser is Internet Explorer,	\
                                 you must have ActiveX enabled to use this application.</p>');
@@ -34,7 +34,7 @@ function mapLoad()
 	  mapCreate();
 	  bRet = true;
 	}
-      _setElStyle('loading', 'display', 'none');
+      setElStyle('loading', 'display', 'none');
     } 
   else 
     {

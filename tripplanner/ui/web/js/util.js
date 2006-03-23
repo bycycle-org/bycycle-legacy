@@ -18,15 +18,73 @@ function el(id)
   return document.getElementById(id); 
 }
 
-function _elV(id) 
+function elV(id) 
 { 
   return document.getElementById(id).value;
 }
 
-function _setElV(id, val) 
+function setElV(id, val) 
 { 
   document.getElementById(id).value = val; 
 }
+
+
+/* Element Style */
+
+
+/**
+ * Get the value of an element's style
+ * @param style_name The CSS name for the style to get the value of (for 
+          standards-compliant browsers)
+ * @param ie_style_name The mixed case name for the style to get the value of 
+          (for IE when the style name has more than 1 word)
+ */
+function elStyle(id, style_name, ie_style_name)
+{
+  var el = document.getElementById(id);
+  if (el.currentStyle)
+      return el.currentStyle[ie_style_name]
+  else if (document.defaultView.getComputedStyle)
+      return document.defaultView.getComputedStyle(el, '').getPropertyValue(style_name);
+  return '';
+}
+
+
+/**
+ * Set the value of an element's style
+ * @param style_name The CSS name for style to set value of (mixed-case)
+ * @param value The new value for the style (e.g., "5px")
+ */
+function setElStyle(id, style_name, value) 
+{ 
+  // use mixed case for style name
+  document.getElementById(id).style[style_name] = value;
+}
+
+
+
+
+/* Inner HTML */
+
+function iH(id) { return document.getElementById(id).innerHTML; }
+function setIH(id, val) { document.getElementById(id).innerHTML = val; }
+function appendIH(id, val) { document.getElementById(id).innerHTML += val; }
+
+
+/**
+ * Swap the values of the two elements with the given IDs.
+ * @param id_a ID of element to swap
+ * @param id_b ID of other element to swap
+ */
+function _swapElV(id_a, id_b) 
+{
+  var av = elV(id_a);
+  setElV(id_a, elV(id_b));
+  setElV(id_b, av);
+}
+
+
+/* Misc */
 
 function getWindowHeight() 
 {
@@ -42,67 +100,6 @@ function getWindowHeight()
 }
 
 
-/* Style */
-
-
-/**
- * Get the value of an element's style
- * @param style_name The CSS name for the style to get the value of (for 
-          standards-compliant browsers)
- * @param ie_style_name The mixed case name for the style to get the value of 
-          (for IE when the style name has more than 1 word)
- */
-function _elStyle(id, style_name, ie_style_name)
-{
-  var el = document.getElementById(id);
-  if (el.currentStyle)
-    {
-      return el.currentStyle[ie_style_name]
-    }
-  else if (document.defaultView.getComputedStyle)
-    {
-      return document.defaultView.getComputedStyle(el, '').getPropertyValue(style_name);
-    }
-  return '';
-}
-
-
-/**
- * Set the value of an element's style
- * @param style_name The CSS name for style to set value of (mixed-case)
- * @param value The new value for the style (e.g., "5px")
- */
-function _setElStyle(id, style_name, value) 
-{ 
-  // use mixed case for style name
-  document.getElementById(id).style[style_name] = value;
-}
-
-
-
-
-/* Inner HTML */
-
-function _iH(id) { return document.getElementById(id).innerHTML; }
-function _setIH(id, val) { document.getElementById(id).innerHTML = val; }
-function _appendIH(id, val) { document.getElementById(id).innerHTML += val; }
-
-
-/**
- * Swap the values of the two elements with the given IDs.
- * @param id_a ID of element to swap
- * @param id_b ID of other element to swap
- */
-function _swapElV(id_a, id_b) 
-{
-  var av = _elV(id_a);
-  _setElV(id_a, _elV(id_b));
-  _setElV(id_b, av);
-}
-
-
-
-
 /* String */
 
 
@@ -113,7 +110,7 @@ function _swapElV(id_a, id_b)
  * @param keep_newlines If this is set, reduce internal newlines to a single newline instead of a space
  * @return The cleaned string
  */
-function _cleanString(the_string, keep_newlines)
+function cleanString(the_string, keep_newlines)
 {
   if (!the_string) 
     return '';
@@ -122,8 +119,7 @@ function _cleanString(the_string, keep_newlines)
   // Reduce internal whitespace
   if (keep_newlines)
     {
-
-  //the_string = the_string.replace(/[ \f\t\u00A0\u2028\u2029]+/, ' ');
+      //the_string = the_string.replace(/[ \f\t\u00A0\u2028\u2029]+/, ' ');
       the_string = the_string.replace(/[^\n^\r\s]+/, ' ');
       the_string = the_string.replace(/\n+/g, '\n');
       the_string = the_string.replace(/\r+/g, '\r');
@@ -142,7 +138,7 @@ function _cleanString(the_string, keep_newlines)
  * @param the_string The string to trim
  * @return The trimmed string
  */
-function _trim(the_string)
+function trim(the_string)
 {
   return the_string.replace(/^\s+|\s+$/g, '');
 }

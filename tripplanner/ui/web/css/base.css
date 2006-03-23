@@ -4,7 +4,6 @@ html, body, table, td, tr, form {
 }
 
 html, body {
-  overflow: hidden;
   height: 100%;
 }
 
@@ -16,6 +15,7 @@ body, td {
 }
 
 table {
+  width: 100%;
   border-collapse: collapse;
 }
 
@@ -51,12 +51,6 @@ a:hover {
   color: #f08000;
 }
 
-a.selected {
-  font-weight: bold;
-  text-decoration: none;
-  color: black;
-}
-
 hr {
   color: gray;
   background-color: gray;
@@ -82,10 +76,6 @@ hr {
 
 }
 
-#header table { 
-  width: 100%;
-}
-
 #logo {
   font-weight: bold;
   font-size: 20px;
@@ -107,7 +97,7 @@ hr {
 #status {  
   background: #fffa73; /*99b3cc;*/
   border: 1px solid gray;
-  padding: 2px 5px;
+  padding: 5px 5px 3px 5px;
 }
 
 
@@ -118,7 +108,6 @@ hr {
 }
 
 #content_table { 
-  width: 100%;
   table-layout: fixed;
 }
 
@@ -152,15 +141,14 @@ hr {
 }
 
 .input_field { 
-  width: 241px;
-  margin-right: 5px;
+  width: 284px;
 }
 
 .input_button { 
   width: 35px;
 }
 
-#geocode_form {  
+#geocode_form, #geocode_form div {  
   margin-bottom: 5px;
 }
 
@@ -222,7 +210,7 @@ hr {
 }
 
 #summary, #directions {
-  width: 100%;
+
 }
 
 #summary td, #directions td {
