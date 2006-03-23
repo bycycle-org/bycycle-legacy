@@ -20,37 +20,39 @@ var start_ms;
 
 /* Functions */
 
-function doFind()
+function doFind(service)
 {
   start_ms = new Date().getTime();
-  _setResult('Processing. Please wait<blink>...</blink>');
-  
-  if (map)
-    map.closeInfoWindow();
+  setStatus('Processing. Please wait<blink>...</blink>');
 
   var el_region = el('region');
   var region = el_region.value;
   var el_q = el('q');
-  var q = _trim(el_q.value, true);
+  var q = cleanString(el_q.value);
   var errors = [];
-  
-  if (!q)
-    {
-      errors.push('Missing address or route <a href="javascript:void(0);" onclick="el(\'q\').focus();"><i>query</i></a>');
-      el_q.focus();
-    }
+
+  if (map)
+    map.closeInfoWindow();
   
   if (!region)
     {
-      errors.push('No <a href="javascript:void(0);" onclick="el(\'region\').focus();"><i>region</i></a> selected');
+      errors.push('Please select a Region</a>');
       el_region.focus();
+    }
+  
+  if (!q)
+    {
+      errors.push('Please enter an Address or Route');
+      if (region)
+	el_q.focus();
     }
 
   if (errors.length) 
     {
       errors = ['<h2>Errors</h2><ul><li>', errors.join('</li><li>'),
 		'</li></ul>'].join('');
-      _setResult(errors);
+      setStatus('Error. See below for details.', 1);
+      setResult(errors);
     } 
   else 
     {
@@ -79,16 +81,20 @@ function _callback(req)
       eval("result_set = " + response_text + ";");
       eval('_' + result_set.result_set.type + 'Callback')(status, result_set);
       if (start_ms)
-	_setIH('elapsed_time', 
-	       ((new Date().getTime() - start_ms) / 1000.0) + 's');
+	{
+	  var elapsed = (new Date().getTime() - start_ms) / 1000.0;
+	  setStatus(['Done. Took ', elapsed, ' second', 
+		     (elapsed == 1.00 ? '' : 's'), '.'].join(''));
+	}
       var result = result_set.result_set.html;
     }
   else
     {
+      setStatus('Error. See below for details.', 1);
       var result = response_text;
     }
   if (result)
-    _setResult(result);
+    setResult(result);
 }
 
 function _geocodeCallback(status, result_set)
@@ -158,39 +164,41 @@ function _routeCallback(status, result_set)
 
 /* UI Manipulation */
 
-function _setResult(content, error)
+function setStatus(content, error)
 {
   if (error) 
-    _setElStyle('result', 'color', 'red');
+    setElStyle('status', 'color', 'red');
   else 
-    _setElStyle('result', 'color', 'black');
-  _setIH('result', content.toString());
+    setElStyle('status', 'color', 'black');
+  setIH('status', content.toString());
 }
 
-function _setRouteFieldToAddress(fr_or_to, address)
+function setResult(content, error)
 {
-  eval([fr_or_to, ' = "', address, '";'].join(''));
-  _setElV('q', [fr, '\nTO\n', to].join(''));
+  if (error) 
+    setElStyle('result', 'color', 'red');
+  else 
+    setElStyle('result', 'color', 'black');
+  setIH('result', content.toString());
 }
 
-function swapFromAndTo()
+function setRouteField(fr_or_to, value)
 {
-  var temp = fr;
-  fr = to;
-  to = temp;
-  _setElV('q', [fr, '\nTO\n', to].join(''));
+  eval([fr_or_to, ' = "', value, '";'].join(''));
+  setElV(fr_or_to, value);
 }
 
 
 /* Map */
 
-function _setElVToMapLonLat(id)
+function setElVToMapLonLat(id)
 {
-  if (!map) return;
+  if (!map) 
+    return;
   var lon_lat = map.getCenterLatLng();
   var x = Math.round(lon_lat.x * 1000000) / 1000000;
   var y = Math.round(lon_lat.y * 1000000) / 1000000;
-  _setElV(id, "lon=" + x + ", " + "lat=" + y);
+  setElV(id, "lon=" + x + ", " + "lat=" + y);
 }
 
 function _clearMap()
@@ -234,7 +242,7 @@ function _showGeocode(index, open_info_win)
       var geocode = geocodes[index];
       var point = {'x': geocode.x, 'y': geocode.y};
       var html = ['<div style="width:250px;">', 
-		  geocode.address, 
+		  geocode.address.replace('\n', '<br/>'), 
 		  '</div>'].join('');
       var geocode_marker = placeMarkers([point])[0];
       GEvent.addListener(geocode_marker, "click", 
@@ -255,26 +263,7 @@ function selectRegion(region)
   if (!region.bounds)
     region = regions[region] || regions.all;
 
-//   var img_src = region.img_src;
-//   var reg_logo = el('region_logo');
-//   var reg_link = el('region_link');
-//   if (img_src) 
-//     {
-//       reg_logo.src = 'images/' + img_src;
-//       reg_logo.width = region.img_width;
-//       reg_logo.height = region.img_height;
-//       reg_link.href = region.href;
-//     }
-//   else 
-//     {
-//       reg_logo.src = '';
-//       reg_logo.width = 0;
-//       reg_logo.height = 0;
-//       reg_link.href = '';
-//    }
-
-  //el('region_heading').innerHTML = region.heading;
-  el('status').innerHTML = region.subheading;
+  setStatus(region.subheading);
   document.title = 'byCycle - Bicycle Trip Planner - ' + region.heading;
 
   if (map)
