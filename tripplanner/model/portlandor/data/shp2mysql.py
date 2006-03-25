@@ -4,18 +4,18 @@ from pysqlite2 import dbapi2 as sqlite
 from byCycle.lib import gis, meter
 
 
-dbf_fields = ('FNODE', 'TNODE',
+dbf_fields = ('LOCALID', 'FNODE', 'TNODE',
               'LEFTADD1', 'LEFTADD2', 'RGTADD1', 'RGTADD2',
               'FDPRE', 'FNAME', 'FTYPE', 'FDSUF',
               'LCITY', 'RCITY', 'ZIPCOLEF', 'ZIPCORGT',
-              'ONE_WAY', 'BIKEMODE', 'UP_FRAC', 'ABS_SLP', 'CPD')
+              'ONE_WAY', 'TYPE', 'BIKEMODE', 'UP_FRAC', 'ABS_SLP', 'CPD', 'SSCODE')
 
 layer_fields = ('fnode', 'tnode',
                 'addr_f', 'addr_t', 'streetname_id', 'city_l_id', 'city_r_id',
                 'state_l_id', 'state_r_id', 'zipcolef', 'zipcorgt',
                 'wkt_geometry')
 
-attr_fields = ('one_way', 'code', 'bikemode', 'up_frac', 'abs_slp', 'cpd')
+attr_fields = ('localid', 'one_way', 'type', 'bikemode', 'up_frac', 'abs_slp', 'cpd', 'sscode')
 
 
 def shpToRawSql():
@@ -24,16 +24,14 @@ def shpToRawSql():
         os.unlink('db.db-journal')
     except OSError, e:
         print e
-    datasource = '20061219'
-    inlayer = 'new1'
+    datasource = r'E:\GIS\_tp\str04\prj'
+    inlayer = 'str_prj04aug'
     outdb = 'db.db'
     outtable = 'raw'
-    outsrs = '-t_srs WGS84'
+    outsrs = ''#'-t_srs WGS84'
     outformat = 'SQLite'
     ds = os.getcwd()
-    cmd = 'ogr2ogr %s -f "%s" ' \
-          '-select "%s" ' \
-          '%s %s %s -nln %s'  % \
+    cmd = r'C:\Progra~1\FWTools1.0.0a7\bin\ogr2ogr %s -f "%s" -select "%s" %s %s %s -nln %s' % \
           (outsrs, outformat,
            ','.join(dbf_fields), 
            outdb, datasource, inlayer, outtable)
@@ -49,14 +47,6 @@ def fixRaw():
             'state_l_id', 'state_r_id', 'code')
     for col in cols:
         execute(Q % col)
-    ## Import missing street types field
-    Q = 'UPDATE raw SET code=%s WHERE ogc_fid=%s'
-    csv = open('./20061219/type.csv')
-    for line in csv:
-        type_, ix = line.split(',')
-        type_ = type_.strip()
-        ix = int(float(ix)) + 1
-        cur.execute(Q % (type_, ix))    
     con.commit()
     ## Set TEXT NULLs to '' and all TEXT values to lower case
     Q0 = 'UPDATE raw SET %s="" WHERE %s IS NULL'
@@ -303,6 +293,7 @@ def execute(Q):
 
 def openDB():
     ## Set up DB connection
+    global con, cur
     con = sqlite.connect('db.db')
     cur = con.cursor()
 
@@ -313,7 +304,7 @@ if __name__ == '__main__':
     
     # This timer gets reused in the functions above
     timer = meter.Timer()    
-    timer.startTiming('Transferring data into byCycle schema...')
+    timer.start('Transferring data into byCycle schema...')
 
     pairs = [('Converting shapefile to monolithic SQL table.',
               shpToRawSql),
@@ -354,14 +345,15 @@ if __name__ == '__main__':
               cleanUp),
              ]
 
-    for p in pairs[-3:]:
+    for p in pairs[:]:
         msg, func = p[0], p[1]
         try: args = p[2]
         except IndexError: args = ()
-        timer.startTiming(msg)
+        timer.start(msg)
+        print msg
         apply(func, args)
-        timer.stopTiming()
+        timer.stop()
 
-    timer.stopTiming()
+    timer.stop()
     print 'Done.'
 
