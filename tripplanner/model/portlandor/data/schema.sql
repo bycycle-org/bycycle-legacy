@@ -45,12 +45,14 @@ CREATE TABLE "layer_street" (
 -- Portland street attributes
 CREATE TABLE "attr_street" (
   "id"           INTEGER PRIMARY KEY,
+  "localid"      REAL,
   "oneway"       INTEGER,
   "code"         INTEGER,	
   "bikemode"     TEXT,
   "up_frac"      REAL,	
   "abs_slp"      REAL,
-  "cpd"          INTEGER	
+  "cpd"          INTEGER,
+  "sscode"       INTEGER
 );
 
 CREATE TABLE "layer_node" (
