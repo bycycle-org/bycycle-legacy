@@ -99,11 +99,7 @@ if __name__ == "__main__":
 
          'portlandor':
          ('300 main',
-          ),
-         
-         'portland':
-         # Portland
-         ('37800 S Hwy 213 Hwy, Clackamas, OR 97362',
+          '37800 S Hwy 213 Hwy, Clackamas, OR 97362',
           '4550 ne 15',
           '633 n alberta',
           '4408 se stark',

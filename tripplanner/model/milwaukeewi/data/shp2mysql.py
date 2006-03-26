@@ -9,7 +9,7 @@
 #  0
 # PURPOSE 
 #  Script to import line geometry and associated attributes from a street layer
-#  and import it into a normalized database
+#  shapefile and import it into a normalized database
 # USAGE 
 #  python shp2mysql.py
 # LICENSE 

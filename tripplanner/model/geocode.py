@@ -1,4 +1,4 @@
-from copy import deepcopy
+from copy import copy
 from byCycle.lib import gis
 from byCycle.tripplanner.model import address
 
@@ -92,8 +92,8 @@ def getAddressGeocodes(inaddr, mode):
 
     # Build the WHERE clause
     where = []
-    where.append('(%s BETWEEN MIN(addr_f, addr_t) AND MAX(addr_f, addr_t))' % \
-                 addr.number)
+    where.append('(%s BETWEEN LEAST(addr_f, addr_t) AND ' \
+                           'GREATEST(addr_f, addr_t))' % addr.number)
     where += _getPlaceWhere(place)
     streetname_ids = ','.join([str(i) for i in street.getIds(mode)])
     where.append('streetname_id IN (%s)' % streetname_ids)
@@ -110,7 +110,7 @@ def getAddressGeocodes(inaddr, mode):
     # Make list of geocodes for segments matching inaddr
     geocodes = []
     for s in segs:
-        s_addr = deepcopy(addr)
+        s_addr = copy(addr)
         attrs = s.getAttrsOnNumSide(addr.number)
         for attr in ('prefix', 'name', 'type', 'suffix'):
             s_addr.street.__dict__[attr] = attrs[attr]
@@ -178,7 +178,7 @@ def getIntersectionGeocodes(inaddr, mode):
     node_ids = []
     for p in pairs:
         s, t = s_dict[p[0]], s_dict[p[1]]
-        i_addr = deepcopy(addr)
+        i_addr = copy(addr)
         _setStreetAndPlaceFromSegment(i_addr.street1, i_addr.place1, s)
         _setStreetAndPlaceFromSegment(i_addr.street2, i_addr.place2, t)
         addrs.append(i_addr)
