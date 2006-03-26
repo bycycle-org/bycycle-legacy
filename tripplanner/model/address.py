@@ -167,7 +167,7 @@ class IntersectionAddress(Address):
 
     @staticmethod
     def getCrossStreets(inaddr): 
-        ands = ('&', 'and', 'AND', 'at', 'AT')
+        ands = ('&', 'and', 'AND', 'at', 'AT', '@')
         for a in ands:
             streets = [addr for addr in inaddr.split(' %s ' % a)
                        if addr.strip()]

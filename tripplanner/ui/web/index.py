@@ -536,6 +536,7 @@ if __name__ == '__main__':
                 content = ''
                 errs.append((i+1, exc))
                 char = '-'
+                raise
             else:
                 char = '+'
             if show_content:

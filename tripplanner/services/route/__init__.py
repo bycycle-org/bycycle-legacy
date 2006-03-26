@@ -8,15 +8,6 @@ from byCycle.tripplanner.services import geocode
 import sssp
 
 
-travel_modes = {'bike': 'bicycle',
-                'bicycle': 'bicycle',
-                'walk': 'pedestrian',
-                'pedestrian': 'pedestrian',
-                'drive': 'automobile',
-                'car': 'automobile',
-                'auto': 'automobile'}
-
-
 class RouteError(Exception):
     def __init__(self, desc=''):
         if desc: self.description = desc
@@ -40,7 +31,7 @@ class MultipleMatchingAddressesError(RouteError):
         RouteError.__init__(self, desc=desc)
 
 
-def get(return_messages=False, region='', tmode='', q=[], **params):
+def get(return_messages=False, region='', tmode='bicycle', q=[], **params):
     """Get a route for q in specified region using specified mode of travel.
     
     @param region Data mode (TODO: Make determinable from place in geocoder) 
@@ -49,6 +40,8 @@ def get(return_messages=False, region='', tmode='', q=[], **params):
     @param options A dict of optional user options (sent off to tmode)
 
     """
+    tmode = 'bicycle'
+    
     st_tot = time.time()
     messages, errors = [], []
             
@@ -56,16 +49,6 @@ def get(return_messages=False, region='', tmode='', q=[], **params):
     region = region.strip()
     if not region:
         errors.append('Region required')
-
-    # Travel mode
-    tmode = tmode.strip()
-    if not tmode:
-        errors.append('Travel mode required')
-    else:
-        try:
-            tmode = travel_modes[tmode]
-        except KeyError:
-            errors.append('Unknown travel mode: %s' % tmode)
 
     # Query
     if not q:
@@ -530,19 +513,19 @@ if __name__ == '__main__':
            ('lon=-87.973645, lat=43.039615', 'lon=-87.978623, lat=43.036086'),
            ),
           'portlandor':
-           (('300 main', '4807 se kelly'),
-            #('633 n alberta', '44th and se stark'),
-            #('-122.645488, 45.509475', 'sw hall & denney'),
+           (('633 n alberta', '4807 se kelly'),
+            ('sw hall & denney', '44th and se stark'),
+            ('-122.645488, 45.509475', 'sw hall & denney'),
            ),
           }
-    
-    tm = 'bike'
 
     for dm in ('portlandor',):
         qs = Qs[dm]
         for q in qs:
             try:
-                r = get(region=dm, tmode=tm, q=q)
+                st = time.time()
+                r = get(return_messages=1, region=dm, q=q)
+                et = time.time() - st
             except MultipleMatchingAddressesError, e:
                 print e.route
             except Exception, e:
@@ -562,5 +545,6 @@ if __name__ == '__main__':
                 M = r['messages']
                 for m in M:
                     print m
+                print 'Took %.2f' % et
                 print '----------------------------------------' \
                       '----------------------------------------'

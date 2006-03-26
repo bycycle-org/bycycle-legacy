@@ -10,22 +10,18 @@ class Segment(object):
     def getAttrsOnNumSide(self, num):
         """Get attributes for side of segment num is on.
 
-        Get all the attributes from the segment object s that end in 'l'
-        or 'r', depending on whether num is on the right or left side of s.
+        Get all the attributes from this segment that end in 'l' or 'r', depending on whether num is 
+        on the right or left side of s.
 
         Args:
-        s -- a segment object
         num -- a street number (hopefully it's actually within the segment)
 
         Return:
         A dict of the attributes, with the 'l' or 'r' stripped off the keys
 
         """
-        num = int(num)
-        left_mod = self.addr_f % 2
-        right_mod = 1 - left_mod
-        if left_mod == num % 2: side = 'left'
-        elif right_mod == num % 2: side = 'right'
+        odd_side = ('l', 'r')[self.even_side == 'l']
+        side = (odd_side, self.even_side)[int(num) % 2 == 0]
         return self.getAttrsOnSide(side)
 
 

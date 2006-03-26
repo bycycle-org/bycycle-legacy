@@ -1,6 +1,5 @@
-# Metro shapefile import
 import sys, os
-from pysqlite2 import dbapi2 as sqlite
+import MySQLdb as db
 from byCycle.lib import gis, meter
 
 

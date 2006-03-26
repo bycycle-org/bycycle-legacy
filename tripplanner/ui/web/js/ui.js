@@ -56,7 +56,7 @@ function doFind(service)
     } 
   else 
     {
-      var url = ['http://', domain, '/', dir, 
+      var url = ['http://', domain, '/',  
 		 '?region=', region, '&tmode=bike&q=', 
 		 escape(q), 
 		 '&async=1'].join('');

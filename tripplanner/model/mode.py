@@ -1,13 +1,14 @@
 # Base Mode
 # 11/07/2005
 
-from pysqlite2 import dbapi2 as sqlite
+import MySQLdb
 from byCycle import install_path
 from byCycle.lib import gis
 import address, segment, intersection
 
 
 class Mode(object):
+    region = 'portlandor'
     def __init__(self):
         edge_fields = ('weight', 'streetid', 'code')
         self.indices = {}
@@ -25,29 +26,19 @@ class Mode(object):
         # What a lon or lat with an implied decimal point has to be multiplied
         # by to get the actual lon or lat
         self.lon_lat_exp = 10 ** -self.lon_lat_fraction_len
-        # Set up the database connection
+
+        # Set up path to data files
         self.data_path = '%stripplanner/model/%s/data/' % \
                          (install_path, self.region)
-        self.db_path = self.data_path + 'db.db'
-        # For ramdisk
-        #self.matrix_path = '%stripplanner/model/data/%s_matrix.pyc' % \
-        #                   (install_path, self.region)
         self.matrix_path = '%smatrix.pyc' % (self.data_path)
         
-        self.connection = sqlite.connect(self.db_path)
+        # Set up database connection
+        self.connection = MySQLdb.connect(db=self.region, host='localhost', user='root', passwd='')
         self.cursor = self.connection.cursor()
-        def dict_factory(cursor, row):
-            d = {}
-            for idx, col in enumerate(cursor.description):
-                d[col[0]] = row[idx]
-            return d
-        class DictCursor(sqlite.Cursor):
-            def __init__(self, *args, **kwargs):
-                sqlite.Cursor.__init__(self, *args, **kwargs)
-                self.row_factory = dict_factory
-        self.dict_cursor = self.connection.cursor(factory=DictCursor)
-
-
+        self.dict_cursor = self.connection.cursor(MySQLdb.cursors.DictCursor)
+        
+        self.G = None
+        
     def geocode(self, inaddr):
         import geocode
         return geocode.geocode(inaddr, self)
@@ -59,24 +50,8 @@ class Mode(object):
         G = marshal.load(in_file)
         in_file.close()
         return G
-
-
-    #def getEdgeWeight(self, e, **kwargs):
-    #    return 1
-
     
-    def getHeuristic(self, e, d):
-        try: self.lon_lat_goal
-        except AttributeError:
-            self.lon_lat_goal = (d[self.indices['lon']],
-                                 d[self.indices['lat']])
-        f = gis.getDistanceBetweenTwoPointsOnEarth
-        return f(lon_a=e[self.indices['lon']],
-                 lat_a=e[self.indices['lat']],
-                 lon_b=self.lon_lat_goal[0],
-                 lat_b=self.lon_lat_goal[1])
-
-
+    
     # Intersection Methods ----------------------------------------------------
 
     def getIntersectionsById(self, ids):
@@ -341,6 +316,30 @@ class Mode(object):
         return self.getSegmentById(self.fetchRow()["id"])
 
 
+    # Adjacency Matrix Methods
+    def _saveMatrix(self, G):
+        import marshal
+        Q = 'CREATE TABLE IF NOT EXISTS `region` (' \
+               '`id` INTEGER PRIMARY KEY NOT NULL AUTO_INCREMENT NOT NULL,' \
+               '`name` VARCHAR(255) NOT NULL,' \
+               '`matrix` LONGBLOB NOT NULL' \
+               ')'
+        self.execute(Q)
+        Q = 'DELETE FROM region WHERE name = "%s"' % self.region
+        self.execute(Q)
+        Q = 'INSERT INTO region (name, matrix) VALUES("%s", "%s")' % \
+                (self.region, MySQLdb.escape_string(marshal.dumps(G)))
+        self.execute(Q)
+                
+    def getAdjacencyMatrix(self):
+        import marshal
+        if self.G is None:
+            Q = 'SELECT matrix FROM region WHERE name = "%s"' % self.region
+            if self.execute(Q):
+                self.G = marshal.loads(self.fetchRow()[0].tostring())
+        return self.G
+        
+        
     # Utility Methods ---------------------------------------------------------
 
     def getRowsById(self, table, ids, dict=True):
@@ -380,24 +379,26 @@ class Mode(object):
             else: new_list.append(None)
         return new_list
 
-    def execute(self, Q):
-        try: return self.cursor.execute(Q)
+    def _execute(self, cursor, Q):
+        try: 
+            return cursor.execute(Q)
         except Exception, e:
-            print Q
-            print e
+            print Q[1:100]
             raise
+            
+    def execute(self, Q):
+            return self._execute(self.cursor, Q)
 
     def executeDict(self, Q):
-        try: return self.dict_cursor.execute(Q)
-        except Exception, e:
-            print Q
-            print e
-            raise
+        return self._execute(self.dict_cursor, Q)
 
     def executeMany(self, Q, values_list):
-        try: return self.cursor.executemany(Q, values_list)
-        except _mysql_exceptions.MySQLError, e: raise
-        except: raise
+        try: 
+            return self.cursor.executemany(Q, values_list)
+        except _mysql_exceptions.MySQLError, e: 
+            raise
+        except: 
+            raise
 
     def getTableUpdateTime(self, table):
         Q = "show table status like '%s'" % table
@@ -409,8 +410,9 @@ class Mode(object):
     def fetchAll(self): return self.cursor.fetchall()
     def fetchAllDict(self): return self.dict_cursor.fetchall()
 
-    def commit(self): self.connection.commit()
-
+    def commit(self): 
+        pass
 
 if __name__ == "__main__":
-    pass
+    m = Mode()
+    m.getIntersectionById(1)

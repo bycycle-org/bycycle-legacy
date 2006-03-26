@@ -35,10 +35,18 @@ class Mode(mode.Mode):
         lengthFunc = gis.getLengthOfLineString
         
         # Get the edge attributes
+        t = meter.Timer()
+        t.start()
+        print 'Fetching edge attributes...'
         Q = 'SELECT * FROM %s' % self.tables['street_attrs']
         self.executeDict(Q)
         rows = self.fetchAllDict()
+        print 'Took %s' % t.stop()
+        
         # Convert all possible values to int or float
+        print 'Converting values to int or float...'
+        met = meter.Meter(num_items=len(rows), start_now=True)
+        i = 1
         for row in rows:
             for k in row: 
                 val = row[k]
@@ -49,13 +57,22 @@ class Mode(mode.Mode):
                         row[k] = float(val)  # no. float?
                     except ValueError:
                         row[k] = str(val.strip()) # no. must be a string.
+            met.update(i)
+            i+=1
+        print
 
         # Get the from and to node IDs of the edges and add them to their
         # respective attr rows
+        t.start()
+        print 'Fetching more edge attributes...'
         Q = 'SELECT wkt_geometry, node_f_id, node_t_id, streetname_id ' \
             'FROM %s' % self.tables['edges']
         self.executeDict(Q)
         nrows = self.fetchAllDict()
+        print 'Took %s' % t.stop()
+        
+        print 'Converting values to int...'
+        met.setNumberOfItems(len(nrows)); met.startTimer()
         for i, nrow in enumerate(nrows):
             for k in nrow:
                 try:
@@ -63,17 +80,16 @@ class Mode(mode.Mode):
                 except ValueError:
                     pass
             rows[i].update(nrow)
+            met.update(i+1)
         del nrows
+        print
 
         G = {'nodes': {}, 'edges': {}}
         nodes = G['nodes']
         edges = G['edges']
 
-        met = meter.Meter()
-        met.setNumberOfItems(len(rows))
-        met.startTimer()
-        record_number = 1
-        
+        print 'Creating adjacency matrix...'
+        met.setNumberOfItems(len(rows)); met.startTimer(); i = 1
         for row in rows:
             ix = row['id']
             node_f_id, node_t_id = row['node_f_id'], row['node_t_id']
@@ -99,18 +115,36 @@ class Mode(mode.Mode):
                 if not node_t_id in nodes: nodes[node_t_id] = {}
                 nodes[node_t_id][node_f_id] = ix
 
-            met.update(record_number)
-            record_number+=1
+            met.update(i)
+            i+=1
         print
-            
-        ## Save a compressed representation of G
-        import marshal
-        out_file = open(self.matrix_path, 'wb')
-        marshal.dump(G, out_file)
-        out_file.close()
+        
+        t.start()
+        print 'Saving adjacency matrix...'
+        self._saveMatrix(G)
+        self.G = G
+        print 'Took %s' % t.stop()
         return G
 
 
 if __name__ == '__main__':
+    import time
+    from byCycle.lib import meter
+    
+    t = meter.Timer()
+    
     md = Mode();
-    G = md.createAdjacencyMatrix()
+    
+    #G1 = md.createAdjacencyMatrix()
+    
+    #assert(isinstance(G1, dict))
+    
+    t.start()
+    print 'Getting adjacency matrix...'
+    G2 = md.getAdjacencyMatrix()
+    print t.stop()
+    
+    print G2['edges'].popitem()
+    
+    #assert(isinstance(G2, dict))
+    #assert(G1 == G2)

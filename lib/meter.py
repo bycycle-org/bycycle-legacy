@@ -1,31 +1,7 @@
-"""
-$$$
-:Author: Wyatt Baldwin
-:Copyright: 2005 byCycle.org
-:License: GPL
-:Version: 0
-:Date: 15 Aug 2005
-$$$
-
-This program is free software; you can redistribute it and/or
-modify it under the terms of the GNU General Public License
-as published by the Free Software Foundation; either version 2
-of the License, or (at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-ERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with this program; if not, write to the Free Software
-Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
-"""
-
 import sys, time
 
 class Meter(object):
-    def __init__(self, percentages=None, num_items=0):
+    def __init__(self, percentages=None, num_items=0, start_now=False):
         # The percentages of items at which to update the progress meter
         self.percentages = percentages or \
                            [1, 5, 10, 20, 30, 40, 50, 60, 70, 80, 90]
@@ -44,6 +20,9 @@ class Meter(object):
 
         self.length = 6 + self.per_len
 
+        if start_now:
+            self.startTimer()
+        
     def startTimer(self):
         if self.start_time:
             print "Progress Meter timer already started."
@@ -64,8 +43,7 @@ class Meter(object):
 
         # Update the progress meter if current item number is an update point
         if item_number == self.update_points[self.per_idx]:
-            sys.stdout.write("\r")
-            for i in range(self.length): sys.stdout.write(" ")
+            sys.stdout.write("\r%s" % (" " * self.length))
 
             # end marker
             sys.stdout.write("| Processing %s items\r" % self.num_items)
@@ -73,15 +51,15 @@ class Meter(object):
             # % done
             sys.stdout.write("%3s" % (self.percentages[self.per_idx]))
             
-            sys.stdout.write("% ")
-            sys.stdout.write("|") # start marker
-            for i in range(self.per_idx): sys.stdout.write("*")
             self.per_idx+=1
-
+            
+            sys.stdout.write("%% |%s" % ("*" * self.per_idx))
+            sys.stdout.flush()
+            
             if item_number == self.update_points[-1]:
                 self.printElapsedTime(item_number)
                 self.reset()
-
+            
             return True
 
         return False
@@ -119,13 +97,13 @@ class Timer(object):
         self.paused = False        
         self.pause_time = 0
         self.time_paused = 0
+        self.elapsed_time = 0
     
     def start(self):
         self.start_time = time.time()
         
     def stop(self):
-        self.end_time = time.time()
-        self.elapsed_time = self.end_time - self.start_time - self.time_paused
+        self.pause()
         units = 'second'
         if self.elapsed_time > 60:
             self.elapsed_time /= 60.0
@@ -134,17 +112,14 @@ class Timer(object):
             units += 's'
         return '%.2f %s' % (self.elapsed_time, units)
 
-    def getElapsedTime(self):
-        return self.elapsed_time
-
     def pause(self):
         if self.paused:
             return        
         self.paused = True
-        self.pause_time = time.time()
+        self.elapsed_time += (time.time() - self.start_time)
 
     def unpause(self):
         if not self.paused:
             return
         self.paused = False
-        self.time_paused += (time.time() - self.pause_time)
+        self.start_time = time.time()
