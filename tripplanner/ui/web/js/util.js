@@ -9,6 +9,17 @@ function fixScroll()
 }
 
 
+/* DOM */
+
+function elTag(name)
+{
+  return document.getElementsByTagName(name);
+}
+
+function elTag0(name)
+{
+  return document.getElementsByTagName(name)[0];
+}
 
 
 /* Element */
@@ -76,7 +87,7 @@ function appendIH(id, val) { document.getElementById(id).innerHTML += val; }
  * @param id_a ID of element to swap
  * @param id_b ID of other element to swap
  */
-function _swapElV(id_a, id_b) 
+function swapElV(id_a, id_b) 
 {
   var av = elV(id_a);
   setElV(id_a, elV(id_b));

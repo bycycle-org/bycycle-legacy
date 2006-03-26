@@ -42,7 +42,7 @@ function doFind(service)
   
   if (!q)
     {
-      errors.push('Please enter an Address or Route');
+      errors.push('Please enter an Address');
       if (region)
 	el_q.focus();
     }
@@ -57,8 +57,8 @@ function doFind(service)
   else 
     {
       var url = ['http://', domain, '/',  
-		 '?region=', region, '&tmode=bike&q=', 
-		 escape(q), 
+		 '?region=', region, 
+		 '&q=', escape(q), 
 		 '&async=1'].join('');
       //alert(url);
       doXmlHttpReq('GET', url, _callback);
@@ -76,6 +76,7 @@ function _callback(req)
   var result_set = {};
   var status = req.status;
   var response_text = req.responseText;
+  //alert(response_text);
   if (status < 400)
     {
       eval("result_set = " + response_text + ";");
@@ -86,7 +87,7 @@ function _callback(req)
 	  setStatus(['Done. Took ', elapsed, ' second', 
 		     (elapsed == 1.00 ? '' : 's'), '.'].join(''));
 	}
-      var result = result_set.result_set.html;
+      var result = unescape(result_set.result_set.html);
     }
   else
     {

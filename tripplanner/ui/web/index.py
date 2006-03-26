@@ -1,5 +1,7 @@
 import os
 import datetime
+import urllib
+import simplejson
 import byCycle
 
 
@@ -46,8 +48,8 @@ def index(req, **params):
             type_ = result_set['result_set']['type']
             callback = '_%sCallback' % type_
             result = eval(callback)(req.status, result_set, **params)
-            result_set['result_set']['html'] = result
-            content = repr(result_set)
+            result_set['result_set']['html'] = urllib.quote(result)
+            content = simplejson.dumps(result_set)
         else:
             content = '<h2>Error</h2>%s' % response_text
     else:
@@ -72,6 +74,7 @@ def index(req, **params):
                 type_ = result_set['result_set']['type']
                 callback = '_%sCallback' % type_
                 result = eval(callback)(req.status, result_set, **params)
+                response_text = simplejson.dumps(response_text)
             else:
                 result = '<h2>Error</h2>%s' % response_text
                                 
@@ -116,7 +119,7 @@ def _processQuery(req, params, service=''):
         content = eval('ws_obj.%s' % method)()
     except wsrest.MethodNotAllowedError, exc:
         content = exc.reason + ' (%s)' % method
-        req.allow_methods(exc.getAllowMethods(self))
+        req.allow_methods(exc.getAllowMethods(ws_obj))
     except wsrest.MultipleChoicesError, exc:
         content = exc.choices
     except wsrest.RestError, exc:
@@ -171,8 +174,8 @@ def _geocodeCallback(status, result_set, **params):
         result = '<h2 style="margin-top:0">Address</h2><p>%s</p>' % addr
     elif status == 300:  # Multiple matches
         result = ['<h2>Multiple Matches Found</h2><ul>']
-        for i, geocode in enumerate(geocodes):
-            addr = geocode['address']
+        for i, code in enumerate(geocodes):
+            addr = code['address']
             result.append('<li>'
                           '  <a href="?region=%s&q=%s" '
                           '    onclick="_showGeocode(%s, 1); return false;"'
@@ -216,8 +219,8 @@ def _makeRouteMultipleMatchList(geocodes_fr, geocodes_to, params):
             q_temp = '%s to ' + params['q'][1]
         else:
             q_temp = params['q'][0] + ' to %s'
-        for geocode in geocodes:
-            addr = geocode['address']
+        for code in geocodes:
+            addr = code['address']
             q = q_temp % addr.replace('\n', ', ')
             result.append('<li>'
                           '<a href="?region=%s&q=%s&tmode=bike">%s</a>'
@@ -309,12 +312,10 @@ def _makeRegionsOptionList(region='', **params):
 
     for state in states:
         areas = regions[state]
-        #areas.sort()
         for area in areas:
             reg = '%s%s' % (area, state)
             if reg == region:
                 opt = region_opt_selected
-                #region_heading = '%s, %s' % (area.title(), state.upper())
             else:
                 opt = region_opt 
             regions_opt_list.append(opt % (reg, '%s, %s' %
@@ -466,8 +467,8 @@ def _makeDirectionsTable(route):
                 toward = '?'
         row_i.append(' toward %s -- %smi' % (toward, mi))
 
-	if d['bikemode']:
-            row_i.append(' [%s]' % ', '.join([bm for bm in d['bikemode']]))
+    if d['bikemode']:
+        row_i.append(' [%s]' % ', '.join([bm for bm in d['bikemode']]))
 
         if jogs:
             row_i.append('<br/>%sJogs...' % tab)
