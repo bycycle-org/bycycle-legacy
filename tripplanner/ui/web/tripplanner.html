@@ -1,30 +1,32 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 
-<html 
-  xmlns="http://www.w3.org/1999/xhtml"
-  xmlns:v="urn:schemas-microsoft-com:vml">
-
+<html
+      xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:v="urn:schemas-microsoft-com:vml">
+  
   <head>
     <meta http-equiv="Content-Type" content="application/xhtml+xml; charset=iso-8859-1"/>
-      <title>byCycle - Bicycle Trip Planner</title>
-
-      <meta name="keywords" 
-	content="bicycle, bike, bicycle trip planner, bicycle route finder, bike trip planner, bike route finder, bicycle route, bicycle trip, bike route, bike trip, bicycle routing, bike routing, maps, bicycle maps, bike maps, bicycle advocacy, community, sustainability, portland, oregon, milwaukee, wisconsin"/>
-
-	<meta name="description" 
+    <title>byCycle - Bicycle Trip Planner</title>
+    
+    <meta name="keywords" 
+	  content="bicycle, bike, bicycle trip planner, bicycle route finder, bike trip planner, bike route finder, bicycle route, bicycle trip, bike route, bike trip, bicycle routing, bike routing, maps, bicycle maps, bike maps, bicycle advocacy, community, sustainability, portland, oregon, milwaukee, wisconsin"/>
+    
+    <meta name="description" 
 	  content="byCycle Trip Planner -- A web-based, interactive, bicycle trip planner (route finder) for the Portland, Oregon, Milwaukee, Wisconsin, and, soon, other regions."/>
-	  
-      <link rel="stylesheet" href="css/base.css" type="text/css"/>
-      <!--[if IE]>
-        <link rel="stylesheet" href="css/base_ie.css" type="text/css"/>
-      <![endif]-->
-
-	<script type="text/javascript">
-          <!--
+    
+    <link rel="stylesheet" href="css/base.css" type="text/css"/>
+    <!--[if IE]>
+	<link rel="stylesheet" href="css/base_ie.css" type="text/css"/>
+	<![endif]-->
+    
+    <script type="text/javascript">
+      //<![CDATA[
 	  function afterPageLoad()
 	  {
 	    setElV('gjs', '1');
 	    resizeMap();
+	    elTag0('html').style.overflow = 'hidden';
+	    elTag0('body').style.overflow = 'hidden';
 	    if (local || api_key)
 	      {
 	        if (mapLoad())
@@ -53,7 +55,7 @@
 	    document.addEventListener('load', afterPageLoad, false);
 	  else if(window.attachEvent)
 	    window.attachEvent('onload', afterPageLoad);
-	  //-->
+	    //]]>
 	</script>
 
 	<script src="js/util.js" type="text/javascript"></script>
@@ -63,7 +65,7 @@
 	<script src="js/ui.js" type="text/javascript"></script>
 	<script src="js/ginit.js" type="text/javascript"></script>
   </head>
-
+  
   <body onresize="resizeMap();">
     <div id="content_pane">
       <!-- Header -->
@@ -108,51 +110,83 @@
 
 	      <!-- Input -->
 	      <div id="input">
-		
-		<form id="geocode_form" class="input_form"
-		  action="." 
-		  method="get" 
-		  onsubmit="doFind(); return false;">
-
+		<form id="region_form" class="input_form"
+		      action="." 
+		      method="get" 
+		      onsubmit="return false;">
 		  <div>
 		    <select id="region" name="region" 
-		      tabindex="2"
-		      title="Set the active region and zoom into it"
-		      onchange="selectRegion(this.options[this.selectedIndex].value);">
-		      <option value="">-- Select Region --</option>				
-		      <option value="">All Regions</option>				
+			    tabindex="2"
+			    title="Set the active region and zoom into it"
+			    onchange="selectRegion(this.options[this.selectedIndex].value);">
+		      <option value="">-- Select Region --</option>
+		      <option value="">All Regions</option>
 		      %(regions_opt_list)s			    
 		    </select>
+
+		    <noscript>
+		      <input class="input_button"
+			     title="Click to go to region"
+			     tabindex="3" 
+			     type="submit" 
+			     value="Go!"/>		      
+		    </noscript>
+
+		    <input tabindex="1010"  
+			   title="Clear everything from the map" 
+			   type="submit" 
+			   value="Clear Map" 
+			   onclick="_clearMap(); return false;"/>
 		  </div>
-		    
-		  <div class="input_title">Find an Address or Route</div>
+		</form>
+		
+		<form id="geocode_form" class="input_form"
+		      action="." 
+		      method="get" 
+		      onsubmit="doFind(); return false;">
+		  
+		  <div class="input_title">Find an Address</div>
 		  
 		  <div>
 		    <input type="text" id="q" name="q" class="input_field" tabindex="1" value="%(q)s"/>
-		      <input type="hidden" id="gm" name="m" value=""/>
-			<input type="hidden" id="gjs" name="js" value=""/>
-			  <input type="hidden" id="tmode" name="tmode" value="bike"/>
-		  </div>
-
-		  <div style="text-align: right;">
 		    <input name="gb"
-		      class="input_button"
-		      title="Click to look up address"
-		      tabindex="3" 
-		      type="submit" 
-		      value="Go!"/>
-		      
-		      <input tabindex="1010"  
-			title="Clear everything from the map" 
-			type="button" 
-			value="Clear Map" 
-			onclick="_clearMap();"/>
+			   class="input_button"
+			   title="Click to look up address"
+			   tabindex="3" 
+			   type="submit" 
+			   value="Go!"/>
+		    <input type="hidden" id="gm" name="m" value=""/>
+		    <input type="hidden" id="gjs" name="js" value=""/>
 		  </div>
+		</form>
 
-		  <div style="margin-bottom: 0;">
-		    Select a region, then enter an address or route. You don't need to enter the city, state, or zip code. A route looks like <i>123 Main St to 400 5th Ave</i>, with the word "to" between your start and end addresses.
+		<form id="route_form" class="input_form"
+		      action="." 
+		      method="get" 
+		      onsubmit="doFind(); return false;"
+		      style="margin-bottom: 0;">
+
+		  <div class="input_title">Find a Route</div>
+		  
+		  <div style="margin-bottom: 5px;">
+		    <input type="text" id="fr" name="fr" class="input_field" tabindex="1" value="%(fr)s"/>
+		    <a href="javascript:void(0);"  
+		       title="Swap from and to" 
+		       onclick="swapElV('fr', 'to');"
+		       ><img src="images/swapfrto.png" alt="swap"/></a>
 		  </div>
-
+		  
+		  <div>
+		    <input type="text" id="to" name="to" class="input_field" tabindex="1" value="%(to)s"/>
+		    <input name="rb"
+			   class="input_button"
+			   title="Click to look up address"
+			   tabindex="3" 
+			   type="submit" 
+			   value="Go!"/>
+		    <input type="hidden" id="rm" name="m" value=""/>
+		    <input type="hidden" id="rjs" name="js" value=""/>
+		  </div>
 		</form>
 	      </div><!-- Input -->
 	      
