@@ -16,6 +16,22 @@ class Mode(pittsburghpa.Mode):
         length = edge_attrs[indices["length"]] / 1000000.0
 
         cfcc = edge_attrs[indices["cfcc"]]
+        pqi = edge_attrs[indices["pqi"]]
+        no_lanes = edge_attrs[indices["no_lanes"]]
+        slope = edge_attrs[indices["slope"]] * 9000.0 #???
+        byType = edge_attrs[indices["bpType"]] 
+        bikeability = edge_attrs[indices["bikeability"]] 
+
+        #bikeability--default at 0
+        #positive, up to 5, is better
+        #negative, down to -5, is worse
+        #maybe do -6 to mean never take.
+        
+
+        #bpType (maybe only use to set bikeability)
+        #n=none, sp=street proposed, se=street existing,
+        #oe=off-street existing, op=off-street proposed
+
         #try:
         
             #cl, cat, ma, mi = cfcc[0], int(cfcc[1:]), int(cfcc[1]), int(cfcc[2])
@@ -23,13 +39,48 @@ class Mode(pittsburghpa.Mode):
             # Empty CFCC field in DB
             #cl, cat, ma, mi = 'x', 0, 0, 0
             
-        #bikemode = edge_attrs[indices["bikemode"]]
-        #lanes = edge_attrs[indices["lanes"]]
-        #adt = edge_attrs[indices["adt"]]
-        #spd = edge_attrs[indices["spd"]]
-        #ix_sn = edge_attrs[indices["streetname_id"]]
+
         ix_sn = edge_attrs[indices["streetname_id"]]
+
+       
+
         hours = length / self.mph
+
+        if bikeability >2:
+            hours /= (bikeability / 2.0) #means only matters for >2, <-2
+           # print "positive bikeability. ix_sn: " + str(ix_sn) 
+            
+        if bikeability < -2:
+            hours *= (bikeability / 2.0)
+            #print 'negative bikeability'
+        if bikeability < -6:
+            hours *= 50
+
+
+            
+        if pqi:
+            if pqi == 0:
+                pqi = .01
+                #need to distinguish 0 from blank
+                # blank should become 5
+            hours /= (pqi/5.0) #? # will make too low?
+        #else: hours /= (3.0/4)
+        
+            
+
+        if no_lanes:
+            lanes_factor = no_lanes / 2.0
+            #hours *= lanes_factor #??? too much effect?
+           #hours *= 3.0/4.0* lanes_factor
+            if lanes_factor>1:
+                hours *= 3.0/4.0* lanes_factor
+
+               
+           
+            #FOR ADDING SLOPE. jb
+        #slope = -1
+        if slope > 0:
+            hours *= (slope + 1) ##JUST TEST depends on units (what if 0<s<1?)
 
        # if bikemode:
             # Adjust for network
@@ -72,14 +123,16 @@ class Mode(pittsburghpa.Mode):
       # streets on city bike plan
       # trails
 
-                
-        prev_ix_sn = prev_edge_attrs[indices["streetname_id"]]
+        #print 'hours ' + str(hours)         
 
-        if ix_sn != prev_ix_sn: hours += .0055555555555555
-        #test to make turn less
-        #if ix_sn != prev_ix_sn: hours += 500.5185555555555555
-        #makes a different only when huge because wrong projection (?)
-        #makes distances very off (so adding a few hours is insignificant)
-          #  except TypeError:
-           #     pass
+        try:
+            prev_ix_sn = prev_edge_attrs[indices["streetname_id"]]
+            if ix_sn != prev_ix_sn:
+                hours += .0075555555555555
+            #hours += .0055555555555555        
+        except TypeError:
+            pass
+
+        #print 'hours ' + str(hours) + ' ixsn ' + str(ix_sn) + ' slope ' + str(slope)
+       
         return hours
