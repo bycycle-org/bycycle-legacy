@@ -23,65 +23,105 @@
 import sys, os
 from byCycle.lib import gis, meter
 
+
 region = 'portlandor'
 
+# Fields we want from the DBF
 dbf_fields = ('LOCALID', 'FNODE', 'TNODE',
               'LEFTADD1', 'LEFTADD2', 'RGTADD1', 'RGTADD2',
               'FDPRE', 'FNAME', 'FTYPE', 'FDSUF',
               'LCITY', 'RCITY', 'ZIPCOLEF', 'ZIPCORGT',
-              'ONE_WAY', 'TYPE', 'BIKEMODE', 'UP_FRAC', 'ABS_SLP', 'CPD', 'SSCODE')
+              'ONE_WAY', 'TYPE', 'BIKEMODE', 'UP_FRAC', 'ABS_SLP', 'CPD',
+              'SSCODE')
 
-layer_fields = ('fnode', 'tnode',
-                'addr_f', 'addr_t', 'even_side', 'streetname_id', 'city_l_id', 'city_r_id',
-                'state_l_id', 'state_r_id', 'zipcolef', 'zipcorgt',
-                'wkt_geometry')
+# Fields in raw table to be transferred to street layer table.
+# The items in this list must correspond to the fields in the street layer
+# table definition (i.e., must be in the right order).
+db_fields = ('geo',
+             'fnode',
+             'tnode',
+             'addr_f',
+             'addr_t',
+             'even_side',
+             'streetname_id',
+             'city_l_id',
+             'city_r_id',
+             'state_l_id',
+             'state_r_id',
+             'zipcolef',
+             'zipcorgt',
+             'localid',
+             'one_way',
+             'code',
+             'bikemode',
+             'up_frac',
+             'abs_slp',
+             'cpd',
+             'sscode')
 
-attr_fields = ('localid', 'one_way', 'code', 'bikemode', 'up_frac', 'abs_slp', 'cpd', 'sscode')
+# Command-line args
+start = -1
+no_prompt = False
+only = False
 
 # DB handle
 db = None
+
+timer = None
+
     
 def shpToRawSql():
     datasource = '20061219'
-    layer = 'new84'
-    path = '.'.join((os.path.join(os.getcwd(), datasource, layer), "dbf"))
+    layer = 'new1'
+    path = os.path.join(os.getcwd(), datasource)
+    sql_file = 'portlandor.sql'
     fields = ','.join(['IX'] + list(dbf_fields))
-    database = 'portlandor'
+    database = region
     table = 'raw'
     primary_key = 'id'
     names = 'IX=ID'
-    cmd = ('dbf2mysql -f -l -o %s -s %s -h localhost -d %s -t %s -c -p %s -U root -P "" %s' % 
-                (fields, names, database, table, primary_key, path))
-    print cmd
-    exit_code = os.system(cmd)
-    if exit_code:
-        sys.exit()
+    # Drop existing raw table
+    Q = 'DROP TABLE IF EXISTS raw'
+    if not _wait(Q):
+        _execute(Q)
+    # Extract SQL from Shapefile
+    cmd = 'mysqlgisimport -t %s -o %s %s' % \
+          (table, sql_file, os.path.join(path, layer))
+    if not _wait('Extract SQL from Shapefile'): _system(cmd)
+    # Load SQL into DB
+    cmd = 'mysql -u root --password="" %s < %s.sql' % (database, region)
+    if not _wait('Load SQL into DB'): _system(cmd)
+    # Temporary merge of type column
+    if not _wait('Add type attribute'):
+        try:
+            _execute('ALTER TABLE raw DROP COLUMN code')
+        except:
+            pass
+        _execute('ALTER TABLE raw ADD COLUMN code INTEGER NOT NULL')
+        cmd = 'dbf2mysql -f -l -o IX,TYPE -s IX=ID,TYPE=CODE ' \
+              '-h localhost -d %s -t %s -c -p id -U root -P "" %s' % \
+              (database, 'code', os.path.join(path, 'type.dbf'))
+        _system(cmd)
+        _execute('SELECT id, code FROM code ORDER BY id')
+        for row in db.fetchAll():
+            _execute('UPDATE raw SET code = %s WHERE id = %s' % \
+                    (row[1], row[0]), False)
     
 def fixRaw():
     # Add missing...    
     # INTEGER columns
     Q = 'ALTER TABLE raw ADD COLUMN %s INTEGER NOT NULL'
-    cols = ('addr_f', 'addr_t', 'streetname_id', 'city_l_id', 'city_r_id', 'code', 'sscode')
+    cols = ('addr_f', 'addr_t', 'streetname_id', 'city_l_id', 'city_r_id',
+            'sscode')
     for col in cols:
-        execute(Q % col)
+        _execute(Q % col)
     # CHAR(s) columns
     Q = 'ALTER TABLE raw ADD COLUMN %s CHAR(2) NOT NULL' 
     cols = ('state_l_id', 'state_r_id', 'wkt_geometry') # wkt is temporary
     for col in cols:
-        execute(Q % col)
+        _execute(Q % col)
     # ENUM columns
-    execute('ALTER TABLE raw ADD COLUMN even_side ENUM("l", "r") NOT NULL')
-    # Temporary merge of type column
-    cmd = 'dbf2mysql -f -l -o IX,TYPE -s IX=ID,TYPE=CODE ' \
-                '-h localhost -d portlandor -t code -c -p id -U root -P "" ' \
-                '/usr/lib/python2.4/site-packages/byCycle/tripplanner/model/portlandor/data/20061219/type.dbf'
-    print cmd
-    exit_code = os.system(cmd)
-    if exit_code:
-        sys.exit()
-    execute('SELECT id, code FROM code ORDER BY id')
-    for i, row in enumerate(db.fetchAll()):
-        execute('UPDATE raw SET code = %s WHERE id = %s' % (row[1], row[0]), False)
+    _execute('ALTER TABLE raw ADD COLUMN even_side ENUM("l", "r") NOT NULL')
     # Abbreviate bike modes
     Q = 'UPDATE raw SET bikemode="%s" WHERE bikemode="%s"'
     bm = (("t", "mu"),
@@ -97,17 +137,14 @@ def fixRaw():
           ("", "xx")
           )
     for m in bm:
-        execute(Q % (m[0], m[1]))        
+        _execute(Q % (m[0], m[1]))        
 
 def createSchema():
-    tables = ('layer_street', 'attr_street', 'layer_node', 'streetname', 'city', 'state')
+    tables = ('layer_street', 'layer_node', 'streetname', 'city', 'state')
     for table in tables:
-        execute('DROP TABLE IF EXISTS %s' % table)
+        _execute('DROP TABLE IF EXISTS %s' % table)
     cmd = 'mysql -u root --password="" < ./schema.sql'
-    print cmd
-    exit_code = os.system(cmd)
-    if exit_code:
-        sys.exit()
+    _system(cmd)
         
 def unifyAddressRanges():
     #'LEFTADD1', 'LEFTADD2', 'RGTADD1', 'RGTADD2'
@@ -119,8 +156,8 @@ def unifyAddressRanges():
         'SET addr_t = (ROUND(%sadd2 / 10.0) * 10) ' \
         'WHERE %sadd2 != 0'
     for f in ('left', 'rgt'):
-        execute(QF % (f, f))
-        execute(QT % (f, f))
+        _execute(QF % (f, f))
+        _execute(QT % (f, f))
     # Set even side
     QEL = 'UPDATE raw SET even_side = "l" ' \
           'WHERE (leftadd1 != 0 AND leftadd1 % 2 = 0) OR ' \
@@ -128,32 +165,32 @@ def unifyAddressRanges():
     QER = 'UPDATE raw SET even_side = "r" ' \
           'WHERE (rgtadd1 != 0 AND rgtadd1 % 2 = 0) OR ' \
           ' (rgtadd2 != 0 AND rgtadd2 % 2 = 0)'
-    execute(QEL)
-    execute(QER)
+    _execute(QEL)
+    _execute(QER)
 
 def transferStreetNames():
     """Transfer street names to their own table."""
     Q = 'INSERT INTO streetname (prefix, name, type, suffix) '\
         'SELECT DISTINCT fdpre, fname, ftype, fdsuf FROM raw'
-    execute(Q)
+    _execute(Q)
 
 def updateRawStreetNameIds():
     """Set the street name ID of each raw record."""
     # Get all the distinct street names NEW
     Q = 'SELECT DISTINCT fdpre, fname, ftype, fdsuf FROM raw'
-    execute(Q)
+    _execute(Q)
     rows = db.fetchAll()
     # Index each street name ID by its street name
     # {(stname)=>streetname_id}
     stnames = {}
     Q = 'SELECT id, prefix, name, type, suffix FROM streetname'
-    execute(Q)
+    _execute(Q)
     for row in db.fetchAll():
         stnames[(row[1],row[2],row[3],row[4])] = row[0]
     # Index raw row IDs by their street name ID {streetname_id=>[row IDs]}
     stid_rawids = {}
     Q  = 'SELECT id, fdpre, fname, ftype, fdsuf FROM raw'
-    execute(Q)
+    _execute(Q)
     for row in db.fetchAll():
         stid = stnames[(row[1],row[2],row[3],row[4])]
         if stid in stid_rawids: 
@@ -172,7 +209,7 @@ def updateRawStreetNameIds():
             in_data = '(%s)' % int(ixs[0])
         else:
             in_data = tuple([int(ix) for ix in ixs])
-        execute(Q % (stid, in_data), False)
+        _execute(Q % (stid, in_data), False)
         met.update(record_number)
         record_number+=1
     print  # newline after the progress meter
@@ -181,11 +218,11 @@ def transferCityNames():
     """Transfer city names to their own table."""
     Q = 'INSERT INTO city (city) ' \
         'SELECT DISTINCT lcity FROM raw'
-    execute(Q)
+    _execute(Q)
     Q = 'INSERT INTO city (city) ' \
         'SELECT DISTINCT rcity FROM raw WHERE rcity NOT IN ' \
         '(SELECT city FROM city)'
-    execute(Q)
+    _execute(Q)
 
 def updateRawCityIds():
     """Set the city ID of each raw record."""
@@ -194,76 +231,68 @@ def updateRawCityIds():
         Q1 = 'UPDATE raw SET city_%s_id=%s WHERE %scity="%s"' % \
              (side, '%s', side, '%s')
         # Get all the distinct city names
-        execute(Q0)
+        _execute(Q0)
         rows = db.fetchAll()
         # Iterate over city rows and set city IDs of raw records
         for row in rows:
-            execute(Q1 % (row[0], row[1]))
+            _execute(Q1 % (row[0], row[1]))
     # Convert abbreviated names to full names
     from cities import metro_full_cities
     Q = 'UPDATE city SET city="%s" WHERE city="%s"'
     for c in metro_full_cities:
-        execute(Q % (metro_full_cities[c], c))
+        _execute(Q % (metro_full_cities[c], c.upper()))
 
 def updateRawStateIds():
     """Set the state ID of each raw record."""
     Q = 'INSERT INTO state VALUES ("or", "oregon")'
-    execute(Q)
+    _execute(Q)
     Q = 'UPDATE raw SET state_l_id="or", state_r_id="or"'
-    execute(Q)
+    _execute(Q)
 
 def createNodes():
-    Q1 = 'SELECT id, fnode, tnode, wkt_geometry FROM raw'
-    Q2 = 'UPDATE raw SET wkt_geometry="%s" WHERE id=%s'
-    Q3 = 'INSERT INTO layer_node (id, wkt_geometry) VALUES (%s, "%s")'
-    seen_node_ids = {}
-    # Get node_ids and geometry from raw table
-    execute(Q1)
-    # Insert node IDs into layer_node, skipping the ones we've already seen
-    for row in db.fetchAll():
-        id = row[0]
-        node_f_id, node_t_id = row[1], row[2]
-        linestring = row[3]
-        points = gis.importWktGeometry(linestring.lower())
-        # Create a new linestring with only 6 decimal places in each number
-        linestring = 'linestring (%s)' % ','.join(['%.6f %.6f' % (p.x, p.y) 
-                                                   for p in points])
-        execute(Q2 % (linestring, id))
-        # Create and insert a WKT point for each end of the segment
-        i = 0
-        for node_id in (node_f_id, node_t_id):
-            if node_id not in seen_node_ids:
-                seen_node_ids[node_id] = 1
-                p = points[i]
-                execute(Q3 % (node_id, ('point (%.6f %.6f)' % (p.x, p.y))))
-            i = -1
+    Q = 'INSERT INTO layer_node ' \
+        '(SELECT DISTINCT fnode, startpoint(geo)' \
+        ' FROM raw)'
+    _execute(Q)    
+    Q = 'INSERT INTO layer_node ' \
+        '(SELECT DISTINCT tnode, endpoint(geo)' \
+        ' FROM raw' \
+        ' WHERE tnode NOT IN (SELECT DISTINCT id FROM layer_node))'
+    _execute(Q)
 
 def transferAttrs():
-    # Transfer core attributes to street table
-    fields = ', '.join(layer_fields)
+    """Transfer fields from raw table to street layer table."""
+    fields = ', '.join(db_fields)
     Q = 'INSERT INTO layer_street SELECT NULL, %s FROM raw' % fields
-    execute(Q)
-    # Transfer extra attributes to attributes table (attrs)
-    fields = ', '.join(attr_fields)
-    Q = 'INSERT INTO attr_street SELECT NULL, %s FROM raw' % fields
-    execute(Q)
+    _execute(Q)
 
-def addIndexes():
-    Qs = ('CREATE INDEX addr_f on layer_street (addr_f)',
-          'CREATE INDEX addr_t on layer_street (addr_t)',
-          'CREATE INDEX node_f_id on layer_street (node_f_id)',
-          'CREATE INDEX node_t_id on layer_street (node_t_id)',
-          'CREATE INDEX stid on layer_street (streetname_id)',
-          )
-    for Q in Qs: 
-        execute(Q)
-        
-def cleanUp():
-    pass
 
-def execute(Q, show=True):
+## --
+
+def _system(cmd):
+    print cmd
+    exit_code = os.system(cmd)
+    if exit_code:
+        sys.exit()
+
+def _wait(msg='Continue or skip'):
+    if no_prompt:
+        return False
+    timer.pause()
+    resp = raw_input(msg + '? ')
+    timer.unpause()
+    return resp
+
+def _openDB():
+    """Set up DB connection."""
+    global db
+    path = 'byCycle.tripplanner.model.%s' % region
+    db = __import__(path, globals(), locals(), ['']).Mode()
+ 
+def _execute(Q, show=True):
+    """Execute a SQL query."""
     if db is None:
-        openDB()
+        _openDB()
     try:
         if show:
             print 'Executing: "%s"' % Q
@@ -272,33 +301,28 @@ def execute(Q, show=True):
         print 'Execution failed: %s' % e
         sys.exit()
 
-def openDB():
-    ## Set up DB connection
-    global db
-    path = 'byCycle.tripplanner.model.%s' % region
-    db = __import__(path, globals(), locals(), ['']).Mode()
- 
 def run():
+    global start, only, no_prompt, timer
+    
     overall_timer = meter.Timer()
     overall_timer.start()
 
-    # This timer gets reused in the functions above
+    # Reset for each function
     timer = meter.Timer()    
     timer.start()
 
-    pairs = [
-             ('Convert shapefile to monolithic SQL table',
+    pairs = [('Convert shapefile to monolithic SQL table',
               shpToRawSql),
-
+             
              ('Fix raw table: Remove NULLs, add columns, etc',
               fixRaw),
-
-              ('Create byCycle schema tables',
+             
+             ('Create byCycle schema tables',
               createSchema),
-              
+             
              ('Unify address ranges',
               unifyAddressRanges),
-
+             
              ('Transfer street names',
               transferStreetNames),
              
@@ -319,14 +343,9 @@ def run():
              
              ('Transfer attributes',
               transferAttrs),
-
-             ('Add indexes',
-              addIndexes),
              ]
 
-    start = -1
-    no_prompt = False
-    only = False
+    # Process command-line arguments
     try:
         arg1 = sys.argv[1]
     except IndexError:
@@ -342,44 +361,58 @@ def run():
             except IndexError:
                 pass
             else:
-                only = arg2 == "only"
+                only = arg2 == 'only'
+                no_prompt = arg2 == 'no_prompt'
   
     print 'Transferring data into byCycle schema...\n' \
           '----------------------------------------' \
           '----------------------------------------'
     prompt = '====>'
     if only:
+        # Do one function without prompting
         pair = pairs[start]
         msg, func = pair[0], pair[1]
         print '%s %s' % (prompt, msg)
+        # Get function arguments
         try:
             args = pair[2]
         except IndexError:
             args = ()
-        timer.start()
+        # Do function            
+        timer.start() 
         apply(func, args)
         print timer.stop()
     else:
+        # Do all functions, starting from specified
         for i, p in enumerate(pairs):
             msg, func = p[0], p[1]
             if i < start:
+                # Skip functions before specified starting point
                 print '%s Skipping %s %s? ' % (i, prompt, msg)
                 continue
+            # Get function arguments
             try:
                 args = p[2]
             except IndexError:
                 args = ()
+            # Show prompt and function message
             sys.stdout.write('%s %s %s'% (i, prompt, msg))
             if not no_prompt:
+                # Prompt user to continue
                 overall_timer.pause()
                 resp = raw_input('? ').strip().lower()
                 overall_timer.unpause()
             else:
+                # Don't prompt user to continue
                 print
             if  no_prompt or resp in ('', 'y'):
+                # Do function
                 timer.start()
                 apply(func, args)
                 print timer.stop()
+            elif resp in ('q', 'quit', 'exit'):
+                print 'Aborted at %s' % i
+                sys.exit()
 
     print '----------------------------------------' \
           '----------------------------------------\n' \

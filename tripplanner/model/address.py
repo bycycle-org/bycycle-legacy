@@ -6,6 +6,7 @@ allowed_once_chars = "'-"
 import states
 import sttypes
 import compass
+from byCycle.lib import gis
 
 
 ## "Static" "Methods"
@@ -193,30 +194,66 @@ class IntersectionAddress(Address):
 class PointAddress(IntersectionAddress):
     def __init__(self, inaddr, mode, **kwargs):
         IntersectionAddress.__init__(self, '', mode, **kwargs)
-        self.x, self.y = self.getXY(inaddr)
+        self.point = self.getPoint(inaddr)
 
     @staticmethod
-    def getXY(inaddr):
+    def getPoint(inaddr):
+        # WKT string
         try:
-            # (-122, 45) 
+            point = gis.importWktGeometry()
+            point.x
+            point.y
+            return point
+        except:
+            pass
+
+        # X, Y object
+        try:
+            inaddr.x
+            inaddr.y
+            return inaddr
+        except:
+            pass
+
+        # String with form "(-122, 45)"
+        try:
             obj = eval(inaddr)
             if len(obj) < 2: raise
-            if type(obj) != type((1,2)): raise
-            x, y = obj[0], obj[1]
+            if not isinstance(obj, tuple):
+                raise
+            return gis.Point(x=float(obj[0]), y=float(obj[1]))
         except:
+            pass
+            
+        # String with form "x=-122, y=45"
+        # x and y can be any string
+        # = can be any char in the list on the next line
+        for c in ('=', ':'):
             try:
-                # x=-122, y=45
                 xy = inaddr.split(',')
-                x = xy[0].split('=')[1]
-                y = xy[1].split('=')[1]
+                x = xy[0].split('%s' % c)[1]
+                y = xy[1].split('%s' % c)[1]
+                return gis.Point(x=float(x), y=float(y))
             except:
-                err = 'invalid address for PointAddress: %s' % inaddr
-                raise ValueError(err)
-        return float(x), float(y)
+                pass
+
+        # String with form "-122, 45"
+        # , can be any char in the list on the next line
+        for c in (',', ' '):
+            try:
+                xy = inaddr.split(c)
+                return gis.Point(x=float(xy[0]), y=float(xy[1]))
+            except:
+                pass
+
+        err = 'Invalid address for PointAddress: %s' % inaddr
+        raise ValueError(err)
 
     def __str__(self):
-        try: return IntersectionAddress.__str__(self)
-        except AttributeError: return str(('%.6f' % self.x, '%.6f' % self.y))
+        try:
+            return IntersectionAddress.__str__(self)
+        except AttributeError:
+            return str(self.point)
 
     
 class Street(object):

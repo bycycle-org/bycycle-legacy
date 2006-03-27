@@ -169,28 +169,32 @@ def getInterpolatedXY(linestring, length, distance_from_start):
 
 
 def importWktGeometry(wkt_geometry):
-    """Return a simple Python object for the given WKT Geometry string."""
-    wkt_type, wkt_data = wkt_geometry.split(' ', 1)
-    wkt_data = wkt_data[1:-1]
-    if wkt_type == 'linestring':
-        wkt_data = wkt_data.split(',')
-        wkt_data = [d.split() for d in wkt_data]
+    """Return a simple Python object for the given WKT Geometry string.
+
+    POINT(X Y)
+    LINESTRING(X Y,X Y,X Y)
+    
+    """
+    wkt_type, wkt_data = wkt_geometry.split('(', 1)
+    wkt_data = wkt_data[:-1] # strip trailing )
+    if wkt_type == 'LINESTRING':
+        wkt_data = wkt_data.split(',')   # list of 'X Y'
+        wkt_data = [d.split() for d in wkt_data] # list of [X, Y]
         linestring = [Point(x=d[0], y=d[1]) for d in wkt_data]
         return linestring
-    elif wkt_type == 'point':
-        x, y = wkt_data.split()[0:2]
+    elif wkt_type == 'POINT':
+        x, y = wkt_data.split()
         return Point(x=x, y=y)
     else:
         return None
 
 
 def importWktGeometries(wkt_geometries, geom_type):
-    """Return list of simple Python objects for list of WKT Geometry strings."""
+    """Return list of simple Python objects for list of WKT Geometries."""
     geoms = []
-    if geom_type == 'point':
+    if geom_type == 'POINT':
         for p in wkt_geometries:
-            # POINT (x y)
-            x, y = p.split(' ', 1)[1][1:-1].split()[0:2]
+            x, y = p.split('(', 1)[1][:-1].split()
             geoms.append(Point(x=x, y=y))
     else:
         return None
@@ -226,8 +230,11 @@ class Point(object):
                     tmp_x_y = eval(x_y)
                 self.x, self.y = float(tmp_x_y[0]), float(tmp_x_y[1])
 
-    def __str__(self):  return "Point: x = %.6f, y = %.6f" % (self.x, self.y)
-    def __repr__(self): return "{'x': %f, 'y': %f}" % (self.x, self.y)
+    def __str__(self):
+        return 'POINT(%.6f %.6f)' % (self.x, self.y)
+    
+    def __repr__(self):
+        return "{'x': %f, 'y': %f}" % (self.x, self.y)
 
 
 if __name__ == '__main__':

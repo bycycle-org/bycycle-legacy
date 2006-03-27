@@ -7,7 +7,7 @@
 var map;
 var center_marker;
 var center_point;
-var center_marker_html = '<div style="width:225px; text-align:center;"><a href="javascript:void(0);" onclick="setElVToMapLonLat(\'q\'); doFind();">Find address of closest intersection</a></div>';
+var center_marker_html = '<div style="width:225px; text-align:center;"><a href="javascript:void(0);" onclick="setElVToMapLonLat(\'q\'); doFind(\'geocode\');">Find address of closest intersection</a></div>';
 
 // Start and end markers for routes
 var base_icon;

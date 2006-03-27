@@ -467,8 +467,8 @@ def _makeDirectionsTable(route):
                 toward = '?'
         row_i.append(' toward %s -- %smi' % (toward, mi))
 
-    if d['bikemode']:
-        row_i.append(' [%s]' % ', '.join([bm for bm in d['bikemode']]))
+        if d['bikemode']:
+            row_i.append(' [%s]' % ', '.join([bm for bm in d['bikemode']]))
 
         if jogs:
             row_i.append('<br/>%sJogs...' % tab)
@@ -541,7 +541,7 @@ if __name__ == '__main__':
             else:
                 char = '+'
             if show_content:
-                print #content
+                print content
                 print
             else:
                 sys.stdout.write(char)
