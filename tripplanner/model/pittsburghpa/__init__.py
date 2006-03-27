@@ -18,7 +18,10 @@ class Mode(mode.Mode):
         attrs = ('length', 'cfcc',
                  #'bikemode', 'up_frac', 'abs_slp',
                  # 'lanes', 'adt', 'spd',
-                 'streetname_id'
+                 'streetname_id', 'pqi', 'no_lanes',#,
+                 'bpType', 'bikeability',
+                #'rev', 'elevf', 'elevt',
+                 'slope', 
                  #, 'node_f_id'
                  )
         self.edge_attrs = attrs
@@ -68,9 +71,14 @@ class Mode(mode.Mode):
             for k in nrow:
                 try:
                     nrow[k] = int(nrow[k])
+                    #if nrow[k] == 4508:
+                        #print "adding birmingham"
+                    
                 except ValueError:
                     pass
+            
             rows[i].update(nrow)
+            
         del nrows
 
         G = {'nodes': {}, 'edges': {}}
@@ -87,14 +95,24 @@ class Mode(mode.Mode):
             node_f_id, node_t_id = row['node_f_id'], row['node_t_id']
             oneway = row['oneway']
             opdir = row['opdir']
-                        
-           # ft =  not oneway or opdir
-           # tf = not oneway or not opdir
+            elevt = row['elevt']
+            elevf = row['elevf']
+            #print 'elevf: ' + str(elevf)
+            #print 'elevt: ' + str(elevt)
+           
+            #this should be right but opdir data from city is wrong
+            #ft = (oneway == "n") or (opdir == "y")
+            #tf = (oneway == "n") or (opdir == "n")
 
-            ft = (oneway == "n") or (opdir == "y")
-            tf = (oneway == "n") or (opdir == "n")
-
-            
+            #alternate because opdir is wrong
+            ft, tf = True, True
+            if ((oneway == "y_") and (opdir == "y_")):
+                ft = False
+                #print "changed FT"
+            if ((oneway == "y_") and (opdir == "n_")):
+                tf   = False
+                #print "changed TF"
+                
             try:
                 length = int(math.floor(
                     lengthFunc(
@@ -103,15 +121,35 @@ class Mode(mode.Mode):
             except Exception, e:
                 length = 0
 
-       
-            entry = [length] + [row[a] for a in self.edge_attrs[1:]]
-            edges[id] = entry
+            slope = -1 #should make null???
+            #entry = [length] + [row[a] for a in self.edge_attrs[1:]]
+            #edges[id] = entry
             if ft:
                 if not node_f_id in nodes: nodes[node_f_id] = {}
+                #make rev for hill
+                if elevt and elevf:
+                    changeElev = elevf - elevt
+                    if changeElev>0 and length != 0:
+                        slope = changeElev/length
+                        ###entry += entry [slope]
+                #moved here. jb.
+                entry=[length] + [row[a] for a in self.edge_attrs[1:-1]]+ [slope]
+                edges[id] = entry
                 nodes[node_f_id][node_t_id] = id
             if tf:
                 if not node_t_id in nodes: nodes[node_t_id] = {}
+                if elevt and elevf:
+                    changeElev = elevt - elevf
+                    if changeElev>0 and length != 0:
+                        slope = changeElev/length
+                        #entry += entry [slope]
+                entry=[length] + [row[a] for a in self.edge_attrs[1:-1]]+ [slope]
+                edges[id] = entry     
+
                 nodes[node_t_id][node_f_id] = id
+
+            
+            #print 'ENTRY: ' + str(entry)    
 
             met.update(record_number)
             record_number+=1
