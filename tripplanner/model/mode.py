@@ -15,7 +15,6 @@ class Mode(object):
         for i in range(len(edge_fields)): self.indices[edge_fields[i]] = i
         
         self.tables = {'edges': 'layer_street',
-                       'street_attrs': 'attr_street',
                        'vertices': 'layer_node',
                        'streetnames': 'streetname',
                        'cities': 'city',
@@ -33,7 +32,8 @@ class Mode(object):
         self.matrix_path = '%smatrix.pyc' % (self.data_path)
         
         # Set up database connection
-        self.connection = MySQLdb.connect(db=self.region, host='localhost', user='root', passwd='')
+        self.connection = MySQLdb.connect(db=self.region, host='localhost',
+                                          user='root', passwd='')
         self.cursor = self.connection.cursor()
         self.dict_cursor = self.connection.cursor(MySQLdb.cursors.DictCursor)
         
@@ -57,9 +57,9 @@ class Mode(object):
     def getIntersectionsById(self, ids):
         if not ids: return []
         intersections = []
-        id_str = ','.join([str(i) for i in ids])
+        id_str = ', '.join([str(i) for i in ids])
         Q = 'SELECT node_f_id, node_t_id, addr_f, addr_t, streetname_id, ' \
-            'wkt_geometry ' \
+            'AsText(geom) AS wkt_geometry ' \
             'FROM %s ' \
             'WHERE node_f_id IN (%s) OR node_t_id IN (%s)' % \
             (self.tables['edges'], id_str, id_str)
@@ -147,7 +147,8 @@ class Mode(object):
         return self.getIntersectionsById([id])[0]
 
 
-    def getIntersectionClosestToSTIDandNum(self, streetname_id, num, lon_lat=None):
+    def getIntersectionClosestToSTIDandNum(self, streetname_id, num,
+                                           lon_lat=None):
         """Get the intersection closest to the specified street address.
 
         @param streetname_id -- the id of the addresses's street name
@@ -170,7 +171,10 @@ class Mode(object):
         if not self.executeDict(Q): return None, None
         row = self.fetchRow()
 
-        m, fl, fr, tl, tr = row["m"], row["fl"], row["fr"], row["tl"], row["tr"]
+        m = row["m"]
+        fl, fr = row["fl"], row["fr"],
+        tl, tr, row["tl"], row["tr"]
+        
         if m in (fl, fr):
             idc = row["node_f_id"]
             ida = row["node_t_id"]
@@ -201,7 +205,8 @@ class Mode(object):
         """
         streetname_ids, num = self.getStreetIdsForAddress(addr=addr)
         streetname_id, full_name = streetname_ids.popitem()
-        i = self.getIntersectionClosestToSTIDandNum(streetname_id, num, lon_lat)
+        i = self.getIntersectionClosestToSTIDandNum(streetname_id, num,
+                                                    lon_lat)
         return i
  
 
@@ -229,7 +234,8 @@ class Mode(object):
         ids_str = ','.join([str(t) for t in ids])
 
         # Get segments with id in ids
-        Q = 'SELECT * FROM %s WHERE id IN (%s)' % \
+        Q = 'SELECT *, AsText(geom) AS wkt_geometry ' \
+            'FROM %s WHERE id IN (%s)' % \
             (self.tables['edges'], ids_str)
         self.executeDict(Q)
         rows = self.fetchAllDict()
@@ -238,15 +244,6 @@ class Mode(object):
             # Index rows by id
             irows = {}
             for row in rows: irows[row['id']] = row
-
-            # Add the extra attributes to the row
-            Q = 'SELECT * FROM attr_street WHERE id IN (%s)' % ids_str
-            self.executeDict(Q)
-            arows = self.fetchAllDict()
-            for i, arow in enumerate(arows):
-                id = arow['id']
-                irows[id].update(arow)
-            del arows
 
             # Pre-fetch street names and cities
             streetname_ids, cityids = {}, {}

@@ -66,7 +66,7 @@ def geocode(inaddr, mode):
         func = getIntersectionGeocodes
     
     try:
-        address.PointAddress.getXY(inaddr)
+        address.PointAddress.getPoint(inaddr)
     except ValueError:
         pass
     else:
@@ -93,7 +93,7 @@ def getAddressGeocodes(inaddr, mode):
     # Build the WHERE clause
     where = []
     where.append('(%s BETWEEN LEAST(addr_f, addr_t) AND ' \
-                           'GREATEST(addr_f, addr_t))' % addr.number)
+                 'GREATEST(addr_f, addr_t))' % addr.number)
     where += _getPlaceWhere(place)
     streetname_ids = ','.join([str(i) for i in street.getIds(mode)])
     where.append('streetname_id IN (%s)' % streetname_ids)
@@ -201,34 +201,17 @@ def getPointGeocodes(inaddr, mode):
     try:
         # Special case of node ID supplied directly
         min_id = int(inaddr)
-        addr = address.PointAddress('(0,0)', mode)
+        addr = address.PointAddress('POINT(0 0)', mode)
     except ValueError:
         addr = address.PointAddress(inaddr, mode)
-        x, y = addr.x, addr.y
-        min_dist = 2000000000
-        Q = 'SELECT id, wkt_geometry FROM %s' % (mode.tables['vertices'])
-        mode.execute(Q)
-        rows = mode.fetchAll()
-        if rows:
-            from math import sin, cos, acos, radians
-            wkt_geoms = [row[1] for row in rows]
-            points = gis.importWktGeometries(wkt_geoms, 'point')
-            earth_radius = gis.earth_radius
-            for i, row in enumerate(rows):
-                id = row[0]
-                point = points[i]
-                dist = earth_radius * \
-                       acos(cos(radians(y)) * \
-                            cos(radians(point.y)) * \
-                            cos(radians(point.x-x)) + \
-                            sin(radians(y)) * \
-                            sin(radians(point.y)))                
-                if dist < min_dist:
-                    min_id = id
-                    min_dist = dist
-                    if min_dist < .025: break  # close enough
-        else:
-            return []
+        Q = 'SELECT id, ' \
+            'GLength(LineStringFromWKB(LineString(' \
+            'AsBinary(geom), AsBinary(geomfromtext("%s"))))) ' \
+            'AS distance ' \
+            'FROM layer_node ORDER BY distance ASC LIMIT 1'
+        mode.execute(Q % addr.point)
+        row = mode.fetchRow()
+        min_id = row[0]
 
     # Get segment rows that have our min_id as their node_f_id/t
     Q = 'SELECT id, streetname_id ' \

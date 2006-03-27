@@ -1,20 +1,7 @@
 /* User Interface */
 
-
-/* Data dictionary */
-
-// User data
-var q;
-var fr;
-var to;
-
-// Result data
-var result_set;
 var geocodes;
-
-// Map data
 var center;
-
 var start_ms;
 
 
@@ -27,42 +14,59 @@ function doFind(service)
 
   var el_region = el('region');
   var region = el_region.value;
-  var el_q = el('q');
-  var q = cleanString(el_q.value);
   var errors = [];
 
   if (map)
     map.closeInfoWindow();
   
-  if (!region)
-    {
-      errors.push('Please select a Region</a>');
-      el_region.focus();
-    }
-  
-  if (!q)
-    {
+  if (!region) {
+    errors.push('Please select a Region</a>');
+    el_region.focus();
+  }
+
+  if (service == 'geocode') {
+    var el_q = el('a');
+    var q = cleanString(el_q.value);
+    if (!q) {
       errors.push('Please enter an Address');
       if (region)
 	el_q.focus();
     }
-
-  if (errors.length) 
-    {
-      errors = ['<h2>Errors</h2><ul><li>', errors.join('</li><li>'),
-		'</li></ul>'].join('');
-      setStatus('Error. See below for details.', 1);
-      setResult(errors);
-    } 
-  else 
-    {
-      var url = ['http://', domain, '/',  
-		 '?region=', region, 
-		 '&q=', escape(q), 
-		 '&async=1'].join('');
-      //alert(url);
-      doXmlHttpReq('GET', url, _callback);
+  } else if (service == 'route') {
+    var el_fr = el('fr');
+    var el_to = el('to');
+    var fr = cleanString(el_fr.value);
+    var to = cleanString(el_to.value);
+    if (!fr) {
+      errors.push('Please enter a From address');
+      if (region)
+	el_fr.focus();
     }
+    if (!to) {
+      errors.push('Please enter a To address');
+      if (fr)
+	el_to.focus();
+    }
+    if (fr && to) {
+      var q = ['["', fr, '", "', to, '"]'].join('');
+    }
+  } else {
+    errors.push('Unknown service: ' + service);
+  }
+
+  if (errors.length) {
+    errors = ['<h2>Errors</h2><ul><li>', errors.join('</li><li>'),
+	      '</li></ul>'].join('');
+    setStatus('Error. See below for details.', 1);
+    setResult(errors);
+  } else {
+    var url = ['http://', domain, '/',  
+	       '?region=', region, 
+	       '&q=', escape(q), 
+	       '&async=1'].join('');
+    //alert(url);
+    doXmlHttpReq('GET', url, _callback);
+  }
 }
 
 

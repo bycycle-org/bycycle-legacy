@@ -29,16 +29,17 @@ class Mode(mode.Mode):
         @return G -- the adjacency matrix
 
         """
-        from byCycle.lib import gis, meter
+        from byCycle.lib import meter
         import math
-
-        lengthFunc = gis.getLengthOfLineString
         
         # Get the edge attributes
         t = meter.Timer()
         t.start()
         print 'Fetching edge attributes...'
-        Q = 'SELECT * FROM %s' % self.tables['street_attrs']
+        Q = 'SELECT id, node_t_id, one_way, ' \
+            '%s, ' \
+            'GLength(geom) AS length ' \
+            'FROM %s' % (', '.join(self.edge_attrs[1:]), self.tables['edges'])
         self.executeDict(Q)
         rows = self.fetchAllDict()
         print 'Took %s' % t.stop()
@@ -61,29 +62,6 @@ class Mode(mode.Mode):
             i+=1
         print
 
-        # Get the from and to node IDs of the edges and add them to their
-        # respective attr rows
-        t.start()
-        print 'Fetching more edge attributes...'
-        Q = 'SELECT wkt_geometry, node_f_id, node_t_id, streetname_id ' \
-            'FROM %s' % self.tables['edges']
-        self.executeDict(Q)
-        nrows = self.fetchAllDict()
-        print 'Took %s' % t.stop()
-        
-        print 'Converting values to int...'
-        met.setNumberOfItems(len(nrows)); met.startTimer()
-        for i, nrow in enumerate(nrows):
-            for k in nrow:
-                try:
-                    nrow[k] = int(nrow[k])
-                except ValueError:
-                    pass
-            rows[i].update(nrow)
-            met.update(i+1)
-        del nrows
-        print
-
         G = {'nodes': {}, 'edges': {}}
         nodes = G['nodes']
         edges = G['edges']
@@ -94,16 +72,15 @@ class Mode(mode.Mode):
             ix = row['id']
             node_f_id, node_t_id = row['node_f_id'], row['node_t_id']
 
-            oneway = row['oneway']
-            both_ways = oneway == ''
-            ft = both_ways or (oneway == 'f')
-            tf = both_ways or (oneway == 't')
-
-            length = int(math.floor(lengthFunc(gis.importWktGeometry(row['wkt_geometry'])) *
-                                    1000000))
+            one_way = row['one_way']
+            both_ways = one_way == ''
+            ft = both_ways or (one_way == 'f')
+            tf = both_ways or (one_way == 't')
 
             row['up_frac'] = int(math.floor(row['up_frac'] * 1000000))
             row['abs_slp'] = int(math.floor(row['abs_slp'] * 1000000))
+
+            length = int(math.floor(row['length']) * 1000000)
             
             entry = [length] + [row[a] for a in self.edge_attrs[1:]]
             edges[ix] = entry
@@ -135,9 +112,9 @@ if __name__ == '__main__':
     
     md = Mode();
     
-    #G1 = md.createAdjacencyMatrix()
+    G1 = md.createAdjacencyMatrix()
     
-    #assert(isinstance(G1, dict))
+    assert(isinstance(G1, dict))
     
     t.start()
     print 'Getting adjacency matrix...'
@@ -146,5 +123,5 @@ if __name__ == '__main__':
     
     print G2['edges'].popitem()
     
-    #assert(isinstance(G2, dict))
-    #assert(G1 == G2)
+    assert(isinstance(G2, dict))
+    assert(G1 == G2)

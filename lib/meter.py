@@ -100,6 +100,7 @@ class Timer(object):
         self.elapsed_time = 0
     
     def start(self):
+        self.unpause()
         self.start_time = time.time()
         
     def stop(self):

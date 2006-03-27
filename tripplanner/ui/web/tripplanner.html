@@ -92,6 +92,12 @@
 		<a href="http://www.bycycle.org/contact.html" 
 		  title="Send us problem reports, comments, questions, and suggestions"
 		  >Feedback</a>
+
+		&middot;
+		
+		<a href="http://www.bycycle.org/tripplanner/help.html" 
+		  title="Get help on using the Trip Planner"
+		  >Help</a>
 	      </div>
 	    </td>
 	  </tr>
@@ -143,12 +149,12 @@
 		<form id="geocode_form" class="input_form"
 		      action="." 
 		      method="get" 
-		      onsubmit="doFind(); return false;">
+		      onsubmit="doFind('geocode'); return false;">
 		  
 		  <div class="input_title">Find an Address</div>
 		  
 		  <div>
-		    <input type="text" id="q" name="q" class="input_field" tabindex="1" value="%(q)s"/>
+		    <input type="text" id="a" name="a" class="input_field" tabindex="1" value="%(q)s"/>
 		    <input name="gb"
 			   class="input_button"
 			   title="Click to look up address"
@@ -163,7 +169,7 @@
 		<form id="route_form" class="input_form"
 		      action="." 
 		      method="get" 
-		      onsubmit="doFind(); return false;"
+		      onsubmit="doFind('route'); return false;"
 		      style="margin-bottom: 0;">
 
 		  <div class="input_title">Find a Route</div>
