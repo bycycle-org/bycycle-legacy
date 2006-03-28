@@ -384,7 +384,9 @@ def _makeDirectionsTable(route):
     to_point = linestring[-1]
 
     fr_addr = str(fr_addr).replace('\n', '<br/>')
-    to_addr = str(to_addr).replace('\n', '<br/>')
+    to_addr = str(to_addr)
+    last_street = to_addr.split('\n')[0]
+    to_addr = to_addr.replace('\n', '<br/>')
 
     s_table = """
     <table id='summary'>
@@ -430,7 +432,6 @@ def _makeDirectionsTable(route):
     # Direction rows
     row_class = 'a'
     last_i = len(directions)
-    last_street = to_addr.split('\n')[0]
     tab = '&nbsp;' * 4
     d_rows = []
     row_i = []

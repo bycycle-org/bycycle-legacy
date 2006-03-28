@@ -85,10 +85,11 @@ class Mode(portlandor.Mode):
                 elif 1100 <= code < 1200:      hours *= 16.00  #ca++
                 else:                          hours *= 1000   #?
 
+        # Penalize edge if it has different street name from previous edge
         try:
-            # Penalize edge if it has different street name from previous edge            
             prev_ix_sn = prev_edge_attrs[self.indices['streetname_id']]
-            if streetname_id != prev_ix_sn: hours += .005555555555555
+            if streetname_id != prev_ix_sn:
+                hours += .005555555555555
         except TypeError:
             pass        
 
