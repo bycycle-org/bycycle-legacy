@@ -38,37 +38,40 @@ class Mode(mode.Mode):
         print 'Fetching edge attributes...'
         Q = 'SELECT id, node_t_id, one_way, ' \
             '%s, ' \
-            'GLength(geom) AS length ' \
+            'GLength(geom) * 69.172 AS edge_len ' \
             'FROM %s' % (', '.join(self.edge_attrs[1:]), self.tables['edges'])
+        print Q
         self.executeDict(Q)
         rows = self.fetchAllDict()
         print 'Took %s' % t.stop()
         
-        # Convert all possible values to int or float
-        print 'Converting values to int or float...'
-        met = meter.Meter(num_items=len(rows), start_now=True)
-        i = 1
-        for row in rows:
-            for k in row: 
-                val = row[k]
-                try:
-                    row[k] = int(val)        # int?
-                except ValueError:
-                    try:
-                        row[k] = float(val)  # no. float?
-                    except ValueError:
-                        row[k] = str(val.strip()) # no. must be a string.
-            met.update(i)
-            i+=1
-        print
+##         # Convert all possible values to int or float
+##         print 'Converting values to int or float...'
+##         met = meter.Meter(num_items=len(rows), start_now=True)
+##         i = 1
+##         for row in rows:
+##             for k in row: 
+##                 val = row[k]
+##                 try:
+##                     if str(val).find('.'):
+##                         raise ValueError
+##                     row[k] = int(val)        # int?
+##                 except ValueError:
+##                     try:
+##                         row[k] = float(val)  # no. float?
+##                     except ValueError:
+##                         row[k] = str(val.strip()) # no. must be a string.
+##             met.update(i)
+##             i+=1
+##         print
 
         G = {'nodes': {}, 'edges': {}}
         nodes = G['nodes']
         edges = G['edges']
 
         print 'Creating adjacency matrix...'
-        met.setNumberOfItems(len(rows)); met.startTimer(); i = 1
-        for row in rows:
+        met = meter.Meter(num_items=len(rows), start_now=True)
+        for i, row in enumerate(rows):
             ix = row['id']
             node_f_id, node_t_id = row['node_f_id'], row['node_t_id']
 
@@ -80,7 +83,10 @@ class Mode(mode.Mode):
             row['up_frac'] = int(math.floor(row['up_frac'] * 1000000))
             row['abs_slp'] = int(math.floor(row['abs_slp'] * 1000000))
 
-            length = int(math.floor(row['length']) * 1000000)
+            length = int(math.floor(row['edge_len'] * 1000000))
+
+            #print row['edge_len'], row['edge_len'] * 1000000,
+            #print math.floor(row['edge_len'] * 1000000), length
             
             entry = [length] + [row[a] for a in self.edge_attrs[1:]]
             edges[ix] = entry
@@ -92,8 +98,7 @@ class Mode(mode.Mode):
                 if not node_t_id in nodes: nodes[node_t_id] = {}
                 nodes[node_t_id][node_f_id] = ix
 
-            met.update(i)
-            i+=1
+            met.update(i+1)
         print
         
         t.start()

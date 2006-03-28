@@ -20,7 +20,7 @@ USE portlandor;
 
 CREATE TABLE `layer_street` (
   `id`            INTEGER PRIMARY KEY NOT NULL AUTO_INCREMENT,
-  `geom`          GEOMETRY NOT NULL,
+  `geom`          LINESTRING NOT NULL,
   -- Attributes all regions should have
   `node_f_id`     INTEGER UNSIGNED NOT NULL,
   `node_t_id`     INTEGER UNSIGNED NOT NULL,
@@ -53,7 +53,7 @@ CREATE TABLE `layer_street` (
 
 CREATE TABLE `layer_node` (
   `id`   INTEGER PRIMARY KEY NOT NULL,
-  `geom` GEOMETRY NOT NULL,
+  `geom` POINT NOT NULL,
   SPATIAL INDEX (`geom`)
 );
 

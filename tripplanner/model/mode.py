@@ -27,13 +27,17 @@ class Mode(object):
         self.lon_lat_exp = 10 ** -self.lon_lat_fraction_len
 
         # Set up path to data files
-        self.data_path = '%stripplanner/model/%s/data/' % \
-                         (install_path, self.region)
-        self.matrix_path = '%smatrix.pyc' % (self.data_path)
+        self.path = '%stripplanner/model/%s/' % (install_path, self.region)
+        self.data_path = '%s/data/' % self.path
+        self.matrix_path = '%smatrix.pyc' % self.data_path
         
         # Set up database connection
-        self.connection = MySQLdb.connect(db=self.region, host='localhost',
-                                          user='root', passwd='')
+        pw = open('%s.pw' % self.path).read()
+        self.connection = MySQLdb.connect(db=self.region,
+                                          host='localhost',
+                                          user='bycycle',
+                                          passwd=pw)
+                                          
         self.cursor = self.connection.cursor()
         self.dict_cursor = self.connection.cursor(MySQLdb.cursors.DictCursor)
         
@@ -234,7 +238,8 @@ class Mode(object):
         ids_str = ','.join([str(t) for t in ids])
 
         # Get segments with id in ids
-        Q = 'SELECT *, AsText(geom) AS wkt_geometry ' \
+        Q = 'SELECT *, AsText(geom) AS wkt_geometry, ' \
+            'GLength(geom) * 69.172 AS weight ' \
             'FROM %s WHERE id IN (%s)' % \
             (self.tables['edges'], ids_str)
         self.executeDict(Q)
