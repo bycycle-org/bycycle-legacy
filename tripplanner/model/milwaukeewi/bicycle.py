@@ -14,12 +14,14 @@ class Mode(milwaukeewi.Mode):
         indices = self.indices
         length = edge_attrs[indices["length"]] / 1000000.0
 
-        cfcc = edge_attrs[indices["cfcc"]]
+        cfcc = edge_attrs[indices["code"]]
         try:
-            cl, cat, ma, mi = cfcc[0], int(cfcc[1:]), int(cfcc[1]), int(cfcc[2])
-        except (IndexError, TypeError):
-            # Empty CFCC field in DB
-            cl, cat, ma, mi = 'x', 0, 0, 0
+            cl, cat = cfcc[0], int(cfcc[1:])
+            ma, mi = int(cfcc[1]), int(cfcc[2])
+        except (IndexError, ValueError, TypeError):
+            # Malformed CFCC field in DB
+            cl, cat = 'x', 0
+            ma, mi = 0, 0
             
         bikemode = edge_attrs[indices["bikemode"]]
         lanes = edge_attrs[indices["lanes"]]

@@ -519,7 +519,7 @@ if __name__ == '__main__':
            ),
           }
 
-    for dm in ('portlandor',):
+    for dm in ('milwaukeewi',):
         qs = Qs[dm]
         for q in qs:
             try:

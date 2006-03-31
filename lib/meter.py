@@ -90,18 +90,25 @@ class Meter(object):
 
 class Timer(object):
     """Super simple wall clock timer."""    
-    def __init__(self):
+    def __init__(self, start_now=True):
         self.start_time = 0
-        self.end_time = 0
         self.elapsed_time = 0
-        self.paused = False        
-        self.pause_time = 0
-        self.time_paused = 0
+        self.paused = True        
         self.elapsed_time = 0
+        if start_now:
+            self.start()
     
     def start(self):
+        """Start the timer.
+
+        Starting is just a special case of unpausing where we reset the
+        elapsed time.
+
+        """
+        if not self.paused:
+            return
+        self.elapsed_time = 0
         self.unpause()
-        self.start_time = time.time()
         
     def stop(self):
         self.pause()
