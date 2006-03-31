@@ -8,7 +8,6 @@ import address, segment, intersection
 
 
 class Mode(object):
-    region = 'portlandor'
     def __init__(self):
         edge_fields = ('weight', 'streetid', 'code')
         self.indices = {}
@@ -32,34 +31,130 @@ class Mode(object):
         self.matrix_path = '%smatrix.pyc' % self.data_path
         
         # Set up database connection
-        pw = open('%s.pw' % self.path).read()
+        pw = open('%s.pw' % self.path).read().strip()
         self.connection = MySQLdb.connect(db=self.region,
                                           host='localhost',
                                           user='bycycle',
                                           passwd=pw)
-                                          
         self.cursor = self.connection.cursor()
         self.dict_cursor = self.connection.cursor(MySQLdb.cursors.DictCursor)
         
         self.G = None
+
+        # Create an index of adjacency matrix edge attributes.
+        # In other words, each edge in the matrix has attributes associated
+        # with it in an ordered sequence. This index gives us a way to access
+        # the attributes by name while keeping the size of the matrix smaller.
+        self.edge_attrs = ['length', 'code', 'streetname_id'] + self.edge_attrs
+        self.indices = {}
+        for i, attr in enumerate(self.edge_attrs):
+            self.indices[attr] = i
+        
         
     def geocode(self, inaddr):
         import geocode
         return geocode.geocode(inaddr, self)
 
 
+    # Adjacency Matrix Methods ------------------------------------------------
+
+    def createAdjacencyMatrix(self):
+        """Create this mode's adj. matrix, store it in the DB, and return it.
+
+        Build a matrix suitable for use with the route service. The structure
+        of the matrix is defined by the sssp module of the route service.
+
+        @return G -- the adjacency matrix
+
+        """
+        import math
+        from byCycle.lib import meter
+        
+        # Get the edge attributes
+        t = meter.Timer()
+        t.start()
+        print 'Fetching edge attributes...'
+        Q = 'SELECT id, node_f_id, node_t_id, one_way, ' \
+            '%s, ' \
+            'GLength(geom) * 69.172 AS edge_len ' \
+            'FROM %s' % (', '.join(self.edge_attrs[1:]), self.tables['edges'])
+        print Q
+        self.executeDict(Q)
+        rows = self.fetchAllDict()
+        print 'Took %s' % t.stop()
+        
+        G = {'nodes': {}, 'edges': {}}
+        nodes = G['nodes']
+        edges = G['edges']
+
+        print 'Creating adjacency matrix...'
+        met = meter.Meter(num_items=len(rows), start_now=True)
+        for i, row in enumerate(rows):
+            self._fixRow(row)
+
+            ix = row['id']
+            node_f_id, node_t_id = row['node_f_id'], row['node_t_id']
+
+            one_way = row['one_way']
+            both_ways = one_way == ''
+            ft = both_ways or (one_way == 'ft')
+            tf = both_ways or (one_way == 'tf')
+
+            length = int(math.floor(row['edge_len'] * 1000000))
+            row['length'] = length
+
+            entry = tuple([row[a] for a in self.edge_attrs])
+            edges[ix] = entry
+
+            if ft:
+                if not node_f_id in nodes: nodes[node_f_id] = {}
+                nodes[node_f_id][node_t_id] = ix
+            if tf:
+                if not node_t_id in nodes: nodes[node_t_id] = {}
+                nodes[node_t_id][node_f_id] = ix
+
+            met.update(i+1)
+        print
+        
+        t.start()
+        print 'Saving adjacency matrix...'
+        self._saveMatrix(G)
+        self.G = G
+        print 'Took %s' % t.stop()
+        return G
+
+    def _fixRow(self, row):
+        pass
+
+    def _saveMatrix(self, G):
+        import marshal
+        Q = 'CREATE TABLE IF NOT EXISTS `region` (' \
+               '`id` INTEGER PRIMARY KEY NOT NULL AUTO_INCREMENT NOT NULL,' \
+               '`name` VARCHAR(255) NOT NULL,' \
+               '`matrix` LONGBLOB NOT NULL' \
+               ')'
+        self.execute(Q)
+        Q = 'DELETE FROM region WHERE name = "%s"' % self.region
+        self.execute(Q)
+        Q = 'INSERT INTO region (name, matrix) VALUES("%s", "%s")' % \
+                (self.region, MySQLdb.escape_string(marshal.dumps(G)))
+        self.execute(Q)
+
+                
     def getAdjacencyMatrix(self):
         import marshal
-        in_file = open(self.matrix_path, 'rb')
-        G = marshal.load(in_file)
-        in_file.close()
-        return G
+        if self.G is None:
+            Q = 'SELECT matrix FROM region WHERE name = "%s"' % self.region
+            if self.execute(Q):
+                self.G = marshal.loads(self.fetchRow()[0].tostring())
+        return self.G
     
     
     # Intersection Methods ----------------------------------------------------
 
     def getIntersectionsById(self, ids):
-        if not ids: return []
+        if not ids:
+            return []
         intersections = []
         id_str = ', '.join([str(i) for i in ids])
         Q = 'SELECT node_f_id, node_t_id, addr_f, addr_t, streetname_id, ' \
@@ -137,7 +232,7 @@ class Mode(object):
                         st.number = num                        
                     cs.append(st)
                 data['cross_streets'] = cs
-                intersections.append(intersection.Intersection(data))        
+                intersections.append(intersection.Intersection(data))
         return intersections
         
 
@@ -317,30 +412,6 @@ class Mode(object):
         if not self.executeDict(Q): return None
         return self.getSegmentById(self.fetchRow()["id"])
 
-
-    # Adjacency Matrix Methods
-    def _saveMatrix(self, G):
-        import marshal
-        Q = 'CREATE TABLE IF NOT EXISTS `region` (' \
-               '`id` INTEGER PRIMARY KEY NOT NULL AUTO_INCREMENT NOT NULL,' \
-               '`name` VARCHAR(255) NOT NULL,' \
-               '`matrix` LONGBLOB NOT NULL' \
-               ')'
-        self.execute(Q)
-        Q = 'DELETE FROM region WHERE name = "%s"' % self.region
-        self.execute(Q)
-        Q = 'INSERT INTO region (name, matrix) VALUES("%s", "%s")' % \
-                (self.region, MySQLdb.escape_string(marshal.dumps(G)))
-        self.execute(Q)
-                
-    def getAdjacencyMatrix(self):
-        import marshal
-        if self.G is None:
-            Q = 'SELECT matrix FROM region WHERE name = "%s"' % self.region
-            if self.execute(Q):
-                self.G = marshal.loads(self.fetchRow()[0].tostring())
-        return self.G
-        
         
     # Utility Methods ---------------------------------------------------------
 

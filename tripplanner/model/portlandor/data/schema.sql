@@ -36,7 +36,7 @@ CREATE TABLE `layer_street` (
   `zip_r`         MEDIUMINT(5) NOT NULL,
   -- Region-specific attributes
   `localid`       FLOAT(11, 2) NOT NULl,
-  `one_way`       ENUM('', 'f', 't', 'n') NOT NULL,
+  `one_way`       ENUM('', 'ft', 'tf', 'n') NOT NULL,
   `code`          SMALLINT NOT NULL,	
   `bikemode`      ENUM('', 'p', 'mm', 'b', 'l', 'm', 'h', 'c', 'x') NOT NULL,
   `up_frac`       FLOAT(4, 3) NOT NULL,	

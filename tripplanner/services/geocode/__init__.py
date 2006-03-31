@@ -98,7 +98,9 @@ if __name__ == "__main__":
          ),
 
          'portlandor':
-         ('300 main',
+         ('lon=-120.432129, lat=46.137977',
+          'lon=-120.025635, lat=45.379161',
+          '300 main',
           '37800 S Hwy 213 Hwy, Clackamas, OR 97362',
           '4550 ne 15',
           '633 n alberta',
@@ -118,7 +120,7 @@ if __name__ == "__main__":
         }
 
     i = 1
-    for region in ('portlandor',):
+    for region in A:
         print
         print 'Data region: %s' % region
         print '------------------------------'

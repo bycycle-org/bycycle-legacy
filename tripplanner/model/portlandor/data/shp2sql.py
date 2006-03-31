@@ -27,11 +27,27 @@ from byCycle.lib import gis, meter
 region = 'portlandor'
 
 # Fields we want from the DBF
-dbf_fields = ('LOCALID', 'FNODE', 'TNODE',
-              'LEFTADD1', 'LEFTADD2', 'RGTADD1', 'RGTADD2',
-              'FDPRE', 'FNAME', 'FTYPE', 'FDSUF',
-              'LCITY', 'RCITY', 'ZIPCOLEF', 'ZIPCORGT',
-              'ONE_WAY', 'TYPE', 'BIKEMODE', 'UP_FRAC', 'ABS_SLP', 'CPD',
+dbf_fields = ('FNODE',
+              'TNODE',
+              'LEFTADD1',
+              'LEFTADD2',
+              'RGTADD1',
+              'RGTADD2',
+              'FDPRE',
+              'FNAME',
+              'FTYPE',
+              'FDSUF',
+              'LCITY',
+              'RCITY',
+              'ZIPCOLEF',
+              'ZIPCORGT',
+              'LOCALID',
+              'ONE_WAY',
+              'TYPE',
+              'BIKEMODE',
+              'UP_FRAC',
+              'ABS_SLP',
+              'CPD',
               'SSCODE')
 
 # Fields in raw table to be transferred to street layer table.
@@ -52,7 +68,7 @@ db_fields = ('geo',
              'zipcorgt',
              'localid',
              'one_way',
-             'code',
+             'type',
              'bikemode',
              'up_frac',
              'abs_slp',
@@ -74,54 +90,36 @@ def shpToRawSql():
     datasource = '20061219'
     layer = 'new1'
     path = os.path.join(os.getcwd(), datasource)
-    sql_file = 'portlandor.sql'
-    fields = ','.join(['IX'] + list(dbf_fields))
-    database = region
     table = 'raw'
-    primary_key = 'id'
-    names = 'IX=ID'
     # Drop existing raw table
     Q = 'DROP TABLE IF EXISTS raw'
     if not _wait(Q):
         _execute(Q)
     # Extract SQL from Shapefile
-    cmd = 'mysqlgisimport -t %s -o %s %s' % \
-          (table, sql_file, os.path.join(path, layer))
-    if not _wait('Extract SQL from Shapefile'): _system(cmd)
-    # Load SQL into DB
-    cmd = 'mysql -u root --password="" %s < %s.sql' % (database, region)
-    if not _wait('Load SQL into DB'): _system(cmd)
-    # Temporary merge of type column
-    if not _wait('Add type attribute'):
-        try:
-            _execute('ALTER TABLE raw DROP COLUMN code')
-        except:
-            pass
-        _execute('ALTER TABLE raw ADD COLUMN code INTEGER NOT NULL')
-        cmd = 'dbf2mysql -f -l -o IX,TYPE -s IX=ID,TYPE=CODE ' \
-              '-h localhost -d %s -t %s -c -p id -U root -P "" %s' % \
-              (database, 'code', os.path.join(path, 'type.dbf'))
+    cmd = 'mysqlgisimport -t %s -o %s.sql %s' % \
+          (table, table, os.path.join(path, layer))
+    if not _wait('Extract SQL from Shapefile'):
         _system(cmd)
-        _execute('SELECT id, code FROM code ORDER BY id')
-        for row in db.fetchAll():
-            _execute('UPDATE raw SET code = %s WHERE id = %s' % \
-                    (row[1], row[0]), False)
-    
-def fixRaw():
+    # Load SQL into DB
+    cmd = 'mysql -u root --password="" %s < raw.sql' % region
+    if not _wait('Load SQL into DB'):
+        _system(cmd)
+        
+def addColumns():
     # Add missing...    
     # INTEGER columns
-    Q = 'ALTER TABLE raw ADD COLUMN %s INTEGER NOT NULL'
-    cols = ('addr_f', 'addr_t', 'streetname_id', 'city_l_id', 'city_r_id',
-            'sscode')
+    Q = 'ALTER TABLE raw ADD COLUMN %s %s NOT NULL'
+    cols = ('addr_f', 'addr_t', 'streetname_id', 'city_l_id', 'city_r_id')
     for col in cols:
-        _execute(Q % col)
+        _execute(Q % (col, 'INTEGER'))
     # CHAR(s) columns
-    Q = 'ALTER TABLE raw ADD COLUMN %s CHAR(2) NOT NULL' 
-    cols = ('state_l_id', 'state_r_id', 'wkt_geometry') # wkt is temporary
+    cols = ('state_l_id', 'state_r_id')
     for col in cols:
-        _execute(Q % col)
+        _execute(Q % (col, 'CHAR(2)'))
     # ENUM columns
-    _execute('ALTER TABLE raw ADD COLUMN even_side ENUM("l", "r") NOT NULL')
+    _execute(Q % ('even_side', 'ENUM("l", "r")'))
+
+def fixRaw():
     # Abbreviate bike modes
     Q = 'UPDATE raw SET bikemode="%s" WHERE bikemode="%s"'
     bm = (("t", "mu"),
@@ -155,9 +153,9 @@ def unifyAddressRanges():
     QT = 'UPDATE raw ' \
         'SET addr_t = (ROUND(%sadd2 / 10.0) * 10) ' \
         'WHERE %sadd2 != 0'
-    for f in ('left', 'rgt'):
-        _execute(QF % (f, f))
-        _execute(QT % (f, f))
+    for side in ('left', 'rgt'):
+        _execute(QF % (side, side))
+        _execute(QT % (side, side))
     # Set even side
     QEL = 'UPDATE raw SET even_side = "l" ' \
           'WHERE (leftadd1 != 0 AND leftadd1 % 2 = 0) OR ' \
@@ -308,11 +306,13 @@ def run():
     overall_timer.start()
 
     # Reset for each function
-    timer = meter.Timer()    
-    timer.start()
+    timer = meter.Timer(start_now=False)    
 
     pairs = [('Convert shapefile to monolithic SQL table',
               shpToRawSql),
+
+             ('Add columns to raw',
+              addColumns),
              
              ('Fix raw table: Remove NULLs, add columns, etc',
               fixRaw),
@@ -363,6 +363,7 @@ def run():
             else:
                 only = arg2 == 'only'
                 no_prompt = arg2 == 'no_prompt'
+                prompt = not do_prompt
   
     print 'Transferring data into byCycle schema...\n' \
           '----------------------------------------' \
@@ -397,7 +398,7 @@ def run():
                 args = ()
             # Show prompt and function message
             sys.stdout.write('%s %s %s'% (i, prompt, msg))
-            if not no_prompt:
+            if do_prompt:
                 # Prompt user to continue
                 overall_timer.pause()
                 resp = raw_input('? ').strip().lower()
