@@ -5,81 +5,82 @@
 -- starting with "layer_" is (you guessed it!) a layer. It is a lot like a 
 -- combined .shp/.dbf. A significant difference is that the attributes can be 
 -- normalized (in the RDMS sense) by using additional tables combined with 
--- layer attributes that start with "ix_" or "id_". An attribute that starts 
--- with "ix_" points to the sequential index of an attribute in another table.
--- An attribute that starts with "id_" points to a non-sequential unique ID of 
--- an attribute in another table. The table is specifed by naming the attribute
--- with that table name like so: ix_table or id_table.
+-- layer attributes that end with "_id" (i.e., foreign keys).
 --
 -- Attribute naming conventions: 
---     * ixORid_TableName[_OtherQualifiers]
+--     * TableName[_OtherQualifiers]_id
 --     * FieldName[_OtherQualifiers]
--- When the attribute name starts with "ix_" or "id_", the attribute value will
--- be looked up in the table pointed to by NameOrTableName. When the name 
--- starts with "ix_" the name will be looked up by index; when it ends in "id_"
--- it will be looked up by unique id, where "ix"  and "id" are the names of 
--- columns containing, respectively, the sequential index and unique ID for 
--- each record. The Other Qualifiers part of the attribute name can be anything
--- that is useful for the user's purpose.
+-- When the attribute name ends with "_id", the attribute value will
+-- be looked up in the table pointed to by TableName. The Other Qualifiers part
+-- of the attribute name can be anything that is useful for the user's purpose.
 --
 -- The geometry column will contain a binary geometry representation.
 
+USE milwaukeewi;
 
-CREATE TABLE "layer_street" (
-  "id"            INTEGER PRIMARY KEY,
-  "node_f_id"     INTEGER,
-  "node_t_id"     INTEGER,
-  "addr_f"        INTEGER,
-  "addr_t"        INTEGER,
-  "streetname_id" INTEGER,
-  "city_l_id"     INTEGER,
-  "city_r_id"     INTEGER,
-  "state_l_id"    TEXT,
-  "state_r_id"    TEXT,
-  "zip_l"         INTEGER,
-  "zip_r"         INTEGER,
-  "wkt_geometry"  TEXT
+CREATE TABLE `layer_street` (
+  `id`            INTEGER PRIMARY KEY NOT NULL AUTO_INCREMENT,
+  `geom`          LINESTRING NOT NULL,
+  -- Attributes all regions should have
+  `node_f_id`     INTEGER UNSIGNED NOT NULL,
+  `node_t_id`     INTEGER UNSIGNED NOT NULL,
+  `addr_f`        MEDIUMINT UNSIGNED NOT NULL,
+  `addr_t`        MEDIUMINT UNSIGNED NOT NULL,
+  `even_side`     ENUM('l', 'r') NOT NULL,
+  `streetname_id` INTEGER NOT NULL,
+  `city_l_id`     INTEGER NOT NULL,
+  `city_r_id`     INTEGER NOT NULL,
+  `state_l_id`    CHAR(2) NOT NULL,
+  `state_r_id`    CHAR(2) NOT NULL,
+  `zip_l`         MEDIUMINT(5) NOT NULL,
+  `zip_r`         MEDIUMINT(5) NOT NULL,
+  -- Region-specific attributes
+  `one_way`       ENUM('', 'ft', 'tf', 'n') NOT NULL,
+  `code`          CHAR(3) NOT NULL,	
+  `bikemode`      ENUM('', 't', 'r', 'l', 'p'),
+  `lanes`         TINYINT NULL,	
+  `adt`           INTEGER NOT NULL,
+  `spd`           TINYINT NOT NULL,
+  SPATIAL INDEX (`geom`),
+  INDEX (`node_f_id`),
+  INDEX (`node_t_id`),
+  INDEX (`addr_f`),
+  INDEX (`addr_t`),
+  INDEX (`streetname_id`),
+  INDEX (`city_l_id`),
+  INDEX (`city_r_id`),
+  INDEX (`state_l_id`),
+  INDEX (`state_r_id`),
+  INDEX (`zip_l`),
+  INDEX (`zip_r`)
 );
 
--- Milwaukee street attributes
-CREATE TABLE "attr_street" (
-  "id"           INTEGER PRIMARY KEY,
-  "oneway"       INTEGER,
-  "cfcc"         TEXT,	
-  "bikemode"     TEXT,
-  "lanes"        INTEGER,	
-  "adt"          INTEGER,
-  "spd"          INTEGER
+CREATE TABLE `layer_node` (
+  `id`   INTEGER PRIMARY KEY NOT NULL,
+  `geom` POINT NOT NULL,
+  SPATIAL INDEX (`geom`)
 );
 
-CREATE TABLE "layer_node" (
-  "id"           INTEGER  PRIMARY KEY,
---"geometry"     BLOB,
-  "wkt_geometry" TEXT   
+CREATE TABLE `streetname` (
+  `id`     INTEGER PRIMARY KEY NOT NULL AUTO_INCREMENT,
+  `prefix` CHAR(2) NOT NULL,
+  `name`   VARCHAR(255) NOT NULL,
+  `type`   CHAR(4) NOT NULL,
+  `suffix` CHAR(2) NOT NULL,
+  INDEX (`prefix`),
+  INDEX (`name`),
+  INDEX (`type`),
+  INDEX (`suffix`)
 );
 
-CREATE TABLE "streetname" (
-  "id"     INTEGER PRIMARY KEY,
-  "prefix" TEXT,
-  "name"   TEXT,
-  "type"   TEXT,
-  "suffix" TEXT,
-  UNIQUE ("prefix","name","type","suffix")
+CREATE TABLE `city` (
+  `id`    INTEGER PRIMARY KEY NOT NULL AUTO_INCREMENT,
+  `city`  VARCHAR(255) NOT NULL,
+  INDEX (`city`)	
 );
 
-CREATE TABLE "city" (
-  "id"    INTEGER PRIMARY KEY,
-  "city"  TEXT UNIQUE
+CREATE TABLE `state` (
+  `id`    CHAR(2) PRIMARY KEY NOT NULL, 
+  `state` VARCHAR(255) NOT NULL,
+  INDEX (`state`)	
 );
-
-CREATE TABLE "state" (
-  "id"    TEXT PRIMARY KEY, -- Two-letter state code
-  "state" TEXT UNIQUE
-);
-
---CREATE TABLE "matrix" (
---  "ix"     INTEGER PRIMARY KEY AUTOINCREMENT,
---  "name"   TEXT UNIQUE,
---  "matrix" BLOB
---);
-
