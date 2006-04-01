@@ -66,8 +66,12 @@ def index(req, **params):
             to = ''
             result = _getWelcomeMessage()
         else:
-            fr = to = ''
-            response_text = _processQuery(req, params)            
+            response_text = _processQuery(req, params)
+            if params['service'] == 'route':
+                fr = params['q'][0]
+                to = params['q'][1]
+            else:
+                fr = to = ''
             status = req.status
             if req.status < 400:
                 result_set = eval(response_text)
