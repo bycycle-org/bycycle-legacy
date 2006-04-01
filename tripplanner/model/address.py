@@ -39,11 +39,21 @@ class Address(object):
         self.street_types_atof = sttypes.street_types_atof
         self.states_ftoa = states.states_ftoa
         self.states_atof = states.states_atof
+        self.suffixes_ftoa = {'northbound': 'nb',
+                              'southhbound': 'sb',
+                              'eastbound': 'eb',
+                              'westbound': 'wb',
+                              }
+        self.suffixes_atof = {}
+        for f in self.suffixes_ftoa:
+            self.suffixes_atof[self.suffixes_ftoa[f]] = f
 
 
     def _initStreetAndPlace(self, inaddr):
-        if isinstance(inaddr, basestring): words = inaddr.split() 
-        elif isinstance(inaddr, list): words = inaddr
+        if isinstance(inaddr, basestring):
+            words = inaddr.split() 
+        elif isinstance(inaddr, list):
+            words = inaddr
         name = []
         street = Street()
         place = Place()
@@ -99,9 +109,13 @@ class Address(object):
 
             # suffix
             word = words[-1]
-            if word in self.directions_atof: street.suffix = word
+            if word in self.directions_atof or \
+                   word in self.suffixes_atof:
+                street.suffix = word
             elif word in self.directions_ftoa:
                 street.suffix = self.directions_ftoa[word]
+            elif word in self.suffixes_ftoa:
+                street.suffix = self.suffixes_ftoa[word]                
             if street.suffix:
                 del words[-1]
 
@@ -142,9 +156,12 @@ class AddressAddress(Address):
     def __init__(self, inaddr, mode, **kwargs):
         Address.__init__(self, inaddr, mode, **kwargs)
         words = self.inaddr.split()
-        try: self.number = int(words[0])
-        except: self.number = 0
-        else: words = words[1:]
+        try:
+            self.number = int(words[0])
+        except:
+            self.number = 0
+        else:
+            words = words[1:]
         self.street, self.place = self._initStreetAndPlace(words)
         
     def __str__(self):        
@@ -163,8 +180,10 @@ class IntersectionAddress(Address):
         else: 
             self.street1, self.place1 = Street(), Place()
             self.street2, self.place2 = Street(), Place()
-        if not self.place1: self.place1 = self.place2
-        if not self.place2: self.place2 = self.place1
+        if not self.place1:
+            self.place1 = self.place2
+        if not self.place2:
+            self.place2 = self.place1
 
     @staticmethod
     def getCrossStreets(inaddr): 

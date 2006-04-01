@@ -83,41 +83,39 @@ function _callback(req)
   //alert(response_text);
   if (status < 400)
     {
-      eval("result_set = " + response_text + ";");
-      eval('_' + result_set.result_set.type + 'Callback')(status, result_set);
       if (start_ms)
 	{
 	  var elapsed = (new Date().getTime() - start_ms) / 1000.0;
 	  setStatus(['Done. Took ', elapsed, ' second', 
 		     (elapsed == 1.00 ? '' : 's'), '.'].join(''));
 	}
-      var result = unescape(result_set.result_set.html);
+      eval("result_set = " + response_text + ";");
+      setResult(unescape(result_set.result_set.html));
+      eval('_' + result_set.result_set.type + 'Callback')(status, result_set);
     }
   else
     {
       setStatus('Error. See below for details.', 1);
-      var result = response_text;
+      setResult(response_text);
     }
-  if (result)
-    setResult(result);
 }
 
 function _geocodeCallback(status, result_set)
 {
-  geocodes = result_set['result_set']['result'];
+  geocodes = result_set.result_set.result;
   switch (status)
     {
     case 200: // A-OK, one match
       if (map)
 	{
-	  _showGeocode(0, true);
+	  showGeocode(0, true);
 	}
       break;
     case 300:
       if (map)
 	{
 	  for (var i = 0; i < geocodes.length; ++i)
-	    _showGeocode(i, false);
+	    showGeocode(i, false);
 	}
       break;
     }
@@ -131,8 +129,6 @@ var colors_len = colors.length;
 function _routeCallback(status, result_set)
 {
   var route = result_set.result_set.result;
-  fr = route.fr.original;
-  to = route.to.original;
   switch (status)
     {
     case 200: // A-OK, one match
@@ -148,17 +144,16 @@ function _routeCallback(status, result_set)
 	  var s_mkr = s_e_markers[0];
 	  var e_mkr = s_e_markers[1];
 	  var e_ord = linestring_len - 1;
-	  GEvent.addListener(s_mkr, "click", function() 
-			     { 
-			       map.showMapBlowup(linestring[0]); 
-			     });	           
-	  GEvent.addListener(e_mkr, "click", function() 
-			     { 
-			       map.showMapBlowup(linestring[e_ord]); 
-			     });			
+	  GEvent.addListener(s_mkr, "click", function() { 
+	    map.showMapBlowup(linestring[0]); 
+	  });	           
+	  GEvent.addListener(e_mkr, "click", function() { 
+	    map.showMapBlowup(linestring[e_ord]); 
+	  });			
 	  centerAndZoomToBox(box);
-	  if (color_index == colors_len) color_index = 0;
 	  drawPolyLine(linestring, colors[color_index++]);
+	  if (color_index == colors_len)
+	    color_index = 0;
 	}
       break;			 
     case 300: // Multiple matches
@@ -220,42 +215,34 @@ function resizeMap()
 {
   var margin = 5;
   var win_height = getWindowHeight();
-  var height = win_height - _getOffset('map') - margin;
+  var height = win_height - elOffset('map') - margin;
   if (height >= 0)
     {
       el('map').style.height = height + 'px';
       if (map)
 	map.onResize();
     }
-  height = win_height - _getOffset('result') - margin;
+  height = win_height - elOffset('result') - margin;
   if (height >= 0)
     el('result').style.height =  height + 'px'; 
 }
 
-function _getOffset(id)
-{
-  var offset = 0;
-  for (var e = el(id); e != null; e = e.offsetParent) 
-    offset += e.offsetTop;
-  return offset;
-}
-
-function _showGeocode(index, open_info_win)
+function showGeocode(index, open_info_win)
 {
   if (map) 
     {
       var geocode = geocodes[index];
       var point = {'x': geocode.x, 'y': geocode.y};
-      var html = ['<div style="width:250px;">', 
-		  geocode.address.replace('\n', '<br/>'), 
-		  '</div>'].join('');
-      var geocode_marker = placeMarkers([point])[0];
-      GEvent.addListener(geocode_marker, "click", 
-			 function() { map.openInfoWindowHtml(point, html); });
+      if (!geocode.marker) {
+	geocode.marker = placeMarkers([point])[0];
+	GEvent.addListener(geocode.marker, "click", function() {
+	  map.openInfoWindowHtml(point, geocode.html); 
+	});
+      }
       if (open_info_win)
 	{
 	  map.centerAndZoom(point, 3);
-	  map.openInfoWindowHtml(point, html);
+	  map.openInfoWindowHtml(point, geocode.html);
 	}
     }
 }

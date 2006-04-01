@@ -16,11 +16,11 @@ class Mode(portlandor.Mode):
 
     def getEdgeWeight(self, v, edge_attrs, prev_edge_attrs):
         """Calculate weight for edge given it & last crossed edge's attrs."""
-        length = edge_attrs[self.indices["length"]] / 1000000.0
+        length = edge_attrs[self.indices["length"]] * self.int_decode
         code = edge_attrs[self.indices["code"]]
         bikemode = edge_attrs[self.indices["bikemode"]]
-        slope = edge_attrs[self.indices["abs_slp"]] / 1000000.0
-        upfrac = edge_attrs[self.indices["up_frac"]] / 1000000.0
+        slope = edge_attrs[self.indices["abs_slp"]] * self.int_decode
+        upfrac = edge_attrs[self.indices["up_frac"]] * self.int_decode
         downfrac = 1 - upfrac
         node_f_id = edge_attrs[self.indices["node_f_id"]]
         streetname_id = edge_attrs[self.indices["streetname_id"]]
@@ -60,13 +60,13 @@ class Mode(portlandor.Mode):
             elif bikemode == 'p': hours *= .90
             elif bikemode == 'b':
                 # Adjust bike lane for traffic (est. from st. type)
-                if   code in (1500, 1521):     hours *=  .750  #lt
-                elif code == 1450:             hours *= .8750  #mt
-                elif code == 1400:             hours *= 1.000  #ht
-                elif code == 1300:             hours *= 2.000  #ca
-                elif 1200 <= code < 1300:      hours *= 4.000  #ca+
-                elif 1100 <= code < 1200:      hours *= 8.000  #ca++
-                else:                          hours *= 1000   #?
+                if   code in (1500, 1521):      hours *=  .750  #lt
+                elif code == 1450:              hours *= .8750  #mt
+                elif code == 1400:              hours *= 1.000  #ht
+                elif code == 1300:              hours *= 2.000  #ca
+                elif 1200 <= code < 1300:       hours *= 4.000  #ca+
+                elif 1100 <= code < 1200:       hours *= 8.000  #ca++
+                else:                           hours *= 1000   #?
             elif bikemode == 'l': hours *= 1.00
             elif bikemode == 'm': hours *= 1.17
             elif bikemode == 'h': hours *= 1.33
@@ -77,13 +77,13 @@ class Mode(portlandor.Mode):
             # (est. from st. type)
             if code in (3200, 3230, 3240, 3250): hours *= .95
             else:
-                if code in (1500, 1521):       hours *= 1.50   #lt
-                elif code == 1450:             hours *= 1.75   #mt
-                elif code == 1400:             hours *= 2.00   #ht
-                elif code == 1300:             hours *= 4.00   #ca
-                elif 1200 <= code < 1300:      hours *= 8.00   #ca+
-                elif 1100 <= code < 1200:      hours *= 16.00  #ca++
-                else:                          hours *= 1000   #?
+                if code in (1500, 1521):         hours *= 1.50   #lt
+                elif code == 1450:               hours *= 1.75   #mt
+                elif code == 1400:               hours *= 2.00   #ht
+                elif code == 1300:               hours *= 4.00   #ca
+                elif 1200 <= code < 1300:        hours *= 8.00   #ca+
+                elif 1100 <= code < 1200:        hours *= 16.00  #ca++
+                else:                            hours *= 1000   #?
 
         # Penalize edge if it has different street name from previous edge
         try:

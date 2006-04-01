@@ -166,27 +166,44 @@ def _analyzeQuery(params):
 
 def _geocodeCallback(status, result_set, **params):
     geocodes = result_set['result_set']['result']
+
+    html = '<div class="info_win">' \
+           '  <h2 style="margin-top:0">Address</h2><p>%s</p><p>%s</p>' \
+           '</div>'
+    href = ' href="javascript:void(0);" '
+    onclick = 'onclick="setElV(\'%s\', \'%s\')"'
+    set = '''<p>Set as
+    <a %s %s>From</a> or
+    <a %s %s>To</a>
+    address for route</p>''' % \
+    (href, onclick % ('fr', '%s'),
+     href, onclick % ('to', '%s'))
+    
     if status == 200:    # A-OK, one match
         geocode = geocodes[0]
-        addr = geocode['address'].replace('\n', '<br/>')
+        disp_addr = geocode['address'].replace('\n', '<br/>')
         field_addr = geocode['address'].replace('\n', ', ')
-        href = ' href="javascript:void(0);" '        
-        result = '<h2 style="margin-top:0">Address</h2><p>%s</p>' % addr
+        result = html % (disp_addr, set % (field_addr, field_addr))
+        geocode['html'] = result
     elif status == 300:  # Multiple matches
         result = ['<h2>Multiple Matches Found</h2><ul>']
-        for i, code in enumerate(geocodes):
-            addr = code['address']
+        for i, geocode in enumerate(geocodes):
+            disp_addr = geocode['address'].replace('\n', '<br/>')
+            field_addr = geocode['address'].replace('\n', ', ')
+            geocode['html'] = html % (disp_addr, set % (field_addr,
+                                                        field_addr))
             result.append('<li>'
                           '  <a href="?region=%s&q=%s" '
-                          '    onclick="_showGeocode(%s, 1); return false;"'
+                          '    onclick="showGeocode(%s, 1); return false;"'
                           '    >%s</a>'
                           '</li>' %
                           (params['region'],
-                           addr.replace('\n', ', ').replace(' ', '+'),
+                           field_addr.replace(' ', '+'),
                            i,
-                           addr.replace('\n', '<br/> ')))
+                           disp_addr))
         result.append('</ul>')
-        result = ''.join(result)
+        result = '\n'.join(result)
+        print result
     return result
 
 
@@ -204,6 +221,8 @@ def _routeCallback(status, result_set, **params):
 def _makeRouteMultipleMatchList(geocodes_fr, geocodes_to, params):
     region = params['region']
     result = ['<div id="mma"><h2>Multiple Matches Found</h2>']
+
+    zoom = 'if (map) map.centerAndZoom({x: %s, y: %s}, 3);'
 
     def makeDiv(fr_or_to, style):
         if fr_or_to == 'fr':
@@ -223,25 +242,33 @@ def _makeRouteMultipleMatchList(geocodes_fr, geocodes_to, params):
             addr = code['address']
             q = q_temp % addr.replace('\n', ', ')
             result.append('<li>'
-                          '<a href="?region=%s&q=%s&tmode=bike">%s</a>'
+                          '  %s<br/>'
+                          '  <a href="javascript:void(0);"'
+                          '     onclick="%s">Show on map</a>'
+                          '  &middot;'
+                          '  <a href="?region=%s&q=%s"'
+                          '     onclick="%s">Select</a>'
                           '</li>' % 
-                          (region,
+                          (addr.replace('\n', '<br/>'),
+                           zoom % (code['x'], code['y']),
+                           region,
                            q.replace(' ', '+'),
-                           addr.replace('\n', '<br/>')))
+                           find % addr.replace('\n', ', ')))
         result.append('</ul></div>')
-  
+
     if geocodes_fr:
-        style = 'block'
+        find = 'setElV(\'fr\', \'%s\'); '
         if geocodes_to:
-            find = '_setElStyle(\'mma_fr\', \'display\', \'none\'); ' \
-                   '_setElStyle(\'mma_to\', \'display\', \'block\')'
+            find += 'setElStyle(\'mma_fr\', \'display\', \'none\'); ' \
+                    'setElStyle(\'mma_to\', \'display\', \'block\'); ' \
+                    'return false;'
         else:
-            find = 'doFind()'
-        makeDiv('fr', style)
+            find += 'doFind(\'route\'); return false;'
+        makeDiv('fr', 'block')
         makeList('fr', geocodes_fr, find)
 
     if geocodes_to:
-        find = 'doFind()'
+        find = 'setElV(\'to\', \'%s\'); doFind(\'route\'); return false;'
         if geocodes_fr:
             style = 'none'
         else:
@@ -506,26 +533,27 @@ if __name__ == '__main__':
 
     P = [
         {'region': 'portlandor',
-         'tmode': 'bike',
          'q': '300 main to 4807 se kelly'
          },
-
+        
+        {'region': 'portlandor',
+         'q': '300 main'
+         },
+        
         {'region': 'milwaukee',
-          'q': '27th and lisbon'
-          },
-         
-         {'region': 'portlandor',
-          'tmode': 'bike',
-          'q': '4807 se kelly to 45th and kelly'
-          },
-         
-         {'region': 'milwaukeewi',
-          'tmode': 'bike',
-          'q': '35th and north to 27th and lisbon'
-          },
-         ]
-
-
+         'q': '27th and lisbon'
+         },
+    
+        {'region': 'portlandor',
+         'q': '4807 se kelly to 45th and kelly'
+         },
+        
+        {'region': 'milwaukeewi',
+         'q': '35th and north to 27th and lisbon'
+         },
+        ]
+    
+    
     print
     def runTest(func):
         print 'Running %s tests' % len(P)
@@ -542,7 +570,7 @@ if __name__ == '__main__':
             else:
                 char = '+'
             if show_content:
-                print content
+                #print content
                 print
             else:
                 sys.stdout.write(char)

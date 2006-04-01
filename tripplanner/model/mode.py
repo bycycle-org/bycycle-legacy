@@ -8,23 +8,21 @@ import address, segment, intersection
 
 
 class Mode(object):
-    def __init__(self):
-        edge_fields = ('weight', 'streetid', 'code')
-        self.indices = {}
-        for i in range(len(edge_fields)): self.indices[edge_fields[i]] = i
+    # The number of digits to save when encoding a float as an int
+    int_exp = 6
+    # Multiplier to create int-encoded float
+    int_encode = 10 ** int_exp
+    # Multiplier to get original value back
+    int_decode = 10 ** -int_exp
         
-        self.tables = {'edges': 'layer_street',
-                       'vertices': 'layer_node',
-                       'streetnames': 'streetname',
-                       'cities': 'city',
-                       'states': 'state'}
+    tables = {'edges': 'layer_street',
+              'vertices': 'layer_node',
+              'streetnames': 'streetname',
+              'cities': 'city',
+              'states': 'state'}
 
-        # The number of digits after the implied decimal point of a lon or lat
-        self.lon_lat_fraction_len = 6
-        # What a lon or lat with an implied decimal point has to be multiplied
-        # by to get the actual lon or lat
-        self.lon_lat_exp = 10 ** -self.lon_lat_fraction_len
-
+    
+    def __init__(self):
         # Set up path to data files
         self.path = '%stripplanner/model/%s/' % (install_path, self.region)
         self.data_path = '%s/data/' % self.path
@@ -45,6 +43,8 @@ class Mode(object):
         # In other words, each edge in the matrix has attributes associated
         # with it in an ordered sequence. This index gives us a way to access
         # the attributes by name while keeping the size of the matrix smaller.
+        # We require that segments for all regions have length, street type
+        # (code), and streetname_id attributes.
         self.edge_attrs = ['length', 'code', 'streetname_id'] + self.edge_attrs
         self.indices = {}
         for i, attr in enumerate(self.edge_attrs):
@@ -100,7 +100,7 @@ class Mode(object):
             ft = both_ways or (one_way == 'ft')
             tf = both_ways or (one_way == 'tf')
 
-            length = int(math.floor(row['edge_len'] * 1000000))
+            length = int(math.floor(row['edge_len'] * self.int_encode))
             row['length'] = length
 
             entry = tuple([row[a] for a in self.edge_attrs])
@@ -456,7 +456,7 @@ class Mode(object):
         try: 
             return cursor.execute(Q)
         except Exception, e:
-            print Q[1:100]
+            print Q[:100]
             raise
             
     def execute(self, Q):
