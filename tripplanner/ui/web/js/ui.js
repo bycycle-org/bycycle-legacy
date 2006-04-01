@@ -25,12 +25,17 @@ function doFind(service)
   }
 
   if (service == 'geocode') {
-    var el_q = el('a');
+    var el_q = el('q');
     var q = cleanString(el_q.value);
     if (!q) {
       errors.push('Please enter an Address');
       if (region)
 	el_q.focus();
+    }
+    var i = q.toLowerCase().indexOf(' to ');
+    if (i != -1) {
+      setElV('fr', q.substring(0, i));
+      setElV('to', q.substring(i+4));
     }
   } else if (service == 'route') {
     var el_fr = el('fr');
