@@ -1,20 +1,9 @@
 /* This module initializes the interface. */
 
+var local = 0;
+
 // The base location (domain) of the web interface
 var domain = location.href.split('/')[2];
-
-// Decide if we are running locally (where locally means not on the production
-// server)
-if (domain == 'tripplanner.bycycle.org')
-  {
-    var local = 0;
-    var dir = '';
-  }
-else
-  {
-    var local = 1;
-    var dir = 'tripplanner/';    
-  }
 
 // The URL minus the query string
 var base_url = location.href.split('?')[0];
@@ -22,6 +11,10 @@ var base_url = location.href.split('?')[0];
 var urls_to_keys_map = {
   'http://tripplanner.bycycle.org/':
   'ABQIAAAAd_4WmZlgvQzchd_BQM0MPhQ8y5tnWrQRsyOlME1eHkOS3wQveBSeFCpOUAfP10H6ec-HcFWPgiJOCA',
+
+  'http://dev.bycycle.org/':
+  'ABQIAAAAd_4WmZlgvQzchd_BQM0MPhQSskL_eAzZotWlegWekqLPLda0sxQZNf0_IshFell3z8qP8s0Car117A',
+
   'http://www.bycycle.org/tripplanner/':
   'ABQIAAAAd_4WmZlgvQzchd_BQM0MPhQ9bMyOoze7XFWIje4XR3o1o-U-cBTwScNT8SYtwSl70gt4wHCO-23Y3g'
 };

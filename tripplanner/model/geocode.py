@@ -1,4 +1,3 @@
-from copy import copy
 from byCycle.lib import gis
 from byCycle.tripplanner.model import address
 
@@ -103,15 +102,19 @@ def getAddressGeocodes(inaddr, mode):
     Q = 'SELECT id FROM %s WHERE %s' % (mode.tables['edges'], where)
     mode.execute(Q)
     rows = mode.fetchAll()
-    if rows: ids = [r[0] for r in rows]
-    else: return []
+    if rows:
+        ids = [r[0] for r in rows]
+    else:
+        return []
     segs = mode.getSegmentsById(ids)
 
     # Make list of geocodes for segments matching inaddr
     geocodes = []
+    num = addr.number
     for s in segs:
-        s_addr = copy(addr)
-        attrs = s.getAttrsOnNumSide(addr.number)
+        s_addr = address.AddressAddress('', mode)
+        s_addr.number = num
+        attrs = s.getAttrsOnNumSide(num)
         for attr in ('prefix', 'name', 'type', 'suffix'):
             s_addr.street.__dict__[attr] = attrs[attr]
         for attr in ('city', 'state_id', 'zip'):
@@ -123,6 +126,8 @@ def getAddressGeocodes(inaddr, mode):
                                    min(s.addr_f, s.addr_t))
         code = AddressGeocode(s_addr, s, xy)
         geocodes.append(code)
+
+    for g in geocodes: print g
     return geocodes
 
     
@@ -178,7 +183,7 @@ def getIntersectionGeocodes(inaddr, mode):
     node_ids = []
     for p in pairs:
         s, t = s_dict[p[0]], s_dict[p[1]]
-        i_addr = copy(addr)
+        i_addr = address.IntersectionAddress('', mode)
         _setStreetAndPlaceFromSegment(i_addr.street1, i_addr.place1, s)
         _setStreetAndPlaceFromSegment(i_addr.street2, i_addr.place2, t)
         addrs.append(i_addr)

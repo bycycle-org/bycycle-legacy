@@ -39,6 +39,14 @@ function setElV(id, val)
   document.getElementById(id).value = val; 
 }
 
+function elOffset(id)
+{
+  var offset = 0;
+  for (var e = el(id); e != null; e = e.offsetParent) 
+    offset += e.offsetTop;
+  return offset;
+}
+
 
 /* Element Style */
 

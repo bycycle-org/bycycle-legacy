@@ -48,24 +48,24 @@ def get(return_messages=False, region='', tmode='bicycle', q=[], **params):
     # Data mode (region)
     region = region.strip()
     if not region:
-        errors.append('Region required')
+        errors.append('Please select a region')
 
     # Query
     if not q:
-        errors.append('Route query required')
+        errors.append('Please enter a route query')
     else:
         try:
             fr = q[0].strip()
             if not fr:
                 raise IndexError
         except IndexError:
-            errors.append('Start address required')
+            errors.append('Please enter a From address')
         try:
             to = q[1].strip()
             if not to:
                 raise IndexError
         except IndexError:
-            errors.append('End address required')
+            errors.append('Please enter a To address')
 
     # Let multiple input errors fall through to here
     if errors:
@@ -104,20 +104,22 @@ def get(return_messages=False, region='', tmode='bicycle', q=[], **params):
         raise MultipleMatchingAddressesError(route)
 
     # Let multiple multiple match errors fall through to here
-    if errors: raise InputError(errors)
+    if errors:
+        raise InputError(errors)
 
     # Precise (enough) addresses were entered
     fcode, tcode = fcodes[0], tcodes[0]
 
     # TODO: Make this check actually work
     if fcode == tcode:
-        raise InputError('From and To appear to be the same')
+        raise InputError('From and To addresses appear to be the same')
 
 
     ## Made it through that maze--now fetch the main adjacency matrix, G
     st = time.time()
     G = mode.getAdjacencyMatrix()
-    if not G: raise NoRouteError('Graph is empty')
+    if not G:
+        raise NoRouteError('Graph is empty')
     messages.append('Time to get G: %s' % (time.time() - st))
 
 
@@ -203,7 +205,9 @@ def get(return_messages=False, region='', tmode='bicycle', q=[], **params):
                                    weightFunction=mode.getEdgeWeight,
                                    heuristicFunction=None)
     except sssp.SingleSourceShortestPathsNoPathError:
-        raise NoRouteError('Could not find a route')
+        raise NoRouteError('Unable to find a route from "%"s to "%s"' % \
+                           (str(fcode).replace('\n', ', '),
+                            str(tcode).replace('\n', ', ')))
     messages.append('Time to findPath: %s' % (time.time() - st))
 
 
@@ -493,6 +497,8 @@ def getDirectionFromBearing(bearing):
 
 
 if __name__ == '__main__':
+    import sys
+
     def print_key(key):
         for k in key:
             print k, 
@@ -503,23 +509,31 @@ if __name__ == '__main__':
             else: print key[k]
         print
 
-    Qs = {'milwaukeewi':
-          (('Puetz Rd & 51st St', '841 N Broadway St'),
-           ('27th and lisbon', '35th and w north'),
-           ('S 84th Street & Greenfield Ave', 'S 84th street & Lincoln Ave'),
-           ('3150 lisbon', 'walnut & n 16th '),
-           ('124th and county line, franklin', '3150 lisbon'),
-           ('124th and county line, franklin', 'lon=-87.940407, lat=43.05321'),
-           ('lon=-87.973645, lat=43.039615', 'lon=-87.978623, lat=43.036086'),
-           ),
-          'portlandor':
-           (('633 n alberta', '4807 se kelly'),
-            ('sw hall & denney', '44th and se stark'),
-            ('-122.645488, 45.509475', 'sw hall & denney'),
-           ),
-          }
+    try:
+        region, q = sys.argv[1].split(',')
+    except IndexError:
+        Qs = {'milwaukeewi':
+              (('Puetz Rd & 51st St', '841 N Broadway St'),
+               ('27th and lisbon', '35th and w north'),
+               ('S 84th Street & Greenfield Ave', 'S 84th street & Lincoln Ave'),
+               ('3150 lisbon', 'walnut & n 16th '),
+               ('124th and county line, franklin', '3150 lisbon'),
+               ('124th and county line, franklin', 'lon=-87.940407, lat=43.05321'),
+               ('lon=-87.973645, lat=43.039615', 'lon=-87.978623, lat=43.036086'),
+               ),
+              'portlandor':
+               (('lon=-122.67334,lat=45.621662', '8220 N Denver Ave'),
+                ('633 n alberta', '4807 se kelly'),
+                ('sw hall & denney', '44th and se stark'),
+                ('-122.645488, 45.509475', 'sw hall & denney'),
+               ),
+              }
+    else:
+        q = q.split('to')
+        Qs = {region: (q,)}
 
-    for dm in ('milwaukeewi',):
+
+    for dm in Qs:
         qs = Qs[dm]
         for q in qs:
             try:
