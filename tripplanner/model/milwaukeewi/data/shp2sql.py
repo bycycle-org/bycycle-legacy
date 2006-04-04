@@ -6,6 +6,7 @@
 # DATE 
 #  January 27, 2006
 #  March 30, 2006 [Switched from SQLite to MySQL]
+#  April 4, 2006 [Converted to single-DB, shared with other regions]
 # VERSION 
 #  0.1
 # PURPOSE 
@@ -25,6 +26,7 @@ from byCycle.lib import gis, meter
 
 
 region = 'milwaukeewi'
+
 
 # Fields we want from the DBF
 dbf_fields = ('FNODE',
@@ -81,6 +83,8 @@ only = False
 # DB handle
 db = None
 
+raw = '%s_raw' % region
+
 timer = None
 
     
@@ -88,25 +92,24 @@ def shpToRawSql():
     datasource = 'route_roads84psrenode'
     layer = 'route_roads84psrenode'
     path = os.path.join(os.getcwd(), datasource)
-    table = 'raw'
     # Drop existing raw table
-    Q = 'DROP TABLE IF EXISTS raw'
+    Q = 'DROP TABLE IF EXISTS %s' % raw
     if not _wait(Q):
         _execute(Q)
     # Extract SQL from Shapefile
     cmd = 'mysqlgisimport -t %s -o %s.sql %s' % \
-          (table, table, os.path.join(path, layer))
+          (raw, raw, os.path.join(path, layer))
     if not _wait('Extract SQL from Shapefile'):
         _system(cmd)
     # Load SQL into DB
-    cmd = 'mysql -u root --password="" %s < raw.sql' % region
+    cmd = 'mysql -u root --password="" bycycle < %s.sql' % raw
     if not _wait('Load SQL into DB'):
         _system(cmd)
     
 def addColumns():
     # Add missing...    
     # INTEGER columns
-    Q = 'ALTER TABLE raw ADD COLUMN %s %s NOT NULL'
+    Q = 'ALTER TABLE %s ADD COLUMN %%s %%s NOT NULL' % raw
     cols = ('addr_f', 'addr_t', 'streetname_id', 'city_l_id', 'city_r_id')
     for col in cols:
         _execute(Q % (col, 'INTEGER'))
@@ -119,7 +122,7 @@ def addColumns():
 
 def fixRaw():
     # Abbreviate bike modes
-    Q = 'UPDATE raw SET bike_facil="%s" WHERE bike_facil="%s"'
+    Q = 'UPDATE %s SET bike_facil="%%s" WHERE bike_facil="%%s"' % raw
     bm = (("t", "bike trail"),
           ("r", "bike route"),
           ("l", "bike lane"),
@@ -128,63 +131,63 @@ def fixRaw():
     for m in bm:
         _execute(Q % (m[0], m[1]))
     # Fix CFCC for bike trails
-    _execute('UPDATE raw SET cfcc="a71" WHERE bike_facil="t"')
+    _execute('UPDATE %s SET cfcc="a71" WHERE bike_facil="t"' % raw)
     # Fix one_way (0 => 'n', 1 => 'ft', 2 => 'tf', 3 => '')
-    Q = 'UPDATE raw SET one_way="%s" WHERE one_way="%s"'
+    Q = 'UPDATE %s SET one_way="%s" WHERE one_way="%s"'
     M = {'0': 'n', '1': 'ft', '2': 'tf', '3': ''}
     for m in M:
-        _execute(Q % (M[m], m))
+        _execute(Q % (raw, M[m], m))
 
 def createSchema():
     tables = ('layer_street', 'layer_node', 'streetname', 'city', 'state')
     for table in tables:
-        _execute('DROP TABLE IF EXISTS %s' % table)
+        _execute('DROP TABLE IF EXISTS %s_%s' % (region, table))
     cmd = 'mysql -u root --password="" < ./schema.sql'
     _system(cmd)
-        
+            
 def unifyAddressRanges():
     """Combine left and right side address number into a single value."""
-    QF = 'UPDATE raw ' \
+    QF = 'UPDATE %s ' \
         'SET addr_f = (ROUND(fradd%s / 10.0) * 10) + 1 ' \
         'WHERE fradd%s != 0'
-    QT = 'UPDATE raw ' \
+    QT = 'UPDATE %s ' \
         'SET addr_t = (ROUND(toadd%s / 10.0) * 10) ' \
         'WHERE toadd%s != 0'
     for side in ('l', 'r'):
-        _execute(QF % (side, side))
-        _execute(QT % (side, side))
+        _execute(QF % (raw, side, side))
+        _execute(QT % (raw, side, side))
     # Set even side
-    QEL = 'UPDATE raw SET even_side = "l" ' \
-          'WHERE (fraddl != 0 AND fraddl % 2 = 0) OR ' \
-          ' (toaddl != 0 AND toaddl % 2 = 0)'
-    QER = 'UPDATE raw SET even_side = "r" ' \
-          'WHERE (fraddr != 0 AND fraddr % 2 = 0) OR ' \
-          ' (toaddr != 0 AND toaddr % 2 = 0)'
-    _execute(QEL)
-    _execute(QER)
+    QEL = 'UPDATE %s SET even_side = "l" ' \
+          'WHERE (fraddl != 0 AND fraddl %% 2 = 0) OR ' \
+          ' (toaddl != 0 AND toaddl %% 2 = 0)'
+    QER = 'UPDATE %s SET even_side = "r" ' \
+          'WHERE (fraddr != 0 AND fraddr %% 2 = 0) OR ' \
+          ' (toaddr != 0 AND toaddr %% 2 = 0)'
+    _execute(QEL % raw)
+    _execute(QER % raw)
 
 def transferStreetNames():
     """Transfer street names to their own table."""
-    Q = 'INSERT INTO streetname (prefix, name, type, suffix) '\
-        'SELECT DISTINCT fedirp, fename, fetype, fedirs FROM raw'
-    _execute(Q)
+    Q = 'INSERT INTO %s_streetname (prefix, name, type, suffix) '\
+        'SELECT DISTINCT fedirp, fename, fetype, fedirs FROM %s'
+    _execute(Q % (region, raw))
 
 def updateRawStreetNameIds():
     """Set the street name ID of each raw record."""
     # Get all the distinct street names NEW
-    Q = 'SELECT DISTINCT fedirp, fename, fetype, fedirs FROM raw'
+    Q = 'SELECT DISTINCT fedirp, fename, fetype, fedirs FROM %s' % raw
     _execute(Q)
     rows = db.fetchAll()
     # Index each street name ID by its street name
     # {(stname)=>streetname_id}
     stnames = {}
-    Q = 'SELECT id, prefix, name, type, suffix FROM streetname'
+    Q = 'SELECT id, prefix, name, type, suffix FROM %s_streetname' % region
     _execute(Q)
     for row in db.fetchAll():
         stnames[(row[1],row[2],row[3],row[4])] = row[0]
     # Index raw row IDs by their street name ID {streetname_id=>[row IDs]}
     stid_rawids = {}
-    Q  = 'SELECT id, fedirp, fename, fetype, fedirs FROM raw'
+    Q  = 'SELECT id, fedirp, fename, fetype, fedirs FROM %s' % raw
     _execute(Q)
     for row in db.fetchAll():
         stid = stnames[(row[1],row[2],row[3],row[4])]
@@ -193,7 +196,7 @@ def updateRawStreetNameIds():
         else: 
             stid_rawids[stid] = [row[0]]
     # Iterate over street name IDs and set street name IDs of raw records
-    Q = 'UPDATE raw SET streetname_id=%s WHERE id IN %s'
+    Q = 'UPDATE %s SET streetname_id=%%s WHERE id IN %%s' % raw
     met = meter.Meter()
     met.setNumberOfItems(len(stid_rawids))
     met.startTimer()
@@ -211,20 +214,20 @@ def updateRawStreetNameIds():
 
 def transferCityNames():
     """Transfer city names to their own table."""
-    Q = 'INSERT INTO city (city) ' \
-        'SELECT DISTINCT cityl FROM raw'
+    Q = 'INSERT INTO %s_city (city) ' \
+        'SELECT DISTINCT cityl FROM %s' % (region, raw)
     _execute(Q)
-    Q = 'INSERT INTO city (city) ' \
-        'SELECT DISTINCT cityr FROM raw WHERE cityr NOT IN ' \
-        '(SELECT city FROM city)'
+    Q = 'INSERT INTO %s_city (city) ' \
+        'SELECT DISTINCT cityr FROM %s WHERE cityr NOT IN ' \
+        '(SELECT city FROM %s_city)' % (region, raw, region)
     _execute(Q)
 
 def updateRawCityIds():
     """Set the city ID of each raw record."""
-    Q0 = 'SELECT DISTINCT id, city FROM city'
+    Q0 = 'SELECT DISTINCT id, city FROM %s_city' % region
     for side in ('l', 'r'):
-        Q1 = 'UPDATE raw SET city_%s_id=%s WHERE city%s="%s"' % \
-             (side, '%s', side, '%s')
+        Q1 = 'UPDATE %s SET city_%s_id=%s WHERE city%s="%s"' % \
+             (raw, side, '%s', side, '%s')
         # Get all the distinct city names
         _execute(Q0)
         rows = db.fetchAll()
@@ -234,26 +237,28 @@ def updateRawCityIds():
 
 def updateRawStateIds():
     """Set the state ID of each raw record."""
-    Q = 'INSERT INTO state VALUES ("wi", "wisconsin")'
+    Q = 'INSERT INTO %s_state VALUES ("wi", "wisconsin")' % region
     _execute(Q)
-    Q = 'UPDATE raw SET state_l_id="wi", state_r_id="wi"'
+    Q = 'UPDATE %s SET state_l_id="wi", state_r_id="wi"' % raw
     _execute(Q)
 
 def createNodes():
-    Q = 'INSERT INTO layer_node ' \
+    Q = 'INSERT INTO %s_layer_node ' \
         '(SELECT DISTINCT fnode, startpoint(geo)' \
-        ' FROM raw)'
+        ' FROM %s)' % (region, raw)
     _execute(Q)    
-    Q = 'INSERT INTO layer_node ' \
+    Q = 'INSERT INTO %s_layer_node ' \
         '(SELECT DISTINCT tnode, endpoint(geo)' \
-        ' FROM raw' \
-        ' WHERE tnode NOT IN (SELECT DISTINCT id FROM layer_node))'
+        ' FROM %s' \
+        ' WHERE tnode NOT IN (SELECT DISTINCT id FROM %s_layer_node))' % \
+        (region, raw, region)
     _execute(Q)
 
 def transferAttrs():
     """Transfer fields from raw table to street layer table."""
     fields = ', '.join(db_fields)
-    Q = 'INSERT INTO layer_street SELECT NULL, %s FROM raw' % fields
+    Q = 'INSERT INTO %s_layer_street SELECT NULL, %s FROM %s' % \
+        (region, fields, raw)
     _execute(Q)
 
 

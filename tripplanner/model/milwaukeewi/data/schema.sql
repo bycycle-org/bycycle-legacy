@@ -16,9 +16,9 @@
 --
 -- The geometry column will contain a binary geometry representation.
 
-USE milwaukeewi;
+USE bycycle;
 
-CREATE TABLE `layer_street` (
+CREATE TABLE `milwaukeewi_layer_street` (
   `id`            INTEGER PRIMARY KEY NOT NULL AUTO_INCREMENT,
   `geom`          LINESTRING NOT NULL,
   -- Attributes all regions should have
@@ -55,13 +55,13 @@ CREATE TABLE `layer_street` (
   INDEX (`zip_r`)
 );
 
-CREATE TABLE `layer_node` (
+CREATE TABLE `milwaukeewi_layer_node` (
   `id`   INTEGER PRIMARY KEY NOT NULL,
   `geom` POINT NOT NULL,
   SPATIAL INDEX (`geom`)
 );
 
-CREATE TABLE `streetname` (
+CREATE TABLE `milwaukeewi_streetname` (
   `id`     INTEGER PRIMARY KEY NOT NULL AUTO_INCREMENT,
   `prefix` CHAR(2) NOT NULL,
   `name`   VARCHAR(255) NOT NULL,
@@ -73,13 +73,13 @@ CREATE TABLE `streetname` (
   INDEX (`suffix`)
 );
 
-CREATE TABLE `city` (
+CREATE TABLE `milwaukeewi_city` (
   `id`    INTEGER PRIMARY KEY NOT NULL AUTO_INCREMENT,
   `city`  VARCHAR(255) NOT NULL,
   INDEX (`city`)	
 );
 
-CREATE TABLE `state` (
+CREATE TABLE `milwaukeewi_state` (
   `id`    CHAR(2) PRIMARY KEY NOT NULL, 
   `state` VARCHAR(255) NOT NULL,
   INDEX (`state`)	

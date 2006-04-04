@@ -16,9 +16,9 @@
 --
 -- The geometry column will contain a binary geometry representation.
 
-USE portlandor;
+USE bycycle;
 
-CREATE TABLE `layer_street` (
+CREATE TABLE `portlandor_layer_street` (
   `id`            INTEGER PRIMARY KEY NOT NULL AUTO_INCREMENT,
   `geom`          LINESTRING NOT NULL,
   -- Attributes all regions should have
@@ -51,13 +51,13 @@ CREATE TABLE `layer_street` (
   INDEX (`streetname_id`)
 );
 
-CREATE TABLE `layer_node` (
+CREATE TABLE `portlandor_layer_node` (
   `id`   INTEGER PRIMARY KEY NOT NULL,
   `geom` POINT NOT NULL,
   SPATIAL INDEX (`geom`)
 );
 
-CREATE TABLE `streetname` (
+CREATE TABLE `portlandor_streetname` (
   `id`     INTEGER PRIMARY KEY NOT NULL AUTO_INCREMENT,
   `prefix` CHAR(2) NOT NULL,
   `name`   VARCHAR(255) NOT NULL,
@@ -65,12 +65,12 @@ CREATE TABLE `streetname` (
   `suffix` CHAR(2) NOT NULL
 );
 
-CREATE TABLE `city` (
+CREATE TABLE `portlandor_city` (
   `id`    INTEGER PRIMARY KEY NOT NULL AUTO_INCREMENT,
   `city`  VARCHAR(255) NOT NULL
 );
 
-CREATE TABLE `state` (
+CREATE TABLE `portlandor_state` (
   `id`    CHAR(2) PRIMARY KEY NOT NULL, 
   `state` VARCHAR(255) NOT NULL
 );
