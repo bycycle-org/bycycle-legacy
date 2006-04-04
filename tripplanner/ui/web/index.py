@@ -94,6 +94,9 @@ def index(method, params):
         template_file = open(template)
         content = template_file.read() % data
         template_file.close()
+
+
+    return content_type, status, content
         
     print 'Content-type: %s' % content_type
     print 'Status: %s' % status
@@ -295,16 +298,6 @@ def _makeRouteMultipleMatchList(geocodes_fr, geocodes_to, params):
       
     result.append('</div>')
     return ''.join(result)
-
-
-## Web Services
-
-def geocode(req, params):
-    return _processQuery(req, params, 'geocode')
-
-
-def route(req, params):
-    return _processQuery(req, params, 'route')
 
 
 ## Helpers
@@ -539,103 +532,6 @@ def _makeDirectionsTable(route):
     return ''.join((s_table, d_table))            
         
 
-## Testing
-    
-def test():
-    import sys
-
-    
-    class Req(object):
-        def __init__(self):
-            self.content_type = ''
-            self.headers_out = {}
-
-
-    P = [
-        {'region': 'portlandor',
-         'q': '300 main to 4807 se kelly'
-         },
-        
-        {'region': 'portlandor',
-         'q': '300 main'
-         },
-        
-        {'region': 'milwaukee',
-         'q': '27th and lisbon'
-         },
-    
-        {'region': 'portlandor',
-         'q': '4807 se kelly to 45th and kelly'
-         },
-        
-        {'region': 'milwaukeewi',
-         'q': '35th and north to 27th and lisbon'
-         },
-        ]
-    
-    
-    print
-    def runTest(func):
-        print 'Running %s tests' % len(P)
-        errs = []
-        show_content = 1
-        for i, params in enumerate(P):
-            try:
-                content = func(show_content=show_content, **params)
-            except Exception, exc:
-                content = ''
-                errs.append((i+1, exc))
-                char = '-'
-                raise
-            else:
-                char = '+'
-            if show_content:
-                #print content
-                print
-            else:
-                sys.stdout.write(char)
-                sys.stdout.flush()
-                
-        print '\nDone'
-        if errs:
-            print 'Errors'
-        for i, e in errs:
-            if e:
-                print '%s) %s' % (i, e)
-        print
-
-        
-    ## "CGI" test function
-
-    def doRequest(show_content=False, **params):
-        req = Req()
-        req.method = 'GET'
-        content = index(req, **params)
-        if show_content:
-            print req.content_type
-            print req.headers_out
-            print req.status
-            #print req.reason
-        return content
-    runTest(doRequest)
-
-
-    ## Web Services test function
-    
-    def doRequest(service=None, show_content=False, **params):
-        req = Req()
-        req.method = 'GET'
-        params['async'] = '1'
-        content = index(req, **params)
-        if show_content:
-            print req.content_type
-            print req.headers_out
-            print req.status
-        return content
-    runTest(doRequest)
-
-
-
 if __name__ == '__main__':
     try:
         sys.stderr = sys.stdout 
@@ -646,8 +542,17 @@ if __name__ == '__main__':
         params = {}
         for p in fs.keys():
             params[p] = fs.getvalue(p, '')
-        index(method, params)
+
+        if params.has_key('service'):
+            content_type = 'text/plain'
+            status, content = _processQuery(method, params, params['service'])
+        else:
+            content_type, status, content = index(method, params)
         
+        print 'Content-type: %s' % content_type
+        print 'Status: %s' % status
+        print
+        print content
     except Exception, e:
         print 'Content-type: text/html\n'
         print
