@@ -169,8 +169,10 @@ def _analyzeQuery(params):
 ## Callbacks
 
 def _geocodeCallback(status, result_set, **params):
+    region = params['region']
+    
     geocodes = result_set['result_set']['result']
-
+    
     html = '<div class="info_win">' \
            '  <h2 style="margin-top:0">Address</h2><p>%s</p><p>%s</p>' \
            '</div>'
@@ -191,23 +193,32 @@ def _geocodeCallback(status, result_set, **params):
         geocode['html'] = result
     elif status == 300:  # Multiple matches
         result = ['<h2>Multiple Matches Found</h2><ul>']
-        for i, geocode in enumerate(geocodes):
-            disp_addr = geocode['address'].replace('\n', '<br/>')
-            field_addr = geocode['address'].replace('\n', ', ')
-            geocode['html'] = html % (disp_addr, set % (field_addr,
-                                                        field_addr))
+        for i, code in enumerate(geocodes):
+            disp_addr = code['address'].replace('\n', '<br/>')
+            field_addr = code['address'].replace('\n', ', ')
+            code['html'] = html % (disp_addr, set % (field_addr,
+                                                     field_addr))
+
             result.append('<li>'
-                          '  <a href="?region=%s&q=%s" '
-                          '    onclick="showGeocode(%s, 1); return false;"'
-                          '    >%s</a>'
-                          '</li>' %
-                          (params['region'],
+                          '  %s<br/>'
+                          '  <a href="javascript:void(0);"'
+                          '     onclick="if (map) '
+                          'map.centerAndZoom({x: %s, y: %s}, 3); '
+                          'return false;"'
+                          '>Show on map</a>'
+                          '  &middot;'
+                          '  <a href="?region=%s&q=%s"'
+                          '     onclick="showGeocode(%s, true); '
+                          'return false;"'
+                          '>Select</a>'
+                          '</li>' % 
+                          (disp_addr,
+                           code['x'], code['y'],
+                           region,
                            field_addr.replace(' ', '+'),
-                           i,
-                           disp_addr))
+                           i))
         result.append('</ul>')
         result = '\n'.join(result)
-        print result
     return result
 
 
@@ -226,14 +237,12 @@ def _makeRouteMultipleMatchList(geocodes_fr, geocodes_to, params):
     region = params['region']
     result = ['<div id="mma"><h2>Multiple Matches Found</h2>']
 
-    zoom = 'if (map) map.centerAndZoom({x: %s, y: %s}, 3);'
-
     def makeDiv(fr_or_to, style):
         if fr_or_to == 'fr':
             heading = 'From Address:'
         else:
             heading = 'To Address:'
-        result.append('<div id="mma_%s" style="display:%s;"><h3>%s</h3>' % \
+        result.append('<div id="mma_%s" style="display: %s;"><h3>%s</h3>' % \
                       (fr_or_to, style, heading))
 
     def makeList(fr_or_to, geocodes, find):
@@ -248,13 +257,16 @@ def _makeRouteMultipleMatchList(geocodes_fr, geocodes_to, params):
             result.append('<li>'
                           '  %s<br/>'
                           '  <a href="javascript:void(0);"'
-                          '     onclick="%s">Show on map</a>'
+                          '     onclick='
+                          '"if (map) map.centerAndZoom({x: %s, y: %s}, 3); '
+                          'return false;"'
+                          '>Show on map</a>'
                           '  &middot;'
                           '  <a href="?region=%s&q=%s"'
-                          '     onclick="%s">Select</a>'
+                          '     onclick="%s return false;">Select</a>'
                           '</li>' % 
                           (addr.replace('\n', '<br/>'),
-                           zoom % (code['x'], code['y']),
+                           code['x'], code['y'],
                            region,
                            q.replace(' ', '+'),
                            find % addr.replace('\n', ', ')))
@@ -264,15 +276,14 @@ def _makeRouteMultipleMatchList(geocodes_fr, geocodes_to, params):
         find = 'setElV(\'fr\', \'%s\'); '
         if geocodes_to:
             find += 'setElStyle(\'mma_fr\', \'display\', \'none\'); ' \
-                    'setElStyle(\'mma_to\', \'display\', \'block\'); ' \
-                    'return false;'
+                    'setElStyle(\'mma_to\', \'display\', \'block\'); '
         else:
-            find += 'doFind(\'route\'); return false;'
+            find += 'doFind(\'route\'); '
         makeDiv('fr', 'block')
         makeList('fr', geocodes_fr, find)
 
     if geocodes_to:
-        find = 'setElV(\'to\', \'%s\'); doFind(\'route\'); return false;'
+        find = 'setElV(\'to\', \'%s\'); doFind(\'route\'); '
         if geocodes_fr:
             style = 'none'
         else:
