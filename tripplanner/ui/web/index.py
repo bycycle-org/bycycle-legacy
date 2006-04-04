@@ -1,4 +1,7 @@
-import os
+#!/usr/bin/python2.4 -OO
+
+import os, sys, traceback
+import cgi
 import datetime
 import urllib
 import simplejson
@@ -9,7 +12,7 @@ template = '%stripplanner/ui/web/tripplanner.html' % \
            byCycle.install_path
 
 
-def index(req, **params):
+def index(method, params):
     # - Normal request
     #   - No query string
     #     Return the template with default values
@@ -39,23 +42,20 @@ def index(req, **params):
 
     if async:
         # Asynchronous request
-        req.content_type = 'text/plain'
-        
-        response_text = _processQuery(req, params)
-        status = req.status
-        if req.status < 400:
+        content_type = 'text/plain'
+        status, response_text = _processQuery(method, params)
+        if status < 400:
             result_set = eval(response_text)
             type_ = result_set['result_set']['type']
             callback = '_%sCallback' % type_
-            result = eval(callback)(req.status, result_set, **params)
+            result = eval(callback)(status, result_set, params)
             result_set['result_set']['html'] = urllib.quote(result)
             content = simplejson.dumps(result_set)
         else:
             content = '<h2>Error</h2>%s' % response_text
     else:
         # Normal request
-        req.content_type = 'text/html'
-
+        content_type = 'text/html'
         try:
             q = ' '.join(params['q'].split())
         except KeyError:
@@ -66,18 +66,17 @@ def index(req, **params):
             to = ''
             result = _getWelcomeMessage()
         else:
-            response_text = _processQuery(req, params)
+            status, response_text = _processQuery(method, params)
             if params['service'] == 'route':
                 fr = params['q'][0]
                 to = params['q'][1]
             else:
                 fr = to = ''
-            status = req.status
-            if req.status < 400:
+            if status < 400:
                 result_set = eval(response_text)
                 type_ = result_set['result_set']['type']
                 callback = '_%sCallback' % type_
-                result = eval(callback)(req.status, result_set, **params)
+                result = eval(callback)(status, result_set, params)
                 response_text = simplejson.dumps(response_text)
             else:
                 result = '<h2>Error</h2>%s' % response_text
@@ -88,17 +87,21 @@ def index(req, **params):
             'q': q,
             'fr': fr,
             'to': to,
-            'regions_opt_list': _makeRegionsOptionList(**params),
+            'regions_opt_list': _makeRegionsOptionList(params),
             'result': result,
             }
 
         template_file = open(template)
         content = template_file.read() % data
         template_file.close()
-    return content
+        
+    print 'Content-type: %s' % content_type
+    print 'Status: %s' % status
+    print
+    print content
 
 
-def _processQuery(req, params, service=''):
+def _processQuery(method, params, service=''):
     from byCycle.lib import wsrest
 
     # Normalize query
@@ -118,12 +121,11 @@ def _processQuery(req, params, service=''):
     ws_obj = getattr(mod, service.title())(**params)
 
     # Process the query according to the request method
-    method = req.method
     try:
         content = eval('ws_obj.%s' % method)()
     except wsrest.MethodNotAllowedError, exc:
         content = exc.reason + ' (%s)' % method
-        req.allow_methods(exc.getAllowMethods(ws_obj))
+        #req.allow_methods(exc.getAllowMethods(ws_obj))
     except wsrest.MultipleChoicesError, exc:
         content = exc.choices
     except wsrest.RestError, exc:
@@ -135,11 +137,11 @@ def _processQuery(req, params, service=''):
         status = 200
 
     try:
-        req.status = status
+        status = status
     except NameError:
-        req.status = exc.status
+        status = exc.status
     
-    return content
+    return status, content
 
 
 def _analyzeQuery(params):
@@ -168,7 +170,7 @@ def _analyzeQuery(params):
 
 ## Callbacks
 
-def _geocodeCallback(status, result_set, **params):
+def _geocodeCallback(status, result_set, params):
     region = params['region']
     
     geocodes = result_set['result_set']['result']
@@ -222,7 +224,7 @@ def _geocodeCallback(status, result_set, **params):
     return result
 
 
-def _routeCallback(status, result_set, **params):
+def _routeCallback(status, result_set, params):
     route = result_set['result_set']['result']
     if status == 200:    # A-OK, one match
         result = _makeDirectionsTable(route)
@@ -297,11 +299,11 @@ def _makeRouteMultipleMatchList(geocodes_fr, geocodes_to, params):
 
 ## Web Services
 
-def geocode(req, **params):
+def geocode(req, params):
     return _processQuery(req, params, 'geocode')
 
 
-def route(req, **params):
+def route(req, params):
     return _processQuery(req, params, 'route')
 
 
@@ -324,7 +326,7 @@ def _getRegionForAlias(alias):
 
 ## Output
     
-def _makeRegionsOptionList(region='', **params):
+def _makeRegionsOptionList(params):
     """Create an HTML options list of regions.
 
     Set the selected region if we got here by
@@ -344,7 +346,10 @@ def _makeRegionsOptionList(region='', **params):
     states = regions.keys()
     states.sort()
 
-    region = region.strip().lower().replace(',', '')
+    try:
+        region = params['region'].strip().lower().replace(',', '')
+    except KeyError:
+        region = ''
 
     region_opt = '<option value="%s">%s</option>'
     region_opt_selected = '<option value="%s" selected="selected">%s</option>'
@@ -536,7 +541,7 @@ def _makeDirectionsTable(route):
 
 ## Testing
     
-if __name__ == '__main__':
+def test():
     import sys
 
     
@@ -630,4 +635,30 @@ if __name__ == '__main__':
     runTest(doRequest)
 
 
+
+if __name__ == '__main__':
+    try:
+        sys.stderr = sys.stdout 
+
+        method = os.environ['REQUEST_METHOD']
+        
+        fs = cgi.FieldStorage()
+        params = {}
+        for p in fs.keys():
+            params[p] = fs.getvalue(p, '')
+        index(method, params)
+        
+    except Exception, e:
+        print 'Content-type: text/html\n'
+        print
+        print '<html><head><title>'
+        print e
+        print '</title>'
+        print '</head><body>'
+        print '<h1>TRACEBACK</h1>'
+        print '<pre>'
+        traceback.print_exc()
+        print '</pre>'
+        print '</body></html>'
+    
 
