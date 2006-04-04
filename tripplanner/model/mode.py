@@ -14,23 +14,22 @@ class Mode(object):
     int_encode = 10 ** int_exp
     # Multiplier to get original value back
     int_decode = 10 ** -int_exp
-        
-    tables = {'edges': 'layer_street',
-              'vertices': 'layer_node',
-              'streetnames': 'streetname',
-              'cities': 'city',
-              'states': 'state'}
-
-    
+            
     def __init__(self):
+        self.tables = {'edges': '%s_layer_street' % self.region,
+                       'vertices': '%s_layer_node' % self.region,
+                       'streetnames': '%s_streetname' % self.region,
+                       'cities': '%s_city' % self.region,
+                       'states': '%s_state' % self.region}
+
+        
         # Set up path to data files
         self.path = '%stripplanner/model/%s/' % (install_path, self.region)
         self.data_path = '%s/data/' % self.path
-        self.matrix_path = '%smatrix.pyc' % self.data_path
         
         # Set up database connection
         pw = open('%s.pw' % self.path).read().strip()
-        self.connection = MySQLdb.connect(db=self.region,
+        self.connection = MySQLdb.connect(db='bycycle',
                                           host='localhost',
                                           user='bycycle',
                                           passwd=pw)
