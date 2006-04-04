@@ -205,7 +205,7 @@ def get(return_messages=False, region='', tmode='bicycle', q=[], **params):
                                    weightFunction=mode.getEdgeWeight,
                                    heuristicFunction=None)
     except sssp.SingleSourceShortestPathsNoPathError:
-        raise NoRouteError('Unable to find a route from "%"s to "%s"' % \
+        raise NoRouteError('Unable to find a route from "%s" to "%s"' % \
                            (str(fcode).replace('\n', ', '),
                             str(tcode).replace('\n', ', ')))
     messages.append('Time to findPath: %s' % (time.time() - st))
@@ -543,7 +543,7 @@ if __name__ == '__main__':
             except MultipleMatchingAddressesError, e:
                 print e.route
             except Exception, e:
-                raise
+                pass
             else:
                 D = r['directions']
                 print r['fr']['geocode']
