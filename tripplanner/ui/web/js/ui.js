@@ -112,16 +112,9 @@ function _geocodeCallback(status, result_set)
     {
     case 200: // A-OK, one match
       if (map)
-	{
-	  showGeocode(0, true);
-	}
+	showGeocode(0, true);
       break;
     case 300:
-      if (map)
-	{
-	  for (var i = 0; i < geocodes.length; ++i)
-	    showGeocode(i, false);
-	}
       break;
     }
 }
@@ -134,11 +127,10 @@ var colors_len = colors.length;
 function _routeCallback(status, result_set)
 {
   var route = result_set.result_set.result;
-  switch (status)
+  switch (status) 
     {
     case 200: // A-OK, one match
-      if (map) 
-	{
+      if (map) {
 	  var linestring = route.linestring;
 	  var linestring_len = linestring.length;
 	  var last_point_ix = linestring.length - 1;
@@ -234,9 +226,10 @@ function resizeMap()
 
 function showGeocode(index, open_info_win)
 {
+  var geocode = geocodes[index];
+  setResult(geocode.html);
   if (map) 
     {
-      var geocode = geocodes[index];
       var point = {'x': geocode.x, 'y': geocode.y};
       if (!geocode.marker) {
 	geocode.marker = placeMarkers([point])[0];
