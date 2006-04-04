@@ -124,6 +124,7 @@ class Mode(object):
         return G
 
     def _fixRow(self, row):
+        """Make changes to a row before adding it to the adjacency matrix."""
         pass
 
     def _saveMatrix(self, G):
@@ -136,10 +137,8 @@ class Mode(object):
         self.execute(Q)
         Q = 'DELETE FROM region WHERE name = "%s"' % self.region
         self.execute(Q)
-        Q = 'INSERT INTO region (name, matrix) VALUES("%s", "%s")' % \
-                (self.region, MySQLdb.escape_string(marshal.dumps(G)))
-        self.execute(Q)
-
+        Q = 'INSERT INTO region (name, matrix) VALUES(%s, %s)'
+        self.cursor.execute(Q, (self.region, marshal.dumps(G)))
                 
     def getAdjacencyMatrix(self):
         import marshal
