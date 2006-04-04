@@ -126,8 +126,6 @@ def getAddressGeocodes(inaddr, mode):
                                    min(s.addr_f, s.addr_t))
         code = AddressGeocode(s_addr, s, xy)
         geocodes.append(code)
-
-    for g in geocodes: print g
     return geocodes
 
     
