@@ -211,8 +211,8 @@ def getPointGeocodes(inaddr, mode):
             'GLength(LineStringFromWKB(LineString(' \
             'AsBinary(geom), AsBinary(geomfromtext("%s"))))) ' \
             'AS distance ' \
-            'FROM layer_node ORDER BY distance ASC LIMIT 1'
-        mode.execute(Q % addr.point)
+            'FROM %s ORDER BY distance ASC LIMIT 1'
+        mode.execute(Q % (addr.point, mode.tables['nodes']))
         row = mode.fetchRow()
         min_id = row[0]
 
