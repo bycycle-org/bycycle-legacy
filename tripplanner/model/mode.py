@@ -17,7 +17,7 @@ class Mode(object):
             
     def __init__(self):
         self.tables = {'edges': '%s_layer_street' % self.region,
-                       'vertices': '%s_layer_node' % self.region,
+                       'nodes': '%s_layer_node' % self.region,
                        'streetnames': '%s_streetname' % self.region,
                        'cities': '%s_city' % self.region,
                        'states': '%s_state' % self.region}
@@ -309,7 +309,7 @@ class Mode(object):
 
     def getDistanceBetweenTwoIntersections(self, a, b):
         Q = "SELECT lon_lat FROM %s WHERE " \
-            "id=%s OR id=%s" % (self.tables['vertices'], a.id, b.id)
+            "id=%s OR id=%s" % (self.tables['nodes'], a.id, b.id)
         if not self.executeDict(Q): return None
         ll_a = gis.Point(self.fetchRow()["lon_lat"])
         ll_b = gis.Point(self.fetchRow()["lon_lat"])
@@ -318,7 +318,7 @@ class Mode(object):
 
     def getLonLatById(self, id):
         Q = "SELECT lon_lat FROM %s WHERE id=%s" % \
-            (self.tables['vertices'], id)
+            (self.tables['nodes'], id)
         if not self.executeDict(Q): return None
         return gis.Point(self.fetchRow()["lon_lat"])
 
