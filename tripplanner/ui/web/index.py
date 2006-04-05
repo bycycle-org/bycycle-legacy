@@ -1,16 +1,5 @@
 #!/usr/bin/python2.4 -OO
 
-import os, sys, traceback
-import cgi
-import datetime
-import urllib
-import simplejson
-import byCycle
-
-
-template = '%stripplanner/ui/web/tripplanner.html' % \
-           byCycle.install_path
-
 
 def index(method, params):
     # - Normal request
@@ -70,6 +59,7 @@ def index(method, params):
             if params['service'] == 'route':
                 fr = params['q'][0]
                 to = params['q'][1]
+                q = ' to '.join((fr, to))
             else:
                 fr = to = ''
             if status < 400:
@@ -77,7 +67,8 @@ def index(method, params):
                 type_ = result_set['result_set']['type']
                 callback = '_%sCallback' % type_
                 result = eval(callback)(status, result_set, params)
-                response_text = simplejson.dumps(response_text)
+                result_set['result_set']['html'] = urllib.quote(result)
+                response_text = simplejson.dumps(result_set)
             else:
                 result = '<h2>Error</h2>%s' % response_text
                                 
@@ -195,14 +186,14 @@ def _geocodeCallback(status, result_set, params):
         disp_addr = geocode['address'].replace('\n', '<br/>')
         field_addr = geocode['address'].replace('\n', ', ')
         result = html % (disp_addr, set % (field_addr, field_addr))
-        geocode['html'] = result
+        geocode['html'] = urllib.quote(result)
     elif status == 300:  # Multiple matches
         result = ['<h2>Multiple Matches Found</h2><ul>']
         for i, code in enumerate(geocodes):
             disp_addr = code['address'].replace('\n', '<br/>')
             field_addr = code['address'].replace('\n', ', ')
-            code['html'] = html % (disp_addr, set % (field_addr,
-                                                     field_addr))
+            code['html'] = urllib.quote(html % (disp_addr, set % (field_addr,
+                                                                  field_addr)))
 
             result.append('<li>'
                           '  %s<br/>'
@@ -534,7 +525,17 @@ def _makeDirectionsTable(route):
 
 if __name__ == '__main__':
     try:
+        import os, sys, traceback
+        import cgi
+        import datetime
+        import urllib
+        import simplejson
+        import byCycle
+
         sys.stderr = sys.stdout 
+
+        template = '%stripplanner/ui/web/tripplanner.html' % \
+                   byCycle.install_path
 
         method = os.environ['REQUEST_METHOD']
         
