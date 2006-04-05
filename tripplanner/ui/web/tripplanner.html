@@ -27,23 +27,18 @@
 	    resizeMap();
 	    elTag0('html').style.overflow = 'hidden';
 	    elTag0('body').style.overflow = 'hidden';
-	    if (local || api_key)
-	      {
-	        if (mapLoad())
-	          {
+	    if (local || api_key) {
+	        if (mapLoad()) {
 	            setElV('gm', '1');
 	          }
-	      }
-	    else
-	      {
+	      } else {
 	        el('map').innerHTML =  
 	          'Error loading map: Could not find valid API key for ' + 
 	          base_url + '.';
 	      }
 	    var status = elV('http_status');
 	    var response_text = elV('response_text');
-	    if (status && response_text)
-	      {
+	    if (status && response_text) {
 	        var req = {status: parseInt(status), responseText: response_text}
 	        _callback(req);
 	      }
@@ -227,6 +222,6 @@
     </div><!-- Content Pane --> 
 
     <input type="hidden" id="http_status" name="http_status" value="%(http_status)s"/>
-    <input type="hidden" id="response_text" name="response_text" value="%(response_text)s"/> 
+    <input type="hidden" id="response_text" name="response_text" value='%(response_text)s'/> 
   </body>
 </html>

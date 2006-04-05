@@ -227,20 +227,21 @@ function resizeMap()
 function showGeocode(index, open_info_win)
 {
   var geocode = geocodes[index];
-  setResult(geocode.html);
+  var html = unescape(geocode.html);
+  setResult(html);
   if (map) 
     {
       var point = {'x': geocode.x, 'y': geocode.y};
       if (!geocode.marker) {
 	geocode.marker = placeMarkers([point])[0];
 	GEvent.addListener(geocode.marker, "click", function() {
-	  map.openInfoWindowHtml(point, geocode.html); 
+	  map.openInfoWindowHtml(point, html); 
 	});
       }
       if (open_info_win)
 	{
 	  map.centerAndZoom(point, 3);
-	  map.openInfoWindowHtml(point, geocode.html);
+	  map.openInfoWindowHtml(point, html);
 	}
     }
 }
