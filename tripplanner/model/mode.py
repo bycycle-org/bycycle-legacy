@@ -8,6 +8,7 @@ import address, segment, intersection
 
 
 class Mode(object):
+    path = '%stripplanner/model/' % install_path
     # The number of digits to save when encoding a float as an int
     int_exp = 6
     # Multiplier to create int-encoded float
@@ -24,14 +25,14 @@ class Mode(object):
 
         
         # Set up path to data files
-        self.path = '%stripplanner/model/%s/' % (install_path, self.region)
-        self.data_path = '%s/data/' % self.path
-        
+        self.data_path = '%s%s/' % (self.path, self.region)
+        self.matrix_path = '%smatrix.pyc' % self.data_path
+
         # Set up database connection
         pw = open('%s.pw' % self.path).read().strip()
-        self.connection = MySQLdb.connect(db='bycycle',
+        self.connection = MySQLdb.connect(db='bycycle-1',
                                           host='localhost',
-                                          user='bycycle',
+                                          user='bycycle-1',
                                           passwd=pw)
         self.cursor = self.connection.cursor()
         self.dict_cursor = self.connection.cursor(MySQLdb.cursors.DictCursor)
@@ -128,23 +129,16 @@ class Mode(object):
 
     def _saveMatrix(self, G):
         import marshal
-        Q = 'CREATE TABLE IF NOT EXISTS `region` (' \
-               '`id` INTEGER PRIMARY KEY NOT NULL AUTO_INCREMENT NOT NULL,' \
-               '`name` VARCHAR(255) NOT NULL,' \
-               '`matrix` LONGBLOB NOT NULL' \
-               ')'
-        self.execute(Q)
-        Q = 'DELETE FROM region WHERE name = "%s"' % self.region
-        self.execute(Q)
-        Q = 'INSERT INTO region (name, matrix) VALUES(%s, %s)'
-        self.cursor.execute(Q, (self.region, marshal.dumps(G)))
+        dumpfile = open(self.matrix_path, 'wb')
+        marshal.dump(G, dumpfile)
+        dumpfile.close()
                 
     def getAdjacencyMatrix(self):
         import marshal
         if self.G is None:
-            Q = 'SELECT matrix FROM region WHERE name = "%s"' % self.region
-            if self.execute(Q):
-                self.G = marshal.loads(self.fetchRow()[0].tostring())
+            loadfile = open(self.matrix_path, 'rb')
+            self.G = marshal.load(loadfile)
+            loadfile.close()
         return self.G
     
     
