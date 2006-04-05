@@ -542,8 +542,10 @@ if __name__ == '__main__':
                 et = time.time() - st
             except MultipleMatchingAddressesError, e:
                 print e.route
+            except NoRouteError, e:
+                print e
             except Exception, e:
-                pass
+                raise e
             else:
                 D = r['directions']
                 print r['fr']['geocode']

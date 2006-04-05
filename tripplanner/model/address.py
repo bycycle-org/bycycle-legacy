@@ -99,7 +99,8 @@ class Address(object):
 
             # city
             word = words[-1]
-            Q = 'SELECT id FROM city WHERE city="%s"' % (word)
+            Q = 'SELECT id FROM %s_city WHERE city="%s"' % \
+                (self.mode.region, word)
             self.mode.execute(Q)
             row = self.mode.fetchRow()
             if row:
@@ -298,7 +299,8 @@ class Street(object):
             cols_str = ', '.join(C)
             cur.execute(Q % (cols_str, mode.tables['streetnames'], where))
             stnameids = {}
-            for row in cur.fetchall(): stnameids[row[0]] = joinAttrs(row[1:])
+            for row in cur.fetchall():
+                stnameids[row[0]] = joinAttrs(row[1:])
             if stnameids: return stnameids
         err = 'Could not find street %s' % joinAttrs(A)
         raise AddressNotFoundError(err)
