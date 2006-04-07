@@ -44,6 +44,7 @@ function mapCreate()
   map.addControl(new GLargeMapControl());
   map.addControl(new GMapTypeControl());
   map.addControl(new GScaleControl());
+  map.addControl(new GOverviewMapControl());
   
   var icon = new GIcon();
   icon.image = 'images/reddot15.png';
