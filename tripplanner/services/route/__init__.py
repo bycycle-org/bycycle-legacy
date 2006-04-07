@@ -31,7 +31,8 @@ class MultipleMatchingAddressesError(RouteError):
         RouteError.__init__(self, desc=desc)
 
 
-def get(return_messages=False, region='', tmode='bicycle', q=[], **params):
+def get(return_messages=False, region='', tmode='bicycle', q=[], opt='',
+        **params):
     """Get a route for q in specified region using specified mode of travel.
     
     @param region Data mode (TODO: Make determinable from place in geocoder) 
@@ -40,12 +41,10 @@ def get(return_messages=False, region='', tmode='bicycle', q=[], **params):
     @param options A dict of optional user options (sent off to tmode)
 
     """
-    tmode = 'bicycle'
-    
     st_tot = time.time()
     messages, errors = [], []
             
-    # Data mode (region)
+    # Data region
     region = region.strip()
     if not region:
         errors.append('Please select a region')
@@ -74,7 +73,8 @@ def get(return_messages=False, region='', tmode='bicycle', q=[], **params):
     # The mode is a combination of the data/travel modes
     st = time.time()
     path = 'byCycle.tripplanner.model.%s.%s'
-    mode = __import__(path % (region, tmode), globals(), locals(), ['']).Mode()
+    mod = __import__(path % (region, tmode), globals(), locals(), [''])
+    mode = mod.Mode(opt=opt)
     messages.append('Time to instantiate mode: %s' % (time.time() - st))
 
 
@@ -302,16 +302,12 @@ def makeDirections(I, S):
     for (toi, s) in zip(I[1:], S):
         # Get the bearing of the segment--based on whether we are moving
         # toward its start or end
-        # Assume moving fr => to
-        frlonlat, tolonlat = s.linestring[0], s.linestring[1]
-        e_frlonlat, e_tolonlat = s.linestring[-2], s.linestring[-1]
         sls = s.linestring
-
         if s.node_f_id == toi.id:
-            # Assumption wrong: moving to => fr
-            frlonlat, tolonlat = tolonlat, frlonlat
-            e_frlonlat, e_tolonlat = e_tolonlat, e_frlonlat
+            # Moving to => fr
             sls.reverse()
+        frlonlat, tolonlat = sls[0], sls[1]
+        e_frlonlat, e_tolonlat = sls[-2], sls[-1]
 
         # This avoids duplicate x,y at intersections--below we'll have to
         # append the last point for the last segment

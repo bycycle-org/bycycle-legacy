@@ -22,6 +22,21 @@ class AddressNotFoundError(AddressError): pass
 
 
 class Address(object):
+    directions_ftoa = compass.directions_ftoa
+    directions_atof = compass.directions_atof
+    street_types_ftoa = sttypes.street_types_ftoa
+    street_types_atof = sttypes.street_types_atof
+    states_ftoa = states.states_ftoa
+    states_atof = states.states_atof
+    suffixes_ftoa = {'northbound': 'nb',
+                     'southhbound': 'sb',
+                     'eastbound': 'eb',
+                     'westbound': 'wb',
+                     }
+    suffixes_atof = {}
+    for f in suffixes_ftoa:
+        suffixes_atof[suffixes_ftoa[f]] = f
+                        
     def __init__(self, inaddr, mode):
         type_inaddr = type(inaddr)
         if type_inaddr not in (type(''), type(u''), type({})):
@@ -33,21 +48,6 @@ class Address(object):
         self.inaddr = inaddr
         
         self.mode = mode
-        self.directions_ftoa = compass.directions_ftoa
-        self.directions_atof = compass.directions_atof
-        self.street_types_ftoa = sttypes.street_types_ftoa
-        self.street_types_atof = sttypes.street_types_atof
-        self.states_ftoa = states.states_ftoa
-        self.states_atof = states.states_atof
-        self.suffixes_ftoa = {'northbound': 'nb',
-                              'southhbound': 'sb',
-                              'eastbound': 'eb',
-                              'westbound': 'wb',
-                              }
-        self.suffixes_atof = {}
-        for f in self.suffixes_ftoa:
-            self.suffixes_atof[self.suffixes_ftoa[f]] = f
-
 
     def _initStreetAndPlace(self, inaddr):
         if isinstance(inaddr, basestring):

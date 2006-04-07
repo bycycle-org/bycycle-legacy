@@ -23,12 +23,17 @@ var urls_to_keys_map = {
 // Get the API key associated with the URL
 var api_key = urls_to_keys_map[base_url];
 
+if (!api_key) {
+  setIH('map', 'Error loading map: Could not find valid API key for ' + 
+	base_url + '.');
+}
+
 // If we're running locally, load local GMap script. If we're running, load 
 // official script, but only if the URL has an associated API key.
 if (local)
   script('js/G_map.js');
 else if (api_key)
-  script('http://maps.google.com/maps?file=api&amp;v=1&amp;key=' + api_key);
+  script('http://maps.google.com/maps?file=api&amp;v=2&amp;key=' + api_key);
 
 
 function script(src) 

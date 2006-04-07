@@ -1,6 +1,7 @@
 /* User Interface */
 
 var geocodes;
+var linestring;
 var center;
 var start_ms;
 
@@ -68,6 +69,7 @@ function doFind(service)
     var url = ['http://', domain, '/',  
 	       '?region=', region, 
 	       '&q=', escape(q), 
+	       '&opt=', elV('opt'),
 	       '&async=1'].join('');
     //alert(url);
     doXmlHttpReq('GET', url, _callback);
@@ -121,7 +123,7 @@ function _geocodeCallback(status, result_set)
 	
 var colors = ['#0000ff', '#00ff00', '#ff0000', 
 	      '#00ffff', '#ff00ff', '#ff8800',
-	      '#000000', '#ffffff'];	
+	      '#000000'];	
 var color_index = 0;
 var colors_len = colors.length;
 function _routeCallback(status, result_set)
@@ -131,23 +133,27 @@ function _routeCallback(status, result_set)
     {
     case 200: // A-OK, one match
       if (map) {
-	  var linestring = route.linestring;
+	  var route_linestring = route.linestring;
+	  linestring = [];
+	  for (var i = 0; i < route_linestring.length; ++i) {
+	    var p = route_linestring[i];
+	    linestring.push(new GLatLng(p.y, p.x));
+	  }
 	  var linestring_len = linestring.length;
 	  var last_point_ix = linestring.length - 1;
-	  var box = getBoxForPoints(linestring);	
+	  var bounds = getBoundsForPoints(linestring);
 	  var s_e_markers = placeMarkers([linestring[0],
 					  linestring[last_point_ix]],
 					 [start_icon, end_icon]);
 	  var s_mkr = s_e_markers[0];
 	  var e_mkr = s_e_markers[1];
-	  var e_ord = linestring_len - 1;
-	  GEvent.addListener(s_mkr, "click", function() { 
-	    map.showMapBlowup(linestring[0]); 
+	  GEvent.addListener(s_mkr, 'click', function() { 
+	    map.showMapBlowup(linestring[0]);
 	  });	           
-	  GEvent.addListener(e_mkr, "click", function() { 
-	    map.showMapBlowup(linestring[e_ord]); 
+	  GEvent.addListener(e_mkr, 'click', function() { 
+	    map.showMapBlowup(linestring[last_point_ix]); 
 	  });			
-	  centerAndZoomToBox(box);
+	  centerAndZoomToBounds(bounds);
 	  drawPolyLine(linestring, colors[color_index++]);
 	  if (color_index == colors_len)
 	    color_index = 0;
@@ -163,6 +169,7 @@ function _routeCallback(status, result_set)
 
 function setStatus(content, error)
 {
+  return;
   if (error) 
     setElStyle('status', 'color', 'red');
   else 
@@ -192,7 +199,7 @@ function setElVToMapLonLat(id)
 {
   if (!map) 
     return;
-  var lon_lat = map.getCenterLatLng();
+  var lon_lat = map.getCenter();
   var x = Math.round(lon_lat.x * 1000000) / 1000000;
   var y = Math.round(lon_lat.y * 1000000) / 1000000;
   setElV(id, "lon=" + x + ", " + "lat=" + y);
@@ -200,12 +207,15 @@ function setElVToMapLonLat(id)
 
 function _clearMap()
 {  
-  if (map) 
-    {
-      map.clearOverlays();
-      for (var reg_key in regions)
-	_showRegionOverlays(regions[reg_key], true);
+  if (map) {
+    map.clearOverlays();
+    for (var reg_key in regions) {
+      var reg = regions[reg_key];
+      if (!reg.all)
+	_showRegionOverlays(reg, true);
     }
+    map.setCenter(map.getCenter());
+  }
 }
 
 function resizeMap() 
@@ -213,12 +223,13 @@ function resizeMap()
   var margin = 5;
   var win_height = getWindowHeight();
   var height = win_height - elOffset('map') - margin;
-  if (height >= 0)
-    {
-      el('map').style.height = height + 'px';
-      if (map)
-	map.onResize();
+  if (height >= 0) {
+    el('map').style.height = height + 'px';
+    if (map) {
+      map.checkResize();
+      map.setCenter(map.getCenter());
     }
+  }
   height = win_height - elOffset('result') - margin;
   if (height >= 0)
     el('result').style.height =  height + 'px'; 
@@ -229,21 +240,19 @@ function showGeocode(index, open_info_win)
   var geocode = geocodes[index];
   var html = unescape(geocode.html);
   setResult(html);
-  if (map) 
-    {
-      var point = {'x': geocode.x, 'y': geocode.y};
-      if (!geocode.marker) {
-	geocode.marker = placeMarkers([point])[0];
-	GEvent.addListener(geocode.marker, "click", function() {
-	  map.openInfoWindowHtml(point, html); 
-	});
-      }
-      if (open_info_win)
-	{
-	  map.centerAndZoom(point, 3);
-	  map.openInfoWindowHtml(point, html);
-	}
+  if (map) {
+    var point = new GLatLng(geocode.y, geocode.x);
+    if (!geocode.marker) {
+      geocode.marker = placeMarkers([point])[0];
+      GEvent.addListener(geocode.marker, "click", function() {
+	map.openInfoWindowHtml(point, html); 
+      });
     }
+    if (open_info_win) {
+      map.setCenter(point, 14);
+      map.openInfoWindowHtml(point, html);
+    }
+  }
 }
 
 
@@ -251,110 +260,71 @@ function showGeocode(index, open_info_win)
 
 function selectRegion(region)
 {
-  if (!region.bounds)
-    region = regions[region] || regions.all;
+  region = regions[region] || regions.all;
 
   setStatus(region.subheading);
   document.title = 'byCycle - Bicycle Trip Planner - ' + region.heading;
-
-  if (map)
-    {
-      _zoomToRegion(region);
-      if (region.all)
-	{
-	  var reg;
-	  for (var reg_key in regions)
-	    {
-	      reg = regions[reg_key];
-	      _initRegion(reg);
-	      _showRegionOverlays(reg);
-	    }
+  
+  if (map) {
+    _initRegion(region);
+    centerAndZoomToBounds(region.bounds, region.center);
+    if (region.all) {
+      var reg;
+      for (var reg_key in regions) {
+	reg = regions[reg_key];
+	if (!reg.all) {
+	  _initRegion(reg);
+	  _showRegionOverlays(reg);
 	}
-      else
-	{
-	  _initRegion(region);
-	  _showRegionOverlays(region);
-	}
+      }
+    } else {
+      _showRegionOverlays(region);
     }
+  }
 }
 
 function _initRegion(region)
 {
-  var bounds = region.bounds;
-  var center = region.center;
-  var dimensions = region.dimensions;
-  var linestring = region.linestring;
+  if (!region.center)
+    region.center = getCenterOfBounds(region.bounds);
 
-  if (!center)
-    {
-      center = getCenterOfBox(bounds);
-      region.center = center;
-    }
-
-  if (!dimensions)
-    {
-      dimensions = getBoxDimensions(bounds) ;
-      region.dimensions = dimensions;
-    }      
-
-  if (!linestring)
-    {
-      var minX = bounds['minX']; var maxY = bounds['maxY'];
-      var maxX = bounds['maxX']; var minY = bounds['minY']; 
-      var tl = {x: minX, y: maxY};
-      var tr = {x: maxX, y: maxY};
-      var br = {x: maxX, y: minY};
-      var bl = {x: minX, y: minY};
-      var linestring = [tl, tr, br, bl, tl];
-      region.linestring = linestring;
-    }
-}
-
-function _zoomToRegion(region)
-{
-  centerAndZoomToBox(region.bounds, 
-		     region.center, 
-		     region.dimensions);
+  if (!region.linestring) {
+    var bounds = region.bounds;
+    var sw = bounds.getSouthWest();
+    var ne = bounds.getNorthEast();
+    var nw = new GLatLng(ne.lat(), sw.lng());
+    var se = new GLatLng(sw.lat(), ne.lng());
+    region.linestring = [nw, ne, se, sw, nw];
+  }
 }
 
 function _showRegionOverlays(region, use_cached)
 {
-  if (region.all)
-    return;
-
-  var marker = region.marker;
-  var line = region.line;
+  if (!region.marker) {
+    icon = new GIcon();
+    icon.image = "images/x.png";
+    icon.iconSize = new GSize(17, 19);
+    icon.iconAnchor = new GPoint(9, 10);
+    icon.infoWindowAnchor = new GPoint(9, 10);
+    icon.infoShadowAnchor = new GPoint(9, 10);
+    region.marker = placeMarker(region.center, icon);
+    GEvent.addListener(region.marker, "click", function() { 
+      var id = region.id;
+      var sel = el('region');
+      for (var i = 0; i < sel.length; ++i) {
+	var opt = sel.options[i];
+	if (opt.value == id) {
+	  sel.selectedIndex = i;
+	  selectRegion(id);
+	  break;
+	}
+      }
+    });
+  } else if (use_cached) {
+    map.addOverlay(region.marker);
+  }
   
-  if (!marker)
-    {
-      icon = new GIcon();
-      icon.image = "images/x.png";
-      icon.iconSize = new GSize(17, 19);
-      icon.iconAnchor = new GPoint(9, 10);
-      icon.infoWindowAnchor = new GPoint(9, 10);
-      icon.infoShadowAnchor = new GPoint(9, 10);
-      region.marker = placeMarker(region.center, icon);
-      GEvent.addListener(region.marker, "click", function() { 
-			   var id = region.id;
-			   var sel = el('region');
-			   for (var i = 0; i < sel.length; ++i)
-			     {
-			       var opt = sel.options[i];
-			       if (opt.value == id)
-				 {
-				   sel.selectedIndex = i;
-				   selectRegion(id);
-				   break;
-				 }
-			     }
-			 });
-    } 
-  else if (use_cached)
-    {
-      map.addOverlay(region.marker);
-    }
-  
-  if (!line)
+  if (!region.line)
     region.line = drawPolyLine(region.linestring); 
   else if (use_cached)
     map.addOverlay(region.line);

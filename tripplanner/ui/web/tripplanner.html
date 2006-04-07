@@ -28,20 +28,18 @@
 	    elTag0('html').style.overflow = 'hidden';
 	    elTag0('body').style.overflow = 'hidden';
 	    if (local || api_key) {
-	        if (mapLoad()) {
-	            setElV('gm', '1');
-	          }
+	      if (mapLoad()) {
+	        setElV('gm', '1');
 	      } else {
-	        el('map').innerHTML =  
-	          'Error loading map: Could not find valid API key for ' + 
-	          base_url + '.';
+	        setIH('map', 'Error loading map.');
 	      }
+            }
 	    var status = elV('http_status');
 	    var response_text = elV('response_text');
 	    if (status && response_text) {
-	        var req = {status: parseInt(status), responseText: response_text}
-	        _callback(req);
-	      }
+	      var req = {status: parseInt(status), responseText: response_text}
+	      _callback(req);
+	    }
 	  }
 
 	  if(window.addEventListener)
@@ -54,27 +52,53 @@
 	</script>
 
 	<script src="js/util.js" type="text/javascript"></script>
+	<script src="js/ginit.js" type="text/javascript"></script>
 	<script src="js/ajax.js" type="text/javascript"></script>
 	<script src="js/regions.js" type="text/javascript"></script>
 	<script src="js/gmap.js" type="text/javascript"></script>
 	<script src="js/ui.js" type="text/javascript"></script>
-	<script src="js/ginit.js" type="text/javascript"></script>
   </head>
   
-  <body onresize="resizeMap();">
+  <body onresize="resizeMap();" onunload="GUnload();">
     <div id="content_pane">
       <!-- Header -->
       <div id="header" class="page_section">
 	<table>
 	  <tr>
-	    <td>
+	    <td style="width: 305px;">
 	      <!-- Logo -->
 	      <div id="logo">
 		<a href="http://www.bycycle.org/" title="byCycle Home Page">byCycle</a>
 		<a href="/">Trip Planner</a>
 	      </div>
 	    </td>
- 
+
+	    <td>
+	      <form id="region_form" class="input_form"
+		    action="." 
+		    method="get" 
+		    onsubmit="return false;">
+		<div>
+		  <select id="region" name="region" 
+			  tabindex="2"
+			  title="Set the active region and zoom into it"
+			  onchange="selectRegion(this.options[this.selectedIndex].value);">
+		    <option value="">-- Select Region --</option>
+		    <option value="">All Regions</option>
+		    %(regions_opt_list)s			    
+		  </select>
+		  
+		  <noscript>
+		    <input class="input_button"
+			   title="Click to go to region"
+			   tabindex="3" 
+			   type="submit" 
+			   value="Go!"/>		      
+		  </noscript>
+		</div>
+	      </form>
+	    </td>
+	    
 	    <td>
 	      <!-- Links -->
 	      <div id="links">
@@ -107,40 +131,9 @@
 	  <![endif]-->
 	  
 	  <tr>
-	    <td id="left_panel" class="panel">		  
-
+	    <td id="left_panel" class="panel">
 	      <!-- Input -->
 	      <div id="input">
-		<form id="region_form" class="input_form"
-		      action="." 
-		      method="get" 
-		      onsubmit="return false;">
-		  <div>
-		    <select id="region" name="region" 
-			    tabindex="2"
-			    title="Set the active region and zoom into it"
-			    onchange="selectRegion(this.options[this.selectedIndex].value);">
-		      <option value="">-- Select Region --</option>
-		      <option value="">All Regions</option>
-		      %(regions_opt_list)s			    
-		    </select>
-
-		    <noscript>
-		      <input class="input_button"
-			     title="Click to go to region"
-			     tabindex="3" 
-			     type="submit" 
-			     value="Go!"/>		      
-		    </noscript>
-
-		    <input tabindex="1010"  
-			   title="Clear everything from the map" 
-			   type="submit" 
-			   value="Clear Map" 
-			   onclick="_clearMap(); return false;"/>
-		  </div>
-		</form>
-		
 		<form id="geocode_form" class="input_form"
 		      action="." 
 		      method="get" 
@@ -169,12 +162,12 @@
 
 		  <div class="input_title">Find a Route</div>
 		  
-		  <div style="margin-bottom: 5px;">
+		  <div>
 		    <input type="text" id="fr" name="fr" class="input_field" tabindex="1" value="%(fr)s"/>
 		    <a href="javascript:void(0);"  
 		       title="Swap from and to" 
 		       onclick="swapElV('fr', 'to');"
-		       ><img src="images/swapfrto.png" alt="swap"/></a>
+		       ><img src="images/swapfrto.gif" alt="swap"/></a>
 		  </div>
 		  
 		  <div>
@@ -185,6 +178,20 @@
 			   tabindex="3" 
 			   type="submit" 
 			   value="Go!"/>
+		  </div>
+		  
+		  <div id="prefs">
+		    <select id = "opt" name="opt">
+		      <option value="default">-- Select Route Preference --</option>
+		      <option value="default">Default</option>
+		      <option value="safer">Safer</option>
+		      <option value="faster">Faster</option>
+		      <option value="flatter">Flatter</option>
+		      <option value="shorter">Shorter</option>
+		    </select>
+		  </div>
+		  
+		  <div>
 		    <input type="hidden" id="rm" name="m" value=""/>
 		    <input type="hidden" id="rjs" name="js" value=""/>
 		  </div>
@@ -194,14 +201,19 @@
 	      <div id="result">
 		%(result)s	      
 	      </div>
-	      
 	    </td><!-- left_panel -->
 	    
 	    <td id="right_panel" class="panel">
-	      <div id="status" class="page_section">
-		Welcome to the 
-		<a href="http://www.bycycle.org/" title="byCycle Home Page">byCycle</a> 
-		interactive bicycle trip planner, version 0.3.5 beta
+	      <div id="map_menu" class="page_section">
+		<a href="javascript:void(0);"
+		   title="Find address nearest to red dot at center of map"
+		   onclick="setElVToMapLonLat('q'); doFind('geocode');"
+		   >Find address at center of map</a>		
+		&middot;
+		<a href="/"
+		   title="Clear everything from the map"
+		   onclick="_clearMap(); return false;"
+		   >Clear Map</a>
 	      </div>
 	      
 	      <div id="map">

@@ -1,4 +1,4 @@
-#!/usr/bin/python2.4 -OO
+#!/home/u6/bycycle/bin/python -OO
 
 
 def index(method, params):
@@ -85,14 +85,7 @@ def index(method, params):
         template_file = open(template)
         content = template_file.read() % data
         template_file.close()
-
-
     return content_type, status, content
-        
-    print 'Content-type: %s' % content_type
-    print 'Status: %s' % status
-    print
-    print content
 
 
 def _processQuery(method, params, service=''):
@@ -199,7 +192,7 @@ def _geocodeCallback(status, result_set, params):
                           '  %s<br/>'
                           '  <a href="javascript:void(0);"'
                           '     onclick="if (map) '
-                          'map.centerAndZoom({x: %s, y: %s}, 3); '
+                          'map.setCenter(new GLatLng(%s, %s)); '
                           'return false;"'
                           '>Show on map</a>'
                           '  &middot;'
@@ -209,7 +202,7 @@ def _geocodeCallback(status, result_set, params):
                           '>Select</a>'
                           '</li>' % 
                           (disp_addr,
-                           code['x'], code['y'],
+                           code['y'], code['x'],
                            region,
                            field_addr.replace(' ', '+'),
                            i))
@@ -254,7 +247,7 @@ def _makeRouteMultipleMatchList(geocodes_fr, geocodes_to, params):
                           '  %s<br/>'
                           '  <a href="javascript:void(0);"'
                           '     onclick='
-                          '"if (map) map.centerAndZoom({x: %s, y: %s}, 3); '
+                          '"if (map) map.setCenter(new GLatLng(%s, %s)); '
                           'return false;"'
                           '>Show on map</a>'
                           '  &middot;'
@@ -262,24 +255,24 @@ def _makeRouteMultipleMatchList(geocodes_fr, geocodes_to, params):
                           '     onclick="%s return false;">Select</a>'
                           '</li>' % 
                           (addr.replace('\n', '<br/>'),
-                           code['x'], code['y'],
+                           code['y'], code['x'],
                            region,
                            q.replace(' ', '+'),
                            find % addr.replace('\n', ', ')))
         result.append('</ul></div>')
 
     if geocodes_fr:
-        find = 'setElV(\'fr\', \'%s\'); '
+        find = "setElV('fr', '%s'); "
         if geocodes_to:
-            find += 'setElStyle(\'mma_fr\', \'display\', \'none\'); ' \
-                    'setElStyle(\'mma_to\', \'display\', \'block\'); '
+            find += "el('mma_fr').style.display = 'none'; " \
+                    "el('mma_to').style.display = 'block'; "
         else:
-            find += 'doFind(\'route\'); '
+            find += "doFind('route'); "
         makeDiv('fr', 'block')
         makeList('fr', geocodes_fr, find)
 
     if geocodes_to:
-        find = 'setElV(\'to\', \'%s\'); doFind(\'route\'); '
+        find = "setElV('to', '%s'); doFind('route'); "
         if geocodes_fr:
             style = 'none'
         else:
@@ -411,52 +404,49 @@ def _makeDirectionsTable(route):
     directions = route['directions']
     linestring = route['linestring']
  
-    fr_point = linestring[0]
-    to_point = linestring[-1]
-
     fr_addr = str(fr_addr).replace('\n', '<br/>')
     to_addr = str(to_addr)
     last_street = to_addr.split('\n')[0]
     to_addr = to_addr.replace('\n', '<br/>')
 
     s_table = """
-    <table id='summary'>
+    <table id="summary">
         <tr>
-          <td class='start'>
-            <h2><a href='javascript:void(0);' class='start'
-                   onclick="map.showMapBlowup(%s)">Start</a>
+          <td class="start">
+            <h2><a href="javascript:void(0);" class="start"
+                   onclick="showMapBlowup(0);">Start</a>
             </h2>
           </td>
-          <td class='start'>%s</a>
+          <td class="start">%s</a>
           </td>
         </tr>
         <tr>
-          <td class='end'>
-            <h2><a href='javascript:void(0);' class='end'
-                   onclick="map.showMapBlowup(%s)">End</a>
+          <td class="end">
+            <h2><a href="javascript:void(0);" class="end"
+                   onclick="showMapBlowup(%s);">End</a>
             </h2>
           </td>
-          <td class='end'>%s</td>
+          <td class="end">%s</td>
         </tr>
         <tr>
-          <td class='total_distance'><h2>Distance</h2></td>
+          <td class="total_distance"><h2>Distance</h2></td>
           <td>%s miles</td>
         </tr>
     </table>
-    """ % (fr_point, fr_addr, to_point, to_addr, distance)
+    """ % (fr_addr, len(linestring) - 1, to_addr, distance)
 
     d_table = """
     <!-- Directions -->
-    <table id='directions'>%s</table>
+    <table id="directions">%s</table>
     """
 
     d_row = """
     <tr>
-      <td class='count %s'>
-        <a href='javascript:void(0)'
-           onclick="map.showMapBlowup(%s)">%s.</a>
+      <td class="count %s">
+        <a href="javascript:void(0)"
+           onclick="showMapBlowup(%s)">%s.</a>
       </td>
-      <td class='direction %s'>%s</td>
+      <td class="direction %s">%s</td>
     </tr>
     """               
 
@@ -508,14 +498,14 @@ def _makeDirectionsTable(route):
                 row_i.append('<br/>%s%s&middot; <i>%s</i> at %s' % \
                              (tab, tab, j['turn'], j['street']))
 
-        d_rows.append(d_row % (row_class, linestring[ls_index], i,
-                               row_class, ''.join(row_i)))
+        d_rows.append(d_row % (row_class, ls_index, i, row_class,
+                               ''.join(row_i)))
         del row_i[:]
         if row_class == 'a': row_class = 'b'
         else: row_class = 'a'
         i += 1
 
-    last_row = d_row  % (row_class, linestring[-1], i, row_class,
+    last_row = d_row  % (row_class, len(linestring) - 1, i, row_class,
                          '<b>End</b> at <b>%s</b>' % last_street)
     d_rows.append(last_row)
     
@@ -523,16 +513,17 @@ def _makeDirectionsTable(route):
     return ''.join((s_table, d_table))            
         
 
+def _printrn(print_me):
+    sys.stdout.write(print_me)
+    
 if __name__ == '__main__':
     try:
-        import os, sys, traceback
+        import os, sys
         import cgi
         import datetime
         import urllib
         import simplejson
         import byCycle
-
-        sys.stderr = sys.stdout 
 
         template = '%stripplanner/ui/web/tripplanner.html' % \
                    byCycle.install_path
@@ -549,13 +540,18 @@ if __name__ == '__main__':
             status, content = _processQuery(method, params, params['service'])
         else:
             content_type, status, content = index(method, params)
-        
-        print 'Content-type: %s' % content_type
-        print 'Status: %s' % status
-        print
-        print content
+ 
+        _printrn('Content-type: %s\r\n' % content_type)
+        if status:
+            _printrn('Status: %s\r\n' % status)
+        _printrn('\r\n')
+        _printrn(content)
     except Exception, e:
-        print 'Content-type: text/html\n'
+        import traceback
+
+        sys.stderr = sys.stdout
+        
+        print 'Content-type: text/html\r\n\r'
         print
         print '<html><head><title>'
         print e

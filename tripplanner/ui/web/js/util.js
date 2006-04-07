@@ -61,10 +61,12 @@ function elOffset(id)
 function elStyle(id, style_name, ie_style_name)
 {
   var el = document.getElementById(id);
-  if (el.currentStyle)
-      return el.currentStyle[ie_style_name]
-  else if (document.defaultView.getComputedStyle)
-      return document.defaultView.getComputedStyle(el, '').getPropertyValue(style_name);
+  if (el.currentStyle) {
+    return el.currentStyle[ie_style_name];
+  } else if (document.defaultView.getComputedStyle) {
+    var comp_style = document.defaultView.getComputedStyle(el, '');
+    return comp_style.getPropertyValue(style_name);
+  }
   return '';
 }
 
