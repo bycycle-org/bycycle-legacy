@@ -8,7 +8,8 @@ from byCycle.tripplanner.model import mode
 class Mode(mode.Mode):
     def __init__(self):
         self.region = 'portlandor'
-        self.edge_attrs = ['bikemode', 'up_frac', 'abs_slp', 'node_f_id']
+        self.edge_attrs = ['bikemode', 'up_frac', 'abs_slp', 'node_f_id',
+                           'cpd']
         mode.Mode.__init__(self)
 
     def _fixRow(self, row):

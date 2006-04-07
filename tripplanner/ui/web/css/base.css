@@ -94,7 +94,7 @@ hr {
 
 /* Status */
 
-#status {  
+#map_menu {  
   background: #fffa73; /*99b3cc;*/
   border: 1px solid gray;
   padding: 5px 5px 3px 5px;
@@ -129,10 +129,10 @@ hr {
   background: #a7cc95;
   border: 1px solid gray;
   margin-bottom: 5px;
-  padding: 5px;
+  padding: 5px 5px 0 5px;
 }
 
-.input_form {
+.input_form, .input_form div {
   margin-bottom: 5px;
 }
 
@@ -144,11 +144,15 @@ hr {
   width: 244px;
 }
 
+.route_field {
+  width: 283px;
+}
+
 .input_button { 
   width: 35px;
 }
 
-#geocode_form, #geocode_form div {  
+#geocode_form {
   margin-bottom: 5px;
 }
 

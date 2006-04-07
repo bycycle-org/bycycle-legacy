@@ -17,30 +17,13 @@ var end_icon;
 
 function mapLoad()
 {
-  var bRet = false;
-  if (GBrowserIsCompatible()) 
-    {
-      el('map').innerHTML = 
-	'<div id="loading">Loading<blink>...</blink></div>';
-      if (_noActiveX()) 
-	{
-	  setIH("map",
-		 '<p>ActiveX is not enabled in your browser. \
-                                If your browser is Internet Explorer,	\
-                                you must have ActiveX enabled to use this application.</p>');
-	} 
-      else 
-	{
-	  mapCreate();
-	  bRet = true;
-	}
-      setElStyle('loading', 'display', 'none');
-    } 
-  else 
-    {
-      el('map').innerHTML = 
-	'<p style="margin:10px;">\
-	         Your browser doesn\'t seem to meet the requirements for using this application. The following browsers are currently supported and are all free to download (<a href="http://www.mozilla.com/">Firefox</a> is an excellent choice):</p> \
+  var bRet = true;
+  if (GBrowserIsCompatible()) {
+    mapCreate();
+    bRet = true;
+  } else {
+    setIH('map', 
+	  '<p style="margin:10px;">Your browser doesn\'t seem to meet the requirements for using this application. The following browsers are currently supported and are all free to download (<a href="http://www.mozilla.com/">Firefox</a> is an excellent choice):</p> \
                <ul> \
 	         <li><a href="http://www.microsoft.com/windows/ie/downloads/default.asp">IE</a> 5.5+ (Windows)</li> \
 		 <li><a href="http://www.mozilla.com/">Firefox</a> 0.8+ (Windows, Mac, Linux)</li> \
@@ -48,53 +31,56 @@ function mapLoad()
 		 <li><a href="http://channels.netscape.com/ns/browsers/download.jsp">Netscape</a> 7.1+ (Windows, Mac, Linux)</li> \
 		 <li><a href="http://www.mozilla.org/products/mozilla1.x/">Mozilla</a> 1.4+ (Windows, Mac, Linux)</li> \
 		 <li><a href="http://www.opera.com/download/">Opera</a> 7.5+ (Windows, Mac, Linux)</li> \
-	       </ul>';
-    }
+	       </ul>');
+    bRet = False;
+  }
   return bRet;
 }
 
 
 function mapCreate()
 {
-  map = new GMap(el("map"));
+  map = new GMap2(el('map'));
   map.addControl(new GLargeMapControl());
   map.addControl(new GMapTypeControl());
   map.addControl(new GScaleControl());
   
   var icon = new GIcon();
-  icon.image = "images/reddot15.png";
+  icon.image = 'images/reddot15.png';
   icon.iconSize = new GSize(15, 15);
   icon.iconAnchor = new GPoint(7, 7);
 
-  GEvent.addListener(map, "moveend", function() {
+  GEvent.addListener(map, 'moveend', function() {
     if (center_marker)
       map.removeOverlay(center_marker);
-    var center = map.getCenterLatLng();
+    var center = map.getCenter();
     center.x = Math.round(center.x * 1000000) /
       1000000;
     center.y = Math.round(center.y * 1000000) /
       1000000;
     center_marker = new GMarker(center, icon);
     map.addOverlay(center_marker);
-    GEvent.clearListeners(center_marker, "click");
-    GEvent.addListener(center_marker, "click", function() {
+    GEvent.clearListeners(center_marker, 'click');
+    GEvent.addListener(center_marker, 'click', function() {
       map.openInfoWindowHtml(center,
 			     center_marker_html);
     });
   });
   
   base_icon = new GIcon();
-  base_icon.shadow = "images/shadow50.png";
+  base_icon.shadow = 'images/shadow50.png';
   base_icon.iconSize = new GSize(20, 34);
   base_icon.shadowSize = new GSize(37, 34);
   base_icon.iconAnchor = new GPoint(9, 34);
   base_icon.infoWindowAnchor = new GPoint(9, 2);
   base_icon.infoShadowAnchor = new GPoint(18, 25);
   start_icon = new GIcon(base_icon);
-  start_icon.image = "images/dd-start.png";
+  start_icon.image = 'images/dd-start.png';
   end_icon = new GIcon(base_icon);
-  end_icon.image = "images/dd-end.png";
+  end_icon.image = 'images/dd-end.png';
   
+  map.setCenter(new GLatLng(0, 0), 0);
+
   var reg_el = el('region');
   selectRegion(reg_el[reg_el.selectedIndex].value);
 }
@@ -124,94 +110,63 @@ function placeMarkers(points, icons)
 {
   var markers = [];
   var len = points.length;
-  if (icons) 
-    {
-      for (var i = 0; i < len; ++i) 
-	{
-	  var marker = new GMarker(points[i], icons[i]);
-	  markers.push(marker);
-	  map.addOverlay(marker);
-	}
+  if (icons) {
+    for (var i = 0; i < len; ++i) {
+      var marker = new GMarker(points[i], icons[i]);
+      markers.push(marker);
+      map.addOverlay(marker);
     }
-  else 
-    {
-      for (var i = 0; i < len; ++i) 
-	{
-	  var marker = new GMarker(points[i]);
-	  markers.push(marker);
-	  map.addOverlay(marker);
-	}
+  } else {
+    for (var i = 0; i < len; ++i) {
+      var marker = new GMarker(points[i]);
+      markers.push(marker);
+      map.addOverlay(marker);
     }
+  }
   return markers;
 }
 
 
-function getBoxForPoints(points)
+function showMapBlowup(index) 
+{
+  map.showMapBlowup(linestring[index]);
+}
+
+
+function getBoundsForPoints(points)
 {
   var min_x = 180;
   var max_x = -180;
   var min_y = 90;
   var max_y = -90;
-  for (var i = 0; i < points.length; i++) 
-    {
-      var p = points[i];
-      var x = p.x;
-      var y = p.y;
-      min_x = x < min_x ? x : min_x;
-      max_x = x > max_x ? x : max_x;
-      min_y = y < min_y ? y : min_y;
-      max_y = y > max_y ? y : max_y;
-    }
-  return {'minX': min_x, 'minY': min_y, 'maxX': max_x, 'maxY': max_y};
-}
-
-
-function getCenterOfBox(box)
-{
-  var x = (box.minX + box.maxX) / 2.0;
-  var y = (box.minY + box.maxY) / 2.0;
-  return {'x': x, 'y': y};
-}
-
-
-function getBoxDimensions(box)
-{
-  return {'width': box.maxX - box.minX, 'height': box.maxY - box.minY};
-}
-
-
-function centerAndZoomToBox(box, center, dimensions)
-{
-  // Center the map at the box's center
-  // Zoom such that the box fits in the map
-  var cent = center || getCenterOfBox(box);
-  var dims = dimensions || getBoxDimensions(box);
-  dims.width *= 1.05;
-  dims.height *= 1.05;
-
-  if (map.spec.getLowestZoomLevel) {
-    var zoom_level = map.spec.getLowestZoomLevel(cent, dims, map.viewSize);
-    map.centerAndZoom(cent, zoom_level);
-  } else {
-    map.centerAndZoom(cent, 0);
-
-    var rw = dims.width;
-    var rh = dims.height;
-
-    var wh = map.getSpanLatLng();
-    var w = wh.width;
-    var h = wh.height;
-
-    var i = 1;
-    while (rw > w || rh > h) {
-      map.zoomTo(i);
-      wh = map.getSpanLatLng();
-      w = wh.width;
-      h = wh.height;
-      if (i == 7) break;
-      ++i;
-    }
+  for (var i = 0; i < points.length; i++) {
+    var p = points[i];
+    var x = p.x;
+    var y = p.y;
+    min_x = x < min_x ? x : min_x;
+    max_x = x > max_x ? x : max_x;
+    min_y = y < min_y ? y : min_y;
+    max_y = y > max_y ? y : max_y;
   }
+  return new GLatLngBounds(new GLatLng(min_y, min_x),
+			   new GLatLng(max_y, max_x));
+}
+
+
+function getCenterOfBounds(bounds)
+{
+  var sw = bounds.getSouthWest();
+  var ne = bounds.getNorthEast();
+  var lon = (sw.lng() + ne.lng()) / 2.0;
+  var lat = (sw.lat() + ne.lat()) / 2.0;
+  return new GLatLng(lat, lon);
+}
+
+
+function centerAndZoomToBounds(bounds, center)
+{
+  var center = center || getCenterOfBounds(bounds);
+  map.setCenter(center, map.getBoundsZoomLevel(bounds));
 }
 
 
@@ -219,7 +174,7 @@ function hideBikeThereNetwork()
 {
   network_visible = false;
   el('bikeThereToggle').onclick = showBikeThereNetwork;
-  el('bikeThereToggle').innerHTML = "Show Bike Route Network";
+  el('bikeThereToggle').innerHTML = 'Show Bike Route Network';
   map.clearOverlays();
 }
 
@@ -230,24 +185,26 @@ function showBikeThereNetwork()
 {
   var processResponse = function(req) {
     // Note: this is going to get called AFTER the outer function returns!!!
-    var colors = {"mu": "#660099",
-		  "bl": "#0000ff",
-		  "lt": "#006600",
-		  "mt": "#FF9933",
-		  "ht": "#FF6600",
-		  "ca": "#CC0033"}
-    if (!network) { eval("network = " + req.responseText + ";"); }
+    var colors = {'mu': '#660099',
+		  'bl': '#0000ff',
+		  'lt': '#006600',
+		  'mt': '#FF9933',
+		  'ht': '#FF6600',
+		  'ca': '#CC0033'}
+    if (!network) { eval('network = ' + req.responseText + ';'); }
 
 
-    el("bikeThereMsg").innerHTML = "Drawing network. Please wait...";
+    el('bikeThereMsg').innerHTML = 'Drawing network. Please wait...';
     var modelines;
     var line;
     var color;
     var last_idx;
 
-    // TODO: only draw inside some particular size box, not just whatever size the map happens to be (like inside a square mile centered at map center).
+    // TODO: only draw inside some particular size bounds, not just whatever
+    // size the map happens to be (like inside a square mile centered at map
+    // center).
     // function to determine if a point is in bounds
-    // function to  draw network
+    // function to draw network
 
     var bounds = map.getBoundsLatLng();
     minX = bounds.minX;
@@ -270,18 +227,18 @@ function showBikeThereNetwork()
     }
 
     network_visible = true;
-    el("bikeThereMsg").innerHTML = "";
-    el('bikeThereToggle').style.display = "";
-    el('bikeThereToggle').innerHTML = "Hide Bike Route Network";
+    el('bikeThereMsg').innerHTML = '';
+    el('bikeThereToggle').style.display = '';
+    el('bikeThereToggle').innerHTML = 'Hide Bike Route Network';
   };
 
   if (map.getZoomLevel() > 1) map.zoomTo(1);
-  el('bikeThereToggle').style.display = "none";
+  el('bikeThereToggle').style.display = 'none';
   el('bikeThereToggle').onclick = hideBikeThereNetwork;
 
   if (!network) {
-    el("bikeThereMsg").innerHTML = "Getting network data. Please wait...";
-    doXmlHttpReq("GET", "/static/javascript/bikethere.json", processResponse);
+    el('bikeThereMsg').innerHTML = 'Getting network data. Please wait...';
+    doXmlHttpReq('GET', '/static/javascript/bikethere.json', processResponse);
   } else {
     processResponse();
   }
