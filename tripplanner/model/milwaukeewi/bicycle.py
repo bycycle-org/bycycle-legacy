@@ -4,7 +4,7 @@
 from byCycle.tripplanner.model import milwaukeewi
 
 class Mode(milwaukeewi.Mode):
-    def __init__(self):
+    def __init__(self, **kwargs):
         self.tmode = "bicycle"
         milwaukeewi.Mode.__init__(self)
         self.mph = 10

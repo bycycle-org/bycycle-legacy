@@ -11,7 +11,7 @@ var start_ms;
 function doFind(service)
 {
   start_ms = new Date().getTime();
-  setStatus('Processing. Please wait<blink>...</blink>');
+  showStatus('Processing. Please wait<blink>...</blink>');
 
   var el_region = el('region');
   var region = el_region.value;
@@ -63,13 +63,12 @@ function doFind(service)
   if (errors.length) {
     errors = ['<h2>Errors</h2><ul><li>', errors.join('</li><li>'),
 	      '</li></ul>'].join('');
-    setStatus('Error. See below for details.', 1);
     setResult(errors);
   } else {
     var url = ['http://', domain, '/',  
 	       '?region=', region, 
 	       '&q=', escape(q), 
-	       '&opt=', elV('opt'),
+	       '&pref=', elV('pref'),
 	       '&async=1'].join('');
     //alert(url);
     doXmlHttpReq('GET', url, _callback);
@@ -88,23 +87,19 @@ function _callback(req)
   var status = req.status;
   var response_text = req.responseText;
   //alert(response_text);
-  if (status < 400)
-    {
-      if (start_ms)
-	{
-	  var elapsed = (new Date().getTime() - start_ms) / 1000.0;
-	  setStatus(['Done. Took ', elapsed, ' second', 
-		     (elapsed == 1.00 ? '' : 's'), '.'].join(''));
-	}
-      eval("result_set = " + response_text + ";");
-      setResult(unescape(result_set.result_set.html));
-      eval('_' + result_set.result_set.type + 'Callback')(status, result_set);
+  if (status < 400) {
+    if (start_ms) {
+      var elapsed = (new Date().getTime() - start_ms) / 1000.0;
+      showStatus(['Done. Took ', elapsed, ' second', 
+		  (elapsed == 1.00 ? '' : 's'), '.'].join(''));
     }
-  else
-    {
-      setStatus('Error. See below for details.', 1);
-      setResult(response_text);
-    }
+    eval("result_set = " + response_text + ";");
+    setResult(unescape(result_set.result_set.html));
+    eval('_' + result_set.result_set.type + 'Callback')(status, result_set);
+  } else {
+    setResult(response_text);
+  }
+  hideStatus();
 }
 
 function _geocodeCallback(status, result_set)
@@ -169,12 +164,23 @@ function _routeCallback(status, result_set)
 
 function setStatus(content, error)
 {
-  return;
   if (error) 
     setElStyle('status', 'color', 'red');
   else 
     setElStyle('status', 'color', 'black');
   setIH('status', content.toString());
+}
+
+function showStatus(content, error)
+{
+  el('status').style.display = 'block';
+  if (content)
+    setStatus(content, error);
+}
+
+function hideStatus()
+{
+  setElStyle('status', 'display', 'none');
 }
 
 function setResult(content, error)
@@ -205,7 +211,7 @@ function setElVToMapLonLat(id)
   setElV(id, "lon=" + x + ", " + "lat=" + y);
 }
 
-function _clearMap()
+function clearMap()
 {  
   if (map) {
     map.clearOverlays();
@@ -245,7 +251,8 @@ function showGeocode(index, open_info_win)
     if (!geocode.marker) {
       geocode.marker = placeMarkers([point])[0];
       GEvent.addListener(geocode.marker, "click", function() {
-	map.openInfoWindowHtml(point, html); 
+	map.openInfoWindowHtml(point, html);
+	setResult(html);
       });
     }
     if (open_info_win) {
@@ -262,7 +269,7 @@ function selectRegion(region)
 {
   region = regions[region] || regions.all;
 
-  setStatus(region.subheading);
+  //setStatus(region.subheading);
   document.title = 'byCycle - Bicycle Trip Planner - ' + region.heading;
   
   if (map) {
@@ -285,21 +292,30 @@ function selectRegion(region)
 
 function _initRegion(region)
 {
-  if (!region.center)
-    region.center = getCenterOfBounds(region.bounds);
-
-  if (!region.linestring) {
-    var bounds = region.bounds;
-    var sw = bounds.getSouthWest();
-    var ne = bounds.getNorthEast();
-    var nw = new GLatLng(ne.lat(), sw.lng());
-    var se = new GLatLng(sw.lat(), ne.lng());
-    region.linestring = [nw, ne, se, sw, nw];
+  if (map) {
+    if (!region.bounds.gbounds)
+      region.bounds.gbounds = new GLatLngBounds(region.bounds.sw, 
+						region.bounds.ne);
+    
+    if (!region.center)
+      region.center = getCenterOfBounds(region.bounds.gbounds);
+    
+    if (!region.linestring) {
+      var bounds = region.bounds;
+      var sw = bounds.sw;
+      var ne = bounds.ne;
+      var nw = new GLatLng(ne.lat, sw.lng);
+      var se = new GLatLng(sw.lat, ne.lng);
+      region.linestring = [nw, ne, se, sw, nw];
+    }
   }
 }
 
 function _showRegionOverlays(region, use_cached)
 {
+  if (!map)
+    return;
+
   if (!region.marker) {
     icon = new GIcon();
     icon.image = "images/x.png";

@@ -4,7 +4,7 @@
 from byCycle.tripplanner.model import pittsburghpa
 
 class Mode(pittsburghpa.Mode):
-    def __init__(self):
+    def __init__(self, **kwargs):
         self.tmode = "bicycle"
         pittsburghpa.Mode.__init__(self)
         self.mph = 10
@@ -15,13 +15,19 @@ class Mode(pittsburghpa.Mode):
         indices = self.indices
         length = edge_attrs[indices["length"]] / 1000000.0
 
-        cfcc = edge_attrs[indices["cfcc"]]
+       # cfcc = edge_attrs[indices["cfcc"]]
         pqi = edge_attrs[indices["pqi"]]
         no_lanes = edge_attrs[indices["no_lanes"]]
-        slope = edge_attrs[indices["slope"]] * 9000.0 #???
-        byType = edge_attrs[indices["bpType"]] 
-        bikeability = edge_attrs[indices["bikeability"]] 
+        #need sto add
+       # slope = edge_attrs[indices["slope"]] * 9000.0 #???
+       # byType = edge_attrs[indices["bpType"]] 
+        bikeability = edge_attrs[indices["bikeability"]]
+        elevt =  edge_attrs[indices["elev_t"]]
 
+        elevf =  edge_attrs[indices["elev_f"]]            
+        slope =0
+        #bpType = ''
+        #bikeability = 0
         #bikeability--default at 0
         #positive, up to 5, is better
         #negative, down to -5, is worse
@@ -32,6 +38,9 @@ class Mode(pittsburghpa.Mode):
         #n=none, sp=street proposed, se=street existing,
         #oe=off-street existing, op=off-street proposed
 
+        if elevt and elevf:
+            slope = abs(elevt -elevf)/(length * 100000.0) * 1100 #9000
+        #print 'length: ' + str(length) +' pqi: ' + str(pqi) + ' no_lanes: ' + str(no_lanes)  +' bikeability: ' + str(bikeability)  +' slope: ' + str(slope)
         #try:
         
             #cl, cat, ma, mi = cfcc[0], int(cfcc[1:]), int(cfcc[1]), int(cfcc[2])
@@ -57,13 +66,13 @@ class Mode(pittsburghpa.Mode):
             hours *= 50
 
 
-            
+         #nulls should be sent to 5, or -1 and avoided
         if pqi:
-            if pqi == 0:
-                pqi = .01
+            if pqi != 0:
+                #pqi = .01
                 #need to distinguish 0 from blank
                 # blank should become 5
-            hours /= (pqi/5.0) #? # will make too low?
+                hours /= (pqi/5.0) #? # will make too low?
         #else: hours /= (3.0/4)
         
             
