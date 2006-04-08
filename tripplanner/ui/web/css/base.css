@@ -129,7 +129,7 @@ hr {
   background: #a7cc95;
   border: 1px solid gray;
   margin-bottom: 5px;
-  padding: 5px 5px 0 5px;
+  padding: 5px;
 }
 
 .input_form, .input_form div {
@@ -144,21 +144,27 @@ hr {
   width: 244px;
 }
 
-.route_field {
-  width: 283px;
-}
-
 .input_button { 
   width: 35px;
-}
+ }
 
-#geocode_form {
-  margin-bottom: 5px;
+#pref_div {
+ margin-bottom: 0;
 }
 
 #result {
   overflow: auto;
   padding: 1px 2px 1px 1px;
+}
+
+#status {
+  padding: 5px;
+  margin-top: 5px;
+  display: none;
+  background: #FD766A;
+  color: white;
+  font-weight: bold;
+  border: 1px solid gray;
 }
 
 

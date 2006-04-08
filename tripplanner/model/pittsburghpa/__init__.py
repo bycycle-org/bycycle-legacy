@@ -1,168 +1,68 @@
-# Pittsburgh Data Mode
+# Pittsburgh, PA Data Mode
 # 11/07/2005
+
+import math
 from byCycle.tripplanner.model import mode
  
 
 class Mode(mode.Mode):
     def __init__(self):
-        
         self.region = 'pittsburghpa'
+#        self.edge_attrs = ['bikemode', 'up_frac', 'abs_slp', 'node_f_id']
+        self.edge_attrs = ['pqi', 'no_lanes', 'bptype', 'bikeability', 'elev_f', 'elev_t'] #test
         mode.Mode.__init__(self)
+
+    #def _fixRow(self, row):
+        
+        #row['up_frac'] = int(math.floor(row['up_frac'] * self.int_encode))
+        #row['abs_slp'] = int(math.floor(row['abs_slp'] * self.int_encode))
+        # some way to deal with slope--maybe set a fSlope and tSlope
+        # be careful if null elevations have been set as 0
+        # what about just avoiding steep streets?
+        # could give each segment a changeElev, and then calculate
+        # absolute value of slope in bicycle
+        
+if __name__ == '__main__':
+    import time
+    from byCycle.lib import meter
+    
+    t = meter.Timer()
+    
+    md = Mode();
+    
+    G1 = md.createAdjacencyMatrix()
+    
+    assert(isinstance(G1, dict))
+    
+    t.start()
+    print 'Getting adjacency matrix...'
+    G2 = md.getAdjacencyMatrix()
+    print t.stop()
+    
+    print G2['edges'].popitem()
+    
+    assert(isinstance(G2, dict))
+    assert(G1 == G2)
+
+#        self.edge_attrs = ['bikemode', 'up_frac', 'abs_slp', 'node_f_id']
+     #   self.edge_attrs = ['pqi', 'no_lanes', 'bytype', 'bikeability'] #test
+
 
         # Create an index of adjacency matrix edge attributes.
         # In other words, each edge in the matrix has attributes associated
         # with it in an ordered sequence. This index gives us a way to access
         # the attributes by name while keeping the size of the matrix smaller.
+        #slopef
+        #                if elevt and elevf:
+                    #changeElev = elevf - elevt
+                    #if changeElev>0 and length != 0:
+                     #   slope = changeElev/length
 
         #NEED TO CORRECT
-        attrs = ('length', 'cfcc',
-                 #'bikemode', 'up_frac', 'abs_slp',
-                 # 'lanes', 'adt', 'spd',
-                 'streetname_id', 'pqi', 'no_lanes',#,
-                 'bpType', 'bikeability',
-                #'rev', 'elevf', 'elevt',
-                 'slope', 
-                 #, 'node_f_id'
-                 )
-        self.edge_attrs = attrs
-        self.indices = {}
-        for i in range(len(attrs)): self.indices[attrs[i]] = i
+    #    attrs = ('length', 'cfcc',
+     #                  'streetname_id', 'pqi', 'no_lanes',#,
+      #           'bpType', 'bikeability',
+       #              'slope', 
+    
+
         
-
-    def createAdjacencyMatrix(self):
-        
-        """Create this mode's adj. matrix, store it in the DB, and return it.
-
-        Build a matrix suitable for use with the route service. The structure
-        of the matrix is defined by the sssp module of the route service.
-
-        @return G -- the adjacency matrix
-
-        """
-        from byCycle.lib import gis, meter
-        import math
-
-        lengthFunc = gis.getLengthOfLineString
-        
-        # Get the edge attributes
-        Q = 'SELECT * FROM %s' % self.tables['street_attrs']
-        self.executeDict(Q)
-        rows = self.fetchAllDict()
-        # Convert all possible values to int or float
-        for row in rows:
-            for k in row: 
-                val = row[k]
-                if val is not None:
-                    try:
-                        row[k] = int(val)             # int?
-                    except (TypeError, ValueError):
-                        try:
-                            row[k] = float(val)       # no. float?
-                        except ValueError:
-                            row[k] = str(val.strip()) # no. must be a string.
-
-        # Get the from and to node IDs of the edges and add them to their
-        # respective attr rows
-        Q = 'SELECT wkt_geometry, node_f_id, node_t_id, streetname_id ' \
-            'FROM %s' % self.tables['edges']
-        self.executeDict(Q)
-        nrows = self.fetchAllDict()
-        for i, nrow in enumerate(nrows):
-            for k in nrow:
-                try:
-                    nrow[k] = int(nrow[k])
-                    #if nrow[k] == 4508:
-                        #print "adding birmingham"
-                    
-                except ValueError:
-                    pass
-            
-            rows[i].update(nrow)
-            
-        del nrows
-
-        G = {'nodes': {}, 'edges': {}}
-        nodes = G['nodes']
-        edges = G['edges']
-
-        met = meter.Meter()
-        met.setNumberOfItems(len(rows))
-        met.startTimer()
-        record_number = 1
-        
-        for row in rows:
-            id = row['id']
-            node_f_id, node_t_id = row['node_f_id'], row['node_t_id']
-            oneway = row['oneway']
-            opdir = row['opdir']
-            elevt = row['elevt']
-            elevf = row['elevf']
-            #print 'elevf: ' + str(elevf)
-            #print 'elevt: ' + str(elevt)
-           
-            #this should be right but opdir data from city is wrong
-            #ft = (oneway == "n") or (opdir == "y")
-            #tf = (oneway == "n") or (opdir == "n")
-
-            #alternate because opdir is wrong
-            ft, tf = True, True
-            if ((oneway == "y_") and (opdir == "y_")):
-                ft = False
-                #print "changed FT"
-            if ((oneway == "y_") and (opdir == "n_")):
-                tf   = False
-                #print "changed TF"
-                
-            try:
-                length = int(math.floor(
-                    lengthFunc(
-                    gis.importWktGeometry(row['wkt_geometry'])) * 1000000))
-                
-            except Exception, e:
-                length = 0
-
-            slope = -1 #should make null???
-            #entry = [length] + [row[a] for a in self.edge_attrs[1:]]
-            #edges[id] = entry
-            if ft:
-                if not node_f_id in nodes: nodes[node_f_id] = {}
-                #make rev for hill
-                if elevt and elevf:
-                    changeElev = elevf - elevt
-                    if changeElev>0 and length != 0:
-                        slope = changeElev/length
-                        ###entry += entry [slope]
-                #moved here. jb.
-                entry=[length] + [row[a] for a in self.edge_attrs[1:-1]]+ [slope]
-                edges[id] = entry
-                nodes[node_f_id][node_t_id] = id
-            if tf:
-                if not node_t_id in nodes: nodes[node_t_id] = {}
-                if elevt and elevf:
-                    changeElev = elevt - elevf
-                    if changeElev>0 and length != 0:
-                        slope = changeElev/length
-                        #entry += entry [slope]
-                entry=[length] + [row[a] for a in self.edge_attrs[1:-1]]+ [slope]
-                edges[id] = entry     
-
-                nodes[node_t_id][node_f_id] = id
-
-            
-            #print 'ENTRY: ' + str(entry)    
-
-            met.update(record_number)
-            record_number+=1
-        print
-            
-        ## Save a compressed representation of G
-        import marshal
-        out_file = open(self.matrix_path, 'wb')
-        marshal.dump(G, out_file)
-        out_file.close()
-        return G
-
-
-if __name__ == '__main__':
-    md = Mode();
-    G = md.createAdjacencyMatrix()

@@ -525,12 +525,10 @@ if __name__ == '__main__':
         import simplejson
         import byCycle
 
-        template = '%stripplanner/ui/web/tripplanner.html' % \
-                   byCycle.install_path
-
+        template = './tripplanner.html'
         method = os.environ['REQUEST_METHOD']
-        
         fs = cgi.FieldStorage()
+
         params = {}
         for p in fs.keys():
             params[p] = fs.getvalue(p, '')
@@ -563,4 +561,3 @@ if __name__ == '__main__':
         print '</pre>'
         print '</body></html>'
     
-
