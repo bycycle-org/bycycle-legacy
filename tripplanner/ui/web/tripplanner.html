@@ -23,26 +23,25 @@
       //<![CDATA[
       function afterPageLoad()
       {
-        setElV('gjs', '1');
 	resizeMap();
 	elTag0('html').style.overflow = 'hidden';
 	elTag0('body').style.overflow = 'hidden';
-	if (local || api_key) {
-	if (mapLoad()) {
-	  setElV('gm', '1');
-	} else if (!api_key) {
+	if (api_key) {
+	  if (mapLoad()) {
+	    // do nothing for now
+	  } else {
+  	    setIH('map', 'Error loading map.');
+	  }
+	} else {
 	  setIH('map', 'Error loading map: Could not find valid API key for ' + 
 	  base_url + '.');
-	} else {
-	  setIH('map', 'Error loading map.');
-	}
-      }
-      var status = elV('http_status');
-      var response_text = elV('response_text');
-      if (status && response_text) {
-        var req = {status: parseInt(status), responseText: response_text};
-        _callback(req);
-      }
+        }
+        var status = elV('http_status');
+        var response_text = elV('response_text');
+        if (status && response_text) {
+          var req = {status: parseInt(status), responseText: response_text};
+          _callback(req);
+        }
       }
       if(window.addEventListener)
 	window.addEventListener('load', afterPageLoad, false);
@@ -141,11 +140,7 @@
 		      method="get" 
 		      onsubmit="doFind('geocode'); return false;">
 		  
-		  <div class="input_title">
-		    Find an Address
-		    <input type="hidden" id="gm" name="m" value=""/>
-		    <input type="hidden" id="gjs" name="js" value=""/>
-		  </div>
+		  <div class="input_title">Find an Address</div>
 		  
 		  <div>
 		    <input type="text" id="q" name="q" class="input_field" tabindex="1" value="%(q)s"/>
@@ -164,11 +159,7 @@
 		      onsubmit="doFind('route'); return false;"
 		      style="margin-bottom: 0;">
 
-		  <div class="input_title">
-		    Find a Route
-		    <input type="hidden" id="rm" name="m" value=""/>
-		    <input type="hidden" id="rjs" name="js" value=""/>
-		  </div>
+		  <div class="input_title">Find a Route</div>
 		  
 		  <div>
 		    <input type="text" id="fr" name="fr" class="input_field" tabindex="1" value="%(fr)s"/>
@@ -182,15 +173,16 @@
 		    <input type="text" id="to" name="to" class="input_field" tabindex="1" value="%(to)s"/>
 		    <input name="rb"
 			   class="input_button"
-			   title="Click to look up address"
+			   title="Click to find route"
 			   tabindex="3" 
 			   type="submit" 
 			   value="Go!"/>
 		  </div>
 		  
+		  <!--
 		  <div id="pref_div">
 		    <select id="pref" name="pref">
-		      <option value="default">-- Select Route Preference --</option>
+		      <option value="default">- Select Route Preference -</option>
 		      <option value="default">Default</option>
 		      <option value="safer">Safer</option>
 		      <option value="faster">Faster</option>
@@ -198,6 +190,7 @@
 		      <option value="shorter">Shorter</option>
 		    </select>
 		  </div>
+		  -->
 		</form>
 
 		<div id="status"></div>

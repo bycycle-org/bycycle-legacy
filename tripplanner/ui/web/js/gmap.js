@@ -80,7 +80,7 @@ function mapCreate()
   end_icon = new GIcon(base_icon);
   end_icon.image = 'images/dd-end.png';
   
-  map.setCenter(new GLatLng(0, 0), 0);
+  map.setCenter(new GLatLng(0, 0), 2);
 
   var reg_el = el('region');
   selectRegion(reg_el[reg_el.selectedIndex].value);

@@ -10,13 +10,13 @@ FASTER, SHORTER, FLATTER, SAFER, DEFAULT = range(5)
 class Mode(portlandor.Mode):
     def __init__(self, tmode='bicycle', pref='', **kwargs):
         """
-localhost/
+
         @param pref A string containing the user's simple preference option.
                Can be one of default, flatter, safer, shorter, or faster.
 
         """
         portlandor.Mode.__init__(self)
-        self.pref = eval(pref.upper())
+        self.pref = (pref == '') or eval(pref.upper())
         self.pct_slopes = [p*.01 for p in
                            (0,    0.65, 1.8, 3.7, 7,  12, 21,  500)]
         self.mph_up     =  (12.5, 11,   9.5, 7.5, 5,  3,  2.5, 2.5)

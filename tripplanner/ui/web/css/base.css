@@ -129,7 +129,7 @@ hr {
   background: #a7cc95;
   border: 1px solid gray;
   margin-bottom: 5px;
-  padding: 5px;
+  padding: 5px 5px 0 5px;
 }
 
 .input_form, .input_form div {
@@ -146,10 +146,10 @@ hr {
 
 .input_button { 
   width: 35px;
- }
+}
 
 #pref_div {
- margin-bottom: 0;
+
 }
 
 #result {
@@ -159,7 +159,7 @@ hr {
 
 #status {
   padding: 5px;
-  margin-top: 5px;
+  margin-bottom: 5px;
   display: none;
   background: #FD766A;
   color: white;

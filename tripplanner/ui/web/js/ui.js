@@ -33,6 +33,7 @@ function doFind(service)
       if (region)
 	el_q.focus();
     }
+    // Is the address really a route request?
     var i = q.toLowerCase().indexOf(' to ');
     if (i != -1) {
       setElV('fr', q.substring(0, i));
@@ -63,12 +64,13 @@ function doFind(service)
   if (errors.length) {
     errors = ['<h2>Errors</h2><ul><li>', errors.join('</li><li>'),
 	      '</li></ul>'].join('');
+    hideStatus();
     setResult(errors);
   } else {
     var url = ['http://', domain, '/',  
 	       '?region=', region, 
 	       '&q=', escape(q), 
-	       '&pref=', elV('pref'),
+	       //'&pref=', elV('pref'),
 	       '&async=1'].join('');
     //alert(url);
     doXmlHttpReq('GET', url, _callback);
@@ -90,16 +92,17 @@ function _callback(req)
   if (status < 400) {
     if (start_ms) {
       var elapsed = (new Date().getTime() - start_ms) / 1000.0;
-      showStatus(['Done. Took ', elapsed, ' second', 
-		  (elapsed == 1.00 ? '' : 's'), '.'].join(''));
+      setStatus(['Done. Took ', elapsed, ' second', 
+		 (elapsed == 1.00 ? '' : 's'), '.'].join(''));
     }
     eval("result_set = " + response_text + ";");
     setResult(unescape(result_set.result_set.html));
     eval('_' + result_set.result_set.type + 'Callback')(status, result_set);
   } else {
+    setStatus('Error.');
     setResult(response_text);
   }
-  hideStatus();
+  window.setTimeout('hideStatus()', 2000);
 }
 
 function _geocodeCallback(status, result_set)
@@ -269,12 +272,11 @@ function selectRegion(region)
 {
   region = regions[region] || regions.all;
 
-  //setStatus(region.subheading);
   document.title = 'byCycle - Bicycle Trip Planner - ' + region.heading;
   
   if (map) {
     _initRegion(region);
-    centerAndZoomToBounds(region.bounds, region.center);
+    centerAndZoomToBounds(region.bounds.gbounds, region.center);
     if (region.all) {
       var reg;
       for (var reg_key in regions) {
@@ -293,19 +295,20 @@ function selectRegion(region)
 function _initRegion(region)
 {
   if (map) {
-    if (!region.bounds.gbounds)
-      region.bounds.gbounds = new GLatLngBounds(region.bounds.sw, 
-						region.bounds.ne);
-    
-    if (!region.center)
+    if (!region.bounds.gbounds) {
+      var sw = region.bounds.sw;
+      var ne = region.bounds.ne;
+      region.bounds.gbounds = new GLatLngBounds(new GLatLng(sw.lat, sw.lng),
+						new GLatLng(ne.lat, ne.lng));
+    }
+    if (!region.center) {
       region.center = getCenterOfBounds(region.bounds.gbounds);
-    
+    }
     if (!region.linestring) {
-      var bounds = region.bounds;
-      var sw = bounds.sw;
-      var ne = bounds.ne;
-      var nw = new GLatLng(ne.lat, sw.lng);
-      var se = new GLatLng(sw.lat, ne.lng);
+      var sw = region.bounds.gbounds.getSouthWest();
+      var ne = region.bounds.gbounds.getNorthEast();
+      var nw = new GLatLng(ne.lat(), sw.lng());
+      var se = new GLatLng(sw.lat(), ne.lng());
       region.linestring = [nw, ne, se, sw, nw];
     }
   }
