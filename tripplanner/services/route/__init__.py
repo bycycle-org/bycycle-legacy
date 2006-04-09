@@ -31,7 +31,7 @@ class MultipleMatchingAddressesError(RouteError):
         RouteError.__init__(self, desc=desc)
 
 
-def get(return_messages=False, region='', tmode='bicycle', q=[], opt='',
+def get(return_messages=False, region='', tmode='bicycle', q=[], pref='',
         **params):
     """Get a route for q in specified region using specified mode of travel.
     
@@ -73,11 +73,10 @@ def get(return_messages=False, region='', tmode='bicycle', q=[], opt='',
     # The mode is a combination of the data/travel modes
     st = time.time()
     path = 'byCycle.tripplanner.model.%s.%s'
-    mod = __import__(path % (region, tmode), globals(), locals(), [''])
-    mode = mod.Mode(opt=opt)
+    module = __import__(path % (region, tmode), globals(), locals(), [''])
+    mode = module.Mode(pref=pref)
     messages.append('Time to instantiate mode: %s' % (time.time() - st))
-
-
+    
     ## Get geocodes matching from and to addresses
     route = {'fr': {'geocode': [], 'original': fr},
              'to': {'geocode': [], 'original': to}}
@@ -405,7 +404,8 @@ def makeDirections(I, S):
             # (one different from the name of the current seg)
             toward = getDifferentNameInIntersection(st, toi)
 
-            for var in ('turn', 'street', 'toward'): d[var] = eval(var)
+            for var in ('turn', 'street', 'toward'):
+                d[var] = eval(var)
             
             directions.append(d)
             d_count += 1
@@ -511,11 +511,14 @@ if __name__ == '__main__':
         Qs = {'milwaukeewi':
               (('Puetz Rd & 51st St', '841 N Broadway St'),
                ('27th and lisbon', '35th and w north'),
-               ('S 84th Street & Greenfield Ave', 'S 84th street & Lincoln Ave'),
+               ('S 84th Street & Greenfield Ave',
+                'S 84th street & Lincoln Ave'),
                ('3150 lisbon', 'walnut & n 16th '),
                ('124th and county line, franklin', '3150 lisbon'),
-               ('124th and county line, franklin', 'lon=-87.940407, lat=43.05321'),
-               ('lon=-87.973645, lat=43.039615', 'lon=-87.978623, lat=43.036086'),
+               ('124th and county line, franklin',
+                'lon=-87.940407, lat=43.05321'),
+               ('lon=-87.973645, lat=43.039615',
+                'lon=-87.978623, lat=43.036086'),
                ),
               'portlandor':
                (('lon=-122.67334,lat=45.621662', '8220 N Denver Ave'),
@@ -525,7 +528,7 @@ if __name__ == '__main__':
                ),
               }
     else:
-        q = q.split('to')
+        q = q.split(' to ')
         Qs = {region: (q,)}
 
 

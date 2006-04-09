@@ -26,16 +26,19 @@ function elTag0(name)
 
 function el(id)
 { 
+  //GLog.write(id);
   return document.getElementById(id); 
 }
 
 function elV(id) 
 { 
+  //GLog.write(id);
   return document.getElementById(id).value;
 }
 
 function setElV(id, val) 
 { 
+  //GLog.write(id);
   document.getElementById(id).value = val; 
 }
 

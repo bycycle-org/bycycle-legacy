@@ -1,6 +1,5 @@
 #!/home/u6/bycycle/bin/python -OO
 
-
 def index(method, params):
     # - Normal request
     #   - No query string
@@ -45,23 +44,8 @@ def index(method, params):
     else:
         # Normal request
         content_type = 'text/html'
-        try:
-            q = ' '.join(params['q'].split())
-        except KeyError:
-            status = ''
-            response_text = ''
-            q = ''
-            fr = ''
-            to = ''
-            result = _getWelcomeMessage()
-        else:
+        if 'q' in params or ('fr' in params and 'to' in params):
             status, response_text = _processQuery(method, params)
-            if params['service'] == 'route':
-                fr = params['q'][0]
-                to = params['q'][1]
-                q = ' to '.join((fr, to))
-            else:
-                fr = to = ''
             if status < 400:
                 result_set = eval(response_text)
                 type_ = result_set['result_set']['type']
@@ -71,7 +55,22 @@ def index(method, params):
                 response_text = simplejson.dumps(result_set)
             else:
                 result = '<h2>Error</h2>%s' % response_text
-                                
+            # Set template vars
+            if params['service'] == 'route':
+                fr = params['fr']
+                to = params['to']
+                q = ' to '.join((fr, to))
+            else:
+                fr = to = ''
+                q = params['q']
+        else:
+            status = ''
+            response_text = ''
+            q = ''
+            fr = ''
+            to = ''
+            result = _getWelcomeMessage()
+
         data = {
             'http_status': status,
             'response_text': response_text,
@@ -90,26 +89,25 @@ def index(method, params):
 
 def _processQuery(method, params, service=''):
     from byCycle.lib import wsrest
-
-    # Normalize query
-    params['q'] = ' '.join(params['q'].split()).lower()
-
+    
     # Analyze the query to determine the service and prepare the query for the
     # service. If a service was explicitly given, use it; otherwise, use the
     # service determined by the semantic analysis.
     s = _analyzeQuery(params)
     service = service or s
+    class_ = service.title()
 
     # Import web service module
     path = 'byCycle.tripplanner.webservices.%s'
-    mod = __import__(path % service, globals(), locals(), [''])
+    module = __import__(path % service, globals(), locals(), [''])
     
     # Create web service object
-    ws_obj = getattr(mod, service.title())(**params)
+    # E.g., mod = geocode & class = Geocode
+    ws_obj = getattr(module, class_)(**params)
 
     # Process the query according to the request method
     try:
-        content = eval('ws_obj.%s' % method)()
+        content = getattr(ws_obj, method)()
     except wsrest.MethodNotAllowedError, exc:
         content = exc.reason + ' (%s)' % method
         #req.allow_methods(exc.getAllowMethods(ws_obj))
@@ -132,20 +130,47 @@ def _processQuery(method, params, service=''):
 
 
 def _analyzeQuery(params):
-    q = params['q']
-    service = 'geocode'
+    # If query has params fr and to and not q, it is a route query
+    try:
+        fr = params['fr']
+        to = params['to']
+    except KeyError:
+        pass
+    else:
+        if 'q' not in params:
+            service = 'route'
+            q = [fr, to]
+
+    # If param q contains the substring " to " between two other substrings OR
+    # if param q is a list (or a string repr of a list) with at least two
+    # items, query is for a route
+    try:
+        service
+    except NameError:
+        try:
+            q = params['q']
+        except KeyError:
+            pass
+        else:
+            words = ''
+            try:
+                words = eval(q)
+            except:
+                try:
+                    words = q.lower().split(' to ')
+                except AttributeError:
+                    pass
+            if isinstance(words, list) and len(words) > 1:
+                service = 'route'    
+                q = words
+                params['fr'] = q[0]
+                params['to'] = q[1]
 
     try:
-        q = eval(q)
-    except:
-        words = q.split(' to ') 
-        if len(words) > 1:
-            service = 'route'
-            q = words
-    else:
-        if isinstance(q, list):
-            service = 'route'
-           
+        service
+    except NameError:
+        service = 'geocode'
+        
     try:
         service = params['service']
     except KeyError:
@@ -527,12 +552,15 @@ if __name__ == '__main__':
 
         template = './tripplanner.html'
         method = os.environ['REQUEST_METHOD']
-        fs = cgi.FieldStorage()
+        cgi_vars = cgi.FieldStorage()
 
         params = {}
-        for p in fs.keys():
-            params[p] = fs.getvalue(p, '')
-
+        for param in cgi_vars.keys():
+            val = ' '.join(cgi_vars.getvalue(param, '').split())
+            if param.startswith('bycycle_'):
+                param = '_'.join(param.split('_')[1:])
+            params[param] = val
+            
         if params.has_key('service'):
             content_type = 'text/plain'
             status, content = _processQuery(method, params, params['service'])
