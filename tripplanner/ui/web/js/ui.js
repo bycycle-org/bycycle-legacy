@@ -102,7 +102,7 @@ function _callback(req)
     setStatus('Error.');
     setResult(response_text);
   }
-  window.setTimeout('hideStatus()', 2000);
+  window.setTimeout('hideStatus()', 3000);
 }
 
 function _geocodeCallback(status, result_set)

@@ -44,7 +44,11 @@ def index(method, params):
     else:
         # Normal request
         content_type = 'text/html'
-        if 'q' in params or ('fr' in params and 'to' in params):
+        if params['q'] is not None or \
+               (params['fr'] is not None and params['to'] is not None):
+            # Save original q for template
+            q = params['q'] or ''
+            
             status, response_text = _processQuery(method, params)
             if status < 400:
                 result_set = eval(response_text)
@@ -55,14 +59,10 @@ def index(method, params):
                 response_text = simplejson.dumps(result_set)
             else:
                 result = '<h2>Error</h2>%s' % response_text
+
             # Set template vars
-            if params['service'] == 'route':
-                fr = params['fr']
-                to = params['to']
-                q = ' to '.join((fr, to))
-            else:
-                fr = to = ''
-                q = params['q']
+            fr = params['fr'] or ''
+            to = params['to'] or ''
         else:
             status = ''
             response_text = ''
@@ -130,16 +130,14 @@ def _processQuery(method, params, service=''):
 
 
 def _analyzeQuery(params):
+    q = params['q'] or ''
+    
     # If query has params fr and to and not q, it is a route query
-    try:
-        fr = params['fr']
-        to = params['to']
-    except KeyError:
-        pass
-    else:
-        if 'q' not in params:
-            service = 'route'
-            q = [fr, to]
+    fr = params['fr']
+    to = params['to']
+    if q is None and fr is not None and to is not None:
+        service = 'route'
+        q = [fr, to]
 
     # If param q contains the substring " to " between two other substrings OR
     # if param q is a list (or a string repr of a list) with at least two
@@ -148,23 +146,17 @@ def _analyzeQuery(params):
         service
     except NameError:
         try:
-            q = params['q']
-        except KeyError:
-            pass
-        else:
-            words = ''
+            words = eval(q)
+        except:
             try:
-                words = eval(q)
-            except:
-                try:
-                    words = q.lower().split(' to ')
-                except AttributeError:
-                    pass
-            if isinstance(words, list) and len(words) > 1:
-                service = 'route'    
-                q = words
-                params['fr'] = q[0]
-                params['to'] = q[1]
+                words = q.lower().split(' to ')
+            except AttributeError:
+                words = None
+        if isinstance(words, list) and len(words) > 1:
+            service = 'route'    
+            q = words
+            params['fr'] = q[0]
+            params['to'] = q[1]
 
     try:
         service
@@ -385,7 +377,8 @@ def _getWelcomeMessage():
     </p>
     
     <p>
-    Users should independently verify all information presented here. This service is provided AS IS with NO WARRANTY of any kind. 
+    Users should independently verify all information presented here. This
+    service is provided AS IS with NO WARRANTY of any kind. 
     </p>
     
     <p>
@@ -560,6 +553,10 @@ if __name__ == '__main__':
             if param.startswith('bycycle_'):
                 param = '_'.join(param.split('_')[1:])
             params[param] = val
+
+        # Set default values for missing parameters
+        for param in ('q', 'fr', 'to'):
+            params[param] = params.get(param, None)
             
         if params.has_key('service'):
             content_type = 'text/plain'
