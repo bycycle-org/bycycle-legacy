@@ -148,6 +148,10 @@ hr {
   width: 35px;
 }
 
+#geocode_form {
+  margin-bottom: 10px;
+}
+
 #pref_div {
 
 }
