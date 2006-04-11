@@ -404,6 +404,33 @@ class Mode(object):
         if not self.executeDict(Q): return None
         return self.getSegmentById(self.fetchRow()["id"])
 
+
+    # Street Methods ----------------------------------------------------------
+
+    def getIds(self, prefix='', name='', stype='', suffix=''):
+        """Get all the street name IDs for this Street.
+
+        Return a dict of {street name IDs => street names}
+
+        """
+        Q = 'SELECT %s FROM %s WHERE %s'
+        cols = ('id', 'prefix', 'name', 'type', 'suffix')
+        attrs = (prefix, name, type, suffix)
+        where = ['%s = "%s"' % (c, a.lower()) for
+                 c, a in zip(cols[1:], attrs) if a]
+        where = ' AND '.join(where)
+        if where: 
+            self.execute(Q %
+                         (', '.join(cols),
+                          self.tables['streetnames'], where))
+            stnameids = {}
+            for row in self.fetchAll():
+                stnameids[row[0]] = joinAttrs(row[1:])
+            if stnameids:
+                return stnameids
+        raise ValueError('No street names found for %s %s %s %s' %
+                         prefix, name, stype, suffix)
+
         
     # Utility Methods ---------------------------------------------------------
 
