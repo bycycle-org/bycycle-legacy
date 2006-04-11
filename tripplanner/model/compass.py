@@ -1,11 +1,5 @@
-directions_atof = {'n'  : 'north',
-                   's'  : 'south',
-                   'e'  : 'east',
-                   'w'  : 'west',
-                   'ne' : 'northeast',
-                   'nw' : 'northwest',
-                   'se' : 'southeast',
-                   'sw' : 'southwest'}
+from byCycle.lib.util import swapKeysAndValues
+
 
 directions_ftoa = {'north'     : 'n',
                    'south'     : 's',
@@ -14,16 +8,10 @@ directions_ftoa = {'north'     : 'n',
                    'northeast' : 'ne',
                    'northwest' : 'nw',
                    'southeast' : 'se',
-                   'southwest' : 'sw'}
+                   'southwest' : 'sw',
+                   }
+directions_atof = swapKeysAndValues(directions_ftoa)
 
-directions_atod = {'n'  : '0',
-                   's'  : '180',
-                   'e'  : '90',
-                   'w'  : '270',
-                   'ne' : '45',
-                   'nw' : '315',
-                   'se' : '135',
-                   'sw' : '225'}
 
 directions_dtoa = {'0'   : 'n',
                    '180' : 's',
@@ -32,4 +20,14 @@ directions_dtoa = {'0'   : 'n',
                    '45'  : 'ne',
                    '315' : 'nw',
                    '135' : 'se',
-                   '225' : 'sw'}
+                   '225' : 'sw',
+                   }
+directions_atod = swapKeysAndValues(directions_dtoa)
+
+
+suffixes_ftoa = {'northbound': 'nb',
+                 'southhbound': 'sb',
+                 'eastbound': 'eb',
+                 'westbound': 'wb',
+                 }
+suffixes_atof = swapKeysAndValues(suffixes_ftoa)
