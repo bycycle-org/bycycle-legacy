@@ -42,7 +42,7 @@ class IntersectionGeocode(Geocode):
         return repr(result)
 
 
-def geocode(inaddr, mode):
+def get(inaddr, mode):
     """Choose the geocoding function based on the type of the input address.
 
     Call the appropriate geocoding function. Return a list of Geocode objects.

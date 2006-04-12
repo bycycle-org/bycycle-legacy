@@ -16,7 +16,7 @@
 --
 -- The geometry column will contain a binary geometry representation.
 
-USE bycycle;
+USE `bycycle-1`;
 
 CREATE TABLE `milwaukeewi_layer_street` (
   `id`            INTEGER PRIMARY KEY NOT NULL AUTO_INCREMENT,

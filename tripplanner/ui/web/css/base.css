@@ -148,10 +148,6 @@ hr {
   width: 35px;
 }
 
-#geocode_form {
-  margin-bottom: 10px;
-}
-
 #pref_div {
 
 }
@@ -190,14 +186,8 @@ hr {
 /* Footer */
 
 #footer {
-  font-size: 10px;
-  text-align: center;
-  padding-bottom: 0;
-}
-
-#footer a {
-  color: #000;
-  text-decoration: none;
+  font-size: 11px;
+  padding: 5px 0;
 }
 
 .disclaimer {

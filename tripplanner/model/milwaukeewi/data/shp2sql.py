@@ -102,7 +102,7 @@ def shpToRawSql():
     if not _wait('Extract SQL from Shapefile'):
         _system(cmd)
     # Load SQL into DB
-    cmd = 'mysql -u root --password="" bycycle < %s.sql' % raw
+    cmd = 'mysql -u root --password="" bycycle-1 < %s.sql' % raw
     if not _wait('Load SQL into DB'):
         _system(cmd)
     

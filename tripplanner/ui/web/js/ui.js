@@ -229,7 +229,7 @@ function clearMap()
 
 function resizeMap() 
 {
-  var margin = 5;
+  var margin = 25;
   var win_height = getWindowHeight();
   var height = win_height - elOffset('map') - margin;
   if (height >= 0) {

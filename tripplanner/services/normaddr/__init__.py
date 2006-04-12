@@ -1,3 +1,14 @@
+"""
+Address Normalizer
+
+Accepts these types of addresses:
+- Postal
+- Intersection
+- Point
+- Node (i.e., node ID)
+- Edge (i.e., number + edge ID)
+"""
+
 from byCycle.tripplanner.model import address, states, sttypes, compass
 
 
@@ -5,24 +16,175 @@ directions_ftoa = compass.directions_ftoa
 directions_atof = compass.directions_atof
 suffixes_ftoa = compass.suffixes_ftoa
 suffixes_atof = compass.suffixes_atof
-street_types_ftoa = sttypes.street_types_ftoa
-street_types_atof = sttypes.street_types_atof
+sttypes_ftoa = sttypes.street_types_ftoa
+sttypes_atof = sttypes.street_types_atof
 states_ftoa = states.states_ftoa
 states_atof = states.states_atof
 
-@staticmethod
+
+def get(addr, mode):
+    """Get a normalized address for the input address."""
+
+    # Fail early here if addr is empty
+
+    # Remove punctuation chars here (and other extraneous chars too?)
+    
+    # First we should decide (guess) what type of address the input string is
+    # supposed to be. Then we should fork and do different things accordingly
+    # and return an Address object.
+
+    # Node?
+    try:
+        node_id = int(addr)
+    except ValueError:
+        pass
+
+    # Intersection?
+    try:
+        street1, street2 = getCrossStreets(addr)
+    except ValueError:
+        pass
+
+    words = addr.split()
+    
+    # Edge?
+    try:
+        number = int(words[0])
+        edge_id = int(words[1])
+    except (IndexError, ValueError):
+        pass
+
+    # Address [postal]
+    try:
+        number = int(words[0])
+        words[1]
+    except (IndexError, ValueError):
+        pass
+
+    # Point?
+    # XXX: Expensive; do last
+    try:
+        point = getPoint(addr)
+    except ValueError:
+        pass
+
+    # Raise an exception if we get here: address is unnormalizeable
+
+
+
+def _normalize(addr, mode):
+    # This is the "meat" of this address normalizer
+    name = []
+    street = address.Street()
+    place = address.Place()
+    try:
+        ## Front to back
+ 
+        # prefix
+        word = words[0]
+        if word in directions_atof:
+            street.prefix = word
+        elif word in directions_ftoa:
+            if len(words) == 1:
+                raise IndexError
+            else:
+                street.prefix = directions_ftoa[word]
+        if street.prefix:
+            del words[0]
+
+        # name
+        name.append(words[0])
+        del words[0]
+
+        ## Back to front
+
+        # zip code
+        word = words[-1]
+        try:
+            int(word)
+        except ValueError:
+            pass
+        else:
+            place.zip = word
+            del words[-1]
+
+        # state
+        word = words[-1]
+        if word in states_atof:
+            place.state = word
+        elif word in states_ftoa:
+            place.state = states_ftoa[word]
+        if place.state:
+            del words[-1]
+
+        # city
+        # TODO: make static list of cities for each region
+        word = words[-1]
+        Q = 'SELECT id FROM %s_city WHERE city="%s"' % \
+            (mode.region, word)
+        mode.execute(Q)
+        row = mode.fetchRow()
+        if row:
+            place.city_id = row[0]
+            place.city = word
+            del words[-1]
+
+        # suffix
+        word = words[-1]
+        if word in directions_atof or \
+               word in suffixes_atof:
+            street.suffix = word
+        elif word in directions_ftoa:
+            street.suffix = directions_ftoa[word]
+        elif word in suffixes_ftoa:
+            street.suffix = suffixes_ftoa[word]                
+        if street.suffix:
+            del words[-1]
+
+        # street type
+        word = words[-1]
+        if word in sttypes_atof: 
+            street.type = word
+        elif word in sttypes_ftoa:
+            street.type = sttypes_ftoa[word]
+        if street.type:
+            del words[-1]
+
+    except IndexError:
+        pass
+
+    # name
+    name += words
+    street.name = ' '.join(name)
+
+    # Add suffix to number street (if needed), e.g. 10 => 10th
+    name = street.name
+    try: int(name)
+    except ValueError: pass
+    else:
+        last_char = name[-1]
+        try: last_two_chars = name[-2:]
+        except IndexError: last_two_chars = ''
+        if   last_char == '1' and last_two_chars != '11': name += 'st'
+        elif last_char == '2' and last_two_chars != '12': name += 'nd'
+        elif last_char == '3' and last_two_chars != '13': name += 'rd'
+        else: name += 'th'
+        street.name = name
+
+    return street, place
+
+
 def getCrossStreets(sAddr): 
     ands = ('&', 'and', 'AND', 'at', 'AT', '@')
     for a in ands:
         streets = [sAddr for sAddr in sAddr.split(' %s ' % a)
                    if sAddr.strip()]
     if len(streets) >= 2:
-        return streets
-    err = 'invalid address for IntersectionAddress: %s' % sAddr
+        return street[0], street[1]
+    err = '"%s" cannot be parsed as an intersection address' % sAddr
     raise ValueError(err)
 
 
-@staticmethod
 def getPoint(sAddr):
     # String with form "x=-122, y=45"
     # x and y can be any string
@@ -81,112 +243,63 @@ def getPoint(sAddr):
             return gis.Point(x=float(xy[0]), y=float(xy[1]))
         except:
             pass
-
-    err = 'Invalid address for PointAddress: %s' % sAddr
+        
+    err = '"%s" cannot be parsed as a point address' % sAddr
     raise ValueError(err)
 
 
-def get(addr, mode):
-    if isinstance(addr, basestring):
-        words = addr.split() 
-    elif isinstance(addr, list):
-        words = addr
-    name = []
-    street = Street()
-    place = Place()
-    try:
-        ## Front to back
- 
-        # prefix
-        word = words[0]
-        if word in self.directions_atof:
-            street.prefix = word
-        elif word in self.directions_ftoa:
-            if len(words) == 1:
-                raise IndexError
-            else:
-                street.prefix = self.directions_ftoa[word]
-        if street.prefix:
-            del words[0]
+    
 
-        # name
-        name.append(words[0])
-        del words[0]
+if __name__ == '__main__':
+    import unittest
+    from byCycle.tripplanner.model import portlandor
 
-        ## Back to front
 
-        # zip code
-        word = words[-1]
-        try:
-            int(word)
-        except ValueError:
-            pass
-        else:
-            place.zip = word
-            del words[-1]
+    class TestNormAddr(unittest.TestCase):
+        def testCreatePortlandORMode(self):
+            mode = portlandor.Mode()
 
-        # state
-        word = words[-1]
-        if word in self.states_atof:
-            place.state = word
-        elif word in self.states_ftoa:
-            place.state = self.states_ftoa[word]
-        if place.state:
-            del words[-1]
+        def testUsePortlandORMode(self):
+            mode = portlandor.Mode()
+            mode.execute('show columns from portlandor_layer_street')
+        
+        def testPortlandORAddressAddress(self): 
+            mode = portlandor.Mode()
+            inaddr = '4807 SE Kelly St, Portland, OR 97206'
+            self.assert_(isinstance(get(inaddr, mode),
+                                    address.AddressAddress))
 
-        # city
-        # TODO: make static list of cities for each region
-        word = words[-1]
-        Q = 'SELECT id FROM %s_city WHERE city="%s"' % \
-            (self.mode.region, word)
-        self.mode.execute(Q)
-        row = self.mode.fetchRow()
-        if row:
-            place.city_id = row[0]
-            place.city = word
-            del words[-1]
+        def testPortlandORIntersectionAddress(self):
+            inaddr = 'SE Kelly St & SE 49th Ave, Portland, OR 97206'
+            mode = portlandor.Mode()
+            self.assert_(isinstance(get(inaddr, mode),
+                                    address.IntersectionAddress))
 
-        # suffix
-        word = words[-1]
-        if word in self.directions_atof or \
-               word in self.suffixes_atof:
-            street.suffix = word
-        elif word in self.directions_ftoa:
-            street.suffix = self.directions_ftoa[word]
-        elif word in self.suffixes_ftoa:
-            street.suffix = self.suffixes_ftoa[word]                
-        if street.suffix:
-            del words[-1]
+        def testPortlandORPointAddress(self):
+            inaddr = 'POINT(-123.120000 45.000000)'
+            mode = portlandor.Mode()
+            self.assert_(isinstance(get(inaddr, mode), address.PointAddress))
+            self.assert_(isinstance(get(inaddr, mode),
+                                    address.IntersectionAddress))
 
-        # street type
-        word = words[-1]
-        if word in self.street_types_atof: 
-            street.type = word
-        elif word in self.street_types_ftoa:
-            street.type = self.street_types_ftoa[word]
-        if street.type:
-            del words[-1]
+        def testPortlandORNodeAddress(self):
+            inaddr = '4'
+            mode = portlandor.Mode()
+            self.assert_(isinstance(get(inaddr, mode),
+                                    address.IntersectionAddress))
 
-    except IndexError:
-        pass
+        def testPortlandOREdgeAddress(self):
+            mode = portlandor.Mode()
+            Q = 'SELECT id FROM portlandor_layer_street ' \
+                'WHERE addr_f <= 4807 AND addr_t >= 4807 AND ' \
+                'streetname_id IN ' \
+                '(SELECT id from portlandor_streetname ' \
+                ' WHERE prefix = "se" AND name = "kelly" AND type = "st")'
+            mode.execute(Q)
+            edge_id = mode.fetchRow()[0]
+            inaddr = '4807 %s' % edge_id
+            self.assert_(isinstance(get(inaddr, mode), address.AddressAddress))
 
-    # name
-    name += words
-    street.name = ' '.join(name)
-
-    # Add suffix to number street (if needed), e.g. 10 => 10th
-    name = street.name
-    try: int(name)
-    except ValueError: pass
-    else:
-        last_char = name[-1]
-        try: last_two_chars = name[-2:]
-        except IndexError: last_two_chars = ''
-        if   last_char == '1' and last_two_chars != '11': name += 'st'
-        elif last_char == '2' and last_two_chars != '12': name += 'nd'
-        elif last_char == '3' and last_two_chars != '13': name += 'rd'
-        else: name += 'th'
-        street.name = name
-
-    return street, place
+            
+    unittest.main()
     
