@@ -325,28 +325,31 @@ def makeDirections(I, S):
     # successive segments' lengths to 0. In the next for loop below,
     # segments with length 0 are skipped.
     prev_name_type = ''
-    seg_x = stretch_start_x = 0
+    stretch_start_x = 0
     streets = []
     jogs = []
-    for s in S:
+    for seg_x, s in enumerate(S):
         st = address.Street(s.prefix, s.name, s.type, s.suffix)
         streets.append(st)  # save for later
         name_type = '%s %s' % (s.name, s.type)
 
-        try: next_s = S[seg_x + 1]
-        except IndexError: next_name_type = '!@#$'
-        else: next_name_type = '%s %s' % (next_s.name, next_s.type)
+        try:
+            next_s = S[seg_x + 1]
+        except IndexError:
+            next_name_type = None
+        else:
+            next_name_type = '%s %s' % (next_s.name, next_s.type)
         
         if name_type == prev_name_type:
             W[stretch_start_x] += W[seg_x]
-            W[seg_x] = 0
+            W[seg_x] = None
             prev_name_type = name_type
         # Check for jog
         elif prev_name_type and \
                  W[seg_x] < .05 and name_type != prev_name_type and \
                  next_name_type == prev_name_type:
             W[stretch_start_x] += W[seg_x]
-            W[seg_x] = 0
+            W[seg_x] = None
             turn = calculateWayToTurn(bearings[seg_x], end_bearings[seg_x - 1])
             jogs[-1].append({'turn': turn, 'street': str(st)})
         else:
@@ -354,8 +357,6 @@ def makeDirections(I, S):
             stretch_start_x = seg_x
             prev_name_type = name_type
             jogs.append([])
-            
-        seg_x += 1
 
 
     # Add 'stretches' between start and destination intersections
@@ -369,7 +370,7 @@ def makeDirections(I, S):
         st = streets[s_count]
         st_str = str(st)
         
-        if w:
+        if w is not None:
             # Things in here only happen at the start of a stretch
 
             bearing = bearings[s_count]
@@ -424,13 +425,14 @@ def makeDirections(I, S):
         except AttributeError:
             pass
         else:
-            dbm = d['bikemode']
             if bm:
                 try:
+                    # Only record changes in bikemode
                     if bm != dbm[-1]:
-                        dbm.append(bm)
+                        d['bikemode'].append(bm)
                 except IndexError:
-                    dbm.append(bm)
+                    # First segment in stretch with a bikemode
+                    d['bikemode'].append(bm)
 
         s_count += 1
         ls_index += len(s.linestring) - 1
