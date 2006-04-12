@@ -130,11 +130,11 @@ def _processQuery(method, params, service=''):
 
 
 def _analyzeQuery(params):
-    q = params['q'] or ''
-    
-    # If query has params fr and to and not q, it is a route query
+    q = params['q']    
     fr = params['fr']
     to = params['to']
+    
+    # If query has params fr and to and not q, it is a route query
     if q is None and fr is not None and to is not None:
         service = 'route'
         q = [fr, to]
@@ -168,7 +168,7 @@ def _analyzeQuery(params):
     except KeyError:
         params['service'] = service
 
-    params['q'] = q
+    params['q'] = q or ''
     return service
 
 
