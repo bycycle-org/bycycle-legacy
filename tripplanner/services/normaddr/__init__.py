@@ -12,6 +12,8 @@ Accepts these types of addresses:
 import re
 from byCycle.tripplanner.model import address, states, sttypes, compass
 
+# RE to check see if a string has at least one word char
+re_word_plus = re.compile(r'\w+')
 
 directions_ftoa = compass.directions_ftoa
 directions_atof = compass.directions_atof
@@ -23,10 +25,10 @@ states_ftoa = states.states_ftoa
 states_atof = states.states_atof
 
 
-def get(addr, mode):
+def get(sAddr, mode):
     """Get a normalized address for the input address."""
 
-    # Fail early here if addr is empty
+    # Fail early here if sAddr is empty
 
     # Remove punctuation chars here (and other extraneous chars too?)
     
@@ -36,36 +38,34 @@ def get(addr, mode):
 
     # Node?
     try:
-        node_id = int(addr)
+        node_id = int(sAddr)
     except ValueError:
         pass
 
     # Intersection?
     try:
-        street1, street2 = getCrossStreets(addr)
+        street1, street2 = getCrossStreets(sAddr)
     except ValueError:
         pass
-
-    words = addr.split()
     
     # Edge?
     try:
-        number = int(words[0])
-        edge_id = int(words[1])
+        lAddr = sAddr.split()        
+        number = int(lAddr[0])
+        edge_id = int(lAddr[1])
     except (IndexError, ValueError):
         pass
 
     # Address [postal]
     try:
-        number = int(words[0])
-        words[1]
-    except (IndexError, ValueError):
+        number, street = getNumberAndStreet(sAddr)
+    except ValueError:
         pass
 
     # Point?
     # XXX: Expensive; do last
     try:
-        point = getPoint(addr)
+        point = getPoint(sAddr)
     except ValueError:
         pass
 
@@ -73,7 +73,7 @@ def get(addr, mode):
 
 
 
-def _normalize(addr, mode):
+def _normalize(sAddr, mode):
     # This is the "meat" of this address normalizer
     name = []
     street = address.Street()
@@ -175,23 +175,40 @@ def _normalize(addr, mode):
     return street, place
 
 
-def getIntersection(sAddr):
-    and_re = re.compile(r'.+( and | at |[&@\+/\\]).+', re.I)
-    if re.match(and_re, sAddr):
-        return True
-    else:
-        return False
-    
-
-def what():
-    for a in ands:
-        streets = [sAddr for sAddr in sAddr.split(' %s ' % a)
-                   if sAddr.strip()]
-    if len(streets) >= 2:
-        return street[0], street[1]
-    err = '"%s" cannot be parsed as an intersection address' % sAddr
+def getCrossStreets(sAddr):
+    """Try to extract two cross streets from the input address."""
+    # Try splitting input addr on 'and', 'at', '&', '@', '+', '/', or '\'
+    # 'and' or 'at' must have whitespace on both sides
+    # All must have at least one word character on both sides
+    sRe = r'\s+and\s+|\s+at\s+|\s*[&@\+/\\]\s*'
+    oRe = re.compile(sRe, re.I)
+    streets = re.split(oRe, sAddr)
+    if (len(streets) > 1 and
+        re.match(re_word_plus, streets[0]) and
+        re.match(re_word_plus, streets[1])):
+        return streets
+    err = '"%s" could not be parsed as an intersection address' % sAddr
     raise ValueError(err)
 
+def getNumberAndStreet(sAddr):
+    """Try to extract a house number and street from the input address."""
+    words = sAddr.split()
+    if len(words) > 1:
+        num = words[0]
+        try:
+            # Is num an int (house number)?
+            num = int(num)
+        except ValueError:
+            # No.
+            pass
+        else:
+            # num is an int; is street a string with at least one word char?
+            street = ' '.join(words[1:])
+            if re.match(re_word_plus, street):
+                # Yes.
+                return num, street 
+    err = '"%s" could not be parsed as a postal address' % sAddr   
+    raise ValueError(err)
 
 def getPoint(sAddr):
     # String with form "x=-122, y=45"
@@ -254,155 +271,3 @@ def getPoint(sAddr):
         
     err = '"%s" cannot be parsed as a point address' % sAddr
     raise ValueError(err)
-
-
-    
-
-if __name__ == '__main__':
-    import unittest
-    #import byCycle.tripplanner.services import normaddr
-    from byCycle.tripplanner.model import portlandor
-
-
-    class TestIsIntersection(unittest.TestCase):
-        def testCall(self):
-            isIntersection('')
-
-        def testAnd(self):
-            is_i = isIntersection('A and B')
-            self.assertTrue(is_i)
-            is_i = isIntersection('A And B')
-            self.assertTrue(is_i)
-            is_i = isIntersection('A aNd B')
-            self.assertTrue(is_i)
-            is_i = isIntersection('A anD B')
-            self.assertTrue(is_i)
-            is_i = isIntersection('A AND B')
-            self.assertTrue(is_i)
-
-        def testAt(self):
-            is_i = isIntersection('A at B')
-            self.assertTrue(is_i)
-            is_i = isIntersection('A At B')
-            self.assertTrue(is_i)
-            is_i = isIntersection('A aT B')
-            self.assertTrue(is_i)
-            is_i = isIntersection('A AT B')
-            self.assertTrue(is_i)
-
-        def testAtSymbol(self):
-            is_i = isIntersection('A @ B')
-            self.assertTrue(is_i)
-            is_i = isIntersection('A @B')
-            self.assertTrue(is_i)            
-            is_i = isIntersection('A@ B')
-            self.assertTrue(is_i)
-            is_i = isIntersection('A@B')
-            self.assertTrue(is_i)
-
-        def testForwardSlash(self):
-            is_i = isIntersection('A / B')
-            self.assertTrue(is_i)
-            is_i = isIntersection('A /B')
-            self.assertTrue(is_i)            
-            is_i = isIntersection('A/ B')
-            self.assertTrue(is_i)            
-            is_i = isIntersection('A/B')
-            self.assertTrue(is_i)
-            
-        def testBackSlash(self):
-            is_i = isIntersection(r'A \ B')
-            self.assertTrue(is_i)
-            is_i = isIntersection(r'A \B')
-            self.assertTrue(is_i)            
-            is_i = isIntersection(r'A\ B')
-            self.assertTrue(is_i)            
-            is_i = isIntersection(r'A\B')
-            self.assertTrue(is_i)
-            
-        def testPlus(self):
-            is_i = isIntersection('A + B')
-            self.assertTrue(is_i)
-            is_i = isIntersection('A +B')
-            self.assertTrue(is_i)            
-            is_i = isIntersection('A+ B')
-            self.assertTrue(is_i)            
-            is_i = isIntersection('A+B')
-            self.assertTrue(is_i)
-
-        def testMissingInternalSpace(self):
-            is_i = isIntersection('A andB')
-            self.assertFalse(is_i)            
-            is_i = isIntersection('Aat B')
-            self.assertFalse(is_i)
-
-        def testMissingFromOrTo(self):
-            is_i = isIntersection('and B')
-            self.assertFalse(is_i)            
-            is_i = isIntersection('A at')
-            self.assertFalse(is_i)
-            is_i = isIntersection(' and B')
-            self.assertFalse(is_i)            
-            is_i = isIntersection('A at ')
-            self.assertFalse(is_i)
-
-        def testMissingFromAndTo(self):
-            is_i = isIntersection('and')
-            self.assertFalse(is_i)                
-            is_i = isIntersection(' and')
-            self.assertFalse(is_i)
-            is_i = isIntersection('and ')
-            self.assertFalse(is_i)                
-            is_i = isIntersection(' and ')
-            self.assertFalse(is_i)                
-            
-
-
-    class TestNormAddr:
-        def testCreatePortlandORMode(self):
-            mode = portlandor.Mode()
-
-        def testUsePortlandORMode(self):
-            mode = portlandor.Mode()
-            mode.execute('show columns from portlandor_layer_street')
-        
-        def testPortlandORAddressAddress(self): 
-            mode = portlandor.Mode()
-            inaddr = '4807 SE Kelly St, Portland, OR 97206'
-            self.assert_(isinstance(get(inaddr, mode),
-                                    address.AddressAddress))
-
-        def testPortlandORIntersectionAddress(self):
-            inaddr = 'SE Kelly St & SE 49th Ave, Portland, OR 97206'
-            mode = portlandor.Mode()
-            self.assert_(isinstance(get(inaddr, mode),
-                                    address.IntersectionAddress))
-
-        def testPortlandORPointAddress(self):
-            inaddr = 'POINT(-123.120000 45.000000)'
-            mode = portlandor.Mode()
-            self.assert_(isinstance(get(inaddr, mode), address.PointAddress))
-            self.assert_(isinstance(get(inaddr, mode),
-                                    address.IntersectionAddress))
-
-        def testPortlandORNodeAddress(self):
-            inaddr = '4'
-            mode = portlandor.Mode()
-            self.assert_(isinstance(get(inaddr, mode),
-                                    address.IntersectionAddress))
-
-        def testPortlandOREdgeAddress(self):
-            mode = portlandor.Mode()
-            Q = 'SELECT id FROM portlandor_layer_street ' \
-                'WHERE addr_f <= 4807 AND addr_t >= 4807 AND ' \
-                'streetname_id IN ' \
-                '(SELECT id from portlandor_streetname ' \
-                ' WHERE prefix = "se" AND name = "kelly" AND type = "st")'
-            mode.execute(Q)
-            edge_id = mode.fetchRow()[0]
-            inaddr = '4807 %s' % edge_id
-            self.assert_(isinstance(get(inaddr, mode), address.AddressAddress))
-
-            
-    unittest.main()
-    
