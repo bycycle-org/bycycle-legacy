@@ -16,6 +16,7 @@ class Address(object):
     def __init__(self, **attrs):
         # Assign keyword arguments to self
         for attr in self.attrs:
+            # Use keyword arg if passed; else use default
             val = attrs.get(attr, self.attrs[attr])
             try:
                 words = val.split()
@@ -30,7 +31,7 @@ class Address(object):
 
 
 
-class AddressAddress(Address):
+class PostalAddress(Address):
     attr_order = ('number',
                   'prefix', 'name', 'sttype', 'suffix',
                   'city', 'county', 'state', 'zip_code')
@@ -42,6 +43,16 @@ class AddressAddress(Address):
     
     def __init__(self, **attrs):
         Address.__init__(self, **attrs)
+        
+        try:
+            self.number = int(self.number)
+        except:
+            pass
+        try:
+            self.zip_code = int(self.zip_code)
+        except:
+            pass
+        
         self.street = Street(self.prefix, self.name, self.sttype, self.suffix)
         self.place = Place(self.city, self.county, self.state, self.zip_code)
 
@@ -50,7 +61,19 @@ class AddressAddress(Address):
         result = joinAttrs([self.number or '', str(self.street)])
         result = joinAttrs([result, str(self.place)], '\n')
         return result
+
+
+
     
+class EdgeAddress(PostalAddress):
+    def __init__(self, number=None, edge_id=None):
+        PostalAddress.__init__(self, number=number)
+        self.edge_id = edge_id
+
+
+    def __str__(self):
+        return PostalAddress.__str__(self)
+
 
 
 
@@ -68,6 +91,15 @@ class IntersectionAddress(Address):
     
     def __init__(self, **attrs):
         Address.__init__(self, **attrs)
+
+        try:
+            self.zip_code1 = int(self.zip_code1)
+        except:
+            pass
+        try:
+            self.zip_code2 = int(self.zip_code2)
+        except:
+            pass
 
         self.street1 = Street(self.prefix1, self.name1, self.sttype1,
                               self.suffix1)
@@ -113,6 +145,21 @@ class PointAddress(IntersectionAddress):
         return s
 
 
+
+
+class NodeAddress(IntersectionAddress):
+    def __init__(self, node_id=None):
+        IntersectionAddress.__init__(self)
+        self.node_id = node_id
+
+
+    def __str__(self):
+        s = IntersectionAddress.__str__(self)
+        if s == '? & ?':
+            s = str(self.node_id)
+        return s
+
+    
 
     
 class Street(object):
@@ -199,47 +246,3 @@ class Place(object):
             return True
         else:
             return False       
-        
-
-
-
-if __name__ == "__main__":
-    import unittest
-
-
-    class TestAddressClasses(unittest.TestCase):
-        def testAddressAddress(self):
-            a = AddressAddress(number='4807',
-                               prefix='SE',
-                               name='Kelly',
-                               sttype='St',
-                               city='Portland',
-                               state='OR',
-                               zip_code=97206)
-            assert(str(a) == '4807 SE Kelly St\nPortland, OR 97206')
-
-
-        def testIntersectionAddress(self):
-            a = IntersectionAddress(prefix1='SE',
-                                    name1='Kelly',
-                                    sttype1='St',
-                                    city1='Portland',
-                                    state1='OR',
-                                    zip_code1=97206,
-                                    prefix2='SE',
-                                    name2='49th',
-                                    sttype2='Ave',
-                                    city2='Portland',
-                                    state2='OR',
-                                    zip_code2=97206)
-            assert(str(a) == 'SE Kelly St & SE 49th Ave\n'
-                   'Portland, OR 97206')
-
-
-        def testPointAddress(self):
-            a = PointAddress(x=-123.12, y=45)
-            assert(str(a) == 'POINT(-123.120000 45.000000)')
-
-
-            
-    unittest.main()
