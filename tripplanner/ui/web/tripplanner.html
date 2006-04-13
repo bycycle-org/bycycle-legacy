@@ -149,6 +149,7 @@
 		  <div class="input_title">Find an Address</div>
 		  
 		  <div>
+		    <input type="hidden" name="region" value="%(region)s"/>
 		    <input type="text" id="q" name="q" class="input_field" tabindex="1" value="%(q)s"/>
 		    <input name="gb"
 			   class="input_button"
@@ -168,6 +169,7 @@
 		  <div class="input_title">Find a Route</div>
 		  
 		  <div>
+		    <input type="hidden" name="region" value="%(region)s"/>
 		    <input type="text" id="fr" name="fr" class="input_field" tabindex="1" value="%(fr)s"/>
 		    <a href="javascript:void(0);"  
 		       title="Swap from and to" 
@@ -222,11 +224,23 @@
 	      
 	      <div id="map">
 		<noscript>
-		  <div>
-		    <p style="padding: 5px;">
-		      <i>To display a map here, JavaScript must be enabled in your browser. 
+		  <div style="font-style: italic; padding: 5px;">
+		    <p>
+		      To display a map here, JavaScript must be enabled in your browser. 
 		      If you would like to view the map, please enable JavaScript and 
-		      <a href="">try again</a>.</i>
+		      <a href="">try again</a>.
+		    </p>
+		    <p>
+		      Note that you must have a relatively recent browser for the map to 
+		      display. We test in <a href="http://www.mozilla.com/">Mozilla Firefox</a> 
+		      on Linux, Mac OS X, and Windows; Safari on Mac OS X; and Internet Explorer 
+		      on Windows.
+		    </p>
+		    <p>
+		      If you don't have one of the above browsers, you may want to leave JavaScript 
+		      turned off. On the other hand, if you feel like experimenting, you can
+		      <a href="mailto:feedback@bycycle.org">let us know</a> if the Trip Planner does 
+		      or does not work in other browsers.
 		    </p>
 		  </div>
 		</noscript>
