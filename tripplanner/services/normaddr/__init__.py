@@ -9,6 +9,7 @@ Accepts these types of addresses:
 - Edge (i.e., number + edge ID)
 """
 
+import re
 from byCycle.tripplanner.model import address, states, sttypes, compass
 
 
@@ -174,8 +175,15 @@ def _normalize(addr, mode):
     return street, place
 
 
-def getCrossStreets(sAddr): 
-    ands = ('&', 'and', 'AND', 'at', 'AT', '@')
+def getIntersection(sAddr):
+    and_re = re.compile(r'.+( and | at |[&@\+/\\]).+', re.I)
+    if re.match(and_re, sAddr):
+        return True
+    else:
+        return False
+    
+
+def what():
     for a in ands:
         streets = [sAddr for sAddr in sAddr.split(' %s ' % a)
                    if sAddr.strip()]
@@ -252,10 +260,105 @@ def getPoint(sAddr):
 
 if __name__ == '__main__':
     import unittest
+    #import byCycle.tripplanner.services import normaddr
     from byCycle.tripplanner.model import portlandor
 
 
-    class TestNormAddr(unittest.TestCase):
+    class TestIsIntersection(unittest.TestCase):
+        def testCall(self):
+            isIntersection('')
+
+        def testAnd(self):
+            is_i = isIntersection('A and B')
+            self.assertTrue(is_i)
+            is_i = isIntersection('A And B')
+            self.assertTrue(is_i)
+            is_i = isIntersection('A aNd B')
+            self.assertTrue(is_i)
+            is_i = isIntersection('A anD B')
+            self.assertTrue(is_i)
+            is_i = isIntersection('A AND B')
+            self.assertTrue(is_i)
+
+        def testAt(self):
+            is_i = isIntersection('A at B')
+            self.assertTrue(is_i)
+            is_i = isIntersection('A At B')
+            self.assertTrue(is_i)
+            is_i = isIntersection('A aT B')
+            self.assertTrue(is_i)
+            is_i = isIntersection('A AT B')
+            self.assertTrue(is_i)
+
+        def testAtSymbol(self):
+            is_i = isIntersection('A @ B')
+            self.assertTrue(is_i)
+            is_i = isIntersection('A @B')
+            self.assertTrue(is_i)            
+            is_i = isIntersection('A@ B')
+            self.assertTrue(is_i)
+            is_i = isIntersection('A@B')
+            self.assertTrue(is_i)
+
+        def testForwardSlash(self):
+            is_i = isIntersection('A / B')
+            self.assertTrue(is_i)
+            is_i = isIntersection('A /B')
+            self.assertTrue(is_i)            
+            is_i = isIntersection('A/ B')
+            self.assertTrue(is_i)            
+            is_i = isIntersection('A/B')
+            self.assertTrue(is_i)
+            
+        def testBackSlash(self):
+            is_i = isIntersection(r'A \ B')
+            self.assertTrue(is_i)
+            is_i = isIntersection(r'A \B')
+            self.assertTrue(is_i)            
+            is_i = isIntersection(r'A\ B')
+            self.assertTrue(is_i)            
+            is_i = isIntersection(r'A\B')
+            self.assertTrue(is_i)
+            
+        def testPlus(self):
+            is_i = isIntersection('A + B')
+            self.assertTrue(is_i)
+            is_i = isIntersection('A +B')
+            self.assertTrue(is_i)            
+            is_i = isIntersection('A+ B')
+            self.assertTrue(is_i)            
+            is_i = isIntersection('A+B')
+            self.assertTrue(is_i)
+
+        def testMissingInternalSpace(self):
+            is_i = isIntersection('A andB')
+            self.assertFalse(is_i)            
+            is_i = isIntersection('Aat B')
+            self.assertFalse(is_i)
+
+        def testMissingFromOrTo(self):
+            is_i = isIntersection('and B')
+            self.assertFalse(is_i)            
+            is_i = isIntersection('A at')
+            self.assertFalse(is_i)
+            is_i = isIntersection(' and B')
+            self.assertFalse(is_i)            
+            is_i = isIntersection('A at ')
+            self.assertFalse(is_i)
+
+        def testMissingFromAndTo(self):
+            is_i = isIntersection('and')
+            self.assertFalse(is_i)                
+            is_i = isIntersection(' and')
+            self.assertFalse(is_i)
+            is_i = isIntersection('and ')
+            self.assertFalse(is_i)                
+            is_i = isIntersection(' and ')
+            self.assertFalse(is_i)                
+            
+
+
+    class TestNormAddr:
         def testCreatePortlandORMode(self):
             mode = portlandor.Mode()
 

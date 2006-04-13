@@ -23,10 +23,7 @@ def index(method, params):
     except KeyError:
         async = False
 
-    try:
-        params['region'] = _getRegionForAlias(params['region'])
-    except KeyError:
-        pass
+    params['region'] = _getRegion(**params)
 
     if async:
         # Asynchronous request
@@ -74,6 +71,7 @@ def index(method, params):
         data = {
             'http_status': status,
             'response_text': response_text,
+            'region': params['region'],
             'q': q,
             'fr': fr,
             'to': to,
@@ -303,7 +301,7 @@ def _makeRouteMultipleMatchList(geocodes_fr, geocodes_to, params):
 
 ## Helpers
 
-def _getRegionForAlias(alias):
+def _getRegion(region='', **params):
     region_aliases = {'mil': 'milwaukeewi',
                       'milwaukee': 'milwaukeewi',
                       'metro': 'portlandor',
@@ -311,11 +309,10 @@ def _getRegionForAlias(alias):
                       'portland': 'portlandor',
                       }
     try:
-        region = region_aliases[alias]
+        region = region_aliases[region]
     except KeyError:
-        return alias
-    else:
-        return region
+        pass
+    return region
 
 
 ## Output
