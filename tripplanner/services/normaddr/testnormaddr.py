@@ -76,46 +76,65 @@ if __name__ == '__main__':
         
 
     class TestNormAddrPortlandOR(unittest.TestCase):
-        def setUp(self):
-            try:
-                self.mode
-            except AttributeError:
-                self.mode = portlandor.Mode() 
-        
         def testPortlandORPostalAddress(self): 
             sAddr = '4807 SE Kelly St, Portland, OR 97206'
-            oAddr = get(sAddr, self.mode)
+            oAddr = get(sAddr, 'portlandor')
             self.assert_(isinstance(oAddr, address.PostalAddress))
-            
+            self.assertEqual(oAddr.number, 4807)
+            self.assertEqual(oAddr.prefix, 'SE')
+            self.assertEqual(oAddr.name, 'Kelly')
+            self.assertEqual(oAddr.sttype, 'St')
+            self.assertEqual(oAddr.city, 'Portland')
+            self.assertEqual(oAddr.state, 'OR')
+            self.assertEqual(oAddr.zip_code, 97206)
+                             
         def testPortlandOREdgeAddress(self):
             Q = 'SELECT id FROM portlandor_layer_street ' \
                 'WHERE addr_f <= 633 AND addr_t >= 633 AND ' \
                 'streetname_id IN ' \
                 '(SELECT id from portlandor_streetname ' \
                 ' WHERE prefix = "n" AND name = "alberta" AND type = "st")'
-            self.mode.execute(Q)
-            edge_id = self.mode.fetchRow()[0]
-            sAddr = '4807 %s' % edge_id
-            oAddr = get(sAddr, self.mode)
+            mode = portlandor.Mode()
+            mode.execute(Q)
+            edge_id = mode.fetchRow()[0]
+            sAddr = '633 %s' % edge_id
+            oAddr = get(sAddr, 'portlandor')
             self.assert_(isinstance(oAddr, address.EdgeAddress))
             self.assert_(isinstance(oAddr, address.PostalAddress))
+            self.assertEqual(oAddr.number, 633)
+            self.assertEqual(oAddr.edge_id, edge_id)
             
         def testPortlandORIntersectionAddress(self):
             sAddr = 'SE Kelly St & SE 49th Ave, Portland, OR 97206'
-            oAddr = get(sAddr, self.mode)
+            oAddr = get(sAddr, 'portlandor')
             self.assert_(isinstance(oAddr, address.IntersectionAddress))
+            self.assertEqual(oAddr.prefix1, 'SE')
+            self.assertEqual(oAddr.name1, 'Kelly')
+            self.assertEqual(oAddr.sttype1, 'St')
+            self.assertEqual(oAddr.city1, 'Portland')
+            self.assertEqual(oAddr.state1, 'OR')
+            self.assertEqual(oAddr.zip_code1, 97206)
+            self.assertEqual(oAddr.prefix2, 'SE')
+            self.assertEqual(oAddr.name2, '49th')
+            self.assertEqual(oAddr.sttype2, 'Ave')
+            self.assertEqual(oAddr.city2, 'Portland')
+            self.assertEqual(oAddr.state2, 'OR')
+            self.assertEqual(oAddr.zip_code2, 97206)
 
         def testPortlandORPointAddress(self):
             sAddr = 'POINT(-123.120000 45.000000)'
-            oAddr = get(sAddr, self.mode)
+            oAddr = get(sAddr, 'portlandor')
             self.assert_(isinstance(oAddr, address.PointAddress))
             self.assert_(isinstance(oAddr, address.IntersectionAddress))
-
+            self.assertAlmostEqual(oAddr.x, -123.120000)
+            self.assertAlmostEqual(oAddr.y, 45.000000)
+            
         def testPortlandORNodeAddress(self):
-            sAddr = '4'
-            oAddr = get(sAddr, self.mode)
+            iAddr = 4
+            sAddr = int(iAddr)
+            oAddr = get(sAddr, 'portlandor')
             self.assert_(isinstance(oAddr, address.IntersectionAddress))
-
+            self.assertEqual(oAddr.node_id, iAddr)
             
     unittest.main()
     

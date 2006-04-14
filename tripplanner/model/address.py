@@ -136,6 +136,8 @@ class PointAddress(IntersectionAddress):
     def __init__(self, x=None, y=None):
         IntersectionAddress.__init__(self)
         self.point = gis.Point(x=x, y=y)
+        self.x = self.point.x
+        self.y = self.point.y
 
 
     def __str__(self):
