@@ -26,9 +26,13 @@ states_ftoa = states.states_ftoa
 states_atof = states.states_atof
 
 
-def get(sAddr, mode):
-    """Get a normalized address for the input address."""
+def get(sAddr, sMode):
+    """Get a normalized address for the input address.
 
+    @param sAddr Input address as a string
+    @param sMode Region mode as a string
+
+    """
     # Fail early here if sAddr is empty
 
     # Remove punctuation chars here (and other extraneous chars too?)
@@ -52,7 +56,9 @@ def get(sAddr, mode):
         pass
     else:
         # parse streets and return IntersectionAddress
-        pass
+        attrs1 = parse(street1, sMode)
+        attrs2 = parse(street2, sMode)
+        return address.IntersectionAddress()
     
     # Edge?
     try:
@@ -71,10 +77,10 @@ def get(sAddr, mode):
         pass
     else:
         # parse street and return PostalAddress
-        pass
+        attrs = parse(street, sMode)
+        return address.PostalAddress(**attrs)
 
     # Point?
-    # XXX: Expensive; do last
     try:
         point = gis.Point(sAddr)
     except ValueError:
@@ -85,12 +91,25 @@ def get(sAddr, mode):
     # Raise an exception if we get here: address is unnormalizeable
 
 
+def parse(sStreet, sMode):
+    """Parse input street string, referring to mode DB only if necessary.
 
-def _normalize(sAddr, mode):
-    # This is the "meat" of this address normalizer
+    Note: the 'street' is actually the street & place
+    TODO: Change to something more appropriate
+
+    @param string sStreet A street & place
+    @param string sMode The mode to lookup in if necessary
+    @return dictionary Address tokens containing keys for prefix, name, type,
+            suffix, city, county, state, and zip code
+
+    """
+    path = 'byCycle.tripplanner.model.%s'
+    oMode = __import__(path % sMode, globals(), locals(), ['']).Mode()    
+
     name = []
     street = address.Street()
     place = address.Place()
+    
     try:
         ## Front to back
  
@@ -135,9 +154,9 @@ def _normalize(sAddr, mode):
         # TODO: make static list of cities for each region
         word = words[-1]
         Q = 'SELECT id FROM %s_city WHERE city="%s"' % \
-            (mode.region, word)
-        mode.execute(Q)
-        row = mode.fetchRow()
+            (oMode.region, word)
+        oMode.execute(Q)
+        row = oMode.fetchRow()
         if row:
             place.city_id = row[0]
             place.city = word
