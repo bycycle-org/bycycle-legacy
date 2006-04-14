@@ -11,6 +11,7 @@ Accepts these types of addresses:
 
 import re
 from byCycle.tripplanner.model import address, states, sttypes, compass
+from byCycle.lib import gis
 
 # RE to check see if a string has at least one word char
 re_word_plus = re.compile(r'\w+')
@@ -41,11 +42,16 @@ def get(sAddr, mode):
         node_id = int(sAddr)
     except ValueError:
         pass
+    else:
+        return address.NodeAddress(node_id)
 
     # Intersection?
     try:
         street1, street2 = getCrossStreets(sAddr)
     except ValueError:
+        pass
+    else:
+        # parse streets and return IntersectionAddress
         pass
     
     # Edge?
@@ -55,19 +61,26 @@ def get(sAddr, mode):
         edge_id = int(lAddr[1])
     except (IndexError, ValueError):
         pass
-
+    else:
+        return address.EdgeAddress(number, edge_id)
+    
     # Address [postal]
     try:
         number, street = getNumberAndStreet(sAddr)
     except ValueError:
         pass
+    else:
+        # parse street and return PostalAddress
+        pass
 
     # Point?
     # XXX: Expensive; do last
     try:
-        point = getPoint(sAddr)
+        point = gis.Point(sAddr)
     except ValueError:
         pass
+    else:
+        return address.PointAddress(x=point.x, y=point.y)
 
     # Raise an exception if we get here: address is unnormalizeable
 
@@ -208,66 +221,4 @@ def getNumberAndStreet(sAddr):
                 # Yes.
                 return num, street 
     err = '"%s" could not be parsed as a postal address' % sAddr   
-    raise ValueError(err)
-
-def getPoint(sAddr):
-    # String with form "x=-122, y=45"
-    # x and y can be any string
-    # = can be any char in the list on the next line
-    # Note: this is the default version we expect from the front end
-    for c in ('=', ':'):
-        try:
-            xy = sAddr.split(',')
-            x = xy[0].split('%s' % c)[1]
-            y = xy[1].split('%s' % c)[1]
-            return gis.Point(x=float(x), y=float(y))
-        except:
-            pass
-
-    # WKT string
-    try:
-        point = gis.importWktGeometry(sAddr)
-        point.x
-        point.y
-        return point
-    except:
-        pass
-
-    # gis.Point
-    if isinstance(sAddr, gis.Point):
-        return sAddr
-
-    # X, Y object
-    try:
-        return gis.Point(x=float(sAddr.x), y=float(sAddr.y))
-    except:
-        pass
-
-    # X, Y literal object
-    try:
-        return gis.Point(x=float(sAddr['x']), y=float(sAddr['y']))
-    except:
-        pass
-
-    # String with form "(-122, 45)"
-    try:
-        obj = eval(sAddr)
-        if len(obj) < 2:
-            raise ValueError
-        if not isinstance(obj, tuple):
-            raise
-        return gis.Point(x=float(obj[0]), y=float(obj[1]))
-    except:
-        pass
-
-    # String with form "-122, 45"
-    # , can be any char in the list on the next line
-    for c in (',', ' '):
-        try:
-            xy = sAddr.split(c)
-            return gis.Point(x=float(xy[0]), y=float(xy[1]))
-        except:
-            pass
-        
-    err = '"%s" cannot be parsed as a point address' % sAddr
     raise ValueError(err)

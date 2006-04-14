@@ -1,10 +1,11 @@
 if __name__ == '__main__':
     import unittest
     from byCycle.tripplanner.services.normaddr import *
+    from byCycle.tripplanner.model import *
     from byCycle.tripplanner.model import portlandor
 
 
-    class TestgetCrossStreets(unittest.TestCase):
+    class TestGetCrossStreets(unittest.TestCase):
         def _testGood(self, addrs):
             for addr in addrs:
                 streets = getCrossStreets(addr)
@@ -74,43 +75,46 @@ if __name__ == '__main__':
             self._testBad(addrs)
         
 
-    class TestNormAddr:
+    class TestNormAddrPortlandOR(unittest.TestCase):
+        def setUp(self):
+            try:
+                self.mode
+            except AttributeError:
+                self.mode = portlandor.Mode() 
+        
         def testPortlandORPostalAddress(self): 
-            mode = portlandor.Mode()
-            inaddr = '4807 SE Kelly St, Portland, OR 97206'
-            self.assert_(isinstance(get(inaddr, mode),
-                                    address.AddressAddress))
-
-        def testPortlandORIntersectionAddress(self):
-            inaddr = 'SE Kelly St & SE 49th Ave, Portland, OR 97206'
-            mode = portlandor.Mode()
-            self.assert_(isinstance(get(inaddr, mode),
-                                    address.IntersectionAddress))
-
-        def testPortlandORPointAddress(self):
-            inaddr = 'POINT(-123.120000 45.000000)'
-            mode = portlandor.Mode()
-            self.assert_(isinstance(get(inaddr, mode), address.PointAddress))
-            self.assert_(isinstance(get(inaddr, mode),
-                                    address.IntersectionAddress))
-
-        def testPortlandORNodeAddress(self):
-            inaddr = '4'
-            mode = portlandor.Mode()
-            self.assert_(isinstance(get(inaddr, mode),
-                                    address.IntersectionAddress))
-
+            sAddr = '4807 SE Kelly St, Portland, OR 97206'
+            oAddr = get(sAddr, self.mode)
+            self.assert_(isinstance(oAddr, address.PostalAddress))
+            
         def testPortlandOREdgeAddress(self):
-            mode = portlandor.Mode()
             Q = 'SELECT id FROM portlandor_layer_street ' \
-                'WHERE addr_f <= 4807 AND addr_t >= 4807 AND ' \
+                'WHERE addr_f <= 633 AND addr_t >= 633 AND ' \
                 'streetname_id IN ' \
                 '(SELECT id from portlandor_streetname ' \
-                ' WHERE prefix = "se" AND name = "kelly" AND type = "st")'
-            mode.execute(Q)
-            edge_id = mode.fetchRow()[0]
-            inaddr = '4807 %s' % edge_id
-            self.assert_(isinstance(get(inaddr, mode), address.AddressAddress))
+                ' WHERE prefix = "n" AND name = "alberta" AND type = "st")'
+            self.mode.execute(Q)
+            edge_id = self.mode.fetchRow()[0]
+            sAddr = '4807 %s' % edge_id
+            oAddr = get(sAddr, self.mode)
+            self.assert_(isinstance(oAddr, address.EdgeAddress))
+            self.assert_(isinstance(oAddr, address.PostalAddress))
+            
+        def testPortlandORIntersectionAddress(self):
+            sAddr = 'SE Kelly St & SE 49th Ave, Portland, OR 97206'
+            oAddr = get(sAddr, self.mode)
+            self.assert_(isinstance(oAddr, address.IntersectionAddress))
+
+        def testPortlandORPointAddress(self):
+            sAddr = 'POINT(-123.120000 45.000000)'
+            oAddr = get(sAddr, self.mode)
+            self.assert_(isinstance(oAddr, address.PointAddress))
+            self.assert_(isinstance(oAddr, address.IntersectionAddress))
+
+        def testPortlandORNodeAddress(self):
+            sAddr = '4'
+            oAddr = get(sAddr, self.mode)
+            self.assert_(isinstance(oAddr, address.IntersectionAddress))
 
             
     unittest.main()
