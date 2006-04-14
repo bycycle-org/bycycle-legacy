@@ -25,43 +25,6 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 import math
 from math import sin, cos, acos, atan2, radians, degrees
 
-# Abbreviation to degree
-directions_atod = {"n": 0,   "s": 180,  "e": 90,   "w": 270,
-                   "ne": 45, "nw": 315, "se": 135, "sw": 225}
-
-# Degree to abbreviation
-directions_dtoa = {0:  "n",  180: "s",  90:  "e",  270: "w",
-                   45: "ne", 315: "nw", 135: "se", 225: "sw"}
-
-# Degree to type
-directions_dtot = {0   : 'north',
-                   180 : 'south',
-                   90  : 'east',
-                   270 : 'west',
-                   45  : 'northeast',
-                   315 : 'northwest',
-                   135 : 'southeast',
-                   225 : 'southwest'}
-
-# Abbreviation to type
-directions_atot = {'n'  : 'north',
-                   's'  : 'south',
-                   'e'  : 'east',
-                   'w'  : 'west',
-                   'ne' : 'northeast',
-                   'nw' : 'northwest',
-                   'se' : 'southeast',
-                   'sw' : 'southwest'}
-
-# Type to abbreviation
-directions_ttoa = {'north'     : 'n',
-                   'south'     : 's',
-                   'east'      : 'e',
-                   'west'      : 'w',
-                   'northeast' : 'ne',
-                   'northwest' : 'nw',
-                   'southeast' : 'se',
-                   'southwest' : 'sw'}
 
 earth_radius = 3959
 equator_circumference = 24902
@@ -76,7 +39,8 @@ def getDistanceBetweenTwoPointsOnEarth(lon_lat_a=None, lon_lat_b=None,
         lat_a = lon_lat_a.y
         lon_b = lon_lat_b.x
         lat_b = lon_lat_b.y
-    if lon_a == lon_b and lat_a == lat_b: return 0
+    if lon_a == lon_b and lat_a == lat_b:
+        return 0
     return earth_radius * \
            acos(cos(radians(lat_a)) * \
                 cos(radians(lat_b)) * \
@@ -117,14 +81,16 @@ def getBearingGivenStartAndEndPoints(p, q):
     while deg < 0: deg += 360
     return deg
 
+
 def getInterpolatedXY(linestring, length, distance_from_start):
     """
-    linestring -- a list of Points (having x and y attributes)
-    length -- the length of the linestring (in any convenient units)
-    distance_from_start -- how far the point to interpolate is from the
-                           start of the linestring (in same units as length)
+    @param linestring A list of Points (having x and y attributes)
+    @param length The length of the linestring (in any convenient units)
+    @param distance_from_start How far the point to interpolate is from the
+           start of the linestring (in same units as length)
 
-    return -- an interpolated point
+    @return An interpolated Point
+    
     """
     ls_len = len(linestring)
     if type(linestring) != type([]) or ls_len < 2: return None
@@ -168,42 +134,53 @@ def getInterpolatedXY(linestring, length, distance_from_start):
     return Point(x=x, y=y)
 
 
-def importWktGeometry(wkt_geometry):
+def importWktGeometry(geom):
     """Return a simple Python object for the given WKT Geometry string.
 
     POINT(X Y)
     LINESTRING(X Y,X Y,X Y)
     
     """
-    wkt_type, wkt_data = wkt_geometry.split('(', 1)
+    geom_type, wkt_data = geom.split('(', 1)
+    geom_type = geom_type.strip().upper()
     wkt_data = wkt_data[:-1] # strip trailing )
-    if wkt_type == 'LINESTRING':
+    if geom_type == 'LINESTRING':
         wkt_data = wkt_data.split(',')   # list of 'X Y'
         wkt_data = [d.split() for d in wkt_data] # list of [X, Y]
         linestring = [Point(x=d[0], y=d[1]) for d in wkt_data]
         return linestring
-    elif wkt_type == 'POINT':
+    elif geom_type == 'POINT':
         x, y = wkt_data.split()
         return Point(x=x, y=y)
     else:
-        return None
+        raise TypeError('Unsupported WKT geometry type: "%s"' % geom_type)
 
 
-def importWktGeometries(wkt_geometries, geom_type):
-    """Return list of simple Python objects for list of WKT Geometries."""
-    geoms = []
+def importWktGeometries(geoms, geom_type):
+    """Return list of simple Python objects for list of WKT Geometries.
+
+    This function is intended to be used instead of looping over a bunch of WKT
+    geometries and making a kabillion calls to importWktGeometry(), which is
+    why DRY is violated here.
+
+    """
+    lGeoms = []
+    geom_type = geom_type.strip().upper()
     if geom_type == 'POINT':
-        for p in wkt_geometries:
+        for p in geoms:
+            # TODO: some type/value checking
             x, y = p.split('(', 1)[1][:-1].split()
-            geoms.append(Point(x=x, y=y))
+            lGeoms.append(Point(x=x, y=y))
+        return lGeoms
     else:
-        return None
-    return geoms
+        raise TypeError('Unsupported WKT geometry type: "%s"' % geom_type)
+
+
 
     
 class Point(object):
     """A very simple Point class."""
-    def __init__(self, x_y=(), x=None, y=None):
+    def __init__(self, x_y=None, x=None, y=None):
         """Create a new Point from the supplied 2-tuple or string.
         
         @param x_y Either a 2-tuple of floats (or string representations of
@@ -212,23 +189,55 @@ class Point(object):
         @param x The x-coordinate of the point
         @param y The y-coordinate of the point
 
+        If x and y are passed, they will be preferred over x_y.
+        Clone a Point by passing it as the x_y arg to a new Point.
+
         """
-        try:
-            self.x = float(x)
-            self.y = float(y)
-        except (ValueError, TypeError):
+        err = 'Bad value(s) for Point: "%s", "%s"'
+        if x is not None and y is not None:
+            # x and y were passed; prefer them over x_y
             try:
-                # x_y is another point
-                self.x, self.y = x_y.x, x_y.y
+                self.x = float(x)
+                self.y = float(y)
+            except (ValueError, TypeError):
+                raise ValueError(err % (x, y))
+        elif x_y is not None:
+            # x_y was passed and x and y weren't
+            try:
+                # See if x_y is another point (or object with x and y attrs)
+                self.x, self.y = float(x_y.x), float(x_y.y)
             except AttributeError:
                 if isinstance(x_y, tuple):
                     # See if x_y is a 2-tuple (either of floats or string
                     # reprensentations of floats)...
-                    tmp_x_y = (x_y[0], x_y[1])
+                    try:
+                        self.x, self.y = float(x_y[0]), float(x_y[1])
+                    except IndexError:
+                        raise ValueError('Missing y value (x: "%s")' % x_y[0])
+                    except (ValueError, TypeError):
+                        raise ValueError(err % (tmp_x_y.x, tmp_x_y.y))
                 elif isinstance(x_y, basestring):
-                    # See if x_y is a string that will evaluate as a 2-tuple
-                    tmp_x_y = eval(x_y)
-                self.x, self.y = float(tmp_x_y[0]), float(tmp_x_y[1])
+                    try:
+                        # See if x_y is string that will evaluate as 2-tuple
+                        tmp_x_y = eval(x_y)
+                    except:
+                        # Last effort: See if x_y is a WKT POINT
+                        # importWktGeometry will raise an appropriate error
+                        # if necessary
+                        point = importWktGeometry(x_y)
+                        self.x, self.y = point.x, point.y
+                    else:
+                        try:
+                            self.x = float(tmp_x_y[0])
+                            self.y = float(tmp_x_y[1])
+                        except (ValueError, TypeError):
+                            raise ValueError(err % (tmp_x_y.x, tmp_x_y.y))
+            except (ValueError, TypeError):
+                raise ValueError(err % (x_y.x, x_y.y))
+        else:
+            # No args passed; create a default empty Point
+            self.x = None
+            self.y = None
 
     def __str__(self):
         return 'POINT(%.6f %.6f)' % (self.x, self.y)
@@ -236,29 +245,3 @@ class Point(object):
     def __repr__(self):
         return "{'x': %f, 'y': %f}" % (self.x, self.y)
 
-
-if __name__ == '__main__':
-    p = Point((-122.0, 45.0))
-    print p
-
-    p = Point(('-122.0', '45.0'))
-    print p
-
-    p = Point("('-122.0', '45.0')")
-    print p
-
-    q = Point(p)
-    print q
-
-    r = Point(x=-122, y=45)
-    print r
-    
-    r = Point(x='-122', y='45')
-    print r
-
-    
-    l = 'linestring (1 2 3, 2 2 4, 3 2 5)'
-    for p in importWktGeometry(l): print p,
-    print
-    p = 'point (1 2)'
-    print importWktGeometry(p)
