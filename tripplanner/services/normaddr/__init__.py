@@ -10,7 +10,7 @@ Accepts these types of addresses:
 """
 
 import re
-from byCycle.tripplanner.model import address, states, sttypes, compass
+from byCycle.tripplanner.model import mode, address, states, sttypes, compass
 from byCycle.lib import gis
 
 # RE to check see if a string has at least one word char
@@ -26,16 +26,14 @@ states_ftoa = states.states_ftoa
 states_atof = states.states_atof
 
 
-def get(sAddr, sMode):
+def get(sAddr, sOrOMode):
     """Get a normalized address for the input address.
 
-    @param sAddr Input address as a string
-    @param sMode Region mode as a string
+    @param string sAddr Input address
+    @param string|object sOrOMode Region mode
 
     """
     # Fail early here if sAddr is empty
-
-    # Remove punctuation chars here (and other extraneous chars too?)
     
     # First we should decide (guess) what type of address the input string is
     # supposed to be. Then we should fork and do different things accordingly
@@ -56,8 +54,8 @@ def get(sAddr, sMode):
         pass
     else:
         # parse streets and return IntersectionAddress
-        attrs1 = parse(street1, sMode)
-        attrs2 = parse(street2, sMode)
+        attrs1 = parse(street1, sOrOMode)
+        attrs2 = parse(street2, sOrOMode)
         return address.IntersectionAddress()
     
     # Edge?
@@ -77,8 +75,8 @@ def get(sAddr, sMode):
         pass
     else:
         # parse street and return PostalAddress
-        attrs = parse(street, sMode)
-        return address.PostalAddress(**attrs)
+        attrs = parse(street, sOrOMode)
+        return address.PostalAddress(number=number, **attrs)
 
     # Point?
     try:
@@ -91,107 +89,128 @@ def get(sAddr, sMode):
     # Raise an exception if we get here: address is unnormalizeable
 
 
-def parse(sStreet, sMode):
+def parse(sStreet, sOrOMode):
     """Parse input street string, referring to mode DB only if necessary.
 
     Note: the 'street' is actually the street & place
     TODO: Change to something more appropriate
 
+    A street should
+
     @param string sStreet A street & place
-    @param string sMode The mode to lookup in if necessary
+    @param string|object sOrOMode Region mode (DB) to do lookup in if necessary
     @return dictionary Address tokens containing keys for prefix, name, type,
             suffix, city, county, state, and zip code
 
     """
-    path = 'byCycle.tripplanner.model.%s'
-    oMode = __import__(path % sMode, globals(), locals(), ['']).Mode()    
+    if not isinstance(sOrOMode, mode.Mode):
+        path = 'byCycle.tripplanner.model.%s'
+        oMode = __import__(path % sOrOMode, globals(), locals(), ['']).Mode()
+    else:
+        oMode = sOrOMode
 
     name = []
-    street = address.Street()
-    place = address.Place()
-    
+
+    # TODO: Add these
+    #no_prefixes = mode.NO_PREFIXES
+    #no_suffixes = mode.NO_SUFFIXES
+
+    # Remove punctuation chars here (and other extraneous chars too?)
+
+    sStreet = sStreet.replace(',', '')
+    sStreet = sStreet.replace('.', '')
+    tokens = sStreet.lower().split()
+
+    i = 0
     try:
-        ## Front to back
- 
         # prefix
-        word = words[0]
-        if word in directions_atof:
-            street.prefix = word
-        elif word in directions_ftoa:
-            if len(words) == 1:
-                raise IndexError
-            else:
-                street.prefix = directions_ftoa[word]
-        if street.prefix:
-            del words[0]
-
-        # name
-        name.append(words[0])
-        del words[0]
-
-        ## Back to front
-
-        # zip code
-        word = words[-1]
-        try:
-            int(word)
-        except ValueError:
-            pass
+        token = tokens[i]
+        i+=1
+        if token in directions_atof:
+            prefix = token
+            print 'prefix: %s' % prefix
+        elif token in directions_ftoa:
+            prefix = directions_ftoa[token]
         else:
-            place.zip = word
-            del words[-1]
-
-        # state
-        word = words[-1]
-        if word in states_atof:
-            place.state = word
-        elif word in states_ftoa:
-            place.state = states_ftoa[word]
-        if place.state:
-            del words[-1]
+            name.append(token)
+            i-=1
+        
+        # street type
+        token = tokens[i]
+        i+=1
+        if token in sttypes_atof: 
+            sttype = token
+            name.pop()
+        elif token in sttypes_ftoa:
+            sttype = sttypes_ftoa[token]
+            name.pop()
+        else:
+            name.append(token)
+            i-=1
+            
+        # suffix
+        token = tokens[i]
+        i+=1
+        if (token in directions_atof or
+            token in suffixes_atof):
+            suffix = token
+            name.pop()
+        elif token in directions_ftoa:
+            suffix = directions_ftoa[token]
+            name.pop()
+        elif token in suffixes_ftoa:
+            suffix = suffixes_ftoa[token]                
+            name.pop()
+        else:
+            name.append(token)
+            i-=1
 
         # city
         # TODO: make static list of cities for each region
-        word = words[-1]
+        token = tokens[i]
+        i+=1
         Q = 'SELECT id FROM %s_city WHERE city="%s"' % \
-            (oMode.region, word)
+            (oMode.region, token)
         oMode.execute(Q)
         row = oMode.fetchRow()
         if row:
-            place.city_id = row[0]
-            place.city = word
-            del words[-1]
+            city = token
+            name.pop()
+        else:
+            name.append(token)
+            i-=1
 
-        # suffix
-        word = words[-1]
-        if word in directions_atof or \
-               word in suffixes_atof:
-            street.suffix = word
-        elif word in directions_ftoa:
-            street.suffix = directions_ftoa[word]
-        elif word in suffixes_ftoa:
-            street.suffix = suffixes_ftoa[word]                
-        if street.suffix:
-            del words[-1]
+        # state
+        token = tokens[i]
+        i+=1
+        if token in states_atof:
+            state = token
+            name.pop()
+        elif token in states_ftoa:
+            state = states_ftoa[token]
+            name.pop()
+        else:
+            name.append(token)
+            i-=1
 
-        # street type
-        word = words[-1]
-        if word in sttypes_atof: 
-            street.type = word
-        elif word in sttypes_ftoa:
-            street.type = sttypes_ftoa[word]
-        if street.type:
-            del words[-1]
-
+        # zip code
+        token = tokens[i]
+        try:
+            int(token)
+        except ValueError:
+            name.append(token)
+        else:
+            name.pop()
+            zip_code = token
     except IndexError:
         pass
 
     # name
-    name += words
-    street.name = ' '.join(name)
+    name += tokens
+    name = ' '.join(name)
 
     # Add suffix to number street (if needed), e.g. 10 => 10th
-    name = street.name
+    name = name
     try: int(name)
     except ValueError: pass
     else:
@@ -202,9 +221,9 @@ def parse(sStreet, sMode):
         elif last_char == '2' and last_two_chars != '12': name += 'nd'
         elif last_char == '3' and last_two_chars != '13': name += 'rd'
         else: name += 'th'
-        street.name = name
+        name = name
 
-    return street, place
+    return locals()
 
 
 def getCrossStreets(sAddr):
@@ -222,11 +241,12 @@ def getCrossStreets(sAddr):
     err = '"%s" could not be parsed as an intersection address' % sAddr
     raise ValueError(err)
 
+
 def getNumberAndStreet(sAddr):
     """Try to extract a house number and street from the input address."""
-    words = sAddr.split()
-    if len(words) > 1:
-        num = words[0]
+    tokens = sAddr.split()
+    if len(tokens) > 1:
+        num = tokens[0]
         try:
             # Is num an int (house number)?
             num = int(num)
@@ -235,7 +255,7 @@ def getNumberAndStreet(sAddr):
             pass
         else:
             # num is an int; is street a string with at least one word char?
-            street = ' '.join(words[1:])
+            street = ' '.join(tokens[1:])
             if re.match(re_word_plus, street):
                 # Yes.
                 return num, street 

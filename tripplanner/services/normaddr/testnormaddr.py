@@ -78,14 +78,15 @@ if __name__ == '__main__':
     class TestNormAddrPortlandOR(unittest.TestCase):
         def testPortlandORPostalAddress(self): 
             sAddr = '4807 SE Kelly St, Portland, OR 97206'
-            oAddr = get(sAddr, 'portlandor')
+            sMode = 'portlandor'
+            oAddr = get(sAddr, sMode)
             self.assert_(isinstance(oAddr, address.PostalAddress))
             self.assertEqual(oAddr.number, 4807)
-            self.assertEqual(oAddr.prefix, 'SE')
-            self.assertEqual(oAddr.name, 'Kelly')
-            self.assertEqual(oAddr.sttype, 'St')
-            self.assertEqual(oAddr.city, 'Portland')
-            self.assertEqual(oAddr.state, 'OR')
+            self.assertEqual(oAddr.prefix, 'se')
+            self.assertEqual(oAddr.name, 'kelly')
+            self.assertEqual(oAddr.sttype, 'st')
+            self.assertEqual(oAddr.city, 'portland')
+            self.assertEqual(oAddr.state, 'or')
             self.assertEqual(oAddr.zip_code, 97206)
                              
         def testPortlandOREdgeAddress(self):
@@ -98,32 +99,35 @@ if __name__ == '__main__':
             mode.execute(Q)
             edge_id = mode.fetchRow()[0]
             sAddr = '633 %s' % edge_id
-            oAddr = get(sAddr, 'portlandor')
+            sMode = 'portlandor'
+            oAddr = get(sAddr, sMode)
             self.assert_(isinstance(oAddr, address.EdgeAddress))
             self.assert_(isinstance(oAddr, address.PostalAddress))
             self.assertEqual(oAddr.number, 633)
             self.assertEqual(oAddr.edge_id, edge_id)
             
-        def testPortlandORIntersectionAddress(self):
+        def PortlandORIntersectionAddress(self):
             sAddr = 'SE Kelly St & SE 49th Ave, Portland, OR 97206'
-            oAddr = get(sAddr, 'portlandor')
+            sMode = 'portlandor'
+            oAddr = get(sAddr, sMode)
             self.assert_(isinstance(oAddr, address.IntersectionAddress))
-            self.assertEqual(oAddr.prefix1, 'SE')
-            self.assertEqual(oAddr.name1, 'Kelly')
-            self.assertEqual(oAddr.sttype1, 'St')
-            self.assertEqual(oAddr.city1, 'Portland')
-            self.assertEqual(oAddr.state1, 'OR')
+            self.assertEqual(oAddr.prefix1, 'se')
+            self.assertEqual(oAddr.name1, 'kelly')
+            self.assertEqual(oAddr.sttype1, 'st')
+            self.assertEqual(oAddr.city1, 'portland')
+            self.assertEqual(oAddr.state1, 'or')
             self.assertEqual(oAddr.zip_code1, 97206)
-            self.assertEqual(oAddr.prefix2, 'SE')
+            self.assertEqual(oAddr.prefix2, 'se')
             self.assertEqual(oAddr.name2, '49th')
-            self.assertEqual(oAddr.sttype2, 'Ave')
-            self.assertEqual(oAddr.city2, 'Portland')
-            self.assertEqual(oAddr.state2, 'OR')
+            self.assertEqual(oAddr.sttype2, 'ave')
+            self.assertEqual(oAddr.city2, 'portland')
+            self.assertEqual(oAddr.state2, 'or')
             self.assertEqual(oAddr.zip_code2, 97206)
 
         def testPortlandORPointAddress(self):
             sAddr = 'POINT(-123.120000 45.000000)'
-            oAddr = get(sAddr, 'portlandor')
+            sMode = 'portlandor'
+            oAddr = get(sAddr, sMode)
             self.assert_(isinstance(oAddr, address.PointAddress))
             self.assert_(isinstance(oAddr, address.IntersectionAddress))
             self.assertAlmostEqual(oAddr.x, -123.120000)
@@ -132,7 +136,8 @@ if __name__ == '__main__':
         def testPortlandORNodeAddress(self):
             iAddr = 4
             sAddr = int(iAddr)
-            oAddr = get(sAddr, 'portlandor')
+            sMode = 'portlandor'
+            oAddr = get(sAddr, sMode)
             self.assert_(isinstance(oAddr, address.IntersectionAddress))
             self.assertEqual(oAddr.node_id, iAddr)
             
