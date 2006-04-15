@@ -1,5 +1,7 @@
 # Geocode Service Module
 
+from byCycle.tripplanner.model import mode
+
 class GeocodeError(Exception):
     def __init__(self, desc=''): 
         if desc: self.description = desc
@@ -24,42 +26,41 @@ class InputError(GeocodeError):
         GeocodeError.__init__(self, desc=desc)
 
  
-def get(region='', q='', **params):
+def get(sOrOMode='', q='', **params):
     """Get the geocode of the address, according to the data mode.
     
-    @param region Either the name of a region mode OR a mode object. In the
-           first case a mode will be instantiated to geocode the address; in
-           the second the object will be used directly.
-    @param q An address string that can be geocoded by the mode
+    @param string|object sOrOMode Either the name of a region mode OR a mode
+           object. In the first case a mode will be instantiated to geocode the
+           address; in the second the object will be used directly.
+    @param q An address string that can be normalized & geocoded in the mode
     @return A list of geocodes for the inaddr
+
+    TODO: Raise exception when no geocodes instead of returning empty list
+    
     
     """
     # Check input
     errors = []
 
-    try:
-        region.geocode
-    except AttributeError:    
-        region_is_object = False
-        region = region.strip().lower()
-    else:
-        region_is_object = True
-    if not region:
-        errors.append('Region required')
-        
+    if not sOrOMode:
+        errors.append('Please select a region')
+            
     inaddr = q.strip().lower()
     if not q:
         errors.append('Address required')
 
-    if errors: raise InputError(errors)
+    if errors:
+        raise InputError(errors)
 
-    # If region is a string (i.e., it's not an object) instantiate a new data
-    # mode based on the string
-    if not region_is_object:
+    if not isinstance(sOrOMode, mode.Mode):
         path = 'byCycle.tripplanner.model.%s'
-        region = __import__(path % region, globals(), locals(), ['']).Mode()
+        oMode = __import__(path % sOrOMode, globals(), locals(), ['']).Mode()
+    else:
+        oMode = sOrOMode
 
     # Get geocode(s)
+    # TODO: Fix this so this module is truly a service and the service part
+    # of it isn't all mixed up in the model
     geocodes = region.geocode(q)    
     len_geocodes = len(geocodes)
     if len_geocodes == 0:
@@ -71,6 +72,8 @@ def get(region='', q='', **params):
 
 
 if __name__ == "__main__":
+    # TODO: Create unit tests!!!!
+    
     import sys
     import time
 
