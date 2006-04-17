@@ -88,7 +88,61 @@ if __name__ == '__main__':
             self.assertEqual(oAddr.city, 'portland')
             self.assertEqual(oAddr.state, 'or')
             self.assertEqual(oAddr.zip_code, 97206)
-                             
+
+        def testPortlandORPostalAddressMultiWordName(self): 
+            sAddr = '4807 SE Martin Luther King Jr Boulevard, ' \
+                    'Oregon City, OR 97206'
+            sMode = 'portlandor'
+            oAddr = get(sAddr, sMode)
+            self.assert_(isinstance(oAddr, address.PostalAddress))
+            self.assertEqual(oAddr.number, 4807)
+            self.assertEqual(oAddr.prefix, 'se')
+            self.assertEqual(oAddr.name, 'martin luther king jr')
+            self.assertEqual(oAddr.sttype, 'blvd')
+            self.assertEqual(oAddr.city, 'oregon city')
+            self.assertEqual(oAddr.state, 'or')
+            self.assertEqual(oAddr.zip_code, 97206)
+            
+        def testPortlandORPostalAddressMultiWordCity(self): 
+            sAddr = '4807 SE Kelly St, Oregon City, OR 97206'
+            sMode = 'portlandor'
+            oAddr = get(sAddr, sMode)
+            self.assert_(isinstance(oAddr, address.PostalAddress))
+            self.assertEqual(oAddr.number, 4807)
+            self.assertEqual(oAddr.prefix, 'se')
+            self.assertEqual(oAddr.name, 'kelly')
+            self.assertEqual(oAddr.sttype, 'st')
+            self.assertEqual(oAddr.city, 'oregon city')
+            self.assertEqual(oAddr.state, 'or')
+            self.assertEqual(oAddr.zip_code, 97206)
+
+        def testPortlandORPostalAddressMultiWordState(self): 
+            sAddr = '4807 SE Kelly Pants St, Oregon City, South Dakota 97206'
+            sMode = 'portlandor'
+            oAddr = get(sAddr, sMode)
+            self.assert_(isinstance(oAddr, address.PostalAddress))
+            self.assertEqual(oAddr.number, 4807)
+            self.assertEqual(oAddr.prefix, 'se')
+            self.assertEqual(oAddr.name, 'kelly pants')
+            self.assertEqual(oAddr.sttype, 'st')
+            self.assertEqual(oAddr.city, 'oregon city')
+            self.assertEqual(oAddr.state, 'sd')
+            self.assertEqual(oAddr.zip_code, 97206)
+            
+        def testPortlandORPostalAddressNameEndsWithStreetType(self): 
+            sAddr = '4807 SE Johnson Creek, ' \
+                    'Oregon City, South Dakota 97206'
+            sMode = 'portlandor'
+            oAddr = get(sAddr, sMode)
+            self.assert_(isinstance(oAddr, address.PostalAddress))
+            self.assertEqual(oAddr.number, 4807)
+            self.assertEqual(oAddr.prefix, 'se')
+            self.assertEqual(oAddr.name, 'johnson creek')
+            self.assertEqual(oAddr.sttype, '')
+            self.assertEqual(oAddr.city, 'oregon city')
+            self.assertEqual(oAddr.state, 'sd')
+            self.assertEqual(oAddr.zip_code, 97206)
+                    
         def testPortlandOREdgeAddress(self):
             Q = 'SELECT id FROM portlandor_layer_street ' \
                 'WHERE addr_f <= 633 AND addr_t >= 633 AND ' \

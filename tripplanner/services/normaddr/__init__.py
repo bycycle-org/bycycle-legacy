@@ -89,16 +89,16 @@ def get(sAddr, sOrOMode):
     # Raise an exception if we get here: address is unnormalizeable
 
 
-def parse(sStreet, sOrOMode):
-    """Parse input street string, referring to mode DB only if necessary.
+def parse(sAddress, sOrOMode):
+    """Parse input address string, referring to mode DB as necessary.
 
-    Note: the 'street' is actually the street & place
-    TODO: Change to something more appropriate
+    The address *must* contain a street name
+    The address must *not* contain a house number
+    It *can* contain a city & state OR zip code OR both
 
-    A street should
-
-    @param string sStreet A street & place
-    @param string|object sOrOMode Region mode (DB) to do lookup in if necessary
+    @param string sAddress A street & place with no number
+           (e.g., Main St, Portland, OR)
+    @param string|object sOrOMode Region to do lookup in if necessary
     @return dictionary Address tokens containing keys for prefix, name, type,
             suffix, city, county, state, and zip code
 
@@ -109,121 +109,137 @@ def parse(sStreet, sOrOMode):
     else:
         oMode = sOrOMode
 
+    attrs = dict(prefix='',
+                 name='',
+                 sttype='',
+                 suffix='',
+                 city='',
+                 state='',
+                 zip_code=None)
+    sAddress = sAddress.replace(',', ' ')
+    sAddress = sAddress.replace('.', '')
+    tokens = sAddress.lower().split()
     name = []
 
-    # TODO: Add these
-    #no_prefixes = mode.NO_PREFIXES
-    #no_suffixes = mode.NO_SUFFIXES
-
-    # Remove punctuation chars here (and other extraneous chars too?)
-
-    sStreet = sStreet.replace(',', '')
-    sStreet = sStreet.replace('.', '')
-    tokens = sStreet.lower().split()
-
-    i = 0
     try:
-        # prefix
-        token = tokens[i]
-        i+=1
-        if token in directions_atof:
-            prefix = token
-            print 'prefix: %s' % prefix
-        elif token in directions_ftoa:
-            prefix = directions_ftoa[token]
-        else:
-            name.append(token)
-            i-=1
+        # If only one token, it must be the name
+        if len(tokens) == 1:
+            raise IndexError
+
+        # -- Front to back
         
-        # street type
-        token = tokens[i]
-        i+=1
-        if token in sttypes_atof: 
-            sttype = token
-            name.pop()
-        elif token in sttypes_ftoa:
-            sttype = sttypes_ftoa[token]
-            name.pop()
+        # prefix
+        prefix = tokens[0]
+        if (prefix in directions_atof or prefix in directions_ftoa):
+            if prefix in directions_ftoa:
+                attrs['prefix'] = directions_ftoa[prefix]
+            attrs['prefix'] = prefix
+            del tokens[0]
+
+        # name
+        # Name must have at least one word
+        name.append(tokens[0])
+        del tokens[0]
+
+        # -- Back to front
+
+        # zip code
+        zip_code = tokens[-1]
+        try:
+            int(zip_code)
+        except ValueError:
+            pass
         else:
-            name.append(token)
-            i-=1
-            
-        # suffix
-        token = tokens[i]
-        i+=1
-        if (token in directions_atof or
-            token in suffixes_atof):
-            suffix = token
-            name.pop()
-        elif token in directions_ftoa:
-            suffix = directions_ftoa[token]
-            name.pop()
-        elif token in suffixes_ftoa:
-            suffix = suffixes_ftoa[token]                
-            name.pop()
-        else:
-            name.append(token)
-            i-=1
+            attrs['zip_code'] = zip_code
+            del tokens[-1]
+
+        # state
+        for i in (-1, -2, -3, -4):
+            state = ' '.join(tokens[i:])
+            if (state in states_atof or state in states_ftoa):
+                if state in states_ftoa:
+                    state = states_ftoa[state]
+                attrs['state'] = state
+                del tokens[i:]
+                break
 
         # city
         # TODO: make static list of cities for each region
-        token = tokens[i]
-        i+=1
-        Q = 'SELECT id FROM %s_city WHERE city="%s"' % \
-            (oMode.region, token)
-        oMode.execute(Q)
-        row = oMode.fetchRow()
-        if row:
-            city = token
-            name.pop()
-        else:
-            name.append(token)
-            i-=1
+        Q = 'SELECT id FROM %s_city WHERE city="%%s"' % oMode.region
+        for i in (-1, -2, -3, -4):
+            city = ' '.join(tokens[i:])
+            if oMode.execute(Q % city):
+                row = oMode.fetchRow()
+                attrs['city'] = city
+                del tokens[i:]
+                break
 
-        # state
-        token = tokens[i]
-        i+=1
-        if token in states_atof:
-            state = token
-            name.pop()
-        elif token in states_ftoa:
-            state = states_ftoa[token]
-            name.pop()
-        else:
-            name.append(token)
-            i-=1
+        # suffix
+        suffix = tokens[-1]
+        if (suffix in directions_atof or suffix in suffixes_atof or
+            suffix in directions_ftoa or suffix in suffixes_ftoa):
+            if suffix in directions_ftoa:
+                suffix = directions_ftoa[suffix]
+            elif suffix in suffixes_ftoa:
+                suffix = suffixes_ftoa[suffix]             
+            attrs['suffix'] = suffix
+            del tokens[-1]
 
-        # zip code
-        token = tokens[i]
-        try:
-            int(token)
-        except ValueError:
-            name.append(token)
-        else:
-            name.pop()
-            zip_code = token
+        # street type
+        sttype = tokens[-1]
+        if (sttype in sttypes_atof or sttype in sttypes_ftoa): 
+            if sttype in sttypes_ftoa:
+                full_sttype = sttype
+                sttype = sttypes_ftoa[sttype]
+            attrs['sttype'] = sttype
+            del tokens[-1]
     except IndexError:
         pass
 
-    # name
-    name += tokens
-    name = ' '.join(name)
+    # Check name
+    name = ' '.join(name + tokens)
+    try:
+        # If a full street type was entered...
+        full_sttype
+    except NameError:
+        pass
+    else:
+        num_name = appendSuffixToNumberStreetName(name)
+        name_type = '%s %s' % (name, full_sttype)
+        # ...and there is no street name in the DB with the name & type
+        Q1 = 'SELECT id FROM %s_streetname WHERE name="%s" AND type="%s"' % \
+             (oMode.region, num_name, attrs['sttype'])
+        # ...but there is one with the name with type appended to it
+        Q2 = 'SELECT id FROM %s_streetname WHERE name = "%s"' % \
+             (oMode.region, name_type)
+        if not oMode.execute(Q1) and oMode.execute(Q2):
+            # ...use the name with type appended as the name
+            name = name_type
+            # ...and assume there was no street type entered
+            attrs['sttype'] = ''
+    attrs['name'] = name
 
+    return attrs
+
+
+def appendSuffixToNumberStreetName(name):
     # Add suffix to number street (if needed), e.g. 10 => 10th
-    name = name
-    try: int(name)
-    except ValueError: pass
+    try:
+        int(name)
+    except ValueError:
+        pass
     else:
         last_char = name[-1]
-        try: last_two_chars = name[-2:]
-        except IndexError: last_two_chars = ''
+        try:
+            last_two_chars = name[-2:]
+        except IndexError:
+            last_two_chars = ''
         if   last_char == '1' and last_two_chars != '11': name += 'st'
         elif last_char == '2' and last_two_chars != '12': name += 'nd'
         elif last_char == '3' and last_two_chars != '13': name += 'rd'
-        else: name += 'th'
-        name = name
-
-    return locals()
+        else:
+            name += 'th'
+    return name
 
 
 def getCrossStreets(sAddr):
