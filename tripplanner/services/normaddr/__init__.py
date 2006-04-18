@@ -2,18 +2,20 @@
 Address Normalizer
 
 Accepts these types of addresses:
-- Postal
-- Intersection
-- Point
+- Postal (e.g., 633 N Alberta, Portland, OR)
+- Intersection (e.g., Alberta & Kerby)
+- Point (e.g., x=-123, y=45)
 - Node (i.e., node ID)
 - Edge (i.e., number + edge ID)
 """
 
 import re
-from byCycle.tripplanner.model import mode, address, states, sttypes, compass
 from byCycle.lib import gis
+from byCycle.tripplanner.services import excs
+from byCycle.tripplanner.model import mode, address, states, sttypes, compass
 
-# RE to check see if a string has at least one word char
+
+# RE to check to see if a string has at least one word char
 re_word_plus = re.compile(r'\w+')
 
 directions_ftoa = compass.directions_ftoa
@@ -26,22 +28,36 @@ states_ftoa = states.states_ftoa
 states_atof = states.states_atof
 
 
-def get(sAddr, sOrOMode):
+def get(q='', region='', **params):
     """Get a normalized address for the input address.
 
-    @param string sAddr Input address
-    @param string|object sOrOMode Region mode
+    @param string q Input address
+    @param string|object region Region
+    @return Address An address object with normalized attributes
 
     """
-    # Fail early here if sAddr is empty
+    # Fail early here if q is empty
     
     # First we should decide (guess) what type of address the input string is
     # supposed to be. Then we should fork and do different things accordingly
     # and return an Address object.
 
+    # Check input
+    errors = []
+
+    if not region:
+        errors.append('Please select a region')
+            
+    inaddr = q.strip().lower()
+    if not q:
+        errors.append('Please enter an address')
+
+    if errors:
+        raise excs.InputError(errors)    
+
     # Node?
     try:
-        node_id = int(sAddr)
+        node_id = int(q)
     except ValueError:
         pass
     else:
@@ -49,18 +65,18 @@ def get(sAddr, sOrOMode):
 
     # Intersection?
     try:
-        street1, street2 = getCrossStreets(sAddr)
+        street1, street2 = getCrossStreets(q)
     except ValueError:
         pass
-    else:
+    else: 
         # parse streets and return IntersectionAddress
-        attrs1 = parse(street1, sOrOMode)
-        attrs2 = parse(street2, sOrOMode)
+        attrs1 = parse(street1, region)
+        attrs2 = parse(street2, region)
         return address.IntersectionAddress()
     
     # Edge?
     try:
-        lAddr = sAddr.split()        
+        lAddr = q.split()        
         number = int(lAddr[0])
         edge_id = int(lAddr[1])
     except (IndexError, ValueError):
@@ -70,23 +86,24 @@ def get(sAddr, sOrOMode):
     
     # Address [postal]
     try:
-        number, street = getNumberAndStreet(sAddr)
+        number, street = getNumberAndStreet(q)
     except ValueError:
         pass
     else:
         # parse street and return PostalAddress
-        attrs = parse(street, sOrOMode)
+        attrs = parse(street, region)
         return address.PostalAddress(number=number, **attrs)
 
     # Point?
     try:
-        point = gis.Point(sAddr)
+        point = gis.Point(q)
     except ValueError:
         pass
     else:
         return address.PointAddress(x=point.x, y=point.y)
 
     # Raise an exception if we get here: address is unnormalizeable
+    raise ValueError('Could not normalize "%s"' % q)
 
 
 def parse(sAddress, sOrOMode):
@@ -114,6 +131,7 @@ def parse(sAddress, sOrOMode):
                  sttype='',
                  suffix='',
                  city='',
+                 city_id=None,
                  state='',
                  zip_code=None)
     sAddress = sAddress.replace(',', ' ')
@@ -155,10 +173,14 @@ def parse(sAddress, sOrOMode):
 
         # state
         for i in (-1, -2, -3, -4):
-            state = ' '.join(tokens[i:])
-            if (state in states_atof or state in states_ftoa):
-                if state in states_ftoa:
-                    state = states_ftoa[state]
+            state_id = ' '.join(tokens[i:])
+            if (state_id in states_atof or state_id in states_ftoa):
+                if state_id in states_ftoa:
+                    state = state_id
+                    state_id = states_ftoa[state_id]
+                else:
+                    state = states_atof[state_id]
+                attrs['state_id'] = state_id
                 attrs['state'] = state
                 del tokens[i:]
                 break
@@ -169,7 +191,9 @@ def parse(sAddress, sOrOMode):
         for i in (-1, -2, -3, -4):
             city = ' '.join(tokens[i:])
             if oMode.execute(Q % city):
+                print city
                 row = oMode.fetchRow()
+                attrs['city_id'] = row[0]
                 attrs['city'] = city
                 del tokens[i:]
                 break
@@ -198,13 +222,13 @@ def parse(sAddress, sOrOMode):
 
     # Check name
     name = ' '.join(name + tokens)
+    num_name = appendSuffixToNumberStreetName(name)
     try:
         # If a full street type was entered...
         full_sttype
     except NameError:
-        pass
+        name = num_name
     else:
-        num_name = appendSuffixToNumberStreetName(name)
         name_type = '%s %s' % (name, full_sttype)
         # ...and there is no street name in the DB with the name & type
         Q1 = 'SELECT id FROM %s_streetname WHERE name="%s" AND type="%s"' % \

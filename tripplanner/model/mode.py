@@ -3,7 +3,7 @@
 
 import MySQLdb
 from byCycle import install_path
-from byCycle.lib import gis
+from byCycle.lib import gis, util
 import address, segment, intersection
 
 
@@ -49,11 +49,6 @@ class Mode(object):
         self.indices = {}
         for i, attr in enumerate(self.edge_attrs):
             self.indices[attr] = i
-        
-        
-    def geocode(self, inaddr):
-        import geocode
-        return geocode.geocode(inaddr, self)
 
 
     # Adjacency Matrix Methods ------------------------------------------------
@@ -407,7 +402,7 @@ class Mode(object):
 
     # Street Methods ----------------------------------------------------------
 
-    def getIds(self, prefix='', name='', stype='', suffix=''):
+    def getStreetNameIds(self, street):
         """Get all the street name IDs for this Street.
 
         Return a dict of {street name IDs => street names}
@@ -415,7 +410,7 @@ class Mode(object):
         """
         Q = 'SELECT %s FROM %s WHERE %s'
         cols = ('id', 'prefix', 'name', 'type', 'suffix')
-        attrs = (prefix, name, type, suffix)
+        attrs = (street.prefix, street.name, street.type, street.suffix)
         where = ['%s = "%s"' % (c, a.lower()) for
                  c, a in zip(cols[1:], attrs) if a]
         where = ' AND '.join(where)
@@ -425,11 +420,10 @@ class Mode(object):
                           self.tables['streetnames'], where))
             stnameids = {}
             for row in self.fetchAll():
-                stnameids[row[0]] = joinAttrs(row[1:])
+                stnameids[row[0]] = util.joinAttrs(row[1:])
             if stnameids:
                 return stnameids
-        raise ValueError('No street names found for %s %s %s %s' %
-                         prefix, name, stype, suffix)
+        raise ValueError('No street names found for "%s"' % street)
 
         
     # Utility Methods ---------------------------------------------------------
