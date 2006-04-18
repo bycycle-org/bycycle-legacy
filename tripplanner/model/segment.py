@@ -10,8 +10,8 @@ class Segment(object):
     def getAttrsOnNumSide(self, num):
         """Get attributes for side of segment num is on.
 
-        Get all the attributes from this segment that end in 'l' or 'r', depending on whether num is 
-        on the right or left side of s.
+        Get all the attributes from this segment that end in 'l' or 'r',
+        depending on whether num is on the right or left side of s.
 
         Args:
         num -- a street number (hopefully it's actually within the segment)

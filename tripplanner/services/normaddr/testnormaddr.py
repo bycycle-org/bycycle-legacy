@@ -86,7 +86,7 @@ if __name__ == '__main__':
             self.assertEqual(oAddr.name, 'kelly')
             self.assertEqual(oAddr.sttype, 'st')
             self.assertEqual(oAddr.city, 'portland')
-            self.assertEqual(oAddr.state, 'or')
+            self.assertEqual(oAddr.state_id, 'or')
             self.assertEqual(oAddr.zip_code, 97206)
 
         def testPortlandORPostalAddressMultiWordName(self): 
@@ -100,7 +100,7 @@ if __name__ == '__main__':
             self.assertEqual(oAddr.name, 'martin luther king jr')
             self.assertEqual(oAddr.sttype, 'blvd')
             self.assertEqual(oAddr.city, 'oregon city')
-            self.assertEqual(oAddr.state, 'or')
+            self.assertEqual(oAddr.state_id, 'or')
             self.assertEqual(oAddr.zip_code, 97206)
             
         def testPortlandORPostalAddressMultiWordCity(self): 
@@ -113,7 +113,7 @@ if __name__ == '__main__':
             self.assertEqual(oAddr.name, 'kelly')
             self.assertEqual(oAddr.sttype, 'st')
             self.assertEqual(oAddr.city, 'oregon city')
-            self.assertEqual(oAddr.state, 'or')
+            self.assertEqual(oAddr.state_id, 'or')
             self.assertEqual(oAddr.zip_code, 97206)
 
         def testPortlandORPostalAddressMultiWordState(self): 
@@ -126,7 +126,7 @@ if __name__ == '__main__':
             self.assertEqual(oAddr.name, 'kelly pants')
             self.assertEqual(oAddr.sttype, 'st')
             self.assertEqual(oAddr.city, 'oregon city')
-            self.assertEqual(oAddr.state, 'sd')
+            self.assertEqual(oAddr.state_id, 'sd')
             self.assertEqual(oAddr.zip_code, 97206)
             
         def testPortlandORPostalAddressNameEndsWithStreetType(self): 
@@ -140,7 +140,7 @@ if __name__ == '__main__':
             self.assertEqual(oAddr.name, 'johnson creek')
             self.assertEqual(oAddr.sttype, '')
             self.assertEqual(oAddr.city, 'oregon city')
-            self.assertEqual(oAddr.state, 'sd')
+            self.assertEqual(oAddr.state_id, 'sd')
             self.assertEqual(oAddr.zip_code, 97206)
                     
         def testPortlandOREdgeAddress(self):
@@ -169,13 +169,13 @@ if __name__ == '__main__':
             self.assertEqual(oAddr.name1, 'kelly')
             self.assertEqual(oAddr.sttype1, 'st')
             self.assertEqual(oAddr.city1, 'portland')
-            self.assertEqual(oAddr.state1, 'or')
+            self.assertEqual(oAddr.state_id1, 'or')
             self.assertEqual(oAddr.zip_code1, 97206)
             self.assertEqual(oAddr.prefix2, 'se')
             self.assertEqual(oAddr.name2, '49th')
             self.assertEqual(oAddr.sttype2, 'ave')
             self.assertEqual(oAddr.city2, 'portland')
-            self.assertEqual(oAddr.state2, 'or')
+            self.assertEqual(oAddr.state_id2, 'or')
             self.assertEqual(oAddr.zip_code2, 97206)
 
         def testPortlandORPointAddress(self):
@@ -189,7 +189,7 @@ if __name__ == '__main__':
             
         def testPortlandORNodeAddress(self):
             iAddr = 4
-            sAddr = int(iAddr)
+            sAddr = str(iAddr)
             sMode = 'portlandor'
             oAddr = get(sAddr, sMode)
             self.assert_(isinstance(oAddr, address.IntersectionAddress))

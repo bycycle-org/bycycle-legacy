@@ -41,8 +41,8 @@ def index(method, params):
     else:
         # Normal request
         content_type = 'text/html'
-        if params['q'] is not None or \
-               (params['fr'] is not None and params['to'] is not None):
+        if (params['q'] is not None or
+            (params['fr'] is not None and params['to'] is not None)):
             # Save original q for template
             q = params['q'] or ''
             

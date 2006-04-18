@@ -3,6 +3,7 @@
 
 import time
 from byCycle.lib import gis
+from byCycle.tripplanner.services import excs
 from byCycle.tripplanner.model import address, intersection
 from byCycle.tripplanner.services import geocode
 import sssp
@@ -17,11 +18,6 @@ class RouteError(Exception):
 
 class NoRouteError(RouteError):
     def __init__(self, desc=''):
-        RouteError.__init__(self, desc=desc)
-
-class InputError(RouteError):
-    def __init__(self, errors=[]):
-        desc = '<br/>'.join(errors)
         RouteError.__init__(self, desc=desc)
 
 class MultipleMatchingAddressesError(RouteError):
@@ -68,7 +64,7 @@ def get(return_messages=False, region='', tmode='bicycle', q=[], pref='',
 
     # Let multiple input errors fall through to here
     if errors:
-        raise InputError(errors)
+        raise excs.InputError(errors)
 
     # The mode is a combination of the data/travel modes
     st = time.time()
@@ -104,14 +100,14 @@ def get(return_messages=False, region='', tmode='bicycle', q=[], pref='',
 
     # Let multiple multiple match errors fall through to here
     if errors:
-        raise InputError(errors)
+        raise excs.InputError(errors)
 
     # Precise (enough) addresses were entered
     fcode, tcode = fcodes[0], tcodes[0]
 
     # TODO: Make this check actually work
     if fcode == tcode:
-        raise InputError('From and To addresses appear to be the same')
+        raise excs.InputError('From and To addresses appear to be the same')
 
 
     ## Made it through that maze--now fetch the main adjacency matrix, G
