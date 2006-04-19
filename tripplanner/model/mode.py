@@ -410,7 +410,7 @@ class Mode(object):
         """
         Q = 'SELECT %s FROM %s WHERE %s'
         cols = ('id', 'prefix', 'name', 'type', 'suffix')
-        attrs = (street.prefix, street.name, street.type, street.suffix)
+        attrs = (street.prefix, street.name, street.sttype, street.suffix)
         where = ['%s = "%s"' % (c, a.lower()) for
                  c, a in zip(cols[1:], attrs) if a]
         where = ' AND '.join(where)

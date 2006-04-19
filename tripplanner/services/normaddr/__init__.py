@@ -70,9 +70,9 @@ def get(q='', region='', **params):
         pass
     else: 
         # parse streets and return IntersectionAddress
-        attrs1 = parse(street1, region)
-        attrs2 = parse(street2, region)
-        return address.IntersectionAddress()
+        street1, place1 = parse(street1, region)
+        street2, place2 = parse(street2, region)
+        return address.IntersectionAddress(street1, place1, street2, place2)
     
     # Edge?
     try:
@@ -84,15 +84,15 @@ def get(q='', region='', **params):
     else:
         return address.EdgeAddress(number, edge_id)
     
-    # Address [postal]
+    # Postal Address?
     try:
         number, street = getNumberAndStreet(q)
     except ValueError:
         pass
     else:
         # parse street and return PostalAddress
-        attrs = parse(street, region)
-        return address.PostalAddress(number=number, **attrs)
+        street, place = parse(street, region)
+        return address.PostalAddress(number=number, street=street, place=place)
 
     # Point?
     try:
@@ -116,8 +116,7 @@ def parse(sAddress, sOrOMode):
     @param string sAddress A street & place with no number
            (e.g., Main St, Portland, OR)
     @param string|object sOrOMode Region to do lookup in if necessary
-    @return dictionary Address tokens containing keys for prefix, name, type,
-            suffix, city, county, state, and zip code
+    @return object street, object place
 
     """
     if not isinstance(sOrOMode, mode.Mode):
@@ -126,18 +125,13 @@ def parse(sAddress, sOrOMode):
     else:
         oMode = sOrOMode
 
-    attrs = dict(prefix='',
-                 name='',
-                 sttype='',
-                 suffix='',
-                 city='',
-                 city_id=None,
-                 state='',
-                 zip_code=None)
     sAddress = sAddress.replace(',', ' ')
     sAddress = sAddress.replace('.', '')
     tokens = sAddress.lower().split()
     name = []
+
+    street = address.Street()
+    place = address.Place()
 
     try:
         # If only one token, it must be the name
@@ -150,8 +144,8 @@ def parse(sAddress, sOrOMode):
         prefix = tokens[0]
         if (prefix in directions_atof or prefix in directions_ftoa):
             if prefix in directions_ftoa:
-                attrs['prefix'] = directions_ftoa[prefix]
-            attrs['prefix'] = prefix
+                prefix = directions_ftoa[prefix]
+            street.prefix = prefix
             del tokens[0]
 
         # name
@@ -168,7 +162,7 @@ def parse(sAddress, sOrOMode):
         except ValueError:
             pass
         else:
-            attrs['zip_code'] = zip_code
+            place.zip_code = zip_code
             del tokens[-1]
 
         # state
@@ -180,8 +174,8 @@ def parse(sAddress, sOrOMode):
                     state_id = states_ftoa[state_id]
                 else:
                     state = states_atof[state_id]
-                attrs['state_id'] = state_id
-                attrs['state'] = state
+                place.state_id = state_id
+                place.state = state
                 del tokens[i:]
                 break
 
@@ -191,10 +185,9 @@ def parse(sAddress, sOrOMode):
         for i in (-1, -2, -3, -4):
             city = ' '.join(tokens[i:])
             if oMode.execute(Q % city):
-                print city
                 row = oMode.fetchRow()
-                attrs['city_id'] = row[0]
-                attrs['city'] = city
+                place.city_id = row[0]
+                place.city = city
                 del tokens[i:]
                 break
 
@@ -206,7 +199,7 @@ def parse(sAddress, sOrOMode):
                 suffix = directions_ftoa[suffix]
             elif suffix in suffixes_ftoa:
                 suffix = suffixes_ftoa[suffix]             
-            attrs['suffix'] = suffix
+            street.suffix = suffix
             del tokens[-1]
 
         # street type
@@ -215,7 +208,7 @@ def parse(sAddress, sOrOMode):
             if sttype in sttypes_ftoa:
                 full_sttype = sttype
                 sttype = sttypes_ftoa[sttype]
-            attrs['sttype'] = sttype
+            street.sttype = sttype
             del tokens[-1]
     except IndexError:
         pass
@@ -232,7 +225,7 @@ def parse(sAddress, sOrOMode):
         name_type = '%s %s' % (name, full_sttype)
         # ...and there is no street name in the DB with the name & type
         Q1 = 'SELECT id FROM %s_streetname WHERE name="%s" AND type="%s"' % \
-             (oMode.region, num_name, attrs['sttype'])
+             (oMode.region, num_name, street.sttype)
         # ...but there is one with the name with type appended to it
         Q2 = 'SELECT id FROM %s_streetname WHERE name = "%s"' % \
              (oMode.region, name_type)
@@ -240,10 +233,10 @@ def parse(sAddress, sOrOMode):
             # ...use the name with type appended as the name
             name = name_type
             # ...and assume there was no street type entered
-            attrs['sttype'] = ''
-    attrs['name'] = name
+            street.sttype = ''
+    street.name = name
 
-    return attrs
+    return street, place
 
 
 def appendSuffixToNumberStreetName(name):
