@@ -116,8 +116,7 @@ def getPostalAddressGeocodes(oMode, oAddr, edge_id=None):
     num = oAddr.number
     segs = oMode.getSegmentsById(ids)
     for s in segs:
-        s_addr = address.PostalAddress()
-        s_addr.number = num
+        s_addr = address.PostalAddress(num)
         attrs = s.getAttrsOnNumSide(num)
         for attr in ('prefix', 'name', 'type', 'suffix'):
             setattr(s_addr.street, attr, attrs[attr])
@@ -186,7 +185,7 @@ def getIntersectionGeocodes(oMode, oAddr):
     node_ids = []
     for p in pairs:
         s, t = s_dict[p[0]], s_dict[p[1]]
-        i_addr = address.IntersectionAddress('', mode)
+        i_addr = address.IntersectionAddress()
         _setStreetAndPlaceFromSegment(i_addr.street1, i_addr.place1, s)
         _setStreetAndPlaceFromSegment(i_addr.street2, i_addr.place2, t)
         addrs.append(i_addr)
@@ -200,7 +199,7 @@ def getIntersectionGeocodes(oMode, oAddr):
     # Make a list of all the matching addresses and return it
     geocodes = []
     for addr, node_id in zip(addrs, node_ids):
-        code = IntersectionGeocode(addr, i_dict[node_id])
+        code = geocode.IntersectionGeocode(addr, i_dict[node_id])
         geocodes.append(code)
     return geocodes
 
@@ -247,7 +246,7 @@ def getPointGeocodes(oMode, oAddr):
         _setStreetAndPlaceFromSegment(oAddr.street1, oAddr.place1, s)
         _setStreetAndPlaceFromSegment(oAddr.street2, oAddr.place2, t)
         # Get intersection
-        code = IntersectionGeocode(addr, i)
+        code = geocode.IntersectionGeocode(addr, i)
     else:
         # Found point at dead end
         addr = address.PostalAddress('', mode)
@@ -260,7 +259,7 @@ def getPointGeocodes(oMode, oAddr):
             addr.number = s.addr_t
             lon_lat = s.linestring[-1]
         _setStreetAndPlaceFromSegment(addr.street, addr.place, s)
-        code = AddressGeocode(addr, s, lon_lat)
+        code = geocode.PostalGeocode(addr, s, lon_lat)
         code.intersection = i
     return [code]
 
@@ -271,7 +270,7 @@ def _setStreetAndPlaceFromSegment(street, place, seg):
     attrs = seg.getAttrsOnSide('left')
     for attr in ('prefix', 'name', 'type', 'suffix'):
         street.__dict__[attr] = attrs[attr]
-    for attr in ('city', 'state', 'zip'):
+    for attr in ('city_id', 'city', 'state_id', 'zip_code'):
         place.__dict__[attr] = attrs[attr]
 
 
@@ -282,10 +281,11 @@ def _getPlaceWhere(place):
         where.append('(city_l_id=%s OR city_r_id=%s)' % (cid, cid))
     if place.state_id:
         st = place.state_id
+        print st
         where.append('(state_l_id="%s" OR state_r_id="%s")' % (st, st))
     if place.zip_code:
         z = place.zip_code
-        where.append('(zip_l=%s OR zip_r=%s)' % (z, z))
+        where.append('(zip_code_l=%s OR zip_code_r=%s)' % (z, z))
     return where
 
 
@@ -329,8 +329,8 @@ if __name__ == "__main__":
             
             'portlandor':
             ('633 n alberta',
-             #'point(-120.432129 46.137977)',
-             #'lon=-120.025635, lat=45.379161',
+             'point(-120.432129 46.137977)',
+             'point(-120.025635 45.379161)',
              '300 main',
              '4550 ne 15',
              '4550 ne 15th',
@@ -373,7 +373,10 @@ if __name__ == "__main__":
                 print e
             else:
                 print i, q
-                print '%s' % geocodes[0]
+                try:
+                    print '%s' % geocodes[0]
+                except IndexError:
+                    print 'No geocodes'
             i+=1
             tt = time.time() - st
             print '%.2f seconds' % tt 
