@@ -1,6 +1,3 @@
-from byCycle.lib import feedbackhandler
-
-
 class ByCycleError(Exception):
     def __init__(self, desc=''): 
         if not desc:

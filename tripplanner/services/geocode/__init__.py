@@ -11,8 +11,8 @@ class GeocodeError(excs.ByCycleError):
         excs.ByCycleError.__init__(self, desc)
 
 class AddressNotFoundError(GeocodeError):
-    def __init__(self, address=''):
-        desc = 'Unable to find address "%s"' % address
+    def __init__(self, region='', address=''):
+        desc = 'Unable to find address "%s" in region "%s"' % (address, region)
         GeocodeError.__init__(self, desc=desc)
                 
 class MultipleMatchingAddressesError(GeocodeError):
@@ -29,11 +29,12 @@ def get(region='', q='', **params):
     the appropriate geocoding function. Return a list of Geocode objects or
     raise exception when no geocodes.
 
-    @param string|object region Either the name of a region mode OR a mode
+    @param region Either the name of a region mode OR a mode
            object. In the first case a mode will be instantiated to geocode the
            address; in the second the object will be used directly.
     @param q An address string that can be normalized & geocoded in the mode
-    @return A list of possible geocodes for the input address
+    @return A list of possible geocodes for the input address OR raise
+            AddressNotFoundError if the address can't be geocoded
     
     """
     # Check input
@@ -55,28 +56,26 @@ def get(region='', q='', **params):
     else:
         oMode = region
 
-    try:
-        oAddr = normaddr.get(region=oMode, q=q)
-    except ValueError:
-        pass
+    oAddr = normaddr.get(region=oMode, q=q)
+
+    if isinstance(oAddr, address.PostalAddress):
+        geocodes = getPostalAddressGeocodes(oMode, oAddr)
+    elif isinstance(oAddr, address.EdgeAddress):
+        geocodes = getPostalAddressGeocodes(oMode, oAddr)
+    elif isinstance(oAddr, address.PointAddress):
+        geocodes = getPointGeocodes(oMode, oAddr)
+    elif isinstance(oAddr, address.NodeAddress):
+        geocodes = getPointGeocodes(oMode, oAddr)
+    elif isinstance(oAddr, address.IntersectionAddress):
+        geocodes = getIntersectionGeocodes(oMode, oAddr)
     else:
-        if isinstance(oAddr, address.PostalAddress):
-            geocodes = getPostalAddressGeocodes(oMode, oAddr)
-        elif isinstance(oAddr, address.EdgeAddress):
-            geocodes = getPostalAddressGeocodes(oMode, oAddr)
-        elif isinstance(oAddr, address.IntersectionAddress):
-            geocodes = getIntersectionGeocodes(oMode, oAddr)
-        elif isinstance(oAddr, address.NodeAddress):
-            geocodes = getPointGeocodes(oMode, oAddr)
-        elif isinstance(oAddr, address.PointAddress):
-            geocodes = getPointGeocodes(oMode, oAddr)
+        raise ValueError('Could not determine address type for address "%s" '
+                         'in region "%s"' % (q, region))
         
-        if len(geocodes) > 1:
-            raise MultipleMatchingAddressesError(geocodes)
-
-        return geocodes
-
-    raise ValueError('Could not find address "%s" in region "%s"'%(q, region))
+    if len(geocodes) > 1:
+        raise MultipleMatchingAddressesError(geocodes)
+    
+    return geocodes
 
 
 # Each get*Geocode function returns a list of possible geocodes for the input
@@ -89,16 +88,20 @@ def getPostalAddressGeocodes(oMode, oAddr, edge_id=None):
     where = []
     where.append('(%s BETWEEN LEAST(addr_f, addr_t) AND '
                  'GREATEST(addr_f, addr_t))' % oAddr.number)
-
+    
     try:
-        edge_id = oAddr.edge_id
+        # Number EdgeID
+        where.append('id = %s' % oAddr.edge_id)
     except AttributeError:
+        # Number Street Place
+        try:
+            ids = oMode.getStreetNameIds(oAddr.street)
+        except ValueError:
+            raise AddressNotFoundError(oMode, oAddr)
+        else:
+            streetname_ids = ','.join([str(i) for i in ids])
+            where.append('streetname_id IN (%s)' % streetname_ids)
         where += _getPlaceWhere(place)
-        streetname_ids = ','.join([str(i) for i in
-                                   oMode.getStreetNameIds(oAddr.street)])
-        where.append('streetname_id IN (%s)' % streetname_ids)
-    else:
-        where.append('id = %s' % edge_id)
         
     where = ' AND '.join(where)
 
@@ -109,7 +112,7 @@ def getPostalAddressGeocodes(oMode, oAddr, edge_id=None):
     if rows:
         ids = [r[0] for r in rows]
     else:
-        raise AddressNotFoundError(oAddr)
+        raise AddressNotFoundError(oMode, oAddr)
     
     # Make list of geocodes for segments matching oAddr
     geocodes = []
@@ -135,10 +138,16 @@ def getPostalAddressGeocodes(oMode, oAddr, edge_id=None):
 def getIntersectionGeocodes(oMode, oAddr):        
     street1, street2 = oAddr.street1, oAddr.street2
     place1, place2 = oAddr.place1, oAddr.place2
-    streetname_ids_a = ','.join([str(i) for i in
-                                 oMode.getStreetNameIds(street1)])
-    streetname_ids_b = ','.join([str(i) for i in
-                                 oMode.getStreetNameIds(street2)])
+
+    try:
+        ids_a = oMode.getStreetNameIds(street1)
+        ids_b = oMode.getStreetNameIds(street2)
+    except ValueError:
+        raise AddressNotFoundError(oMode, oAddr)
+    else:
+        streetname_ids_a = ','.join([str(i) for i in ids_a])
+        streetname_ids_b = ','.join([str(i) for i in ids_b])
+
     # Create the WHERE clause
     Q = 'SELECT id, node_f_id, node_t_id FROM %s WHERE' % oMode.tables['edges']
     first = True
@@ -245,21 +254,21 @@ def getPointGeocodes(oMode, oAddr):
         # Set address attributes
         _setStreetAndPlaceFromSegment(oAddr.street1, oAddr.place1, s)
         _setStreetAndPlaceFromSegment(oAddr.street2, oAddr.place2, t)
-        # Get intersection
-        code = geocode.IntersectionGeocode(addr, i)
+        # Make geocode
+        code = geocode.IntersectionGeocode(oAddr, i)
     else:
         # Found point at dead end
-        addr = address.PostalAddress('', mode)
+        oAddr = address.PostalAddress()
         s = oMode.getSegmentById(ids_a[0])
         # Set address number to num at min_nid end of segment
         if min_id == s.node_f_id:
-            addr.number = s.addr_f
+            oAddr.number = s.addr_f
             lon_lat = s.linestring[0]
         else:
-            addr.number = s.addr_t
+            oAddr.number = s.addr_t
             lon_lat = s.linestring[-1]
-        _setStreetAndPlaceFromSegment(addr.street, addr.place, s)
-        code = geocode.PostalGeocode(addr, s, lon_lat)
+        _setStreetAndPlaceFromSegment(oAddr.street, oAddr.place, s)
+        code = geocode.PostalGeocode(oAddr, s, lon_lat)
         code.intersection = i
     return [code]
 
@@ -276,108 +285,13 @@ def _setStreetAndPlaceFromSegment(street, place, seg):
 
 def _getPlaceWhere(place):
     where = []
-    if place.city_id is not None:
+    if place.city and place.city_id:
         cid = place.city_id
         where.append('(city_l_id=%s OR city_r_id=%s)' % (cid, cid))
     if place.state_id:
         st = place.state_id
-        print st
         where.append('(state_l_id="%s" OR state_r_id="%s")' % (st, st))
     if place.zip_code:
         z = place.zip_code
         where.append('(zip_code_l=%s OR zip_code_r=%s)' % (z, z))
     return where
-
-
-
-
-
-# TODO: Move to separate test module
-if __name__ == "__main__":
-    # TODO: Create unit tests!!!!
-    
-    import sys
-    import time
-
-    try:
-        region, q = sys.argv[1].split(',')
-    except IndexError:
-        A = {#' ',
-            # Milwaukee
-            'milwaukeewi':
-            ('0 w hayes ave',
-             'lon=-87.940407, lat=43.05321',
-             'lon=-87.931137, lat=43.101234',
-             'lon=-87.934399, lat=43.047126',
-             '125 n milwaukee',
-             '125 n milwaukee milwaukee wi',
-             '27th and lisbon',
-             '27th and lisbon milwaukee',
-             '27th and lisbon milwaukee, wi',
-             'lon=-87.961178, lat=43.062993',
-             'lon=-87.921953, lat=43.040791',
-             'n 8th st & w juneau ave, milwaukee, wi ',
-             '77th and burleigh',
-             '2750 lisbon',
-             '(-87.976885, 43.059544)',
-             'lon=-87.946243, lat=43.041669',
-             '124th and county line',
-             '124th and county line wi',
-             '5th and center',
-             '6th and hadley',
-             ),
-            
-            'portlandor':
-            ('633 n alberta',
-             'point(-120.432129 46.137977)',
-             'point(-120.025635 45.379161)',
-             '300 main',
-             '4550 ne 15',
-             '4550 ne 15th',
-             '37800 S Hwy 213 Hwy, Clackamas, OR 97362',
-             '4408 se stark',
-             '4408 se stark, or',
-             '4408 se stark, wi',
-             '4408 se stark st oregon 97215',
-             '44th and stark',
-             '3 and main oregon',
-             '3rd & main 97024',
-             '(-122.67334, 45.523307)',
-             'W Burnside St, Portland, OR 97204 & ' \
-             'NW 3rd Ave, Portland, OR 97209',
-             'Burnside St, Portland, & 3rd Ave, Portland, OR 97209',
-             '300 bloofy lane',
-             ),
-            }
-    else:
-        A = {region: (q,)}
-
-    i = 1
-    for region in ('portlandor',):
-        print
-        print 'Data region: %s' % region
-        print '------------------------------'
-        for q in A[region]:
-            st = time.time()
-            try:
-                geocodes = get(region=region, q=q)
-            except AddressNotFoundError, e:
-                print i, q
-                print e
-            except MultipleMatchingAddressesError, e:
-                print i, q
-                print e
-                for code in e.geocodes:
-                    print '%s' % code
-            except Exception, e:
-                print e
-            else:
-                print i, q
-                try:
-                    print '%s' % geocodes[0]
-                except IndexError:
-                    print 'No geocodes'
-            i+=1
-            tt = time.time() - st
-            print '%.2f seconds' % tt 
-            print

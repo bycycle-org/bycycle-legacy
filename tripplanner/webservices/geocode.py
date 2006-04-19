@@ -1,7 +1,7 @@
 # Geocode Web Service
 
 from byCycle.lib import wsrest
-from byCycle.tripplanner.services import geocode
+from byCycle.tripplanner.services import excs, geocode
 
 class Geocode(wsrest.RestWebService):
     def __init__(self, **params):
@@ -10,7 +10,7 @@ class Geocode(wsrest.RestWebService):
     def GET(self):
         try:
             geocodes = geocode.get(**self.params)
-        except geocode.InputError, exc:
+        except excs.InputError, exc:
             raise wsrest.BadRequestError(reason=exc.description)
         except geocode.AddressNotFoundError, exc:
             raise wsrest.NotFoundError(reason=exc.description)

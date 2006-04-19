@@ -51,6 +51,10 @@ class Mode(object):
             self.indices[attr] = i
 
 
+    def __str__(self):
+        return '%s, %s' % (self.region[:-2].title(), self.region[-2:].upper())
+
+
     # Adjacency Matrix Methods ------------------------------------------------
 
     def createAdjacencyMatrix(self):

@@ -32,8 +32,8 @@ CREATE TABLE `portlandor_layer_street` (
   `city_r_id`     INTEGER NOT NULL,
   `state_l_id`    CHAR(2) NOT NULL,
   `state_r_id`    CHAR(2) NOT NULL,
-  `zip_l`         MEDIUMINT(5) NOT NULL,
-  `zip_r`         MEDIUMINT(5) NOT NULL,
+  `zip_code_l`         MEDIUMINT(5) NOT NULL,
+  `zip_code_r`         MEDIUMINT(5) NOT NULL,
   -- Region-specific attributes
   `localid`       FLOAT(11, 2) NOT NULl,
   `one_way`       ENUM('', 'ft', 'tf', 'n') NOT NULL,

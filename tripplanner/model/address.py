@@ -16,7 +16,7 @@ class Address(object):
 
 
 class PostalAddress(Address):
-    def __init__(self, number, street=None, place=None):
+    def __init__(self, number=None, street=None, place=None):
         try:
             number = int(number)
         except:
@@ -95,14 +95,14 @@ class PostalAddress(Address):
 
     def __str__(self):
         result = joinAttrs([self.number, str(self.street)])
-        result = joinAttrs([result, str(self.place)], ', ')
+        result = joinAttrs([result, str(self.place)], '\n')
         return result
 
 
 
     
 class EdgeAddress(PostalAddress):
-    def __init__(self, number, edge_id):
+    def __init__(self, number=None, edge_id=None):
         PostalAddress.__init__(self, number)
         self.edge_id = edge_id
 
@@ -270,7 +270,7 @@ class IntersectionAddress(Address):
 
 
     def __str__(self):
-        return joinAttrs((self.street, self.place), ', ')
+        return joinAttrs((self.street, self.place), '\n')
         
         
 

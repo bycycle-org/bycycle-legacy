@@ -194,6 +194,7 @@ if __name__ == '__main__':
             oAddr = get(sAddr, sMode)
             self.assert_(isinstance(oAddr, address.IntersectionAddress))
             self.assertEqual(oAddr.node_id, iAddr)
+
             
     unittest.main()
     

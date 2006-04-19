@@ -133,7 +133,7 @@ def getInterpolatedXY(linestring, length, distance_from_start):
                 
     return Point(x=x, y=y)
 
-
+    
 def importWktGeometry(geom):
     """Return a simple Python object for the given WKT Geometry string.
 
@@ -197,12 +197,11 @@ class Point(object):
         if x is not None and y is not None:
             # x and y were passed; prefer them over x_y
             try:
-                self.x = float(x)
-                self.y = float(y)
+                self.x, self.y = float(x), float(y)
             except (ValueError, TypeError):
                 raise ValueError(err % (x, y))
         elif x_y is not None:
-            # x_y was passed and x and y weren't
+            # x_y was passed and at least one of x and y wasn't
             try:
                 # See if x_y is another point (or object with x and y attrs)
                 self.x, self.y = float(x_y.x), float(x_y.y)
@@ -213,7 +212,12 @@ class Point(object):
                     try:
                         self.x, self.y = float(x_y[0]), float(x_y[1])
                     except IndexError:
-                        raise ValueError('Missing y value (x: "%s")' % x_y[0])
+                        length = len(x_y)
+                        if length == 0:
+                            raise ValueError('Missing x and y values')
+                        elif length == 1:
+                            raise ValueError('Missing y value (x: "%s")' %
+                                             x_y[0])
                     except (ValueError, TypeError):
                         raise ValueError(err % (tmp_x_y.x, tmp_x_y.y))
                 elif isinstance(x_y, basestring):
@@ -221,11 +225,15 @@ class Point(object):
                         # See if x_y is string that will evaluate as 2-tuple
                         tmp_x_y = eval(x_y)
                     except:
-                        # Last effort: See if x_y is a WKT POINT
-                        # importWktGeometry will raise an appropriate error
-                        # if necessary
-                        point = importWktGeometry(x_y)
-                        self.x, self.y = point.x, point.y
+                        # Last effort: See if x_y is a point given as a
+                        # kwargs-style string or a WKT POINT
+                        # Both will raise a ValueError if they can't parse
+                        # the string
+                        try:
+                            self.x, self.y = self._importKwargsPoint(x_y)
+                        except (TypeError, ValueError):
+                            point = importWktGeometry(x_y)
+                            self.x, self.y = point.x, point.y
                     else:
                         try:
                             self.x = float(tmp_x_y[0])
@@ -239,8 +247,60 @@ class Point(object):
             self.x = None
             self.y = None
 
+
+    def _importKwargsPoint(self, x_y):
+        """A kwargs point is a str with x & y specified like keyword args.
+
+        @param x_y String like 'x=-123, y=45'
+               x can be one of x, lng, lon, long, longitude
+               y can be one of y, lat, latitude
+               [When x or y is not in the list, the positional value will be
+                used]
+               = can be one of =, :
+               , can be one of [comma], [space]
+        @return x, y Floats
+        @raise ValueError or TypeError on bad input
+        
+        """
+        err = 'Could not parse x and y from "%s"' % x_y
+        
+        try:
+            x, y = x_y.split(',')
+        except ValueError:
+            x, y = x_y.split(' ')
+
+        try:
+            x_label, x = x.split('=')
+        except ValueError:
+            x_label, x = x.split(':')
+
+        try:
+            y_label, y = y.split('=')
+        except ValueError:
+            y_label, y = y.split(':')
+
+        try:
+            if x_label in ('x', 'lng', 'lon', 'long', 'longitude'):
+                x = float(x)
+            elif x_label in ('y', 'lat', 'latitude'):
+                y = float(x)
+
+            if y_label in ('x', 'lng', 'lon', 'long', 'longitude'):
+                x = float(y)
+            elif y_label in ('y', 'lat', 'latitude'):
+                y = float(y)
+        except TypeError:
+            raise ValueError(err)
+
+        try:
+            return x, y
+        except NameError:
+            raise ValueError(err)
+    
+    
     def __str__(self):
         return 'POINT(%.6f %.6f)' % (self.x, self.y)
+
     
     def __repr__(self):
         return "{'x': %f, 'y': %f}" % (self.x, self.y)
