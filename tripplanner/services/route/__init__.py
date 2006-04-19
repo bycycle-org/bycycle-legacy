@@ -424,7 +424,7 @@ def makeDirections(I, S):
             if bm:
                 try:
                     # Only record changes in bikemode
-                    if bm != dbm[-1]:
+                    if bm != d['bikemode'][-1]:
                         d['bikemode'].append(bm)
                 except IndexError:
                     # First segment in stretch with a bikemode
@@ -441,7 +441,7 @@ def makeDirections(I, S):
 def getDifferentNameInIntersection(st, i):
     """Get street name from intersection that is different from street st."""
     for i_st in i.cross_streets:
-        if st.name == i_st.name and st.type == i_st.type:
+        if st.name == i_st.name and st.sttype == i_st.sttype:
             continue
         else:
             return str(i_st)
@@ -519,7 +519,8 @@ if __name__ == '__main__':
                 'lon=-87.978623, lat=43.036086'),
                ),
               'portlandor':
-               (('lon=-122.67334,lat=45.621662', '8220 N Denver Ave'),
+               (('x=-122.668104, y=45.523127', '4807 se kelly'),
+                ('lon=-122.67334,lat=45.621662', '8220 N Denver Ave'),
                 ('633 n alberta', '4807 se kelly'),
                 ('sw hall & denney', '44th and se stark'),
                 ('-122.645488, 45.509475', 'sw hall & denney'),
@@ -541,8 +542,8 @@ if __name__ == '__main__':
                 print e.route
             except NoRouteError, e:
                 print e
-            except Exception, e:
-                raise e
+            #except Exception, e:
+            #    print e
             else:
                 D = r['directions']
                 print r['fr']['geocode']

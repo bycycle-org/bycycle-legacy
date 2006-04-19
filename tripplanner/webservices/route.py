@@ -1,7 +1,7 @@
 # Route Web Service
 
 from byCycle.lib import wsrest
-from byCycle.tripplanner.services import route
+from byCycle.tripplanner.services import excs, route
 
 class Route(wsrest.RestWebService):
     def __init__(self, **params):
@@ -10,7 +10,7 @@ class Route(wsrest.RestWebService):
     def GET(self): 
         try:
             the_route = route.get(**self.params)
-        except route.InputError, exc:
+        except excs.InputError, exc:
             raise wsrest.BadRequestError(reason=exc.description)
         except route.MultipleMatchingAddressesError, exc:
             choices = repr(wsrest.ResultSet('route', exc.route))

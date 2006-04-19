@@ -103,7 +103,8 @@ def get(q='', region='', **params):
         return address.PointAddress(x=point.x, y=point.y)
 
     # Raise an exception if we get here: address is unnormalizeable
-    raise ValueError('Could not normalize "%s"' % q)
+    raise ValueError('Could not normalize address "%s" in region "%s"' %
+                     (q, region))
 
 
 def parse(sAddress, sOrOMode):
