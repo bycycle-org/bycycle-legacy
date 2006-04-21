@@ -1,21 +1,39 @@
 /* User Interface */
-var q;
-var fr;
-var to;
+var mach_q;
+var mach_fr;
+var mach_to;
+var user_q;
+var user_fr;
+var user_to;
 var geocodes;
 var linestring;
 var center;
 var start_ms;
 
-function setFr(val)
+
+function getVal(id, mach_v, user_v)
 {
-  fr = val;
+  var el_v = elV(id);
+  if (mach_v == undefined) {
+    var val = el_v;
+  } else if (el_v != user_v) {
+    var val = el_v;
+    eval('mach_' + id + ' = undefined');
+  } else {
+    var val = mach_v;
+  }
+  return cleanString(val);
 }
 
-
-function setTo(val)
+function setVal(id, mach_v, user_v)
 {
-  to = val;
+  if (mach_v != undefined) {
+    eval(['mach_', id, ' = "', mach_v, '"'].join(''));
+  }
+  if (user_v != undefined) {  
+    eval(['user_', id, ' = "', user_v, '"'].join(''));
+    setElV(id, user_v);
+  }
 }
 
 
@@ -38,45 +56,35 @@ function doFind(service)
   }
 
   if (service == 'geocode') {
-    if (q == undefined) {
-      var el_q = el('q');
-      q = el_q.value;
-    }
-    q = cleanString(q);
+    var q = getVal('q', mach_q, user_q);
     if (!q) {
       errors.push('Please enter an Address');
       if (region)
-	el_q.focus();
-    }
-    // Is the address really a route request?
-    var i = q.toLowerCase().indexOf(' to ');
-    if (i != -1) {
-      setElV('fr', q.substring(0, i));
-      setElV('to', q.substring(i+4));
+	el('q').focus();
+    } else {
+      // Is the address really a route request?
+      var i = q.toLowerCase().indexOf(' to ');
+      if (i != -1) {
+	setElV('fr', q.substring(0, i));
+	setElV('to', q.substring(i+4));
+      }
     }
   } else if (service == 'route') {
-    if (fr == undefined) {
-      var el_fr = el('fr');
-      fr = el_fr.value;
-    }
-    if (to == undefined) {
-      var el_to = el('to');
-      to = el_to.value;
-    }
-    fr = cleanString(fr);
-    to = cleanString(to);
-    if (!fr) {
-      errors.push('Please enter a From address');
-      if (region)
-	el_fr.focus();
-    }
-    if (!to) {
-      errors.push('Please enter a To address');
-      if (fr)
-	el_to.focus();
-    }
+    var fr = getVal('fr', mach_fr, user_fr);
+    var to = getVal('to', mach_to, user_to);
     if (fr && to) {
       q = ['["', fr, '", "', to, '"]'].join('');
+    } else {
+      if (!fr) {
+	errors.push('Please enter a From address');
+	if (region)
+	  el_fr.focus();
+      }
+      if (!to) {
+	errors.push('Please enter a To address');
+	if (fr)
+	  el_to.focus();
+      }
     }
   } else {
     errors.push('Unknown service: ' + service);
@@ -108,7 +116,7 @@ function _callback(req)
   var result_set = {};
   var status = req.status;
   var response_text = req.responseText;
-  //alert(response_text);
+  //alert(status + '\n' + response_text);
   if (status < 400) {
     if (status < 300) {
       q = undefined;
@@ -224,12 +232,6 @@ function setResult(content, error)
 function clearResult()
 {
   setIH('result', '');
-}
-
-function setRouteField(fr_or_to, value)
-{
-  eval([fr_or_to, ' = "', value, '";'].join(''));
-  setElV(fr_or_to, value);
 }
 
 

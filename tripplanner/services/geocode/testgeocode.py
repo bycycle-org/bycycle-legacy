@@ -123,6 +123,10 @@ if __name__ == '__main__':
             q = '3rd @ main 97024'
             geocodes = self._get(q)
             self.assert_(len(geocodes) == 1)
+
+        def testIntersectionAddressMidblock(self):
+            q = '48th & kelly'
+            self.assertRaises(AddressNotFoundError, self._get, q)
             
         def testPointAddressWKT(self):
             q = 'point(-120.432129 46.137977)'

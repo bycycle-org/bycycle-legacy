@@ -237,3 +237,7 @@ hr {
 .count {
 
 }
+
+.mma_list li {
+  margin-bottom: 10px;
+}
