@@ -27,7 +27,7 @@ class MultipleMatchingAddressesError(RouteError):
         RouteError.__init__(self, desc=desc)
 
 
-def get(return_messages=False, region='', tmode='bicycle', q=[], pref='',
+def get(region='', q=[], tmode='bicycle', pref='', return_messages=False, 
         **params):
     """Get a route for q in specified region using specified mode of travel.
     

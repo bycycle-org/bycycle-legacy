@@ -28,7 +28,7 @@ states_ftoa = states.states_ftoa
 states_atof = states.states_atof
 
 
-def get(q='', region='', **params):
+def get(region='', q='', **params):
     """Get a normalized address for the input address.
 
     @param string q Input address
@@ -48,7 +48,6 @@ def get(q='', region='', **params):
     if not region:
         errors.append('Please select a region')
             
-    inaddr = q.strip().lower()
     if not q:
         errors.append('Please enter an address')
 
@@ -103,7 +102,7 @@ def get(q='', region='', **params):
         return address.PointAddress(x=point.x, y=point.y)
 
     # Raise an exception if we get here: address is unnormalizeable
-    raise ValueError('Could not normalize address "%s" in region "%s"' %
+    raise ValueError('Could not parse address "%s" in region "%s"' %
                      (q, region))
 
 

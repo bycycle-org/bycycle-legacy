@@ -68,7 +68,27 @@ def get(region='', q='', **params):
     elif isinstance(oAddr, address.NodeAddress):
         geocodes = getPointGeocodes(oMode, oAddr)
     elif isinstance(oAddr, address.IntersectionAddress):
-        geocodes = getIntersectionGeocodes(oMode, oAddr)
+        try:
+            geocodes = getIntersectionGeocodes(oMode, oAddr)
+        except AddressNotFoundError, e:
+            try:
+                num = int(oAddr.name1[:-2])
+            except (TypeError, ValueError):
+                try:
+                    num = int(oAddr.name2[:-2])
+                except (TypeError, ValueError):
+                    pass
+                else:
+                    street=oAddr.street1
+            else:
+                street = oAddr.street2
+            try:
+                oAddr = address.PostalAddress(number=num*100,
+                                              street=street,
+                                              place=oAddr.place1)
+                geocodes = getPostalAddressGeocodes(oMode, oAddr)
+            except (NameError, AddressNotFoundError):
+                raise e
     else:
         raise ValueError('Could not determine address type for address "%s" '
                          'in region "%s"' % (q, region))
@@ -159,23 +179,28 @@ def getIntersectionGeocodes(oMode, oAddr):
         where = ' AND '.join(where)
         oMode.executeDict('%s %s' % (Q, where))
         rows = oMode.fetchAllDict()
-        if not rows: return []
+        if not rows:
+            raise AddressNotFoundError(oMode, oAddr)
         if first:
             first = False
             rows_a = rows
         else:
             rows_b = rows
 
-    # Index all segments by their fr/node_t_ids
+    # Index all segments by their node_f/t_ids
     ia, ib = {}, {}
     for i, R in ((ia, rows_a), (ib, rows_b)):
         for r in R:
             id = r['id']
             node_f_id, node_t_id = r['node_f_id'], r['node_t_id']
-            if node_f_id in i: i[node_f_id].append(id)
-            else: i[node_f_id] = [id]
-            if node_t_id in i: i[node_t_id].append(id)
-            else: i[node_t_id] = [id]
+            if node_f_id in i:
+                i[node_f_id].append(id)
+            else:
+                i[node_f_id] = [id]
+            if node_t_id in i:
+                i[node_t_id].append(id)
+            else:
+                i[node_t_id] = [id]
 
     # Get IDs of segs with matching id
     ids, pairs = {}, []
@@ -184,9 +209,13 @@ def getIntersectionGeocodes(oMode, oAddr):
             id_a, id_b = ia[id][0], ib[id][0]
             ids[id_a], ids[id_b] = 1, 1
             pairs.append((id_a, id_b))
+    if not pairs:
+        raise AddressNotFoundError(oMode, oAddr)
 
     # Get all the segs and map them by their IDs
     S = oMode.getSegmentsById(ids.keys())
+    if not S:
+        raise AddressNotFoundError(oMode, oAddr) 
     s_dict = {}
     for s in S: s_dict[s.id] = s
 
@@ -203,8 +232,11 @@ def getIntersectionGeocodes(oMode, oAddr):
 
     # Get all the ints and map them by their Node IDs
     I = oMode.getIntersectionsById(node_ids)
+    if not I:
+        raise AddressNotFoundError(oMode, oAddr)
     i_dict = {}
-    for i in I: i_dict[i.id] = i
+    for i in I:
+        i_dict[i.id] = i
 
     # Make a list of all the matching addresses and return it
     geocodes = []

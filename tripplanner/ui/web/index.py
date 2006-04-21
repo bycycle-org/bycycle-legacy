@@ -10,6 +10,7 @@ def _main():
         cgi_vars = cgi.FieldStorage()
         params = {}
         for param in cgi_vars.keys():
+            param = ' '.join(param.split())
             val = ' '.join(cgi_vars.getvalue(param, '').split())
             # params are allowed to start with bycycle prefix (namespace)
             if param.startswith('bycycle_'):
@@ -197,13 +198,11 @@ def _geocodeCallback(status, result_set, region='', **params):
            '  <h2 style="margin-top:0">Address</h2><p>%s</p><p>%s</p>' \
            '</div>'
     href = ' href="javascript:void(0);" '
-    onclick = 'onclick="%s = \'%%s\'; setElV(\'%s\', \'%%s\')"'
-    set = '''<p>Set as
-    <a %s %s>From</a> or
-    <a %s %s>To</a>
-    address for route</p>''' % \
-    (href, onclick % ('fr', 'fr'),
-     href, onclick % ('to', 'to'))
+    onclick = ' onclick="setVal(\'%s\', \'%%s\', \'%%s\')" '
+    set = '<p>Set as <a %s %s>From</a> or ' \
+          '<a %s %s>To</a> address for route</p>' % \
+          (href, onclick % ('fr'),
+           href, onclick % ('to'))
     
     if status == 200:    # A-OK, one match
         code = geocodes[0]
@@ -211,14 +210,15 @@ def _geocodeCallback(status, result_set, region='', **params):
         field_addr = code['address'].replace('\n', ', ')
         id_addr = _getIdAddr(code)
         result = html % (disp_addr, set %
-                         (id_addr, field_addr, id_addr, field_addr))
-        code['html'] = urllib.quote(result)
+                         (id_addr, field_addr,
+                          id_addr, field_addr))
+        code['html'] = urllib.quote(result)        
     elif status == 300:  # Multiple matches
-        result = ['<h2>Multiple Matches Found</h2><ul>']
+        result = ['<h2>Multiple Matches Found</h2><ul class="mma_list">']
         for i, code in enumerate(geocodes):
             disp_addr = code['address'].replace('\n', '<br/>')
             field_addr = code['address'].replace('\n', ', ')
-            id_addr = _getIdAddr(code)            
+            id_addr = _getIdAddr(code)
             code['html'] = urllib.quote(html %
                                         (disp_addr, set %
                                          (id_addr, field_addr,
@@ -271,7 +271,7 @@ def _makeRouteMultipleMatchList(geocodes_fr, geocodes_to,
                       (fr_or_to, style, heading))
 
     def makeList(fr_or_to, q, geocodes, find):
-        result.append('<ul>')
+        result.append('<ul class="mma_list">')
         if fr_or_to == 'fr':
             q_temp = '%%s+to+%s' % q[1]
         else:
@@ -302,7 +302,7 @@ def _makeRouteMultipleMatchList(geocodes_fr, geocodes_to,
         result.append('</ul></div>')
 
     if geocodes_fr:
-        find = "fr = '%s'; setElV('fr', '%s'); "
+        find = "setVal('fr', '%s', '%s'); "
         if geocodes_to:
             find += "el('mma_fr').style.display = 'none'; " \
                     "el('mma_to').style.display = 'block'; "
@@ -312,7 +312,7 @@ def _makeRouteMultipleMatchList(geocodes_fr, geocodes_to,
         makeList('fr', q, geocodes_fr, find)
 
     if geocodes_to:
-        find = "to = '%s'; setElV('to', '%s'); doFind('route'); "
+        find = "setVal('to', '%s', '%s'); doFind('route'); "
         if geocodes_fr:
             style = 'none'
         else:
