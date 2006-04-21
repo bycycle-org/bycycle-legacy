@@ -99,16 +99,19 @@ class PostalAddress(Address):
         return result
 
 
+    def __repr__(self):
+        return repr({'type': 'postal',
+                     'number': self.number,
+                     'street': self.street,
+                     'place': self.place})
+    
+
 
     
 class EdgeAddress(PostalAddress):
     def __init__(self, number=None, edge_id=None):
         PostalAddress.__init__(self, number)
         self.edge_id = edge_id
-
-
-    def __str__(self):
-        return PostalAddress.__str__(self)
 
 
 
@@ -273,6 +276,13 @@ class IntersectionAddress(Address):
         return joinAttrs((self.street, self.place), '\n')
         
         
+    def __repr__(self):
+        return repr({'type': 'intersection',
+                     'street1': self.street1,
+                     'place1': self.place1,
+                     'street2': self.street2,
+                     'place2': self.place2})
+
 
 
 
@@ -327,7 +337,7 @@ class Street(object):
     def __repr__(self):
         return repr({'prefix': str(self.prefix.upper()),
                      'name': str(self._name()),
-                     'type': str(self.sttype.title()),
+                     'sttype': str(self.sttype.title()),
                      'suffix': str(self.suffix.upper())})        
 
 

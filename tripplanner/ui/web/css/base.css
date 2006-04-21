@@ -160,9 +160,8 @@ hr {
 #status {
   padding: 5px;
   margin-bottom: 5px;
-  display: none;
   background: #FD766A;
-  color: white;
+  color: black;
   font-weight: bold;
   border: 1px solid gray;
 }
