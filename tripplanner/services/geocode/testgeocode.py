@@ -89,6 +89,15 @@ if __name__ == '__main__':
         def testPostalAddressBadState(self):
             q = '300 bloofy lane'
             self.assertRaises(AddressNotFoundError, self._get, q)
+
+        def testEdgeAddress(self):
+            q = '633 1651'
+            geocodes = self._get(q)
+            self.assert_(len(geocodes) == 1)
+            
+        def testEdgeAddressBadID(self):
+            q = '633 16510'
+            self.assertRaises(AddressNotFoundError, self._get, q)
             
         def testIntersectionAddress(self):
             q = '44th and stark'
@@ -141,4 +150,13 @@ if __name__ == '__main__':
             geocodes = self._get(q)
             self.assert_(len(geocodes) == 1)
 
+        def testNodeAddress(self):
+            q = '1651'
+            geocodes = self._get(q)
+            self.assert_(len(geocodes) == 1)
+            
+        def testNodeAddressBadID(self):
+            q = '84700'
+            self.assertRaises(AddressNotFoundError, self._get, q)
+            
     unittest.main()

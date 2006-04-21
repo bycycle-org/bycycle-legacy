@@ -1,16 +1,28 @@
 /* User Interface */
-
+var q;
+var fr;
+var to;
 var geocodes;
 var linestring;
 var center;
 var start_ms;
 
+function setFr(val)
+{
+  fr = val;
+}
 
-/* Functions */
+
+function setTo(val)
+{
+  to = val;
+}
+
 
 function doFind(service)
 {
   start_ms = new Date().getTime();
+  clearResult('');
   showStatus('Processing. Please wait<blink>...</blink>');
 
   var el_region = el('region');
@@ -26,8 +38,11 @@ function doFind(service)
   }
 
   if (service == 'geocode') {
-    var el_q = el('q');
-    var q = cleanString(el_q.value);
+    if (q == undefined) {
+      var el_q = el('q');
+      q = el_q.value;
+    }
+    q = cleanString(q);
     if (!q) {
       errors.push('Please enter an Address');
       if (region)
@@ -40,10 +55,16 @@ function doFind(service)
       setElV('to', q.substring(i+4));
     }
   } else if (service == 'route') {
-    var el_fr = el('fr');
-    var el_to = el('to');
-    var fr = cleanString(el_fr.value);
-    var to = cleanString(el_to.value);
+    if (fr == undefined) {
+      var el_fr = el('fr');
+      fr = el_fr.value;
+    }
+    if (to == undefined) {
+      var el_to = el('to');
+      to = el_to.value;
+    }
+    fr = cleanString(fr);
+    to = cleanString(to);
     if (!fr) {
       errors.push('Please enter a From address');
       if (region)
@@ -55,7 +76,7 @@ function doFind(service)
 	el_to.focus();
     }
     if (fr && to) {
-      var q = ['["', fr, '", "', to, '"]'].join('');
+      q = ['["', fr, '", "', to, '"]'].join('');
     }
   } else {
     errors.push('Unknown service: ' + service);
@@ -64,14 +85,13 @@ function doFind(service)
   if (errors.length) {
     errors = ['<h2>Errors</h2><ul><li>', errors.join('</li><li>'),
 	      '</li></ul>'].join('');
-    hideStatus();
     setResult(errors);
   } else {
     var url = ['http://', domain, '/',  
 	       '?region=', region, 
 	       '&q=', escape(q), 
 	       //'&pref=', elV('pref'),
-	       '&async=1'].join('');
+	       '&format=json'].join('');
     //alert(url);
     doXmlHttpReq('GET', url, _callback);
   }
@@ -90,19 +110,26 @@ function _callback(req)
   var response_text = req.responseText;
   //alert(response_text);
   if (status < 400) {
+    if (status < 300) {
+      q = undefined;
+      fr = undefined;
+      to = undefined;
+    }
     if (start_ms) {
-      var elapsed = (new Date().getTime() - start_ms) / 1000.0;
-      setStatus(['Done. Took ', elapsed, ' second', 
-		 (elapsed == 1.00 ? '' : 's'), '.'].join(''));
+      var elapsed_time = (new Date().getTime() - start_ms) / 1000.0;
+      var elapsed_time = ['<p><small>Took ', elapsed_time, ' second', 
+			  (elapsed_time == 1.00 ? '' : 's'), 
+			  ' to find result.</small></p>'].join('');
+    } else {
+      var elapsed_time = '';
     }
     eval("result_set = " + response_text + ";");
-    setResult(unescape(result_set.result_set.html));
+    setResult(unescape(result_set.result_set.html) + elapsed_time);
     eval('_' + result_set.result_set.type + 'Callback')(status, result_set);
   } else {
     setStatus('Error.');
     setResult(response_text);
   }
-  window.setTimeout('hideStatus()', 3000);
 }
 
 function _geocodeCallback(status, result_set)
@@ -175,10 +202,9 @@ function setStatus(content, error)
 }
 
 function showStatus(content, error)
-{
-  el('status').style.display = 'block';
+{	      
   if (content)
-    setStatus(content, error);
+    setResult('<div id="status">' + content + '</div>', error);
 }
 
 function hideStatus()
@@ -193,6 +219,11 @@ function setResult(content, error)
   else 
     setElStyle('result', 'color', 'black');
   setIH('result', content.toString());
+}
+
+function clearResult()
+{
+  setIH('result', '');
 }
 
 function setRouteField(fr_or_to, value)
@@ -229,9 +260,8 @@ function clearMap()
 
 function resizeMap() 
 {
-  var margin = 25;
   var win_height = getWindowHeight();
-  var height = win_height - elOffset('map') - margin;
+  var height = win_height - elOffset('map') - 25;
   if (height >= 0) {
     el('map').style.height = height + 'px';
     if (map) {
@@ -239,7 +269,7 @@ function resizeMap()
       map.setCenter(map.getCenter());
     }
   }
-  height = win_height - elOffset('result') - margin;
+  height = win_height - elOffset('result') - 5;
   if (height >= 0)
     el('result').style.height =  height + 'px'; 
 }

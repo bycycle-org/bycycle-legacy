@@ -174,7 +174,7 @@ class Mode(object):
             for streetname_id in streetnames:
                 r = streetnames[streetname_id]
                 st = address.Street(r['prefix'], r['name'],
-                                    r['type'], r['suffix'])
+                                    r['sttype'], r['suffix'])
                 streets[streetname_id] = st
                 
             # Get intersections with the help of our pre-fetched data
@@ -358,7 +358,7 @@ class Mode(object):
                 except KeyError: pass
                 row.update(street)
                 row['street'] = address.Street(row['prefix'], row['name'],
-                                               row['type'], row['suffix'])
+                                               row['sttype'], row['suffix'])
                 # Get city names for each side
                 row['city_l'] = cities[row['city_l_id']]['city']
                 row['city_r'] = cities[row['city_r_id']]['city']
@@ -413,7 +413,7 @@ class Mode(object):
 
         """
         Q = 'SELECT %s FROM %s WHERE %s'
-        cols = ('id', 'prefix', 'name', 'type', 'suffix')
+        cols = ('id', 'prefix', 'name', 'sttype', 'suffix')
         attrs = (street.prefix, street.name, street.sttype, street.suffix)
         where = ['%s = "%s"' % (c, a.lower()) for
                  c, a in zip(cols[1:], attrs) if a]

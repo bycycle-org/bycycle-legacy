@@ -97,9 +97,16 @@ class Segment(object):
 
         fa, ta = int(self.addr_f), int(self.addr_t)
 
-        min_add = min([a for a in (fa, ta) if a])
-        max_add = max([a for a in (fa, ta) if a])
-
+        try:
+            min_add = min(fa, ta)
+        except ValueError:
+            min_add = 0
+            
+        try:
+            max_add = max(fa, ta)
+        except ValueError:
+            max_add = 0
+            
         seg_len = (max_add - min_add + 1) * 1.0
         pct_from_start = (num - min_add) / seg_len
         pct_from_end = 1.0 - pct_from_start

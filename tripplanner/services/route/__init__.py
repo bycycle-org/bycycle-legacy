@@ -325,16 +325,16 @@ def makeDirections(I, S):
     streets = []
     jogs = []
     for seg_x, s in enumerate(S):
-        st = address.Street(s.prefix, s.name, s.type, s.suffix)
+        st = address.Street(s.prefix, s.name, s.sttype, s.suffix)
         streets.append(st)  # save for later
-        name_type = '%s %s' % (s.name, s.type)
+        name_type = '%s %s' % (s.name, s.sttype)
 
         try:
             next_s = S[seg_x + 1]
         except IndexError:
             next_name_type = None
         else:
-            next_name_type = '%s %s' % (next_s.name, next_s.type)
+            next_name_type = '%s %s' % (next_s.name, next_s.sttype)
         
         if name_type == prev_name_type:
             W[stretch_start_x] += W[seg_x]

@@ -11,7 +11,7 @@ if __name__ == "__main__":
                               place=Place(city='Portland',
                                           state_id='OR',
                                           zip_code=97206))
-            self.assertEqual(str(a), '4807 SE Kelly St, Portland, OR 97206')
+            self.assertEqual(str(a), '4807 SE Kelly St\nPortland, OR 97206')
             a.prefix = 'N';
             self.assertEqual(a.prefix, 'N')
             self.assertEqual(a.street.prefix, 'N')
@@ -40,14 +40,13 @@ if __name__ == "__main__":
                                     place2=Place(city='Portland',
                                                  state_id='OR',
                                                  zip_code=97206))
-            sAddr = 'SE Kelly St & SE 49th Ave, Portland, OR 97206'
+            sAddr = 'SE Kelly St & SE 49th Ave\nPortland, OR 97206'
             assert(str(a) == sAddr)
 
 
     class testPointAddress(unittest.TestCase):
         def testPointAddress(self):
             a = PointAddress(x=-123.12, y=45)
-            print a
             self.assertEqual(str(a), 'POINT(-123.120000 45.000000)')
 
 

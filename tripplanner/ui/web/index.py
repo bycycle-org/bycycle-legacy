@@ -1,136 +1,101 @@
 #!/home/u6/bycycle/bin/python -OO
 
-def index(method, params):
-    # - Normal request
-    #   - No query string
-    #     Return the template with default values
-    
-    #   - Query string, region only
-    #     Return the template with default values, region selected
 
-    #   - Query string
-    #     Process the query
-    #     Return the template with values filled in
-    #     Move the map if there's not an error
+import cgi, os, sys, urllib
 
-    # - Asynchronous request
-    #   - Query string
-    #     Process the query
-    #     Return processing results
 
+def _main():
     try:
-        async = params['async'] == '1'
-    except KeyError:
-        async = False
+        # Get the CGI vars and put them into a standard dict
+        cgi_vars = cgi.FieldStorage()
+        params = {}
+        for param in cgi_vars.keys():
+            val = ' '.join(cgi_vars.getvalue(param, '').split())
+            # params are allowed to start with bycycle prefix (namespace)
+            if param.startswith('bycycle_'):
+                param = '_'.join(param.split('_')[1:])
+            params[param] = val
+
+        # Process query and get result
+        params['method'] = os.environ['REQUEST_METHOD']
+        status, response_text, params = _processQuery(**params)
+
+        # Transform result to output format
+        O = _makeOutput(status, response_text, **params)
+        content_type, status, content = O
+
+        # Deliver result to client
+        _printrn('Content-type: %s' % content_type)        
+        _printrn('Status: %s' % status)
+        _printrn()
+        sys.stdout.write(content)
+    except Exception, e:
+        import traceback
+        sys.stderr = sys.stdout
+        print 'Content-type: text/html\r\n\r'
+        print
+        print '<html><head><title>'
+        print e
+        print '</title>'
+        print '</head><body>'
+        print '<h1>TRACEBACK</h1>'
+        print '<pre>'
+        traceback.print_exc()
+        print '</pre>'
+        print '</body></html>'
+    
+
+def _processQuery(method='get', **params):    
+    from byCycle.lib import wsrest
 
     params['region'] = _getRegion(**params)
 
-    if async:
-        # Asynchronous request
-        content_type = 'text/plain'
-        status, response_text = _processQuery(method, params)
-        if status < 400:
-            result_set = eval(response_text)
-            type_ = result_set['result_set']['type']
-            callback = '_%sCallback' % type_
-            result = eval(callback)(status, result_set, params)
-            result_set['result_set']['html'] = urllib.quote(result)
-            content = simplejson.dumps(result_set)
-        else:
-            content = '<h2>Error</h2>%s' % response_text
-    else:
-        # Normal request
-        content_type = 'text/html'
-        if (params['q'] is not None or
-            (params['fr'] is not None and params['to'] is not None)):
-            # Save original q for template
-            q = params['q'] or ''
-            
-            status, response_text = _processQuery(method, params)
-            if status < 400:
-                result_set = eval(response_text)
-                type_ = result_set['result_set']['type']
-                callback = '_%sCallback' % type_
-                result = eval(callback)(status, result_set, params)
-                result_set['result_set']['html'] = urllib.quote(result)
-                response_text = simplejson.dumps(result_set)
-            else:
-                result = '<h2>Error</h2>%s' % response_text
-
-            # Set template vars
-            fr = params['fr'] or ''
-            to = params['to'] or ''
-        else:
-            status = ''
-            response_text = ''
-            q = ''
-            fr = ''
-            to = ''
-            result = _getWelcomeMessage()
-
-        data = {
-            'http_status': status,
-            'response_text': response_text,
-            'region': params['region'],
-            'q': q,
-            'fr': fr,
-            'to': to,
-            'regions_opt_list': _makeRegionsOptionList(params),
-            'result': result,
-            }
-
-        template_file = open(template)
-        content = template_file.read() % data
-        template_file.close()
-    return content_type, status, content
-
-
-def _processQuery(method, params, service=''):
-    from byCycle.lib import wsrest
-    
     # Analyze the query to determine the service and prepare the query for the
-    # service. If a service was explicitly given, use it; otherwise, use the
-    # service determined by the semantic analysis.
-    s = _analyzeQuery(params)
-    service = service or s
-    class_ = service.title()
+    # service.
+    A = _analyzeQuery(**params)
+    params['service'], params['q'], params['fr'], params['to'] = A
+    service = params['service']
 
     # Import web service module
-    path = 'byCycle.tripplanner.webservices.%s'
-    module = __import__(path % service, globals(), locals(), [''])
-    
-    # Create web service object
-    # E.g., mod = geocode & class = Geocode
-    ws_obj = getattr(module, class_)(**params)
+    import_path = 'byCycle.tripplanner.webservices.%s'
 
-    # Process the query according to the request method
-    try:
-        content = getattr(ws_obj, method)()
-    except wsrest.MethodNotAllowedError, exc:
-        content = exc.reason + ' (%s)' % method
-        #req.allow_methods(exc.getAllowMethods(ws_obj))
-    except wsrest.MultipleChoicesError, exc:
-        content = exc.choices
-    except wsrest.RestError, exc:
-        content = exc.reason
-    except Exception, exc:
-        status = 500
-        content = str(exc)
+    if service is None:
+        status = None
+        response_text = None
     else:
-        status = 200
+        module = __import__(import_path % service, globals(), locals(), [''])
+        class_ = service.title()
 
-    try:
-        status = status
-    except NameError:
-        status = exc.status
+        # Create web service object
+        # E.g., if mod is geocode & class is Geocode, then this is equivalent
+        # geocode.Geocode(**params)
+        ws_obj = getattr(module, class_)(**params)
+
+        # Process the query according to the request method
+        try:
+            response_text = getattr(ws_obj, method)()
+        except wsrest.MethodNotAllowedError, exc:
+            status = exc.status
+            response_text = exc.reason + ' (%s)' % method
+            #req.allow_methods(exc.getAllowMethods(ws_obj))
+        except wsrest.MultipleChoicesError, exc:
+            status = exc.status
+            response_text = exc.choices
+        except wsrest.RestError, exc:
+            status = exc.status
+            response_text = exc.reason
+        except Exception, exc:
+            status = 500
+            response_text = str(exc)
+        else:
+            status = 200
     
-    return status, content
+    return status, response_text, params
 
 
-def _analyzeQuery(params):
-    q = params['q']    
-    fr = params['fr']
-    to = params['to']
+def _analyzeQuery(q=None, fr=None, to=None, **params):
+    if q is fr is to is None:
+        service = None
     
     # If query has params fr and to and not q, it is a route query
     if q is None and fr is not None and to is not None:
@@ -146,63 +111,118 @@ def _analyzeQuery(params):
         try:
             words = eval(q)
         except:
+            import re
+            sRe = '\s+to\s+'
+            oRe = re.compile(sRe, re.I)
             try:
-                words = q.lower().split(' to ')
-            except AttributeError:
+                words = re.split(oRe, q)
+            except TypeError:
                 words = None
         if isinstance(words, list) and len(words) > 1:
             service = 'route'    
             q = words
-            params['fr'] = q[0]
-            params['to'] = q[1]
+            fr = q[0]
+            to = q[1]
 
+    # If we can't determine q is a route query, assume it's a geocode query
     try:
         service
     except NameError:
         service = 'geocode'
+
+    return service, q, fr, to
+
+
+def _makeOutput(status, response_text, format='html', **params):
+    import simplejson
+
+    if status is None:
+        status = 200
+        result = None
+        response_text = ''
+    else:
+        if status < 400:
+            result_set = eval(response_text)
+            type_ = result_set['result_set']['type']
+            callback = '_%sCallback' % type_
+            result = eval(callback)(status, result_set, **params)
+            result_set['result_set']['html'] = urllib.quote(result)
+            response_text = simplejson.dumps(result_set)
+        else:
+            response_text = '<h2>Error</h2>%s' % response_text
+
+    if format == 'json':
+        content_type = 'text/plain'
+        content = response_text
+    elif format == 'html':
+        content_type = 'text/html'
         
-    try:
-        service = params['service']
-    except KeyError:
-        params['service'] = service
+        if status is not None and status >= 400:
+            result = response_text
 
-    params['q'] = q or ''
-    return service
+        q = params['q']
+        if isinstance(q, list):
+           params['q'] = ' to '.join(q) 
 
+        params['http_status'] = status
+        params['response_text'] = response_text
+        params['regions_opt_list'] = _makeRegionsOptionList(**params)
+        params['result'] = result
+        
+        for p in params:
+            if params[p] is None:
+                params[p] = ''
+                
+        template_file = open('./tripplanner.html')
+        content = template_file.read() % params
+        template_file.close()
+    return content_type, status, content
+    
 
 ## Callbacks
 
-def _geocodeCallback(status, result_set, params):
-    region = params['region']
-    
+def _getIdAddr(geocode):
+    type_ = geocode['type']
+    if type_ == 'postal':
+        id_addr = '%s+%s' % (geocode['number'], geocode['edge_id']) 
+    elif type_ == 'intersection':
+        id_addr = geocode['node_id']    
+    return id_addr
+
+
+def _geocodeCallback(status, result_set, region='', **params):
     geocodes = result_set['result_set']['result']
     
     html = '<div class="info_win">' \
            '  <h2 style="margin-top:0">Address</h2><p>%s</p><p>%s</p>' \
            '</div>'
     href = ' href="javascript:void(0);" '
-    onclick = 'onclick="setElV(\'%s\', \'%s\')"'
+    onclick = 'onclick="%s = \'%%s\'; setElV(\'%s\', \'%%s\')"'
     set = '''<p>Set as
     <a %s %s>From</a> or
     <a %s %s>To</a>
     address for route</p>''' % \
-    (href, onclick % ('fr', '%s'),
-     href, onclick % ('to', '%s'))
+    (href, onclick % ('fr', 'fr'),
+     href, onclick % ('to', 'to'))
     
     if status == 200:    # A-OK, one match
-        geocode = geocodes[0]
-        disp_addr = geocode['address'].replace('\n', '<br/>')
-        field_addr = geocode['address'].replace('\n', ', ')
-        result = html % (disp_addr, set % (field_addr, field_addr))
-        geocode['html'] = urllib.quote(result)
+        code = geocodes[0]
+        disp_addr = code['address'].replace('\n', '<br/>')
+        field_addr = code['address'].replace('\n', ', ')
+        id_addr = _getIdAddr(code)
+        result = html % (disp_addr, set %
+                         (id_addr, field_addr, id_addr, field_addr))
+        code['html'] = urllib.quote(result)
     elif status == 300:  # Multiple matches
         result = ['<h2>Multiple Matches Found</h2><ul>']
         for i, code in enumerate(geocodes):
             disp_addr = code['address'].replace('\n', '<br/>')
             field_addr = code['address'].replace('\n', ', ')
-            code['html'] = urllib.quote(html % (disp_addr, set % (field_addr,
-                                                                  field_addr)))
-
+            id_addr = _getIdAddr(code)            
+            code['html'] = urllib.quote(html %
+                                        (disp_addr, set %
+                                         (id_addr, field_addr,
+                                          id_addr, field_addr)))
             result.append('<li>'
                           '  %s<br/>'
                           '  <a href="javascript:void(0);"'
@@ -215,30 +235,31 @@ def _geocodeCallback(status, result_set, params):
                           '     onclick="showGeocode(%s, true); '
                           'return false;"'
                           '>Select</a>'
-                          '</li>' % 
-                          (disp_addr,
-                           code['y'], code['x'],
-                           region,
-                           field_addr.replace(' ', '+'),
-                           i))
+                          '</li>' % (disp_addr,
+                                     code['y'], code['x'],
+                                     region,
+                                     id_addr,
+                                     i)
+                          )
         result.append('</ul>')
         result = '\n'.join(result)
     return result
 
 
-def _routeCallback(status, result_set, params):
+def _routeCallback(status, result_set, **params):
     route = result_set['result_set']['result']
     if status == 200:    # A-OK, one match
         result = _makeDirectionsTable(route)
     elif status == 300:  # Multiple matches
         geocodes_fr = route['fr']['geocode']
         geocodes_to = route['to']['geocode']
-        result = _makeRouteMultipleMatchList(geocodes_fr, geocodes_to, params)
+        result = _makeRouteMultipleMatchList(geocodes_fr, geocodes_to,
+                                             **params)
     return result
 
 
-def _makeRouteMultipleMatchList(geocodes_fr, geocodes_to, params):
-    region = params['region']
+def _makeRouteMultipleMatchList(geocodes_fr, geocodes_to,
+                                region='', q='', fr='', to='', **params):
     result = ['<div id="mma"><h2>Multiple Matches Found</h2>']
 
     def makeDiv(fr_or_to, style):
@@ -249,15 +270,18 @@ def _makeRouteMultipleMatchList(geocodes_fr, geocodes_to, params):
         result.append('<div id="mma_%s" style="display: %s;"><h3>%s</h3>' % \
                       (fr_or_to, style, heading))
 
-    def makeList(fr_or_to, geocodes, find):
+    def makeList(fr_or_to, q, geocodes, find):
         result.append('<ul>')
         if fr_or_to == 'fr':
-            q_temp = '%s to ' + params['q'][1]
+            q_temp = '%%s+to+%s' % q[1]
         else:
-            q_temp = params['q'][0] + ' to %s'
+            q_temp = '%s+to+%%s' % q[0]
         for code in geocodes:
             addr = code['address']
-            q = q_temp % addr.replace('\n', ', ')
+            disp_addr = addr.replace('\n', '<br/>')
+            field_addr = addr.replace('\n', ', ')
+            id_addr = _getIdAddr(code)
+            q = (q_temp % id_addr)
             result.append('<li>'
                           '  %s<br/>'
                           '  <a href="javascript:void(0);"'
@@ -267,33 +291,34 @@ def _makeRouteMultipleMatchList(geocodes_fr, geocodes_to, params):
                           '>Show on map</a>'
                           '  &middot;'
                           '  <a href="?region=%s&q=%s"'
-                          '     onclick="%s return false;">Select</a>'
-                          '</li>' % 
-                          (addr.replace('\n', '<br/>'),
-                           code['y'], code['x'],
-                           region,
-                           q.replace(' ', '+'),
-                           find % addr.replace('\n', ', ')))
+                          '     onclick="%s return false;"'
+                          '     >Select</a>'
+                          '</li>' % (disp_addr,
+                                     code['y'], code['x'],
+                                     region,
+                                     q,
+                                     find % (id_addr, field_addr))
+                          )
         result.append('</ul></div>')
 
     if geocodes_fr:
-        find = "setElV('fr', '%s'); "
+        find = "fr = '%s'; setElV('fr', '%s'); "
         if geocodes_to:
             find += "el('mma_fr').style.display = 'none'; " \
                     "el('mma_to').style.display = 'block'; "
         else:
             find += "doFind('route'); "
         makeDiv('fr', 'block')
-        makeList('fr', geocodes_fr, find)
+        makeList('fr', q, geocodes_fr, find)
 
     if geocodes_to:
-        find = "setElV('to', '%s'); doFind('route'); "
+        find = "to = '%s'; setElV('to', '%s'); doFind('route'); "
         if geocodes_fr:
             style = 'none'
         else:
             style = 'block'
         makeDiv('to', style)
-        makeList('to', geocodes_to, find)
+        makeList('to', q, geocodes_to, find)
       
     result.append('</div>')
     return ''.join(result)
@@ -317,7 +342,7 @@ def _getRegion(region='', **params):
 
 ## Output
     
-def _makeRegionsOptionList(params):
+def _makeRegionsOptionList(region='', **params):
     """Create an HTML options list of regions.
 
     Set the selected region if we got here by
@@ -326,6 +351,8 @@ def _makeRegionsOptionList(params):
     @return An HTML options list of regions sorted by state, then area
     
     """
+    region = region.strip().lower().replace(',', '')
+
     regions = {'or': ['portland',
                       ],
                'wi': ['milwaukee',
@@ -336,11 +363,6 @@ def _makeRegionsOptionList(params):
 
     states = regions.keys()
     states.sort()
-
-    try:
-        region = params['region'].strip().lower().replace(',', '')
-    except KeyError:
-        region = ''
 
     region_opt = '<option value="%s">%s</option>'
     region_opt_selected = '<option value="%s" selected="selected">%s</option>'
@@ -393,6 +415,7 @@ def _getWelcomeMessage():
 
 def _getLastModified(file_name=''):
     """Get and format the last modified date of file_name."""
+    import datetime
     stat = os.stat(file_name)
     last_modified = datetime.date.fromtimestamp(stat.st_mtime)
     last_modified = last_modified.strftime('%B %d, %Y')
@@ -528,58 +551,9 @@ def _makeDirectionsTable(route):
     return ''.join((s_table, d_table))            
         
 
-def _printrn(print_me):
-    sys.stdout.write(print_me)
-    
-if __name__ == '__main__':
-    try:
-        import os, sys
-        import cgi
-        import datetime
-        import urllib
-        import simplejson
-        import byCycle
-
-        template = './tripplanner.html'
-        method = os.environ['REQUEST_METHOD']
-        cgi_vars = cgi.FieldStorage()
-
-        params = {}
-        for param in cgi_vars.keys():
-            val = ' '.join(cgi_vars.getvalue(param, '').split())
-            if param.startswith('bycycle_'):
-                param = '_'.join(param.split('_')[1:])
-            params[param] = val
-
-        # Set default values for missing parameters
-        for param in ('q', 'fr', 'to'):
-            params[param] = params.get(param, None)
-            
-        if params.has_key('service'):
-            content_type = 'text/plain'
-            status, content = _processQuery(method, params, params['service'])
-        else:
-            content_type, status, content = index(method, params)
- 
-        _printrn('Content-type: %s\r\n' % content_type)
-        if status:
-            _printrn('Status: %s\r\n' % status)
-        _printrn('\r\n')
-        _printrn(content)
-    except Exception, e:
-        import traceback
-
-        sys.stderr = sys.stdout
+def _printrn(print_me=''):
+    sys.stdout.write('%s\r\n' % print_me)
         
-        print 'Content-type: text/html\r\n\r'
-        print
-        print '<html><head><title>'
-        print e
-        print '</title>'
-        print '</head><body>'
-        print '<h1>TRACEBACK</h1>'
-        print '<pre>'
-        traceback.print_exc()
-        print '</pre>'
-        print '</body></html>'
-    
+
+if __name__ == '__main__':
+    _main()

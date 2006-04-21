@@ -4,6 +4,7 @@ from byCycle.lib import gis
 from byCycle.tripplanner.model import mode, address, geocode
 from byCycle.tripplanner.services import excs, normaddr
 
+
 class GeocodeError(excs.ByCycleError):
     def __init__(self, desc=''): 
         if not desc:
@@ -121,7 +122,7 @@ def getPostalAddressGeocodes(oMode, oAddr, edge_id=None):
     for s in segs:
         s_addr = address.PostalAddress(num)
         attrs = s.getAttrsOnNumSide(num)
-        for attr in ('prefix', 'name', 'type', 'suffix'):
+        for attr in ('prefix', 'name', 'sttype', 'suffix'):
             setattr(s_addr.street, attr, attrs[attr])
         for attr in ('city_id', 'city', 'state_id', 'zip_code'):
             setattr(s_addr.place, attr, attrs[attr])
@@ -234,6 +235,9 @@ def getPointGeocodes(oMode, oAddr):
     oMode.executeDict(Q)
     rows = oMode.fetchAllDict()
 
+    if not rows:
+       raise AddressNotFoundError(oMode, oAddr)         
+
     # Index segment rows by their street name IDs
     st_ids = {}
     for row in rows:
@@ -277,7 +281,7 @@ def getPointGeocodes(oMode, oAddr):
 
 def _setStreetAndPlaceFromSegment(street, place, seg):
     attrs = seg.getAttrsOnSide('left')
-    for attr in ('prefix', 'name', 'type', 'suffix'):
+    for attr in ('prefix', 'name', 'sttype', 'suffix'):
         street.__dict__[attr] = attrs[attr]
     for attr in ('city_id', 'city', 'state_id', 'zip_code'):
         place.__dict__[attr] = attrs[attr]

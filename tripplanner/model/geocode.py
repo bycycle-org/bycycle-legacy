@@ -16,14 +16,14 @@ class PostalGeocode(Geocode):
         self.xy = xy
         
     def __repr__(self):
-        result = {'type': 'address',
+        result = {'type': 'postal',
                   'number': self.address.number,
                   'street': self.address.street,
                   'place': self.address.place,
                   'address': str(self.address),
                   'x': '%.6f' % self.xy.x,
                   'y': '%.6f' % self.xy.y,
-                  'e': self.segment.id}
+                  'edge_id': self.segment.id}
         return repr(result)
 
     
@@ -42,5 +42,5 @@ class IntersectionGeocode(Geocode):
                   'address': str(self.address),                  
                   'x': '%.6f' % self.xy.x,
                   'y': '%.6f' % self.xy.y,
-                  'v': self.intersection.id}
+                  'node_id': self.intersection.id}
         return repr(result)

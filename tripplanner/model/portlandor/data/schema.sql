@@ -61,7 +61,7 @@ CREATE TABLE `portlandor_streetname` (
   `id`     INTEGER PRIMARY KEY NOT NULL AUTO_INCREMENT,
   `prefix` CHAR(2) NOT NULL,
   `name`   VARCHAR(255) NOT NULL,
-  `type`   CHAR(4) NOT NULL,
+  `sttype` CHAR(4) NOT NULL,
   `suffix` CHAR(2) NOT NULL
 );
 

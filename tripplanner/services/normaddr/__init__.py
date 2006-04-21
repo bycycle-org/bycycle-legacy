@@ -225,7 +225,7 @@ def parse(sAddress, sOrOMode):
     else:
         name_type = '%s %s' % (name, full_sttype)
         # ...and there is no street name in the DB with the name & type
-        Q1 = 'SELECT id FROM %s_streetname WHERE name="%s" AND type="%s"' % \
+        Q1 = 'SELECT id FROM %s_streetname WHERE name="%s" AND sttype="%s"' % \
              (oMode.region, num_name, street.sttype)
         # ...but there is one with the name with type appended to it
         Q2 = 'SELECT id FROM %s_streetname WHERE name = "%s"' % \
