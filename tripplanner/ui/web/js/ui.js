@@ -36,6 +36,19 @@ function setVal(id, mach_v, user_v)
   }
 }
 
+function swapFrAndTo()
+{
+  var fr = elV('fr');
+  setElV('fr', elV('to'));
+  setElV('to', fr);
+  fr = mach_fr;
+  mach_fr = mach_to;
+  mach_to = fr;
+  fr = user_fr;
+  user_fr = user_to;
+  user_to = fr;
+}
+
 
 function doFind(service)
 {
