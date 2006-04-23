@@ -57,13 +57,14 @@ def _processQuery(method='get', **params):
     params['service'], params['q'], params['fr'], params['to'] = A
     service = params['service']
 
-    # Import web service module
+    # Base path to web services
     import_path = 'byCycle.tripplanner.webservices.%s'
 
     if service is None:
         status = 200
         response_text = None
     else:
+        # Import web service
         module = __import__(import_path % service, globals(), locals(), [''])
         class_ = service.title()
 
@@ -94,21 +95,13 @@ def _processQuery(method='get', **params):
     return status, response_text, params
 
 
-def _analyzeQuery(q=None, fr=None, to=None, **params):
-    if q is fr is to is None:
-        service = None
-    
-    # If query has params fr and to and not q, it is a route query
-    if q is None and fr is not None and to is not None:
-        service = 'route'
-        q = [fr, to]
-
-    # If param q contains the substring " to " between two other substrings OR
-    # if param q is a list (or a string repr of a list) with at least two
-    # items, query is for a route
-    try:
-        service
-    except NameError:
+def _analyzeQuery(q=None, fr=None, to=None, rb=None, gb=None, **params):
+    """Look at query variables and decide what type of query was made."""
+    # Note: When a param is None, that means it wasn't passed via CGI
+    if gb is not None or (rb is None and q is not None):
+        # If param q contains the substring " to " between two other substrings
+        # OR if param q is a string repr of a list with at least two items,
+        # query is for a route
         try:
             words = eval(q)
         except:
@@ -124,14 +117,16 @@ def _analyzeQuery(q=None, fr=None, to=None, **params):
             q = words
             fr = q[0]
             to = q[1]
-
-    # If we can't determine q is a route query, assume it's a geocode query
-    try:
-        service
-    except NameError:
-        service = 'geocode'
-
-    return service, q, fr, to
+        else:
+            # If we can't determine q is route query, assume it's geocode query
+            service = 'geocode'        
+    elif (rb is not None or
+          (gb is None and q is None and fr is not None and to is not None)):
+        service = 'route'
+        q = [fr or '', to or '']
+    else:
+        service = None
+    return service, q or '', fr or '', to or ''
 
 
 def _makeOutput(status, response_text, format='html', **params):
@@ -160,6 +155,8 @@ def _makeOutput(status, response_text, format='html', **params):
             result = _getWelcomeMessage(template)
         elif status >= 400:
             result = response_text or 'Unknown Error'
+        else:
+            result = html
 
         q = params['q']
         if isinstance(q, list):
