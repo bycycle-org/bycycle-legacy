@@ -154,7 +154,7 @@ def _makeOutput(status, response_text, format='html', **params):
         if response_text is None:
             result = _getWelcomeMessage(template)
         elif status >= 400:
-            result = response_text or 'Unknown Error'
+            result = response_text.replace('\n', '<br/>') or 'Unknown Error'
         else:
             result = html
 
