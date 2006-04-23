@@ -51,8 +51,8 @@ def _processQuery(method='get', **params):
 
     params['region'] = _getRegion(**params)
 
-    # Analyze the query to determine the service and prepare the query for the
-    # service.
+    # Analyze the query to determine the service and prepare the query for 
+    # the service.
     A = _analyzeQuery(**params)
     params['service'], params['q'], params['fr'], params['to'] = A
     service = params['service']
@@ -61,7 +61,7 @@ def _processQuery(method='get', **params):
     import_path = 'byCycle.tripplanner.webservices.%s'
 
     if service is None:
-        status = None
+        status = 200
         response_text = None
     else:
         module = __import__(import_path % service, globals(), locals(), [''])
@@ -137,29 +137,29 @@ def _analyzeQuery(q=None, fr=None, to=None, **params):
 def _makeOutput(status, response_text, format='html', **params):
     import simplejson
 
-    if status is None:
-        status = 200
-        result = None
-        response_text = ''
-    else:
+    if response_text is not None:
         if status < 400:
             result_set = eval(response_text)
             type_ = result_set['result_set']['type']
             callback = '_%sCallback' % type_
-            result = eval(callback)(status, result_set, **params)
-            result_set['result_set']['html'] = urllib.quote(result)
+            html = eval(callback)(status, result_set, **params)
+            result_set['result_set']['html'] = urllib.quote(html)
             response_text = simplejson.dumps(result_set)
         else:
             response_text = '<h2>Error</h2>%s' % response_text
 
     if format == 'json':
         content_type = 'text/plain'
-        content = response_text
+        content = response_text or ''
     elif format == 'html':
         content_type = 'text/html'
+
+        template = 'tripplanner.html'
         
-        if status is not None and status >= 400:
-            result = response_text
+        if response_text is None:
+            result = _getWelcomeMessage(template)
+        elif status >= 400:
+            result = response_text or 'Unknown Error'
 
         q = params['q']
         if isinstance(q, list):
@@ -174,7 +174,7 @@ def _makeOutput(status, response_text, format='html', **params):
             if params[p] is None:
                 params[p] = ''
                 
-        template_file = open('./tripplanner.html')
+        template_file = open(template)
         content = template_file.read() % params
         template_file.close()
     return content_type, status, content
@@ -385,7 +385,7 @@ def _makeRegionsOptionList(region='', **params):
     return ''.join(regions_opt_list)
 
 
-def _getWelcomeMessage():
+def _getWelcomeMessage(template):
     welcome_message = '''
     <p style="margin-top:0;">
     The Trip Planner is under active development. Please
