@@ -13,17 +13,19 @@ var start_ms;
 
 function getVal(id, mach_v, user_v)
 {
-  var el_v = elV(id);
+  var el_v = cleanString(elV(id));
   if (mach_v == undefined) {
     var val = el_v;
-  } else if (el_v != user_v) {
+  } else if (el_v.toLowerCase() != user_v.toLowerCase()) {
     var val = el_v;
-    eval('mach_' + id + ' = undefined');
+    eval(['mach_', id, ' = undefined'].join(''));
+    eval(['user_', id, ' = "', el_v, '"'].join(''));
   } else {
     var val = mach_v;
   }
-  return cleanString(val);
+  return val;
 }
+
 
 function setVal(id, mach_v, user_v)
 {
@@ -31,7 +33,7 @@ function setVal(id, mach_v, user_v)
     eval(['mach_', id, ' = "', mach_v, '"'].join(''));
   }
   if (user_v != undefined) {  
-    eval(['user_', id, ' = "', user_v, '"'].join(''));
+    eval(['user_', id, ' = "', cleanString(user_v), '"'].join(''));
     setElV(id, user_v);
   }
 }
@@ -91,12 +93,12 @@ function doFind(service)
       if (!fr) {
 	errors.push('Please enter a From address');
 	if (region)
-	  el_fr.focus();
+	  el('fr').focus();
       }
       if (!to) {
 	errors.push('Please enter a To address');
 	if (fr)
-	  el_to.focus();
+	  el('to').focus();
       }
     }
   } else {

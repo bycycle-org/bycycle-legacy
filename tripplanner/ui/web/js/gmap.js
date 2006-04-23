@@ -41,11 +41,16 @@ function mapLoad()
 function mapCreate()
 {
   map = new GMap2(el('map'));
+  map.setCenter(new GLatLng(0, 0), 2);
+  
   map.addControl(new GLargeMapControl());
   map.addControl(new GMapTypeControl());
   map.addControl(new GScaleControl());
+
   map.addControl(new GOverviewMapControl());
-  
+  var overview = document.getElementById('map_overview');
+  document.getElementById("map").appendChild(overview);
+ 
   var icon = new GIcon();
   icon.image = 'images/reddot15.png';
   icon.iconSize = new GSize(15, 15);
@@ -79,8 +84,6 @@ function mapCreate()
   start_icon.image = 'images/dd-start.png';
   end_icon = new GIcon(base_icon);
   end_icon.image = 'images/dd-end.png';
-  
-  map.setCenter(new GLatLng(0, 0), 2);
 
   var reg_el = el('region');
   selectRegion(reg_el[reg_el.selectedIndex].value);
