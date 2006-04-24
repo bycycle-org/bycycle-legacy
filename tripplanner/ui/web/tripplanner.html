@@ -158,8 +158,9 @@
 		  
 		  <div>
 		    <input type="hidden" name="region" value="%(region)s"/>
+		    <input type="hidden" name="service" value="query"/>
 		    <input type="text" id="q" name="q" class="input_field" tabindex="1" value="%(q)s"/>
-		    <input name="service"
+		    <input name="gb"
 			   class="input_button"
 			   title="Click to look up address"
 			   tabindex="3" 
@@ -179,6 +180,7 @@
 		  
 		  <div>
 		    <input type="hidden" name="region" value="%(region)s"/>
+		    <input type="hidden" name="service" value="route"/>
 		    <input type="text" id="fr" name="fr" class="input_field" tabindex="1" value="%(fr)s"/>
 		    <a href="javascript:void(0);"  
 		       title="Swap from and to" 
@@ -188,7 +190,7 @@
 		  
 		  <div>
 		    <input type="text" id="to" name="to" class="input_field" tabindex="1" value="%(to)s"/>
-		    <input name="service"
+		    <input name="rb"
 			   class="input_button"
 			   title="Click to find route"
 			   tabindex="3" 
