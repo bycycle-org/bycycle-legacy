@@ -95,10 +95,10 @@ def _processQuery(method='get', **params):
     return status, response_text, params
 
 
-def _analyzeQuery(q=None, fr=None, to=None, rb=None, gb=None, **params):
+def _analyzeQuery(service=None, q=None, fr=None, to=None, **params):
     """Look at query variables and decide what type of query was made."""
     # Note: When a param is None, that means it wasn't passed via CGI
-    if gb is not None or (rb is None and q is not None):
+    if service == 'geocode' or (service is None and q is not None):
         # If param q contains the substring " to " between two other substrings
         # OR if param q is a string repr of a list with at least two items,
         # query is for a route
@@ -118,10 +118,10 @@ def _analyzeQuery(q=None, fr=None, to=None, rb=None, gb=None, **params):
             fr = q[0]
             to = q[1]
         else:
-            # If we can't determine q is route query, assume it's geocode query
+            # q doesn't look like a route query; assume it's geocode query
             service = 'geocode'        
-    elif (rb is not None or
-          (gb is None and q is None and fr is not None and to is not None)):
+    elif (service == 'route' or 
+          (service is None and q is None and fr is not None and to is not None)):
         service = 'route'
         q = [fr or '', to or '']
     else:
