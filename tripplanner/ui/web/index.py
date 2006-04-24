@@ -65,32 +65,38 @@ def _processQuery(method='get', **params):
         response_text = None
     else:
         # Import web service
-        module = __import__(import_path % service, globals(), locals(), [''])
-        class_ = service.title()
-
-        # Create web service object
-        # E.g., if mod is geocode & class is Geocode, then this is equivalent
-        # geocode.Geocode(**params)
-        ws_obj = getattr(module, class_)(**params)
-
-        # Process the query according to the request method
         try:
-            response_text = getattr(ws_obj, method)()
-        except wsrest.MethodNotAllowedError, exc:
-            status = exc.status
-            response_text = exc.reason + ' (%s)' % method
-            #req.allow_methods(exc.getAllowMethods(ws_obj))
-        except wsrest.MultipleChoicesError, exc:
-            status = exc.status
-            response_text = exc.choices
-        except wsrest.RestError, exc:
-            status = exc.status
-            response_text = exc.reason
-        except Exception, exc:
-            status = 500
-            response_text = str(exc)
+            module = __import__(import_path % service,
+                                globals(), locals(), [''])
+        except ImportError:
+            status = 400
+            response_text = 'Unknown service "%s"' % service
         else:
-            status = 200
+            class_ = service.title()
+
+            # Create web service object
+            # E.g., if mod is geocode & class is Geocode, then this is
+            # equivalent to geocode.Geocode(**params)
+            ws_obj = getattr(module, class_)(**params)
+
+            # Process the query according to the request method
+            try:
+                response_text = getattr(ws_obj, method)()
+            except wsrest.MethodNotAllowedError, exc:
+                status = exc.status
+                response_text = exc.reason + ' (%s)' % method
+                #req.allow_methods(exc.getAllowMethods(ws_obj))
+            except wsrest.MultipleChoicesError, exc:
+                status = exc.status
+                response_text = exc.choices
+            except wsrest.RestError, exc:
+                status = exc.status
+                response_text = exc.reason
+            except Exception, exc:
+                status = 500
+                response_text = str(exc)
+            else:
+                status = 200
     
     return status, response_text, params
 
@@ -98,7 +104,7 @@ def _processQuery(method='get', **params):
 def _analyzeQuery(service=None, q=None, fr=None, to=None, **params):
     """Look at query variables and decide what type of query was made."""
     # Note: When a param is None, that means it wasn't passed via CGI
-    if service == 'geocode' or (service is None and q is not None):
+    if service == 'query' or (service is None and q is not None):
         # If param q contains the substring " to " between two other substrings
         # OR if param q is a string repr of a list with at least two items,
         # query is for a route
@@ -121,9 +127,12 @@ def _analyzeQuery(service=None, q=None, fr=None, to=None, **params):
             # q doesn't look like a route query; assume it's geocode query
             service = 'geocode'        
     elif (service == 'route' or 
-          (service is None and q is None and fr is not None and to is not None)):
+          (service is None and q is None and
+           fr is not None and to is not None)):
         service = 'route'
         q = [fr or '', to or '']
+    elif service is not None:
+        pass
     else:
         service = None
     return service, q or '', fr or '', to or ''
@@ -137,24 +146,27 @@ def _makeOutput(status, response_text, format='html', **params):
             result_set = eval(response_text)
             type_ = result_set['result_set']['type']
             callback = '_%sCallback' % type_
-            html = eval(callback)(status, result_set, **params)
+            try:
+                html = eval(callback)(status, result_set, **params)
+            except NameError:
+                html = response_text
             result_set['result_set']['html'] = urllib.quote(html)
-            response_text = simplejson.dumps(result_set)
-        else:
-            response_text = '<h2>Error</h2>%s' % response_text
 
     if format == 'json':
         content_type = 'text/plain'
-        content = response_text or ''
+        if status >= 400:
+            content = simplejson.dumps({'error': response_text})
+        else:
+            content = simplejson.dumps(result_set)
     elif format == 'html':
         content_type = 'text/html'
-
         template = 'tripplanner.html'
         
         if response_text is None:
             result = _getWelcomeMessage(template)
         elif status >= 400:
-            result = response_text.replace('\n', '<br/>') or 'Unknown Error'
+            result = '<h2>Error</h2>%s' % (response_text.replace('\n', '<br/>')
+                                           or 'Unknown Error')
         else:
             result = html
 
@@ -163,7 +175,7 @@ def _makeOutput(status, response_text, format='html', **params):
            params['q'] = ' to '.join(q) 
 
         params['http_status'] = status
-        params['response_text'] = response_text
+        params['response_text'] = simplejson.dumps(result_set)
         params['regions_opt_list'] = _makeRegionsOptionList(**params)
         params['result'] = result
         
