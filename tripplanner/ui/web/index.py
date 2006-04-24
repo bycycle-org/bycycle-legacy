@@ -151,11 +151,14 @@ def _makeOutput(status, response_text, format='html', **params):
             except NameError:
                 html = response_text
             result_set['result_set']['html'] = urllib.quote(html)
+    else:
+        result_set = ''
 
     if format == 'json':
         content_type = 'text/plain'
         if status >= 400:
-            content = simplejson.dumps({'error': response_text})
+            content = simplejson.dumps({'error':
+                                        response_text or 'Unknown Error'})
         else:
             content = simplejson.dumps(result_set)
     elif format == 'html':
