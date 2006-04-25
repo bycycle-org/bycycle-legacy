@@ -132,12 +132,8 @@ function _callback(req)
   var status = req.status;
   var response_text = req.responseText;
   //alert(status + '\n' + response_text);
+  eval("result_set = " + response_text + ";");
   if (status < 400) {
-    if (status < 300) {
-      q = undefined;
-      fr = undefined;
-      to = undefined;
-    }
     if (start_ms) {
       var elapsed_time = (new Date().getTime() - start_ms) / 1000.0;
       var elapsed_time = ['<p><small>Took ', elapsed_time, ' second', 
@@ -146,12 +142,11 @@ function _callback(req)
     } else {
       var elapsed_time = '';
     }
-    eval("result_set = " + response_text + ";");
     setResult(unescape(result_set.result_set.html) + elapsed_time);
     eval('_' + result_set.result_set.type + 'Callback')(status, result_set);
   } else {
     setStatus('Error.');
-    setResult(response_text);
+    setResult('<h2>Error</h2><p>' + result_set.error + '</p>');
   }
 }
 
