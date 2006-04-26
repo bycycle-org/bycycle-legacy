@@ -128,11 +128,10 @@ function doFind(service)
  */
 function _callback(req)
 {
-  var result_set = {};
   var status = req.status;
   var response_text = req.responseText;
   //alert(status + '\n' + response_text);
-  eval("result_set = " + response_text + ";");
+  eval("var result_set = " + response_text + ";");
   if (status < 400) {
     if (start_ms) {
       var elapsed_time = (new Date().getTime() - start_ms) / 1000.0;

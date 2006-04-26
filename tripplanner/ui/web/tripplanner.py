@@ -137,11 +137,11 @@ class TripPlanner(object):
             if status < 400:
                 result_set = eval(response_text)
                 type_ = result_set['result_set']['type']
-                callback = '_%sCallback' % type_
+                callback = getattr(self, '%sCallback' % type_)
                 try:
-                    html = eval(callback)(status, result_set, **params)
-                except NameError:
-                    html = response_text
+                    html = callback(status, result_set, **params)
+                except AttributeError:
+                    html =  response_text
                 result_set['result_set']['html'] = urllib.quote(html)
         else:
             result_set = ''
@@ -193,6 +193,7 @@ class TripPlanner(object):
     ## Callbacks
 
     def getIdAddr(self, geocode):
+        """Get the the edge or node ID type address for the given geocode."""
         type_ = geocode['type']
         if type_ == 'postal':
             id_addr = '%s+%s' % (geocode['number'], geocode['edge_id']) 
@@ -397,7 +398,7 @@ class TripPlanner(object):
 
 
     def getWelcomeMessage(self, template):
-        welcome_message = '''
+        return '''
         <p style="margin-top:0;">
         The Trip Planner is under active development. Please
         <a href="http://www.bycycle.org/contact.html"
@@ -405,12 +406,7 @@ class TripPlanner(object):
         >contact us</a>
         with any problems, comments, questions, or suggestions.
         </p>
-
-        <p>
-        Users should independently verify all information presented here. This
-        service is provided AS IS with NO WARRANTY of any kind. 
-        </p>
-
+        %s
         <p>
         &copy; 2006 
         <a href="http://www.bycycle.org/" 
@@ -420,8 +416,25 @@ class TripPlanner(object):
         Last modified: %s
         <br/>
         </p>
-        ''' % (self.getLastModified(template))
+        ''' % (self.getDisclaimer(), self.getLastModified(template))
         return welcome_message
+
+
+    def getDisclaimer(self):
+        return '''
+        <p>
+        As you are riding, please keep in mind that you don\'t <i>have</i> to
+        follow the suggested route. <i>It may not be safe at any given
+        point.</i> If you see what looks like an unsafe or undesirable
+        stretch in the suggested route, you can decide to walk, ride on the
+        sidewalk, or go a different way.
+        </p>
+
+        <p>
+        Users should independently verify all information presented here. This
+        service is provided AS IS with NO WARRANTY of any kind. 
+        </p>        
+        '''
 
 
     def getLastModified(self, file_name=''):
@@ -458,8 +471,8 @@ class TripPlanner(object):
         last_street = to_addr.split('\n')[0]
         to_addr = to_addr.replace('\n', '<br/>')
 
-        s_table = """
-        <table id="summary">
+        table = '''
+        <table class="summary">
             <tr>
               <td class="start">
                 <h2><a href="javascript:void(0);" class="start"
@@ -482,14 +495,12 @@ class TripPlanner(object):
               <td>%s miles</td>
             </tr>
         </table>
-        """ % (fr_addr, len(linestring) - 1, to_addr, distance)
+        <table class="directions">        
+            %%s
+        </table>
+        ''' % (fr_addr, len(linestring) - 1, to_addr, distance)
 
-        d_table = """
-        <!-- Directions -->
-        <table id="directions">%s</table>
-        """
-
-        d_row = """
+        d_row = '''
         <tr>
           <td class="count %s">
             <a href="javascript:void(0)"
@@ -497,7 +508,7 @@ class TripPlanner(object):
           </td>
           <td class="direction %s">%s</td>
         </tr>
-        """               
+        '''              
 
         # Direction rows
         row_class = 'a'
@@ -558,8 +569,9 @@ class TripPlanner(object):
                              '<b>End</b> at <b>%s</b>' % last_street)
         d_rows.append(last_row)
 
-        d_table = d_table % ''.join([str(d) for d in d_rows])
-        return ''.join((s_table, d_table))            
+        table = table % ''.join([str(d) for d in d_rows])
+
+        return '<div><div><a href="" onclick="">hide</a></div>%s</div>' % table
 
 
     def write(self, content='', newline='\r\n'):
