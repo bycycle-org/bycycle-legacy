@@ -212,30 +212,34 @@ hr {
   font-size: 14px;
 }
 
-#summary { 
-  margin-bottom: 4px;
+.summary { 
+  
 }
 
-#summary, #directions {
+.summary, .directions {
 
 }
 
-#summary td, #directions td {
-  border: 1px solid #888;
+.summary td, .directions td {
+  border: 1px solid gray;
   padding: 2px;
 }
 
 .error {
   color: red;
 }
+
 .a {
+  background: #ddd;
+}
+
+.b {
   background: #fff;
 }
-.b {
-  background: #eee;
-}
-.count {
 
+.count {
+  vertical-align: middle;
+  text-align: center;
 }
 
 .mma_list li {
