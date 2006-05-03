@@ -171,7 +171,7 @@ def unifyAddressRanges():
 
 def transferStreetNames():
     """Transfer street names to their own table."""
-    Q = 'INSERT INTO %s_streetname (prefix, name, type, suffix) '\
+    Q = 'INSERT INTO %s_streetname (prefix, name, sttype, suffix) '\
         'SELECT DISTINCT fdpre, fname, ftype, fdsuf FROM %s'
     _execute(Q % (region, raw))
 
@@ -184,7 +184,7 @@ def updateRawStreetNameIds():
     # Index each street name ID by its street name
     # {(stname)=>streetname_id}
     stnames = {}
-    Q = 'SELECT id, prefix, name, type, suffix FROM %s_streetname' % region
+    Q = 'SELECT id, prefix, name, sttype, suffix FROM %s_streetname' % region
     _execute(Q)
     for row in db.fetchAll():
         stnames[(row[1],row[2],row[3],row[4])] = row[0]
