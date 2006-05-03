@@ -423,11 +423,11 @@ class TripPlanner(object):
     def getDisclaimer(self):
         return '''
         <p>
-        As you are riding, please keep in mind that you don\'t <i>have</i> to
-        follow the suggested route. <i>It may not be safe at any given
-        point.</i> If you see what looks like an unsafe or undesirable
-        stretch in the suggested route, you can decide to walk, ride on the
-        sidewalk, or go a different way.
+        Disclaimer: If you use a suggested route, please keep in mind that you
+        don\'t <i>have</i> to follow it exactly. <i>It may not be safe or to
+        your liking at any given point.</i> If you see what looks like an
+        unsafe or undesirable stretch in the suggested route, you can decide to
+        walk, ride on the sidewalk, or go a different way.
         </p>
 
         <p>
