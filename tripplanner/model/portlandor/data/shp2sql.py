@@ -14,6 +14,7 @@
 #  shapefile into a normalized database
 # USAGE 
 #  python shp2mysql.py
+#  Note: Run from the region/data directory
 # LICENSE 
 #  GNU Public License (GPL)
 #  See LICENSE in top-level package directory
@@ -25,8 +26,23 @@ import sys, os
 from byCycle.lib import gis, meter
 
 
+CWD = os.getcwd()
+
+
+# -- Edit variables for region
+
+HOME = os.environ['HOME']
+BYCYCLE_PATH = os.path.join(HOME, 'lib/python2.4/site-packages/byCycle')
+
 region = 'portlandor'
 
+# Full path to mysqlgisimport executable
+mysqlgisimport = os.path.join(HOME, 'bin/mysqlgisimport')
+
+# Directory containing shp/dbf files
+datasource = '20061219'
+# shp/dbf base name
+layer = 'new1'
 
 # Fields we want from the DBF
 dbf_fields = ('FNODE',
@@ -77,6 +93,32 @@ db_fields = ('geo',
              'cpd',
              'sscode')
 
+db_user = 'bycycle-1'
+path = os.path.join(BYCYCLE_PATH, 'tripplanner/model/.pw')
+db_pass = open(path).read().strip()
+
+db_name = db_user
+
+# dbf value => database value
+bikemodes = {'mu': 't',
+             'mm': 'p',
+             'bl': 'b',
+             'lt': 'l',
+             'mt': 'm',
+             'ht': 'h',
+             'ca': 'c',
+             'pm': 'x',
+             'up': 'x',
+             'pb': '',
+             'xx': '',
+            }
+
+state_id = 'or'
+state = 'oregon'
+
+# -- End edit variables for region
+
+
 # Command-line args
 start = -1
 no_prompt = False
@@ -85,26 +127,27 @@ only = False
 # DB handle
 db = None
 
+# Name of table for mysqlgisimport to import into
 raw = '%s_raw' % region
 
+# Timer object
 timer = None
 
     
 def shpToRawSql():
-    datasource = '20061219'
-    layer = 'new1'
-    path = os.path.join(os.getcwd(), datasource)
+    path = os.path.join(CWD, datasource, layer)
     # Drop existing raw table
     Q = 'DROP TABLE IF EXISTS %s' % raw
     if not _wait(Q):
         _execute(Q)
     # Extract SQL from Shapefile
-    cmd = 'mysqlgisimport -t %s -o %s.sql %s' % \
-          (raw, raw, os.path.join(path, layer))
+    cmd = '%s -t %s -o %s.sql %s' % \
+          (mysqlgisimport, raw, raw, path)
     if not _wait('Extract SQL from Shapefile'):
         _system(cmd)
     # Load SQL into DB
-    cmd = 'mysql -u root --password="" bycycle-1 < %s.sql' % raw
+    cmd = 'mysql -u %s --password="%s" %s < %s.sql' % \
+          (db_user, db_pass, db_name, raw)
     if not _wait('Load SQL into DB'):
         _system(cmd)
         
@@ -122,29 +165,22 @@ def addColumns():
     # ENUM columns
     _execute(Q % ('even_side', 'ENUM("l", "r")'))
 
-def fixRaw():
+def updateBikeModes():
+    # Set unknown bikemodes to x
+    Q = 'UPDATE %s SET bikemode="x" WHERE bikemode NOT IN (%s)' % \
+        (raw, ', '.join(['"%s"' % bm for bm in bikemodes.keys()]))
+    _execute(Q)
     # Abbreviate bike modes
     Q = 'UPDATE %s SET bikemode="%%s" WHERE bikemode="%%s"' % raw
-    bm = (("t", "mu"),
-          ("p", "mm"),
-          ("b", "bl"),
-          ("l", "lt"),
-          ("m", "mt"),
-          ("h", "ht"),
-          ("c", "ca"),
-          ("x", "pm"),
-          ("x", "up"),
-          ("", "pb"),
-          ("", "xx")
-          )
-    for m in bm:
-        _execute(Q % (m[0], m[1]))        
+    for bm in bikemodes:
+        _execute(Q % (bikemodes[bm], bm))
 
 def createSchema():
     tables = ('layer_street', 'layer_node', 'streetname', 'city', 'state')
     for table in tables:
         _execute('DROP TABLE IF EXISTS %s_%s' % (region, table))
-    cmd = 'mysql -u root --password="" < ./schema.sql'
+    cmd = 'mysql -u %s --password="%s" %s < ./schema.sql' % \
+          (db_user, db_pass, db_name)
     _system(cmd)
         
 def unifyAddressRanges():
@@ -245,9 +281,11 @@ def updateRawCityIds():
 
 def updateRawStateIds():
     """Set the state ID of each raw record."""
-    Q = 'INSERT INTO %s_state VALUES ("or", "oregon")' % region
+    Q = 'INSERT INTO %s_state VALUES ("%s", "%s")' % \
+        (region, state_id, state)
     _execute(Q)
-    Q = 'UPDATE %s SET state_l_id="or", state_r_id="or"' % raw
+    Q = 'UPDATE %s SET state_l_id="%s", state_r_id="%s"' % \
+        (raw, state_id, state_id)
     _execute(Q)
 
 def createNodes():
@@ -319,8 +357,8 @@ def run():
              ('Add columns to raw',
               addColumns),
              
-             ('Fix raw table: Remove NULLs, add columns, etc',
-              fixRaw),
+             ('Update bike modes in raw table',
+              updateBikeModes),
              
              ('Create byCycle schema tables',
               createSchema),
