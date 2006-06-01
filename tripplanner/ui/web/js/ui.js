@@ -88,7 +88,7 @@ function doFind(service)
     var fr = getVal('fr', mach_fr, user_fr);
     var to = getVal('to', mach_to, user_to);
     if (fr && to) {
-      q = ['["', fr, '", "', to, '"]'].join('');
+      var q = ['["', fr, '", "', to, '"]'].join('');
     } else {
       if (!fr) {
 	errors.push('Please enter a From address');
@@ -97,7 +97,7 @@ function doFind(service)
       }
       if (!to) {
 	errors.push('Please enter a To address');
-	if (fr)
+	if (fr && region)
 	  el('to').focus();
       }
     }
@@ -106,7 +106,8 @@ function doFind(service)
   }
 
   if (errors.length) {
-    errors = ['<h2>Errors</h2><ul><li>', errors.join('</li><li>'),
+    errors = ['<h2>Errors</h2><ul class="mma_list"><li>', 
+              errors.join('</li><li>'),
 	      '</li></ul>'].join('');
     setResult(errors);
   } else {
@@ -145,7 +146,9 @@ function _callback(req)
     eval('_' + result_set.result_set.type + 'Callback')(status, result_set);
   } else {
     setStatus('Error.');
-    setResult('<h2>Error</h2><p>' + result_set.error + '</p>');
+    setResult(['<h2>Error</h2><p><ul class="mma_list"><li>', 
+               result_set.error.replace('\n', '</li><li>'), 
+               '</li></ul></p>'].join(''));
   }
 }
 

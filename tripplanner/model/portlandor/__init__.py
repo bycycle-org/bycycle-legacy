@@ -13,7 +13,7 @@ class Mode(mode.Mode):
         mode.Mode.__init__(self)
         
 
-    def _fixRow(self, row):
+    def _adjustRowForMatrix(self, row):
         row['up_frac'] = int(math.floor(row['up_frac'] * self.int_encode))
         row['abs_slp'] = int(math.floor(row['abs_slp'] * self.int_encode))
 

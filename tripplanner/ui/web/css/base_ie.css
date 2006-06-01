@@ -9,3 +9,7 @@ v\:* {
 .input_button { 
   height: 24px;
 }
+
+.summary, .directions {
+  width: 280px;
+}

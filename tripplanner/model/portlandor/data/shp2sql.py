@@ -31,18 +31,17 @@ CWD = os.getcwd()
 
 # -- Edit variables for region
 
-HOME = os.environ['HOME']
-BYCYCLE_PATH = os.path.join(HOME, 'lib/python2.4/site-packages/byCycle')
+BYCYCLE_PATH = '/usr/local/lib/python2.4/site-packages/byCycle'
 
 region = 'portlandor'
 
 # Full path to mysqlgisimport executable
-mysqlgisimport = os.path.join(HOME, 'bin/mysqlgisimport')
+mysqlgisimport = 'mysqlgisimport'
 
 # Directory containing shp/dbf files
-datasource = '20061219'
+datasource = '20060504LL'
 # shp/dbf base name
-layer = 'new1'
+layer = 'str04aug'
 
 # Fields we want from the DBF
 dbf_fields = ('FNODE',
@@ -85,7 +84,7 @@ db_fields = ('geo',
              'zipcolef',
              'zipcorgt',
              'localid',
-             'one_way',
+             'one_way_enc',
              'type',
              'bikemode',
              'up_frac',
@@ -93,11 +92,17 @@ db_fields = ('geo',
              'cpd',
              'sscode')
 
-db_user = 'bycycle-1'
+db_name = 'bycycle-1'
+db_user = db_name
 path = os.path.join(BYCYCLE_PATH, 'tripplanner/model/.pw')
 db_pass = open(path).read().strip()
 
-db_name = db_user
+# dbf value => database value
+one_ways = {'n': 0,
+           'f': 1,
+           't': 2,
+           '': 3,
+           }
 
 # dbf value => database value
 bikemodes = {'mu': 't',
@@ -152,12 +157,16 @@ def shpToRawSql():
         _system(cmd)
         
 def addColumns():
-    # Add missing...    
     # INTEGER columns
     Q = 'ALTER TABLE %s ADD COLUMN %%s %%s NOT NULL' % raw
     cols = ('addr_f', 'addr_t', 'streetname_id', 'city_l_id', 'city_r_id')
     for col in cols:
         _execute(Q % (col, 'INTEGER'))
+    # TINY INTEGER columns
+    Q = 'ALTER TABLE %s ADD COLUMN %%s %%s NOT NULL' % raw
+    cols = ('one_way_enc',)
+    for col in cols:
+        _execute(Q % (col, 'TINYINT'))
     # CHAR(s) columns
     cols = ('state_l_id', 'state_r_id')
     for col in cols:
@@ -165,14 +174,24 @@ def addColumns():
     # ENUM columns
     _execute(Q % ('even_side', 'ENUM("l", "r")'))
 
+def encodeOneWays():
+    # Set unknown one_ways to 0
+    Q = 'UPDATE %s SET one_way_enc = 0 WHERE one_way NOT IN (%s)' % \
+        (raw, ', '.join(['"%s"' % ow for ow in one_ways.keys()]))
+    _execute(Q)
+    # Encode one ways
+    Q = 'UPDATE %s SET one_way_enc = %%s WHERE one_way = "%%s"' % raw
+    for ow in one_ways:
+        _execute(Q % (one_ways[ow], ow))
+
 def updateBikeModes():
     # Set unknown bikemodes to x
-    Q = 'UPDATE %s SET bikemode="x" WHERE bikemode NOT IN (%s)' % \
+    Q = 'UPDATE %s SET bikemode = "x" WHERE bikemode NOT IN (%s)' % \
         (raw, ', '.join(['"%s"' % bm for bm in bikemodes.keys()]))
     _execute(Q)
     # Abbreviate bike modes
-    Q = 'UPDATE %s SET bikemode="%%s" WHERE bikemode="%%s"' % raw
-    for bm in bikemodes:
+    Q = 'UPDATE %s SET bikemode = "%%s" WHERE bikemode = "%%s"' % raw
+    for bm in bikemodes: 
         _execute(Q % (bikemodes[bm], bm))
 
 def createSchema():
@@ -213,7 +232,7 @@ def transferStreetNames():
 
 def updateRawStreetNameIds():
     """Set the street name ID of each raw record."""
-    # Get all the distinct street names NEW
+    # Get all the distinct street names
     Q = 'SELECT DISTINCT fdpre, fname, ftype, fdsuf FROM %s' % raw
     _execute(Q)
     rows = db.fetchAll()
@@ -273,19 +292,33 @@ def updateRawCityIds():
         # Iterate over city rows and set city IDs of raw records
         for row in rows:
             _execute(Q1 % (row[0], row[1]))
-    # Convert abbreviated names to full names
-    from cities import metro_full_cities
+    # Convert abbreviated city names to full names
+    from cities import cities_atof
     Q = 'UPDATE %s_city SET city="%s" WHERE city="%s"'
-    for c in metro_full_cities:
-        _execute(Q % (region, metro_full_cities[c], c.upper()))
+    for c in cities_atof:
+        _execute(Q % (region, cities_atof[c], c.upper()))
 
 def updateRawStateIds():
     """Set the state ID of each raw record."""
     Q = 'INSERT INTO %s_state VALUES ("%s", "%s")' % \
         (region, state_id, state)
     _execute(Q)
-    Q = 'UPDATE %s SET state_l_id="%s", state_r_id="%s"' % \
+    Q = 'INSERT INTO %s_state VALUES ("wa", "washington")' % region
+    _execute(Q)
+    Q = 'UPDATE %s SET state_l_id = "%s", state_r_id = "%s"' % \
         (raw, state_id, state_id)
+    _execute(Q)
+    
+    Q = 'SELECT id FROM portlandor_city WHERE city = "vancouver"'
+    _execute(Q)
+    global db
+    the_couv_id = db.fetchRow()[0]
+
+    Q = 'UPDATE %s SET state_l_id = "%s" WHERE city_l_id = %s' % \
+        (raw, 'wa', the_couv_id)
+    _execute(Q)
+    Q = 'UPDATE %s SET state_r_id = "%s" WHERE city_r_id = %s' % \
+        (raw, 'wa', the_couv_id)
     _execute(Q)
 
 def createNodes():
@@ -336,7 +369,7 @@ def _execute(Q, show=True):
         _openDB()
     try:
         if show:
-            print 'Executing: "%s"' % Q
+            print 'Executing: %s' % Q
         db.execute(Q)
     except Exception, e:
         print 'Execution failed: %s' % e
@@ -356,7 +389,10 @@ def run():
 
              ('Add columns to raw',
               addColumns),
-             
+
+             ('Encode one ways',
+             encodeOneWays),
+    
              ('Update bike modes in raw table',
               updateBikeModes),
              
