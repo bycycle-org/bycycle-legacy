@@ -8,20 +8,23 @@ from byCycle.tripplanner.model import mode
 class Mode(mode.Mode):
     def __init__(self):
         self.region = 'pittsburghpa'
-#        self.edge_attrs = ['bikemode', 'up_frac', 'abs_slp', 'node_f_id']
         self.edge_attrs = ['pqi', 'no_lanes', 'bptype', 'bikeability', 'elev_f', 'elev_t'] #test
         mode.Mode.__init__(self)
 
-    #def _fixRow(self, row):
-        
-        #row['up_frac'] = int(math.floor(row['up_frac'] * self.int_encode))
-        #row['abs_slp'] = int(math.floor(row['abs_slp'] * self.int_encode))
-        # some way to deal with slope--maybe set a fSlope and tSlope
-        # be careful if null elevations have been set as 0
-        # what about just avoiding steep streets?
-        # could give each segment a changeElev, and then calculate
-        # absolute value of slope in bicycle
-        
+
+    def _adjustRowForMatrix(self, row):
+        one_way = row['one_way']
+        if one_way == 'ft':
+            one_way = 1
+        elif one_way == 'tf':
+            one_way = 2
+        elif one_way == '':
+            one_way = 3
+        else:
+            one_way = 0
+        row['one_way'] = one_way
+       
+ 
 if __name__ == '__main__':
     import time
     from byCycle.lib import meter
