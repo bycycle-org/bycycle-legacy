@@ -142,7 +142,7 @@ class TripPlanner(object):
                     html = callback(status, result_set, **params)
                 except AttributeError:
                     html =  response_text
-                result_set['result_set']['html'] = urllib.quote(html)
+                result_set['result_set']['html'] = html
         else:
             result_set = ''
 
@@ -152,6 +152,7 @@ class TripPlanner(object):
                 content = simplejson.dumps({'error':
                                             response_text or 'Unknown Error'})
             else:
+                result_set['result_set']['html'] = urllib.quote(html) 
                 content = simplejson.dumps(result_set)
         elif format == 'html':
             content_type = 'text/html'
@@ -164,6 +165,7 @@ class TripPlanner(object):
                                                                      '<br/>')
                                                or 'Unknown Error')
             else:
+                result_set['result_set']['html'] = html
                 result = html
 
             q = params['q']
@@ -171,7 +173,7 @@ class TripPlanner(object):
                params['q'] = ' to '.join(q) 
 
             params['http_status'] = status
-            params['response_text'] = simplejson.dumps(result_set)
+            params['response_text'] = urllib.quote(simplejson.dumps(result_set))
             params['regions_opt_list'] = self.makeRegionsOptionList(**params)
             params['result'] = result
 
@@ -423,11 +425,11 @@ class TripPlanner(object):
     def getDisclaimer(self):
         return '''
         <p>
-        Disclaimer: If you use a suggested route, please keep in mind that you
-        don\'t <i>have</i> to follow it exactly. <i>It may not be safe or to
-        your liking at any given point.</i> If you see what looks like an
-        unsafe or undesirable stretch in the suggested route, you can decide to
-        walk, ride on the sidewalk, or go a different way.
+        As you are riding, please keep in mind that you don\'t <i>have</i> to
+        follow the suggested route. <i>It may not be safe at any given
+        point.</i> If you see what looks like an unsafe or undesirable
+        stretch in the suggested route, you can decide to walk, ride on the
+        sidewalk, or go a different way.
         </p>
 
         <p>
@@ -571,7 +573,7 @@ class TripPlanner(object):
 
         table = table % ''.join([str(d) for d in d_rows])
 
-        return '<div><div><a href="" onclick="">hide</a></div>%s</div>' % table
+        return table
 
 
     def write(self, content='', newline='\r\n'):

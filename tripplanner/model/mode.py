@@ -1,5 +1,5 @@
 # Base Mode
-# 11/07/2005
+77# 11/07/2005
 
 import MySQLdb
 from byCycle import install_path
@@ -67,7 +67,7 @@ class Mode(object):
 
         """
         import math
-        from byCycle.lib import meter
+        from byCycle.lib import gis, meter
         
         # Get the edge attributes
         t = meter.Timer()
@@ -75,7 +75,7 @@ class Mode(object):
         print 'Fetching edge attributes...'
         Q = 'SELECT id, node_f_id, node_t_id, one_way, ' \
             '%s, ' \
-            'GLength(geom) * 69.172 AS edge_len ' \
+            'AsText(geom) AS wkt_geometry ' \
             'FROM %s' % (', '.join(self.edge_attrs[1:]), self.tables['edges'])
         print Q
         self.executeDict(Q)
@@ -89,17 +89,22 @@ class Mode(object):
         print 'Creating adjacency matrix...'
         met = meter.Meter(num_items=len(rows), start_now=True)
         for i, row in enumerate(rows):
-            self._fixRow(row)
+            self._adjustRowForMatrix(row)
 
             ix = row['id']
             node_f_id, node_t_id = row['node_f_id'], row['node_t_id']
 
+            # 0 => no travel in either direction
+            # 1 => travel FT only
+            # 2 => travel TF only
+            # 3 => travel in both directions
             one_way = row['one_way']
-            both_ways = one_way == ''
-            ft = both_ways or (one_way == 'ft')
-            tf = both_ways or (one_way == 'tf')
+            ft = one_way & 1
+            tf = one_way & 2
 
-            length = int(math.floor(row['edge_len'] * self.int_encode))
+            linestring = gis.importWktGeometry(row['wkt_geometry'])
+            length = gis.getLengthOfLineString(linestring)
+            length = int(math.floor(length * self.int_encode))
             row['length'] = length
 
             entry = tuple([row[a] for a in self.edge_attrs])
@@ -122,7 +127,7 @@ class Mode(object):
         print 'Took %s' % t.stop()
         return G
 
-    def _fixRow(self, row):
+    def _adjustRowForMatrix(self, row):
         """Make changes to a row before adding it to the adjacency matrix."""
         pass
 
@@ -324,8 +329,7 @@ class Mode(object):
         ids_str = ','.join([str(t) for t in ids])
 
         # Get segments with id in ids
-        Q = 'SELECT *, AsText(geom) AS wkt_geometry, ' \
-            'GLength(geom) * 69.172 AS weight ' \
+        Q = 'SELECT *, AsText(geom) AS wkt_geometry ' \
             'FROM %s WHERE id IN (%s)' % \
             (self.tables['edges'], ids_str)
         self.executeDict(Q)
@@ -334,7 +338,8 @@ class Mode(object):
         if rows:
             # Index rows by id
             irows = {}
-            for row in rows: irows[row['id']] = row
+            for row in rows:
+                irows[row['id']] = row
 
             # Pre-fetch street names and cities
             streetname_ids, cityids = {}, {}
@@ -354,8 +359,10 @@ class Mode(object):
                     continue
                 # Get street name components, removing the id entry first
                 street = street_names[row['streetname_id']]
-                try: del street['id']
-                except KeyError: pass
+                try:
+                    del street['id']
+                except KeyError:
+                    pass
                 row.update(street)
                 row['street'] = address.Street(row['prefix'], row['name'],
                                                row['sttype'], row['suffix'])
@@ -473,7 +480,8 @@ class Mode(object):
         try: 
             return cursor.execute(Q)
         except Exception, e:
-            print Q[:100]
+            if __debug__:
+                print Q[:100]
             raise
             
     def execute(self, Q):
