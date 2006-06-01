@@ -4,7 +4,7 @@
 from byCycle.tripplanner.model import pittsburghpa
 
 class Mode(pittsburghpa.Mode):
-    def __init__(self, **kwargs):
+    def __init__(self, tmode='bicycle', pref='', **kwargs):
         self.tmode = "bicycle"
         pittsburghpa.Mode.__init__(self)
         self.mph = 10
@@ -31,14 +31,14 @@ class Mode(pittsburghpa.Mode):
         #bikeability--default at 0
         #positive, up to 5, is better
         #negative, down to -5, is worse
-        #maybe do -6 to mean never take.
+        #-6 is freeway or other impossible edge.
         
 
-        #bpType (maybe only use to set bikeability)
+        #bpType (used to set bikeability)
         #n=none, sp=street proposed, se=street existing,
         #oe=off-street existing, op=off-street proposed
 
-        if elevt and elevf:
+        if elevt !=0 and elevf != 0 and length !=0:
             slope = abs(elevt -elevf)/(length * 100000.0) * 1100 #9000
         #print 'length: ' + str(length) +' pqi: ' + str(pqi) + ' no_lanes: ' + str(no_lanes)  +' bikeability: ' + str(bikeability)  +' slope: ' + str(slope)
         #try:
@@ -55,26 +55,53 @@ class Mode(pittsburghpa.Mode):
 
         hours = length / self.mph
 
-        if bikeability >2:
-            hours /= (bikeability / 2.0) #means only matters for >2, <-2
-           # print "positive bikeability. ix_sn: " + str(ix_sn) 
+        #if bikeability >2:
+         #   hours /= (bikeability / 2.0) #means only matters for >2, <-2
+           # print "positive bikeability. ix_sn: " + str(ix_sn)
+           #too much
             
-        if bikeability < -2:
-            hours *= (bikeability / 2.0)
+        #if bikeability < -2:
+         #   avBikeability = 0 - bikeability
+          #  hours *= (avBikeability / 2.0)
             #print 'negative bikeability'
-        if bikeability < -6:
-            hours *= 50
+        #if bikeability < -6:
+         #   hours *= 1000
 
+        if bikeability:
+            if bikeability == 1: hours /= 1.1
+            if bikeability == 2: hours /= 1.3
+            if bikeability == 3: hours /= 1.5
+            if bikeability == 4: hours /= 1.7
+            if bikeability == 5: hours /= 1.9
+            if bikeability == -1: hours *= 1.1
+            if bikeability == -2: hours *= 1.3 
+            if bikeability == -3: hours *= 1.5
+            if bikeability == -4: hours *= 1.7
+            if bikeability == -5: hours *= 1.9
+            if bikeability == -6: hours *=5000 #1000
 
-         #nulls should be sent to 5, or -1 and avoided
-        if pqi:
-            if pqi != 0:
-                #pqi = .01
-                #need to distinguish 0 from blank
-                # blank should become 5
-                hours /= (pqi/5.0) #? # will make too low?
-        #else: hours /= (3.0/4)
+            
+            #if   bikemode == 'l': pass
+            #elif bikemode == 't': hours *= 1.10
+            #elif bikemode == 'r': hours *= 1.30
+            #elif bikemode == 'p': hours *= 1.50
         
+
+#         #nulls should be sent to 5, or -1 and avoided
+#        if pqi:
+#            if pqi != 0:
+#                #pqi = .01
+#                #need to distinguish 0 from blank
+#                # blank should become 5
+#                hours /= (pqi/5.0) #? # will make too low?
+#        #else: hours /= (3.0/4)
+
+        
+        if pqi > 6.5: #and pqi <=7.5:
+            hours /= (pqi/6.5) # too much effect?
+        
+            
+            
             
 
         if no_lanes:
@@ -138,7 +165,7 @@ class Mode(pittsburghpa.Mode):
             prev_ix_sn = prev_edge_attrs[indices["streetname_id"]]
             if ix_sn != prev_ix_sn:
                 hours += .0075555555555555
-            #hours += .0055555555555555        
+                #hours += .0055555555555555        
         except TypeError:
             pass
 
