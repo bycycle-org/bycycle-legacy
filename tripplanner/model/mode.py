@@ -1,5 +1,5 @@
 # Base Mode
-77# 11/07/2005
+# 11/07/2005
 
 import MySQLdb
 from byCycle import install_path
