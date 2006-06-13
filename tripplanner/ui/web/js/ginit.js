@@ -9,19 +9,19 @@ var domain = location.href.split('/')[2];
 var base_url = location.href.split('?')[0];
 
 var urls_to_keys_map = {
-  'http://tripplanner.bycycle.org/':
+  'tripplanner.bycycle.org':
   'ABQIAAAAd_4WmZlgvQzchd_BQM0MPhQ8y5tnWrQRsyOlME1eHkOS3wQveBSeFCpOUAfP10H6ec-HcFWPgiJOCA',
   
-  'http://dev.bycycle.org/':
+  'dev.bycycle.org':
   'ABQIAAAAd_4WmZlgvQzchd_BQM0MPhQSskL_eAzZotWlegWekqLPLda0sxQZNf0_IshFell3z8qP8s0Car117A',
   
-  'http://www.bycycle.org/tripplanner/':
+  'www.bycycle.org':
   'ABQIAAAAd_4WmZlgvQzchd_BQM0MPhQ9bMyOoze7XFWIje4XR3o1o-U-cBTwScNT8SYtwSl70gt4wHCO-23Y3g'
 };
 
 
 // Get the API key associated with the URL
-var api_key = urls_to_keys_map[base_url];
+var api_key = urls_to_keys_map[domain];
 
 // If we're running locally, load local GMap script. If we're running, load 
 // official script, but only if the URL has an associated API key.
