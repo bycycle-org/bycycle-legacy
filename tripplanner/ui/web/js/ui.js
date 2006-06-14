@@ -111,7 +111,7 @@ function doFind(service)
 	      '</li></ul>'].join('');
     setResult(errors);
   } else {
-    var url = ['http://', domain, '/',  
+    var url = [base_url,  
 	       '?region=', region, 
 	       '&q=', escape(q), 
 	       //'&pref=', elV('pref'),

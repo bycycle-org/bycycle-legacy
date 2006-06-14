@@ -1,5 +1,7 @@
 /* This module initializes the interface. */
 
+var __debug__ = 1;
+
 var local = 0;
 
 // The base location (domain) of the web interface

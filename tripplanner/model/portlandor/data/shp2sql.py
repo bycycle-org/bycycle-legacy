@@ -31,7 +31,7 @@ CWD = os.getcwd()
 
 # -- Edit variables for region
 
-BYCYCLE_PATH = '/usr/local/lib/python2.4/site-packages/byCycle'
+BYCYCLE_PATH = '/home/u6/bycycle/lib/python2.4/site-packages/byCycleCurr'
 
 region = 'portlandor'
 
@@ -39,9 +39,9 @@ region = 'portlandor'
 mysqlgisimport = 'mysqlgisimport'
 
 # Directory containing shp/dbf files
-datasource = '20060504LL'
+datasource = '20051219'
 # shp/dbf base name
-layer = 'str04aug'
+layer = 'new1'
 
 # Fields we want from the DBF
 dbf_fields = ('FNODE',
