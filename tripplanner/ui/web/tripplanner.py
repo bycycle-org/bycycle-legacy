@@ -133,6 +133,8 @@ class TripPlanner(object):
     def render(self, status, response_text, format='html', **params):
         import simplejson
 
+        result_set = ''
+ 
         if response_text is not None:
             if status < 400:
                 result_set = eval(response_text)
@@ -143,8 +145,6 @@ class TripPlanner(object):
                 except AttributeError:
                     html =  response_text
                 result_set['result_set']['html'] = html
-        else:
-            result_set = ''
 
         if format == 'json':
             content_type = 'text/plain'
