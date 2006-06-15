@@ -573,7 +573,26 @@ class TripPlanner(object):
 
         table = table % ''.join([str(d) for d in d_rows])
 
-        return table
+        try:
+            fr_id = '%s %s' % (fr['number'], fr['edge_id'])
+        except KeyError:
+            fr_id = fr['node_id']
+
+        try:
+            to_id = '%s %s' % (to['number'], to['edge_id'])
+        except KeyError:
+            to_id = to['node_id']
+
+        reverse_div = '''
+        <div id="reverse_div">
+          <a href="javascript:void(0);"
+             onclick="reverseDirections('%s', '%s');"
+             >Reverse Directions</a>
+        </div>''' % (to_id, fr_id)
+
+        result = ''.join((reverse_div, table, self.getDisclaimer()))
+
+        return result
 
 
     def write(self, content='', newline='\r\n'):

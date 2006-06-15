@@ -92,15 +92,6 @@ hr {
 }
 
 
-/* Status */
-
-#map_menu {  
-  background: #fffa73; /*99b3cc;*/
-  border: 1px solid gray;
-  padding: 5px 5px 3px 5px;
-}
-
-
 /* Content */
 
 #content {
@@ -166,8 +157,33 @@ hr {
   border: 1px solid gray;
 }
 
+#reverse_div 
+{  
+  margin-bottom: 5px;
+  }
 
 /* Right Panel */
+
+#map_menu 
+{  
+  background: #fffa73; /*99b3cc;*/
+  border: 1px solid gray;
+  padding: 5px 5px 3px 5px;
+  }
+
+#bookmark 
+{ 
+  position: relative;
+  display: none;
+  background: #FD766A;
+  border: 1px solid gray;
+  padding: 5px;
+  }
+
+#bookmark a:hover 
+{
+  color: #46d;
+  }
 
 #map {
   border: 1px solid #888;
