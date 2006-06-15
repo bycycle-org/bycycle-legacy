@@ -189,6 +189,7 @@ hr {
   background: #FD766A;
   border: 1px solid gray;
   padding: 5px;
+  padding-right: 20px;
   }
 
 #bookmark a:hover 
