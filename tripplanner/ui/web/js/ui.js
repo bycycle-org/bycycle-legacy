@@ -118,13 +118,14 @@ function doFind(service, fr, to)
     var url = [base_url,  
 	       '?region=', region, 
 	       '&q=', escape(q), 
-	       //'&pref=', elV('pref'),
+	       '&pref=', elV('pref'),
 	       '&format=json'].join('');
     bookmark = [base_url,  
 		'?region=', region, 
 		'&q=', escape(q), 
-		//'&pref=', elV('pref'),
+		'&pref=', elV('pref'),
 		'&format=html'].join('');
+    hideBookmarkForThisPage();
     //alert(url);
     doXmlHttpReq('GET', url, _callback);
   }
