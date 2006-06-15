@@ -9,6 +9,7 @@ var geocodes;
 var linestring;
 var center;
 var start_ms;
+var bookmark = location.href;
 
 
 function getVal(id, mach_v, user_v)
@@ -52,7 +53,7 @@ function swapFrAndTo()
 }
 
 
-function doFind(service)
+function doFind(service, fr, to)
 {
   start_ms = new Date().getTime();
   clearResult('');
@@ -85,8 +86,11 @@ function doFind(service)
       }
     }
   } else if (service == 'route') {
-    var fr = getVal('fr', mach_fr, user_fr);
-    var to = getVal('to', mach_to, user_to);
+    if (!(fr || to)) {
+      // When fr and to are set in params, we're doing reverse directions
+      var fr = getVal('fr', mach_fr, user_fr);
+      var to = getVal('to', mach_to, user_to);
+    }
     if (fr && to) {
       var q = ['["', fr, '", "', to, '"]'].join('');
     } else {
@@ -116,6 +120,11 @@ function doFind(service)
 	       '&q=', escape(q), 
 	       //'&pref=', elV('pref'),
 	       '&format=json'].join('');
+    bookmark = [base_url,  
+		'?region=', region, 
+		'&q=', escape(q), 
+		//'&pref=', elV('pref'),
+		'&format=html'].join('');
     //alert(url);
     doXmlHttpReq('GET', url, _callback);
   }
@@ -393,3 +402,59 @@ function _showRegionOverlays(region, use_cached)
     map.addOverlay(region.line);
 }
 
+
+function makePrintable()
+{
+  el_print_link = el('print_link');
+  el_print_link.innerHTML = 'Go back to normal view';
+  el_print_link.onclick = makeUnprintable;
+  elTag0('html').style.overflow = 'visible';
+  elTag0('body').style.overflow = 'visible';
+  setElStyle('print_header', 'display', 'block');
+  setElStyle('header', 'display', 'none');
+  setElStyle('input', 'display', 'none');
+  try {
+    setElStyle('reverse_div', 'display', 'none');
+  } catch (e) { }
+  setElStyle('result', 'overflow', 'visible');
+  setElStyle('map_menu_container', 'display', 'none');
+  setElStyle('footer', 'display', 'none');
+}
+
+function makeUnprintable()
+{
+  el_print_link = el('print_link');
+  el_print_link.innerHTML = 'Make page printable';
+  el_print_link.onclick = makePrintable;
+  elTag0('html').style.overflow = 'hidden';
+  elTag0('body').style.overflow = 'hidden';
+  setElStyle('print_header', 'display', 'none');
+  setElStyle('header', 'display', 'block');
+  try {
+    setElStyle('reverse_div', 'display', 'block');
+  } catch (e) { }
+  setElStyle('result', 'overflow', 'auto');
+  setElStyle('input', 'display', 'block');
+  setElStyle('map_menu_container', 'display', 'block');
+  setElStyle('footer', 'display', 'block');
+}
+
+function bookmarkForThisPage()
+{
+  setElStyle('bookmark', 'display', 'block');
+  var link = el('bookmark_link');
+  link.href = bookmark;
+  resizeMap();
+}
+
+function hideBookmarkForThisPage()
+{
+  setElStyle('bookmark', 'display', 'none');
+  resizeMap();  
+}
+
+function reverseDirections(fr, to)
+{
+  doFind('route', fr, to);
+  swapFrAndTo();
+}

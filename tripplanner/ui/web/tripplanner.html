@@ -49,35 +49,6 @@
         document.addEventListener('load', afterPageLoad, false);
       else if(window.attachEvent)
         window.attachEvent('onload', afterPageLoad);
-
-      function makePrintable()
-      {
-        el_print_link = el('print_link');
-	el_print_link.innerHTML = 'Go back to normal view';
-	el_print_link.onclick = makeUnprintable;
-        elTag0('html').style.overflow = 'visible';
-	elTag0('body').style.overflow = 'visible';
-        setElStyle('print_header', 'display', 'block');
-        setElStyle('header', 'display', 'none');
-        setElStyle('input', 'display', 'none');
-        setElStyle('result', 'overflow', 'visible');
-        setElStyle('map_menu', 'display', 'none');
-        setElStyle('footer', 'display', 'none');
-      }
-      function makeUnprintable()
-      {
-        el_print_link = el('print_link');
-	el_print_link.innerHTML = 'Make page printable';
-	el_print_link.onclick = makePrintable;
-        elTag0('html').style.overflow = 'hidden';
-	elTag0('body').style.overflow = 'hidden';
-        setElStyle('print_header', 'display', 'none');
-        setElStyle('header', 'display', 'block');
-        setElStyle('result', 'overflow', 'auto');
-        setElStyle('input', 'display', 'block');
-        setElStyle('map_menu', 'display', 'block');
-        setElStyle('footer', 'display', 'block');
-      }
       //]]>
     </script>
   </head>
@@ -89,7 +60,7 @@
 
       
       <div id="print_header" style="display: none; margin-bottom: 10px;">
-	<a href="http://tripplanner.bycycle.org/">byCycle Trip Planner -- http://tripplanner.byCycle.org/</a>
+	<a href="http://tripplanner.bycycle.org/">byCycle Trip Planner &raquo; http://tripplanner.byCycle.org/</a>
       </div>
 
 
@@ -164,13 +135,13 @@
 		
 		<a href="http://www.bycycle.org/tripplanner/linkhere.html" 
 		   title="Link your site to this page"
-		   >Link Here</a>
+		   >Link here</a>
 
 		&middot;
 		
 		<a href="http://www.bycycle.org/support.html" 
 		   title="Get involved, buy a shirt, donate, ..."
-		   >Support This Project</a>
+		   >Support this project</a>
 	      </div>
 	      <!-- End Links -->
 	    </td>
@@ -282,26 +253,53 @@
 	    </td>
 	    <!-- End Left Panel -->
 
-
 	    
 	    <!-- Right Panel -->
 	    <td id="right_panel" class="panel">
 
 
-	      <!-- Map Menu -->
-	      <div id="map_menu" class="page_section">
-		<a href="javascript:void(0);"
-		   title="Find address nearest to red dot at center of map"
-		   onclick="setElVToMapLonLat('q'); doFind('geocode');"
-		   >Find address at center of map</a>		
-		&middot;
-		<a href="/"
-		   title="Clear everything from the map"
-		   onclick="clearMap(); return false;"
-		   >Clear Map</a>
+	      <!-- Map Menu Container -->
+	      <div id="map_menu_container">
+
+		<!-- Map Menu -->
+		<div id="map_menu" class="page_section">
+		  <a href="javascript:void(0);"
+		     title="Find address nearest to red dot at center of map"
+		     onclick="setElVToMapLonLat('q'); doFind('geocode');"
+		     >Find address at center</a>		
+		  &middot;
+		  <a href="/"
+		     title="Clear everything from the map"
+		     onclick="clearMap(); return false;"
+		     >Clear map</a>
+		  &middot;
+		  <a href="javascript:void(0);"
+		     title="Show a link you can use to bookmark the current result"
+		     onclick="bookmarkForThisPage();"
+		     >Show bookmark</a>
+		</div>
+		<!-- End Map Menu -->
+		
+		<!-- Bookmark -->
+		<div id="bookmark" class="page_section">
+		  <span style="margin-right: 20px;">
+		    <a id="bookmark_link" 
+		       href=""
+		       title="This link lets you bookmark the current result"
+		       >Bookmark for This Result</a> 
+		    (Right-click and select "Copy Link Location")
+		  </span>
+		  <a href="javascript:void(0);" 
+		     style="border: 1px solid black; background: gray; font-family: sans-serif; padding: 2px 5px; text-decoration: none; color: black; margin: 1px; position: absolute; top: 0; right: 0;" 
+		     onclick="hideBookmarkForThisPage();"
+		     title="Hide bookmark"
+		     >X</a>
+		</div>
+		<!-- End Bookmark -->
+
 	      </div>
-	      <!-- End Map Menu -->
-	      
+	      <!-- End Map Menu Container -->
+
 
 	      <!-- Map -->
 	      <div id="map">
