@@ -34,7 +34,7 @@ class Mode(portlandor.Mode):
         node_f_id = edge_attrs[self.indices['node_f_id']]
         streetname_id = edge_attrs[self.indices['streetname_id']]
         cpd = edge_attrs[self.indices['cpd']]
-
+ 
 
         # -- Calculate base weight of edge (in hours)
         
@@ -81,40 +81,62 @@ class Mode(portlandor.Mode):
 
         # -- Adjust weight based on user preference
 
-        if self.pref == FASTER:
-            pass
+        # Multiply bike lane values by `mult` to get non-network weights
+        if self.pref == SAFER:
+            mult = 3
+            t = .6
+            p = .7
         else:
-            # Adjust for 'perceptual time'
-            if bikemode:
-                # Adjust bike network street
-                if   bikemode == 't': hours *= .85
-                elif bikemode == 'p': hours *= .90
-                elif bikemode == 'b':
-                    # Adjust bike lane for traffic (est. from st. type)
-                    if   code in (1500, 1521):      hours *=  .750  #lt
-                    elif code == 1450:              hours *= .8750  #mt
-                    elif code == 1400:              hours *= 1.000  #ht
-                    elif code == 1300:              hours *= 2.000  #ca
-                    elif 1200 <= code < 1300:       hours *= 4.000  #ca+
-                    elif 1100 <= code < 1200:       hours *= 8.000  #ca++
-                    else:                           hours *= 1000   #?
-                elif bikemode == 'l': hours *= 1.00
-                elif bikemode == 'm': hours *= 1.17
-                elif bikemode == 'h': hours *= 1.33
-                elif bikemode == 'c': hours *= 2.67
-                elif bikemode == 'x': hours *= 1000
+            mult = 2
+            t = .85
+            p = .9
+            
+        # no bike lane
+        l = 1
+        m = 1.17
+        h = 1.33
+        c = 2.67
+        x = 1000
+        # bike lane
+        bl = .75
+        bm = .875
+        bh = 1
+        bc = 2
+        bcc = 4
+        bccc = 8
+        
+        # Adjust for 'perceptual time'
+        if bikemode:
+            # Adjust bike network street
+            if   bikemode == 't': hours *= t
+            elif bikemode == 'p': hours *= p
+            elif bikemode == 'b':
+                # Adjust bike lane for traffic (est. from st. type)
+                if   code in (1500, 1521):      hours *= bl    #lt
+                elif code == 1450:              hours *= bm    #mt
+                elif code == 1400:              hours *= bh    #ht
+                elif code == 1300:              hours *= bc    #ca
+                elif 1200 <= code < 1300:       hours *= bcc   #ca+
+                elif 1100 <= code < 1200:       hours *= bccc  #ca++
+                else:                           hours *= x     #?          
+            elif bikemode == 'l': hours *= l
+            elif bikemode == 'm': hours *= m
+            elif bikemode == 'h': hours *= h
+            elif bikemode == 'c': hours *= c
+            elif bikemode == 'x': hours *= x
+        else:
+            # Adjust normal (i.e., no bikemode) street based on traffic
+            # (est. from st. type)
+            if code == 3200:                     hours *= t
+            elif code in (3230, 3240, 3250):  hours *= p
             else:
-                # Adjust normal (i.e., no bikemode) street based on traffic
-                # (est. from st. type)
-                if code in (3200, 3230, 3240, 3250): hours *= .95
-                else:
-                    if code in (1500, 1521):         hours *= 1.50   #lt
-                    elif code == 1450:               hours *= 1.75   #mt
-                    elif code == 1400:               hours *= 2.00   #ht
-                    elif code == 1300:               hours *= 4.00   #ca
-                    elif 1200 <= code < 1300:        hours *= 8.00   #ca+
-                    elif 1100 <= code < 1200:        hours *= 16.00  #ca++
-                    else:                            hours *= 1000   #?
+                if code in (1500, 1521):         hours *= bl * mult    #lt
+                elif code == 1450:               hours *= bm * mult    #mt
+                elif code == 1400:               hours *= bh * mult    #ht
+                elif code == 1300:               hours *= bc * mult    #ca
+                elif 1200 <= code < 1300:        hours *= bcc * mult   #ca+
+                elif 1100 <= code < 1200:        hours *= bccc * mult  #ca++
+                else:                            hours *= x * mult     #?
 
 
         # Penalize edge if it has different street name from previous edge
