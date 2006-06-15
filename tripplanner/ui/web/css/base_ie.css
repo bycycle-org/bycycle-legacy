@@ -10,6 +10,10 @@ v\:* {
   height: 24px;
 }
 
+#pref {
+ width: 249px;
+}
+
 .summary, .directions {
   width: 280px;
 }
