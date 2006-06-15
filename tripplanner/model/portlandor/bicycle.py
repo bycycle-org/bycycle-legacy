@@ -84,18 +84,19 @@ class Mode(portlandor.Mode):
         # Multiply bike lane values by `mult` to get non-network weights
         if self.pref == SAFER:
             mult = 3
-            t = .6
-            p = .7
+            t = .75
+            p = .8
+            c = 4
         else:
             mult = 2
             t = .85
             p = .9
+            c = 2.67
             
         # no bike lane
         l = 1
         m = 1.17
         h = 1.33
-        c = 2.67
         x = 1000
         # bike lane
         bl = .75

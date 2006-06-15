@@ -123,6 +123,17 @@ hr {
   padding: 5px 5px 0 5px;
 }
 
+#input td
+{ 
+  vertical-align: middle;
+  background: #a7cc95;
+  }
+
+#fr
+{   
+  margin-bottom: 5px;
+  }
+
 .input_form, .input_form div {
   margin-bottom: 5px;
 }

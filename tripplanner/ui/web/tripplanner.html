@@ -198,18 +198,37 @@
 
 		  <div class="input_title">Find a Route</div>
 		  
-		  <div>
-		    <input type="hidden" name="region" value="%(region)s"/>
-		    <input type="hidden" name="service" value="route"/>
-		    <input type="text" id="fr" name="fr" class="input_field" tabindex="1" value="%(fr)s"/>
-		    <a href="javascript:void(0);"  
-		       title="Swap from and to" 
-		       onclick="swapFrAndTo();"
-		       ><img src="images/swapfrto.gif" alt="swap"/></a>
-		  </div>
-		  
-		  <div>
-		    <input type="text" id="to" name="to" class="input_field" tabindex="1" value="%(to)s"/>
+		  <table>
+		    <tr>
+		      <td>
+			<input type="hidden" name="region" value="%(region)s"/>
+			<input type="hidden" name="service" value="route"/>
+			<input type="text" id="fr" name="fr" class="input_field" tabindex="1" value="%(fr)s"/>
+		      </td>
+
+		      <td id="swap" rowspan="2">
+			<a href="javascript:void(0);"  
+			   title="Swap from and to" 
+			   onclick="swapFrAndTo();"
+			   ><img src="images/swapfrto.gif" alt="swap"/></a>
+		      </td>
+		    </tr>
+		    
+		    <tr>
+		      <td>
+			<input type="text" id="to" name="to" class="input_field" tabindex="1" value="%(to)s"/>
+		      </td>
+		    </tr>
+		  </table>
+
+		  <div id="pref_div">
+		    <i>Note: Preferences work only for the Portland region.</i>
+		    <select id="pref" name="pref" class="input_field" style="width: 248px;">
+		      <option value="default">- Select Route Preference -</option>
+		      <option value="default">Normal</option>
+		      <option value="safer">Safer</option>
+		    </select>
+
 		    <input name="rb"
 			   class="input_button"
 			   title="Click to find route"
@@ -217,19 +236,6 @@
 			   type="submit" 
 			   value="Go!"/>
 		  </div>
-		  
-
-		  <!-- User Preference -->
-		  <div id="pref_div">
-		    <i>Note: Preferences work only for the Portland region.</i>
-		    <select id="pref" name="pref">
-		      <option value="default">- Select Route Preference -</option>
-		      <option value="safer">Safer</option>
-		      <option value="default">Normal</option>
-		    </select>
-		  </div>
-		  <!-- End User Preference -->
-
 
 		</form>
 	      </div>
