@@ -9,7 +9,6 @@ var geocodes;
 var linestring;
 var center;
 var start_ms;
-var bookmark = location.href;
 
 
 function getVal(id, mach_v, user_v)
@@ -38,6 +37,7 @@ function setVal(id, mach_v, user_v)
     setElV(id, user_v);
   }
 }
+
 
 function swapFrAndTo()
 {
@@ -115,17 +115,23 @@ function doFind(service, fr, to)
 	      '</li></ul>'].join('');
     setResult(errors);
   } else {
-    var url = [base_url,  
-	       '?region=', region, 
-	       '&q=', escape(q), 
-	       '&pref=', elV('pref'),
-	       '&format=json'].join('');
-    bookmark = [base_url,  
-		'?region=', region, 
-		'&q=', escape(q), 
-		'&pref=', elV('pref'),
-		'&format=html'].join('');
-    hideBookmarkForThisPage();
+    var url_parts = [base_url,
+		     '?region=', region, 
+		     '&q=', escape(q), 
+		     '&pref=', elV('pref'),
+		     '&format='];
+
+    url_parts.push('html');
+    bookmark = url_parts.join('');
+    var link = el('print_link');
+    link.href = bookmark;
+    link.innerHTML = bookmark;
+    el('bookmark_link').href = bookmark;
+
+    url_parts.pop();
+    url_parts.push('json');
+    url = url_parts.join('');
+    
     //alert(url);
     doXmlHttpReq('GET', url, _callback);
   }
@@ -403,48 +409,9 @@ function _showRegionOverlays(region, use_cached)
     map.addOverlay(region.line);
 }
 
-
-function makePrintable()
-{
-  el_print_link = el('print_link');
-  el_print_link.innerHTML = 'Go back to normal view';
-  el_print_link.onclick = makeUnprintable;
-  elTag0('html').style.overflow = 'visible';
-  elTag0('body').style.overflow = 'visible';
-  setElStyle('print_header', 'display', 'block');
-  setElStyle('header', 'display', 'none');
-  setElStyle('input', 'display', 'none');
-  try {
-    setElStyle('reverse_div', 'display', 'none');
-  } catch (e) { }
-  setElStyle('result', 'overflow', 'visible');
-  setElStyle('map_menu_container', 'display', 'none');
-  setElStyle('footer', 'display', 'none');
-}
-
-function makeUnprintable()
-{
-  el_print_link = el('print_link');
-  el_print_link.innerHTML = 'Make page printable';
-  el_print_link.onclick = makePrintable;
-  elTag0('html').style.overflow = 'hidden';
-  elTag0('body').style.overflow = 'hidden';
-  setElStyle('print_header', 'display', 'none');
-  setElStyle('header', 'display', 'block');
-  try {
-    setElStyle('reverse_div', 'display', 'block');
-  } catch (e) { }
-  setElStyle('result', 'overflow', 'auto');
-  setElStyle('input', 'display', 'block');
-  setElStyle('map_menu_container', 'display', 'block');
-  setElStyle('footer', 'display', 'block');
-}
-
-function bookmarkForThisPage()
+function showBookmarkForThisPage()
 {
   setElStyle('bookmark', 'display', 'block');
-  var link = el('bookmark_link');
-  link.href = bookmark;
   resizeMap();
 }
 

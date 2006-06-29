@@ -59,9 +59,10 @@ class TripPlanner(object):
             try:
                 module = __import__(import_path % service,
                                     globals(), locals(), [''])
-            except ImportError:
+            except ImportError, e:
                 status = 400
-                response_text = 'Unknown service "%s"' % service
+                response_text = 'Error importing %s service\n[%s]' % \
+                                (service, e)
             else:
                 class_ = service.title()
 
@@ -478,8 +479,7 @@ class TripPlanner(object):
             <tr>
               <td class="start">
                 <h2><a href="javascript:void(0);" class="start"
-                       onclick="showMapBlowup(0);">Start</a>
-                </h2>
+                       onclick="showMapBlowup(0);">Start</a></h2>
               </td>
               <td class="start">%s</a>
               </td>
@@ -487,8 +487,7 @@ class TripPlanner(object):
             <tr>
               <td class="end">
                 <h2><a href="javascript:void(0);" class="end"
-                       onclick="showMapBlowup(%s);">End</a>
-                </h2>
+                       onclick="showMapBlowup(%s);">End</a></h2>
               </td>
               <td class="end">%s</td>
             </tr>

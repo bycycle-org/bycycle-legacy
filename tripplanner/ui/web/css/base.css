@@ -3,7 +3,9 @@ html, body, table, td, tr, form {
   margin: 0;
 }
 
-html, body {
+html, body 
+{
+  overflow: hidden;
   height: 100%;
 }
 
@@ -71,6 +73,12 @@ hr {
 
 
 /* Header */
+
+#print_header
+{ 
+  display: none; 
+  margin-bottom: 10px;
+  }
 
 #header {
 
@@ -271,4 +279,26 @@ hr {
 
 .mma_list li {
   margin-bottom: 10px;
+}
+
+
+@media print { 
+  html, body, #result
+  {  
+    overflow: visible;
+    }
+
+  #print_header
+  {  
+    display: block;
+    }
+  
+  #header, 
+  #input, 
+  #reverse_div, 
+  #map_menu_container, 
+  #footer
+  { 
+    display: none;
+    }
 }
