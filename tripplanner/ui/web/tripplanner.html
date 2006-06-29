@@ -24,8 +24,6 @@
       function afterPageLoad()
       {
       resizeMap();
-      elTag0('html').style.overflow = 'hidden';
-      elTag0('body').style.overflow = 'hidden';
       if (api_key) {
       if (mapLoad()) {
       // do nothing for now
@@ -59,8 +57,8 @@
     <div id="content_pane">
 
       
-      <div id="print_header" style="display: none; margin-bottom: 10px;">
-	<a href="http://tripplanner.bycycle.org/">byCycle Trip Planner &raquo; http://tripplanner.byCycle.org/</a>
+      <div id="print_header">
+	<a id="print_link" href="http://tripplanner.bycycle.org/">byCycle Trip Planner &raquo; http://tripplanner.byCycle.org/</a>
       </div>
 
 
@@ -242,13 +240,6 @@
 	      <!-- End Input -->
 
 
-	      <!-- Printing -->
-	      <div style="margin-bottom: 5px; padding: 5px; border: 1px solid gray; background: #fffa73;">
-		<a id="print_link" href="javascript:void(0);" onclick="makePrintable();">Make page printable</a>
-	      </div>
-	      <!-- End Printing -->
-
-
 	      <!-- Result -->
 	      <div id="result">
 		%(result)s	      
@@ -281,7 +272,7 @@
 		  &middot;
 		  <a href="javascript:void(0);"
 		     title="Show a link you can use to bookmark the current result"
-		     onclick="bookmarkForThisPage();"
+		     onclick="showBookmarkForThisPage();"
 		     >Show bookmark</a>
 		</div>
 		<!-- End Map Menu -->
@@ -289,7 +280,7 @@
 		<!-- Bookmark -->
 		<div id="bookmark" class="page_section">
 		  <a id="bookmark_link" 
-		     href=""
+		     href="http://tripplanner.bycycle.org/"
 		     title="This link lets you bookmark the current result"
 		     >Bookmark for This Result</a> 
 		  [To copy the link address, right-click and select "Copy Link Location" (Firefox) or "Copy Shortcut" (Internet Explorer).]
