@@ -232,6 +232,15 @@ hr {
 }
 
 
+/* Google Ads */
+
+#google_ads_panel
+{ 
+  padding-left: 5px;
+  width: 130px;
+  }
+
+
 /* Directions Table */
 
 .start {
@@ -297,7 +306,8 @@ hr {
   #input, 
   #reverse_div, 
   #map_menu_container, 
-  #footer
+  #footer,
+  #google_ads_panel
   { 
     display: none;
     }
