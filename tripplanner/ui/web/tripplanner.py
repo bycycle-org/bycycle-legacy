@@ -240,14 +240,14 @@ class TripPlanner(object):
                 result.append('<li>'
                               '  %s<br/>'
                               '  <a href="javascript:void(0);"'
-                              '     onclick="if (map) '
-                              'map.setCenter(new GLatLng(%s, %s)); '
-                              'return false;"'
+                              '     onclick="map.setCenter({y: %s, x: %s},'
+                              '                            14)"; '
+                              '              return false;"'
                               '>Show on map</a>'
                               '  &middot;'
                               '  <a href="?region=%s&q=%s"'
-                              '     onclick="showGeocode(%s, true); '
-                              'return false;"'
+                              '     onclick="showGeocode(%s); '
+                              '              return false;"'
                               '>Select</a>'
                               '</li>' % (disp_addr,
                                          code['y'], code['x'],
@@ -301,7 +301,7 @@ class TripPlanner(object):
                               '  %s<br/>'
                               '  <a href="javascript:void(0);"'
                               '     onclick='
-                              '"if (map) map.setCenter(new GLatLng(%s, %s)); '
+                              '"map.setCenter({y: %s, x: %s}, 14); '
                               'return false;"'
                               '>Show on map</a>'
                               '  &middot;'
@@ -403,7 +403,7 @@ class TripPlanner(object):
     def getWelcomeMessage(self, template):
         return '''
         <p style="margin-top:0;">
-        The Trip Planner is under active development. Please
+        The bicycle Trip Planner is under active development. Please
         <a href="http://www.bycycle.org/contact.html"
         title="Send us problem reports, comments, questions, and suggestions"
         >contact us</a>

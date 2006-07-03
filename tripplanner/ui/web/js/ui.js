@@ -1,66 +1,207 @@
 /* User Interface */
-var mach_q;
-var mach_fr;
-var mach_to;
-var user_q;
-var user_fr;
-var user_to;
-var geocodes;
-var linestring;
-var center;
-var start_ms;
 
 
-function getVal(id, mach_v, user_v)
-{
-  var el_v = cleanString(elV(id));
-  if (mach_v == undefined) {
-    var val = el_v;
-  } else if (el_v.toLowerCase() != user_v.toLowerCase()) {
-    var val = el_v;
-    eval(['mach_', id, ' = undefined'].join(''));
-    eval(['user_', id, ' = "', el_v, '"'].join(''));
-  } else {
-    var val = mach_v;
+byCycle.UI = (function() {
+  var self = null;
+
+  var _public = {
+    map: null,
+    region_el: $('region'),
+    q_el: $('q'),
+    fr_el: $('fr'),
+    to_el: $('to'),
+    pref_el: $('pref'),
+    result_el: $('result'),
+    map_el: $('map'),
+    bookmark_state: 0,
+    bookmark_el: $('bookmark'),
+    bookmark_toggle_el: $('bookmark_toggle'),
+    bookmark_link_el: $('bookmark_link'),
+    /*   mach_q, */
+    /*   mach_fr, */
+    /*   mach_to, */
+    /*   user_q, */
+    /*   user_fr, */
+    /*   user_to, */
+    /*   geocodes, */
+    /*   linestring, */
+    /*   center, */
+    /*   start_ms, */
+
+    /* Initialization */
+
+    init: function() {
+      self = byCycle.UI;
+      if (byCycle.no_map) {
+	$('map_msg').innerHTML = 'Map off';
+	self.map = new IbCMap(self, self.map_el);
+      } else {
+	if (byCycle.Map.mapIsLoadable()) {
+	  self.map = new byCycle.Map.Map(self, self.map_el);
+	} else {
+	  self.map = new IbCMap(self, self.map_el);	  
+	}
+	self.onResize();
+	self.setRegionFromSelectBox();
+	self.handleQuery();
+      } 
+      self.setEventHandlers();
+    },
+
+    setEventHandlers: function() {
+      var connect = MochiKit.Signal.connect;
+      var body = document.body;
+      connect(window, 'onresize', self.onResize);
+      connect(body, 'onunload', self.unload);
+      connect(self.region_el, 'onchange', self.setRegionFromSelectBox);
+      connect('swap_fr_and_to', 'onclick', self.swapFrAndTo);
+      connect(self.bookmark_toggle_el, 'onclick', self.toggleBookmark);
+    },
+
+    handleQuery: function() {
+      //var status = elV('http_status');
+      //var response_text = unescape(elV('response_text'));
+      //if (status && response_text != '""') {
+      //  var req = {status: parseInt(status), responseText: response_text};
+      //  callback(req);
+      //}
+    },
+
+
+    /* UI Manipulation ("DHTML") */
+
+    onResize: function() {
+      var win_height = getWindowHeight();
+      var height = win_height - elOffset('map') - 25;
+      if (height >= 0) {
+	self.map.setSize(null, height);
+      }
+      height = win_height - elOffset('result') - 5;
+      if (height >= 0)
+      self.result_el.style.height =  height + 'px'; 
+    },
+
+    toggleBookmark: function() {
+      if (self.bookmark_state) {
+	setElStyle('bookmark', 'display', 'none');
+	self.bookmark_state = 0;
+	self.bookmark_toggle_el.innerHTML = 'Show Bookmark';
+      } else {
+	setElStyle('bookmark', 'display', 'block');
+	self.bookmark_state = 1;
+	self.bookmark_toggle_el.innerHTML = 'Hide Bookmark';
+      }
+      self.onResize();
+    },
+
+    swapFrAndTo: function() {
+      // Swap field values
+      var fr = self.fr_el.value;
+      self.fr_el.value = self.to_el.value;
+      self.to_el.value = fr;
+      // Swap machine values
+      //fr = mach_fr;
+      //mach_fr = mach_to;
+      //mach_to = fr;
+      // Swap user values
+      //fr = user_fr;
+      //user_fr = user_to;
+      //user_to = fr;
+    },
+
+
+    /* Regions */
+
+    setRegion: function(region) {
+      region = regions[region] || regions.all;
+      document.title = 'byCycle - Bicycle Trip Planner - ' + region.heading;  
+      self._initRegion(region);
+      self.map.centerAndZoomToBounds(region.bounds.gbounds, region.center);
+      if (region.all) {
+	var reg;
+	for (var reg_key in regions) {
+	  reg = regions[reg_key];
+	  if (!reg.all) {
+	    self._initRegion(reg);
+	    self._showRegionOverlays(reg);
+	  }
+	}
+      } else {
+	self._showRegionOverlays(region);
+      }
+    },
+
+    setRegionFromSelectBox: function() {
+      var opts = self.region_el.options;
+      var i = self.region_el.selectedIndex;
+      self.setRegion(opts[i].value);
+    },
+
+    _initRegion: function(region) {
+      if (!region.bounds.gbounds) {
+	var sw = region.bounds.sw;
+	var ne = region.bounds.ne;
+	region.bounds.gbounds = new GLatLngBounds(new GLatLng(sw.lat, sw.lng),
+						  new GLatLng(ne.lat, ne.lng));
+      }
+      if (!region.center) {
+	region.center = self.map.getCenterOfBounds(region.bounds.gbounds);
+      }
+      if (!region.linestring) {
+	var sw = region.bounds.gbounds.getSouthWest();
+	var ne = region.bounds.gbounds.getNorthEast();
+	var nw = new GLatLng(ne.lat(), sw.lng());
+	var se = new GLatLng(sw.lat(), ne.lng());
+	region.linestring = [nw, ne, se, sw, nw];
+      }
+    },
+
+    _showRegionOverlays: function(region, use_cached) {
+      if (!region.marker) {
+	var icon = new GIcon();
+	icon.image = "images/x.png";
+	icon.iconSize = new GSize(17, 19);
+	icon.iconAnchor = new GPoint(9, 10);
+	icon.infoWindowAnchor = new GPoint(9, 10);
+	icon.infoShadowAnchor = new GPoint(9, 10);
+	region.marker = self.map.placeMarker(region.center, icon);
+	GEvent.addListener(region.marker, "click", function() { 
+	  var id = region.id;
+	  var sel = region_el;
+	  for (var i = 0; i < sel.length; ++i) {
+	    var opt = sel.options[i];
+	    if (opt.value == id) {
+	      sel.selectedIndex = i;
+	      setRegion(id);
+	      break;
+	    }
+	  }
+	});
+      } else if (use_cached) {
+	self.map.addOverlay(region.marker);
+      }
+      if (!region.line) {
+	region.line = self.map.drawPolyLine(region.linestring); 
+      } else if (use_cached) {
+	self.map.addOverlay(region.line);
+      }
+    },
+  
+    unload: function() {
+      self.map.unload();
+    }
   }
-  return val;
-}
+
+  return _public;
+})();
 
 
-function setVal(id, mach_v, user_v)
-{
-  if (mach_v != undefined) {
-    eval(['mach_', id, ' = "', mach_v, '"'].join(''));
-  }
-  if (user_v != undefined) {  
-    eval(['user_', id, ' = "', cleanString(user_v), '"'].join(''));
-    setElV(id, user_v);
-  }
-}
-
-
-function swapFrAndTo()
-{
-  var fr = elV('fr');
-  setElV('fr', elV('to'));
-  setElV('to', fr);
-  fr = mach_fr;
-  mach_fr = mach_to;
-  mach_to = fr;
-  fr = user_fr;
-  user_fr = user_to;
-  user_to = fr;
-}
-
-
-function doFind(service, fr, to)
-{
+function doFind(service, fr, to) {
   start_ms = new Date().getTime();
   clearResult('');
   showStatus('Processing. Please wait<blink>...</blink>');
 
-  var el_region = el('region');
-  var region = el_region.value;
+  var region = region_el.value;
   var errors = [];
 
   if (map)
@@ -68,7 +209,7 @@ function doFind(service, fr, to)
   
   if (!region) {
     errors.push('Please select a Region</a>');
-    el_region.focus();
+    region_el.focus();
   }
 
   if (service == 'geocode') {
@@ -76,7 +217,7 @@ function doFind(service, fr, to)
     if (!q) {
       errors.push('Please enter an Address');
       if (region)
-	el('q').focus();
+	q_el.focus();
     } else {
       // Is the address really a route request?
       var i = q.toLowerCase().indexOf(' to ');
@@ -97,12 +238,12 @@ function doFind(service, fr, to)
       if (!fr) {
 	errors.push('Please enter a From address');
 	if (region)
-	  el('fr').focus();
+	  fr_el.focus();
       }
       if (!to) {
 	errors.push('Please enter a To address');
 	if (fr && region)
-	  el('to').focus();
+	  to_el.focus();
       }
     }
   } else {
@@ -115,25 +256,15 @@ function doFind(service, fr, to)
 	      '</li></ul>'].join('');
     setResult(errors);
   } else {
-    var url_parts = [base_url,
-		     '?region=', region, 
-		     '&q=', escape(q), 
-		     '&pref=', elV('pref'),
-		     '&format='];
+    var query_args = {region: region, q: q, pref: pref_el.value};
 
-    url_parts.push('html');
-    bookmark = url_parts.join('');
-    var link = el('print_link');
-    link.href = bookmark;
-    link.innerHTML = bookmark;
-    el('bookmark_link').href = bookmark;
+    query_args.format = 'html';
+    bookmark = [base_url, MochiKit.base.queryString(query_args)].join('?');
+    bookmark_link_el.href = bookmark;
 
-    url_parts.pop();
-    url_parts.push('json');
-    url = url_parts.join('');
-    
-    //alert(url);
-    doXmlHttpReq('GET', url, _callback);
+    query_args.format = 'json';
+    var d = doSimpleXMLHttpRequest(base_url, query_args);
+    d.addBoth(callback);
   }
 }
 
@@ -143,8 +274,8 @@ function doFind(service, fr, to)
 /** 
  * Do stuff that's common to all callbacks in here
  */
-function _callback(req)
-{
+function callback(req) {
+  if (req.number) req = req.req;
   var status = req.status;
   var response_text = req.responseText;
   //alert(status + '\n' + response_text);
@@ -202,10 +333,10 @@ function _routeCallback(status, result_set)
 	  }
 	  var linestring_len = linestring.length;
 	  var last_point_ix = linestring.length - 1;
-	  var bounds = getBoundsForPoints(linestring);
-	  var s_e_markers = placeMarkers([linestring[0],
-					  linestring[last_point_ix]],
-					 [start_icon, end_icon]);
+	  var bounds = map.getBoundsForPoints(linestring);
+	  var s_e_markers = map.placeMarkers([linestring[0],
+					      linestring[last_point_ix]],
+					     [map.start_icon, map.end_icon]);
 	  var s_mkr = s_e_markers[0];
 	  var e_mkr = s_e_markers[1];
 	  GEvent.addListener(s_mkr, 'click', function() { 
@@ -214,10 +345,11 @@ function _routeCallback(status, result_set)
 	  GEvent.addListener(e_mkr, 'click', function() { 
 	    map.showMapBlowup(linestring[last_point_ix]); 
 	  });			
-	  centerAndZoomToBounds(bounds);
-	  drawPolyLine(linestring, colors[color_index++]);
-	  if (color_index == colors_len)
+	  map.centerAndZoomToBounds(bounds);
+	  map.drawPolyLine(linestring, colors[color_index++]);
+	  if (color_index == colors_len) {
 	    color_index = 0;
+	  }
 	}
       break;			 
     case 300: // Multiple matches
@@ -288,141 +420,49 @@ function clearMap()
   }
 }
 
-function resizeMap() 
-{
-  var win_height = getWindowHeight();
-  var height = win_height - elOffset('map') - 25;
-  if (height >= 0) {
-    el('map').style.height = height + 'px';
-    if (map) {
-      map.checkResize();
-      map.setCenter(map.getCenter());
-    }
-  }
-  height = win_height - elOffset('result') - 5;
-  if (height >= 0)
-    el('result').style.height =  height + 'px'; 
-}
 
 function showGeocode(index, open_info_win)
 {
   var geocode = geocodes[index];
-  var html = unescape(geocode.html);
-  setResult(html);
-  if (map) {
-    var point = new GLatLng(geocode.y, geocode.x);
-    if (!geocode.marker) {
-      geocode.marker = placeMarkers([point])[0];
-      GEvent.addListener(geocode.marker, "click", function() {
-	map.openInfoWindowHtml(point, html);
-	setResult(html);
-      });
-    }
-    if (open_info_win) {
-      map.setCenter(point, 14);
-      map.openInfoWindowHtml(point, html);
-    }
-  }
+  geocode.html = unescape(geocode.html);
+  setResult(geocode.html);
+  map.showGeocode(geocode);
 }
 
 
-/* Regions */
 
-function selectRegion(region)
-{
-  region = regions[region] || regions.all;
 
-  document.title = 'byCycle - Bicycle Trip Planner - ' + region.heading;
-  
-  if (map) {
-    _initRegion(region);
-    centerAndZoomToBounds(region.bounds.gbounds, region.center);
-    if (region.all) {
-      var reg;
-      for (var reg_key in regions) {
-	reg = regions[reg_key];
-	if (!reg.all) {
-	  _initRegion(reg);
-	  _showRegionOverlays(reg);
-	}
-      }
-    } else {
-      _showRegionOverlays(region);
-    }
-  }
-}
 
-function _initRegion(region)
-{
-  if (map) {
-    if (!region.bounds.gbounds) {
-      var sw = region.bounds.sw;
-      var ne = region.bounds.ne;
-      region.bounds.gbounds = new GLatLngBounds(new GLatLng(sw.lat, sw.lng),
-						new GLatLng(ne.lat, ne.lng));
-    }
-    if (!region.center) {
-      region.center = getCenterOfBounds(region.bounds.gbounds);
-    }
-    if (!region.linestring) {
-      var sw = region.bounds.gbounds.getSouthWest();
-      var ne = region.bounds.gbounds.getNorthEast();
-      var nw = new GLatLng(ne.lat(), sw.lng());
-      var se = new GLatLng(sw.lat(), ne.lng());
-      region.linestring = [nw, ne, se, sw, nw];
-    }
-  }
-}
-
-function _showRegionOverlays(region, use_cached)
-{
-  if (!map)
-    return;
-
-  if (!region.marker) {
-    icon = new GIcon();
-    icon.image = "images/x.png";
-    icon.iconSize = new GSize(17, 19);
-    icon.iconAnchor = new GPoint(9, 10);
-    icon.infoWindowAnchor = new GPoint(9, 10);
-    icon.infoShadowAnchor = new GPoint(9, 10);
-    region.marker = placeMarker(region.center, icon);
-    GEvent.addListener(region.marker, "click", function() { 
-      var id = region.id;
-      var sel = el('region');
-      for (var i = 0; i < sel.length; ++i) {
-	var opt = sel.options[i];
-	if (opt.value == id) {
-	  sel.selectedIndex = i;
-	  selectRegion(id);
-	  break;
-	}
-      }
-    });
-  } else if (use_cached) {
-    map.addOverlay(region.marker);
-  }
-  
-  if (!region.line)
-    region.line = drawPolyLine(region.linestring); 
-  else if (use_cached)
-    map.addOverlay(region.line);
-}
-
-function showBookmarkForThisPage()
-{
-  setElStyle('bookmark', 'display', 'block');
-  resizeMap();
-}
-
-function hideBookmarkForThisPage()
-{
-  setElStyle('bookmark', 'display', 'none');
-  resizeMap();  
-}
-
-function reverseDirections(fr, to)
-{
+function reverseDirections(fr, to) {
   doFind('route', fr, to);
   swapFrAndTo();
 }
+
+
+function getVal(id, mach_v, user_v) {
+  var el_v = cleanString(elV(id));
+  if (mach_v == undefined) {
+    var val = el_v;
+  } else if (el_v.toLowerCase() != user_v.toLowerCase()) {
+    var val = el_v;
+    eval(['mach_', id, ' = undefined'].join(''));
+    eval(['user_', id, ' = "', el_v, '"'].join(''));
+  } else {
+    var val = mach_v;
+  }
+  return val;
+}
+
+
+function setVal(id, mach_v, user_v) {
+  if (mach_v != undefined) {
+    eval(['mach_', id, ' = "', mach_v, '"'].join(''));
+  }
+  if (user_v != undefined) {  
+    eval(['user_', id, ' = "', cleanString(user_v), '"'].join(''));
+    setElV(id, user_v);
+  }
+}
+
+
+
