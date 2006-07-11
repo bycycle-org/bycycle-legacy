@@ -145,7 +145,7 @@ class TripPlanner(object):
                     html = callback(status, result_set, **params)
                 except AttributeError:
                     html =  response_text
-                result_set['result_set']['html'] = html
+                #result_set['result_set']['html'] = html
 
         if format == 'json':
             content_type = 'text/plain'
@@ -402,41 +402,36 @@ class TripPlanner(object):
 
     def getWelcomeMessage(self, template):
         return '''
-        <p style="margin-top:0;">
-        The bicycle Trip Planner is under active development. Please
-        <a href="http://www.bycycle.org/contact.html"
-        title="Send us problem reports, comments, questions, and suggestions"
-        >contact us</a>
-        with any problems, comments, questions, or suggestions.
-        </p>
-        %s
-        <p>
-        &copy; 2006 
-        <a href="http://www.bycycle.org/" 
-        title="byCycle Home Page"
-        >byCycle.org</a>
-        <br/>
-        Last modified: %s
-        <br/>
-        </p>
+		  <p style="margin-top: 0;">
+                    The bicycle Trip Planner is under active development. Please <a href="http://www.bycycle.org/contact.html" title="Send us problem reports, comments, questions, and suggestions">contact us</a> with any problems, comments, questions, or suggestions.
+                  </p>
+        
+                  %s
+
+                  <p>
+                    &copy; 2006 
+                    <a href="http://www.bycycle.org/"
+                       title="byCycle Home Page">byCycle.org</a>
+                    <br/>
+                    Last modified: %s
+                  </p>
         ''' % (self.getDisclaimer(), self.getLastModified(template))
         return welcome_message
 
 
     def getDisclaimer(self):
         return '''
-        <p>
-        As you are riding, please keep in mind that you don\'t <i>have</i> to
-        follow the suggested route. <i>It may not be safe at any given
-        point.</i> If you see what looks like an unsafe or undesirable
-        stretch in the suggested route, you can decide to walk, ride on the
-        sidewalk, or go a different way.
-        </p>
+		  <p>
+                    If you find this site useful or would like help it improve, please consider <b><a href="http://www.bycycle.org/support.html#donate" target="_new">donating</a></b>. Any amount helps. 
+                  </p>
 
-        <p>
-        Users should independently verify all information presented here. This
-        service is provided AS IS with NO WARRANTY of any kind. 
-        </p>        
+                  <p>
+                    <b>Disclaimer</b>: As you are riding, please keep in mind that you don\'t <i>have</i> to follow the suggested route. <i>It may not be safe at any given point.</i> If you see what looks like an unsafe or undesirable stretch in the suggested route, you can decide to walk, ride on the sidewalk, or go a different way.
+                  </p>
+
+                  <p>
+                    Users should independently verify all information presented here. This service is provided <b>AS IS</b> with <b>NO WARRANTY</b> of any kind. 
+                  </p>        
         '''
 
 

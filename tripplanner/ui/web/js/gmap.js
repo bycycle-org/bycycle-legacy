@@ -23,9 +23,9 @@ byCycle.Map = {
     if (api_key) {
       writeScript(api_url + api_key);
       byCycle.Map.api_loaded = true;
-      byCycle.log('API Loaded');
+      byCycle.logInfo('Google Maps API Loaded');
     } else {
-      byCycle.log('No API key found for ' + byCycle.domain);
+      byCycle.logDebug('No API key found for ' + byCycle.domain);
     }
   },
 
@@ -35,7 +35,7 @@ byCycle.Map = {
     if (byCycle.Map.api_loaded && GBrowserIsCompatible()) {
       is_loadable = true;
     } else {
-      byCycle.log('<p style="margin:10px;">Your browser doesn\'t seem to meet the requirements for using this application. The following browsers are currently supported and are all free to download (<a href="http://www.mozilla.com/">Firefox</a> is an excellent choice):</p><ul><li><a href="http://www.microsoft.com/windows/ie/downloads/default.asp">IE</a> 5.5+ (Windows)</li><li><a href="http://www.mozilla.com/">Firefox</a> 0.8+ (Windows, Mac, Linux)</li><li><a href="http://www.apple.com/safari/download/">Safari</a> 1.2.4+ (Mac)</li><li><a href="http://channels.netscape.com/ns/browsers/download.jsp">Netscape</a> 7.1+ (Windows, Mac, Linux)</li><li><a href="http://www.mozilla.org/products/mozilla1.x/">Mozilla</a> 1.4+ (Windows, Mac, Linux)</li><li><a href="http://www.opera.com/download/">Opera</a> 7.5+ (Windows, Mac, Linux)</li></ul>');
+      byCycle.logInfo('<p style="margin:10px;">Your browser doesn\'t seem to meet the requirements for using this application. The following browsers are currently supported and are all free to download (<a href="http://www.mozilla.com/">Firefox</a> is an excellent choice):</p><ul><li><a href="http://www.microsoft.com/windows/ie/downloads/default.asp">IE</a> 5.5+ (Windows)</li><li><a href="http://www.mozilla.com/">Firefox</a> 0.8+ (Windows, Mac, Linux)</li><li><a href="http://www.apple.com/safari/download/">Safari</a> 1.2.4+ (Mac)</li><li><a href="http://channels.netscape.com/ns/browsers/download.jsp">Netscape</a> 7.1+ (Windows, Mac, Linux)</li><li><a href="http://www.mozilla.org/products/mozilla1.x/">Mozilla</a> 1.4+ (Windows, Mac, Linux)</li><li><a href="http://www.opera.com/download/">Opera</a> 7.5+ (Windows, Mac, Linux)</li></ul>');
     }
     return is_loadable;
   }
@@ -44,12 +44,13 @@ byCycle.Map = {
 
 /* bCMap Class Definition */
 
-byCycle.Map.Map = function(parent, map_el) {
+byCycle.Map.Map = function(parent, container) {
   IbCMap.call(this);
   this.parent = parent;
+  this.container = container;
   this.center;
   this.center_marker;
-  this.createMap(map_el);
+  this.createMap(container);
   this.createIcons();
   this.addListeners();
 }
@@ -60,8 +61,8 @@ byCycle.Map.Map.prototype.constructor = byCycle.Map.Map;
 byCycle.Map.Map.prototype.center_marker_html = '<div class="info_win"><p><a href="javascript:void(0);" onclick="setElVToMapLonLat(\'q\'); doFind(\'geocode\');">Find address of closest intersection</a></p><p>Set as <a href="javascript:void(0);" onclick="setElVToMapLonLat(\'fr\')">From</a> or <a href="javascript:void(0);" onclick="setElVToMapLonLat(\'to\')">To</a> address for route</p></div>';
 
 
-byCycle.Map.Map.prototype.createMap = function(map_el) {
-  var map = new GMap2(map_el);
+byCycle.Map.Map.prototype.createMap = function(container) {
+  var map = new GMap2(container);
   map.setCenter(new GLatLng(0, 0), 2);
   
   map.addControl(new GLargeMapControl());
@@ -69,10 +70,9 @@ byCycle.Map.Map.prototype.createMap = function(map_el) {
   map.addControl(new GScaleControl());
 
   map.addControl(new GOverviewMapControl());
-  //map_el.appendChild(document.getElementById('map_overview'));
+  //container.appendChild(document.getElementById('map_overview'));
 
   this.map = map;
-  this.map_el = map_el;
 }
 
 
@@ -132,11 +132,18 @@ byCycle.Map.Map.prototype.setSize = function(width, height) {
     return;
   }
   if (width) {
-    this.map_el.style.width = width + 'px';
+    this.container.style.width = width + 'px';
   }
   if (height) {
-    this.map_el.style.height = height + 'px';
+    this.container.style.height = height + 'px';
   }
+  this.map.checkResize();
+  this.map.setCenter(this.map.getCenter());
+}
+
+
+byCycle.Map.Map.prototype.setHeight = function(height) {
+  this.container.style.height = height + 'px';
   this.map.checkResize();
   this.map.setCenter(this.map.getCenter());
 }
