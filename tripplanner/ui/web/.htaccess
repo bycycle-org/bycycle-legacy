@@ -1,0 +1,17 @@
+RewriteEngine on
+RewriteCond %{REQUEST_URI} !^/tpcurr/static/
+RewriteCond %{REQUEST_URI} !^/tpcurr/dispatch.cgi
+RewriteRule ^(.*)$ dispatch.cgi/$1 [L]
+
+<Files .htaccess>
+  order allow,deny
+  deny from all
+</Files>
+
+Options +ExecCGI
+
+<Files dispatch.cgi>
+    SetHandler cgi-script
+</Files>
+
+ReadmeName README.txt
