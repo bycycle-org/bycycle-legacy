@@ -44,8 +44,7 @@ class TripPlanner(object):
 
         # Analyze the query to determine the service and prepare the query for 
         # the service.
-        A = self.analyzeQuery(**params)
-        params['service'], params['q'], params['fr'], params['to'] = A
+        params.update(self.analyzeQuery(**params))
         service = params['service']
 
         # Base path to web services
@@ -93,10 +92,10 @@ class TripPlanner(object):
         return status, response_text, params
 
 
-    def analyzeQuery(self, service=None, q=None, fr=None, to=None, **params):
+    def analyzeQuery(self, service=None, q=None, **params):
         """Look at query variables and decide what type of query was made."""
         # Note: When a param is None, that means it wasn't passed via CGI
-        if service == 'query' or (service is None and q is not None):
+        if service == 'query':
             # If param q contains the substring " to " between two other
             # substrings
             # OR if param q is a string repr of a list with at least two items,
@@ -114,21 +113,20 @@ class TripPlanner(object):
             if isinstance(words, list) and len(words) > 1:
                 service = 'route'    
                 q = words
-                fr = q[0]
-                to = q[1]
             else:
                 # q doesn't look like a route query; assume it's geocode query
-                service = 'geocode'        
-        elif (service == 'route' or 
-              (service is None and q is None and
-               fr is not None and to is not None)):
-            service = 'route'
-            q = [fr or '', to or '']
-        elif service is not None:
-            pass
-        else:
-            service = None
-        return service, q or '', fr or '', to or ''
+                service = 'geocode'
+        elif service == 'route':
+            try:
+                words = eval(q)
+            except:
+                service = 'error'
+            else:
+                if isinstance(words, list) and len(words) > 1:
+                    q = words
+                else:
+                    service = 'error'
+        return dict(service=service, q=q)
 
 
     def render(self, status, response_text, format='html', **params):
@@ -157,7 +155,7 @@ class TripPlanner(object):
                 content = simplejson.dumps(result_set)
         elif format == 'html':
             content_type = 'text/html'
-            template = 'tripplanner.html'
+            template = 'templates/tripplanner.html'
 
             if response_text is None:
                 result = self.getWelcomeMessage(template)
@@ -177,6 +175,14 @@ class TripPlanner(object):
             params['response_text'] = urllib.quote(simplejson.dumps(result_set))
             params['regions_opt_list'] = self.makeRegionsOptionList(**params)
             params['result'] = result
+
+            service = params['service']
+            if service == 'route':
+                q = params['q']
+                fr, to = q[0], q[1]
+            else:
+                fr, to = None, None
+            params.update(dict(fr=fr, to=to))
 
             for p in params:
                 if params[p] is None:

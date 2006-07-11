@@ -227,12 +227,10 @@ hr
 
 #status
 {
-  padding: 5px;
+  padding: 5px 5px 3px 5px;
   margin-bottom: 5px;
   background: #FD766A;
   color: black;
-  font-weight: bold;
-  border: 1px solid gray;
   }
 
 #result
@@ -251,23 +249,8 @@ hr
 
 #map_menu 
 {  
-  background: #fffa73; /*99b3cc;*/
+  background: #fffa73;
   padding: 5px 5px 3px 5px;
-  }
-
-#bookmark 
-{ 
-  position: relative;
-  display: none;
-  background: #FD766A;
-  border: 1px solid gray;
-  padding: 5px;
-  padding-right: 20px;
-  }
-
-#bookmark a:hover 
-{
-  color: #46d;
   }
 
 #map
@@ -386,7 +369,7 @@ hr
   #links, 
   #input, 
   #reverse_div, 
-  #map_menu_container, 
+  #map_menu, 
   #footer,
   #google_ads_panel
   { 

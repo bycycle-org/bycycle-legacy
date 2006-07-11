@@ -1,13 +1,15 @@
-var prod_config = {
+var _prod_config = {
   debug: 0,
   local: 0,
+  map_type: 'Google',
   map_state: 1
 };
 
-var dev_config = {
+var _dev_config = {
   debug: 1,
   local: 1,
-  map_state: 0
+  map_type: 'Google',
+  map_state: 1
 };
 
 
@@ -15,26 +17,16 @@ var dev_config = {
  * byCycle namespace
  */
 var byCycle = (function() {
-  /* Config */
-  var config = dev_config;
-
-  /* Dynamically discovered config */
+  var config = _dev_config;
   var base_url = location.href.split('?')[0];
   var domain = base_url.split('/')[2];
-
-  /* Query string config */
-  var query_pairs = parseQueryString(window.location.search.substr(1));
-  var map_state = query_pairs.map_state;
-  var map_state = ((typeof(map_state) != 'undefined' && 
-		    (map_state == '1' || map_state == 'on')) || 
-		   config.map_state);
   
   var _public = {
-    debug: config.debug,
-    local: config.local,
-    map_state: map_state,
+    config: config,
+    debug: config.debug, // expose directly for convenience
     base_url: base_url,
     domain: domain,
+    query_pairs: parseQueryString(window.location.search.substr(1)),
 
     logInfo: function() {
       if (arguments.length < 1) return;
