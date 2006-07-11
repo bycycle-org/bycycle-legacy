@@ -1,61 +1,54 @@
-var regions = {
-  
-  all: 
-  {
+byCycle.regions = { 
+  all: {
     id: 'all',
-    
+    all: true,
     heading: 'All Regions',
-    
     subheading: 'Welcome to the <a href="http://www.bycycle.org/" title="byCycle Home Page">byCycle</a> interactive bicycle trip planner, version 0.3.5 beta.',
-    
-    bounds: {sw: {lat: 40.362070, lng: -123.485755},
-	     ne: {lat: 45.814153, lng: -79.866439}},
-    
-    all: true
+    bounds: {
+      nw: {x: -123.485755, y: 45.814153},
+      ne: {x: -79.866439, y: 45.814153},
+      se: {x: -79.866439, y: 40.362070},
+      sw: {x: -123.485755, y: 40.362070}
+    }
   }, 
-
-  
-  portlandor: 
-  {
-    'id': 'portlandor',
-    
-    'heading': 'Portland, OR',
-    
-    'subheading': 'Developed in cooperation with <a href="http://www.metro-region.org/">Metro</a>.',
-    
-    'bounds': {sw: {lat: 44.885219, lng: -123.485755},
-	       ne: {lat: 45.814153, lng: -121.649618}}
+ 
+  portlandor: {
+    id: 'portlandor',
+    heading: 'Portland, OR',
+    subheading: 'Developed in cooperation with <a href="http://www.metro-region.org/">Metro</a>.',
+    bounds: {
+      nw: {x: -123.485755, y: 45.814153},
+      ne: {x: -121.649618, y: 45.814153},
+      se: {x: -121.649618, y: 44.885219},
+      sw: {x: -123.485755, y: 44.885219}
+    }
   },
-
-  
-  milwaukeewi:
-  {
-    'id': 'milwaukeewi',
-    
-    'heading': 'Milwaukee, WI',
-    
-    'subheading': 'Developed in cooperation with the <a href="http://www.bfw.org/">Bicycle Federation of Wisconsin</a>.',
-    
-    'bounds': {sw: {lat: 42.842059, lng: -88.069888}, 
-	       ne: {lat: 43.192647, lng: -87.828241}},
-    
-    'img_src': 'bfw_logo.gif',
-    'img_width': 70,
-    'img_height': 71,
-    'href': 'http://www.bfw.org/'
+ 
+  milwaukeewi: {
+    id: 'milwaukeewi',
+    heading: 'Milwaukee, WI',
+    subheading: 'Developed in cooperation with the <a href="http://www.bfw.org/">Bicycle Federation of Wisconsin</a>.',
+    img_src: 'static/images/bfw_logo.gif',
+    img_width: 70,
+    img_height: 71,
+    href: 'http://www.bfw.org/',
+    bounds: {
+      nw: {x: -88.069888, y: 43.192647},
+      ne: {x: -87.828241, y: 43.192647},
+      se: {x: -87.828241, y: 42.842059},
+      sw: {x: -88.069888, y: 42.842059}
+    }
   },
   
-  
-  pittsburghpa:
-  {
-    'id': 'pittsburghpa',
-    
-    'heading': 'Pittsburgh, PA',
-    
-    'subheading': 'Developed in cooperation with Jessi.',
-    
-    'bounds': {sw: {lat: 40.362070, lng: -80.088957},
-	       ne: {lat: 40.500887, lng: -79.866439}}
+  pittsburghpa: {
+    id: 'pittsburghpa',
+    heading: 'Pittsburgh, PA',
+    subheading: 'Developed in cooperation with Jessi.',
+    bounds: {
+      nw: {x: -80.088957, y: 40.500887},
+      ne: {x: -79.866439, y: 40.500887},
+      se: {x: -79.866439, y: 40.362070},
+      sw: {x: -80.088957, y: 40.362070}
+    }
   }
-
 };

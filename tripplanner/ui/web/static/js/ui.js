@@ -14,8 +14,12 @@ byCycle.UI = (function() {
   var colors_len = colors.length;
 
 
+  /* Query string config */
+  var map_state = byCycle.query_pairs.map_state;
+  map_state = ((map_state == '1' || map_state == 'on') || 
+	       byCycle.config.map_state);
+
   var _public = {
-    map: null,
     input_sections: {
       query: {
 	link: $('query_link'),
@@ -30,17 +34,22 @@ byCycle.UI = (function() {
 	focus: $('fr')
       }
     },
+    selected: 'query',
+
     q_el: $('q'),
     fr_el: $('fr'),
     to_el: $('to'),
     pref_el: $('pref'),
     region_el: $('region'),
+
     result_el: $('result'),
+
+    map: null,
+    map_state: map_state,
     map_el: $('map'),
-    bookmark_state: 0,
-    bookmark_el: $('bookmark'),
-    bookmark_toggle_el: $('bookmark_toggle'),
-    bookmark_link_el: $('bookmark_link'),
+    map_type: byCycle.config.map_type,
+
+    bookmark_el: $('bookmark_link'),
 
     /*   mach_q, */
     /*   mach_fr, */
@@ -51,38 +60,40 @@ byCycle.UI = (function() {
     /*   geocodes, */
     /*   linestring, */
     /*   center, */
-    /*   start_ms, */
 
 
     /* Initialization */
 
     init: function() {
       self = byCycle.UI;
-      self.selected = 'query';
-      if (!byCycle.map_state) {
+      var map_type = 'base';
+      if (!self.map_state) {
 	$('map_msg').innerHTML = 'Map off';
-	self.map = self.getDefaultMap();
+      } else if (byCycle.Map[self.map_type].mapIsLoadable()) {
+	map_type = self.map_type;
       } else {
-	if (byCycle.Map.mapIsLoadable()) {
-	  self.map = new byCycle.Map.Map(self, self.map_el);
-	} else {
-	  self.map = self.getDefaultMap();
-	}
+	// Map is not loadable; do something here to indicate that
       }
       self.setEventHandlers();
+      self.map = self.getMap(map_type);
       self.onResize();
       self.setRegionFromSelectBox();
       self.handleQuery();
     },
 
-    getDefaultMap: function() {
-      return new IbCMap(self, self.map_el);
+    getMap: function(map_type) {
+      byCycle.logDebug(map_type);
+      if (!self[map_type]) {
+	var map = new byCycle.Map[map_type].Map(self, self.map_el);
+	self[map_type] = map;
+      }
+      return self[map_type];
     },
 
     handleQuery: function() {
       var status = $('http_status').value;
       var response_text = unescape($('response_text').value);
-      if (status && response_text != '') {
+      if (status && response_text != '""') {
         var req = {status: parseInt(status), responseText: response_text};
         self.callback(req);
       }
@@ -94,12 +105,13 @@ byCycle.UI = (function() {
     setEventHandlers: function() {
       connect(window, 'onresize', self.onResize);
       connect(document.body, 'onunload', self.unload);
-      connect(self.region_el, 'onchange', self.setRegionFromSelectBox);
       connect('query_link', 'onclick', self.setSelected);
       connect('route_link', 'onclick', self.setSelected);
-      connect($('input_form'), 'onsubmit', self.doFind);
+      connect('input_form', 'onsubmit', self.doFind);
       connect('swap_fr_and_to', 'onclick', self.swapFrAndTo);
-      connect(self.bookmark_toggle_el, 'onclick', self.toggleBookmark);
+      connect(self.region_el, 'onclick', self.setRegionFromSelectBox);
+      connect('find_center_map', 'onclick', self.findAddressAtCenter)
+      connect('clear_map', 'onclick', self.clearMap);
     },
 
     onResize: function() {
@@ -113,7 +125,24 @@ byCycle.UI = (function() {
       self.result_el.style.height =  height + 'px'; 
     },
 
-    doFind: function(service, fr, to) {
+    
+    /* Find */
+
+    doFind: function(service, q) {
+      // Handle called-as-slot
+      if (typeof(service.src) == 'function') {
+        byCycle.logDebug('doFind() called-as-slot');
+	var event = service;
+	service = self.selected;
+	if (service == 'query') {
+	  q = self.q_el.value; 
+	} else if (service == 'route') {
+	  q = [self.fr_el.value, self.to_el.value];
+	}
+      }
+
+      byCycle.logDebug(service);
+
       self.start_ms = new Date().getTime();
       self.result_el.innerHTML = '';
       self.showStatus('Processing. Please wait<blink>...</blink>');
@@ -123,64 +152,72 @@ byCycle.UI = (function() {
 
       self.map.closeInfoWindow();
       
-      if (!region) {
-	errors.push('Please select a Region</a>');
-	self.region_el.focus();
-      }
-      
-      if (service == 'geocode') {
-	var q = getVal('q', mach_q, user_q);
-	if (!q) {
-	  errors.push('Please enter an Address');
-	  if (region)
-	    q_el.focus();
-	} else {
-	  // Is the address really a route request?
-	  var i = q.toLowerCase().indexOf(' to ');
-	  if (i != -1) {
-	    setElV('fr', q.substring(0, i));
-	    setElV('to', q.substring(i+4));
-	  }
-	}
-      } else if (service == 'route') {
-	if (!(fr || to)) {
-	  // When fr and to are set in params, we're doing reverse directions
-	  var fr = getVal('fr', mach_fr, user_fr);
-	  var to = getVal('to', mach_to, user_to);
-	}
-	if (fr && to) {
-	  var q = ['["', fr, '", "', to, '"]'].join('');
-	} else {
-	  if (!fr) {
-	    errors.push('Please enter a From address');
-	    if (region)
-	    fr_el.focus();
-	  }
-	  if (!to) {
-	    errors.push('Please enter a To address');
-	    if (fr && region)
-	    to_el.focus();
-	  }
-	}
-      } else {
+      if (service != 'query' && service != 'route') {
 	errors.push('Unknown service: ' + service);
+      } else {
+	if (service == 'query') {
+	  if (!q) {
+	    errors.push('Please enter an address');
+	    self.q_el.focus();
+	  } else {
+	    // Is the query a route?
+	    var i = q.toLowerCase().indexOf(' to ');
+	    if (i != -1) {
+	      service = 'route';
+	      var fr = q.substring(0, i);
+	      var to = q.substring(i+4);
+	      self.fr_el.value = fr;
+	      self.to_el.value = to;
+	      q = [fr, to];
+	      self.setSelected('route');
+	    }
+	  }
+	}
+
+	if (service == 'route') {
+	  var fr = q[0];
+	  var to = q[1];
+	  if (fr && to) {
+	    q = ['["', fr, '", "', to, '"]'].join('');
+	  } else {
+	    if (!fr) {
+	      errors.push('Please enter a start address');
+	      self.fr_el.focus();
+	    }
+	    if (!to) {
+	      errors.push('Please enter an end address');
+	      if (fr) {
+		self.to_el.focus();
+	      }
+	    }
+	  }
+	}
+      }
+
+      if (!region) {
+	errors.push('Please select a region</a>');
+	self.region_el.focus();
       }
 
       if (errors.length) {
 	errors = ['<h2>Errors</h2><ul class="mma_list"><li>', 
 		  errors.join('</li><li>'),
 		  '</li></ul>'].join('');
-	setResult(errors);
+	self.setResult(errors);
       } else {
-	var query_args = {region: region, q: q, pref: pref_el.value};
+	var query_args = {region: region, service: service, q: q};
+	if (service == 'route') {
+	  query_args.pref = self.pref_el.value;
+	}
 
 	query_args.format = 'html';
-	bookmark = [base_url, queryString(query_args)].join('?');
-	bookmark_link_el.href = bookmark;
+	bookmark = [byCycle.base_url, queryString(query_args)].join('?');
+	self.bookmark_el.href = bookmark;
+	byCycle.logDebug('Bookmark:', bookmark);
 
 	query_args.format = 'json';
-	var d = doSimpleXMLHttpRequest(base_url, query_args);
-	d.addBoth(callback);
+	var d = doSimpleXMLHttpRequest(byCycle.base_url, query_args);
+	d.addBoth(self.callback);
       }
     },
 
@@ -191,37 +228,45 @@ byCycle.UI = (function() {
      * Do stuff that's common to all callbacks in here
      */
     callback: function(req) {
-      if (req.number) req = req.req;
+      byCycle.logDebug('In callback');
+
+      var err = 'MochiKit.Async.XMLHttpRequestError("Request failed")';
+      if (repr(req) == err) {
+	req = req.req;
+      }
       var status = req.status;
       var response_text = req.responseText;
-      //alert(status + '\n' + response_text);
+
+      byCycle.logDebug('Status:', status, 
+		       'responseText:', response_text);
+
       eval("var result_set = " + response_text + ";");
       if (status < 400) {
-	if (start_ms) {
-	  var elapsed_time = (new Date().getTime() - start_ms) / 1000.0;
+	if (self.start_ms) {
+	  var elapsed_time = (new Date().getTime() - self.start_ms) / 1000.0;
 	  var elapsed_time = ['<p><small>Took ', elapsed_time, ' second', 
 			      (elapsed_time == 1.00 ? '' : 's'), 
 			      ' to find result.</small></p>'].join('');
 	} else {
 	  var elapsed_time = '';
 	}
-	setResult(unescape(result_set.result_set.html) + elapsed_time);
-	eval('_' + result_set.result_set.type + 'Callback')(status, result_set);
+	self.setResult(unescape(result_set.result_set.html) + elapsed_time);
+	var cb = eval('self._' + result_set.result_set.type + 'Callback');
+	cb(status, result_set);
       } else {
-	setStatus('Error.');
-	setResult(['<h2>Error</h2><p><ul class="mma_list"><li>', 
-		   result_set.error.replace('\n', '</li><li>'), 
-		   '</li></ul></p>'].join(''));
+	self.setStatus('Error.');
+	self.setResult(['<h2>Error</h2><p><ul class="mma_list"><li>', 
+			result_set.error.replace('\n', '</li><li>'), 
+			'</li></ul></p>'].join(''));
       }
     },
-
+    
     _geocodeCallback: function(status, result_set) {
+      byCycle.logDebug('In _geocodeCallback');
       geocodes = result_set.result_set.result;
-      switch (status)
-      {
+      switch (status) {
       case 200: // A-OK, one match
-	if (map)
-	  showGeocode(0, true);
+	self.showGeocode(0, true);
 	break;
       case 300:
 	break;
@@ -229,36 +274,35 @@ byCycle.UI = (function() {
     },
 	
     _routeCallback: function(status, result_set) {
+      byCycle.logDebug('In _routeCallback');
       var route = result_set.result_set.result;
       switch (status) 
       {
       case 200: // A-OK, one match
-	if (map) {
-	  var route_linestring = route.linestring;
-	  linestring = [];
-	  for (var i = 0; i < route_linestring.length; ++i) {
-	    var p = route_linestring[i];
-	    linestring.push(new GLatLng(p.y, p.x));
-	  }
-	  var linestring_len = linestring.length;
-	  var last_point_ix = linestring.length - 1;
-	  var bounds = map.getBoundsForPoints(linestring);
-	  var s_e_markers = map.placeMarkers([linestring[0],
-					      linestring[last_point_ix]],
-					     [map.start_icon, map.end_icon]);
-	  var s_mkr = s_e_markers[0];
-	  var e_mkr = s_e_markers[1];
-	  GEvent.addListener(s_mkr, 'click', function() { 
-	    map.showMapBlowup(linestring[0]);
-	  });	           
-	  GEvent.addListener(e_mkr, 'click', function() { 
-	    map.showMapBlowup(linestring[last_point_ix]); 
-	  });			
-	  map.centerAndZoomToBounds(bounds);
-	  map.drawPolyLine(linestring, colors[color_index++]);
-	  if (color_index == colors_len) {
-	    color_index = 0;
-	  }
+	var route_linestring = route.linestring;
+	linestring = [];
+	for (var i = 0; i < route_linestring.length; ++i) {
+	  var p = route_linestring[i];
+	  linestring.push(new GLatLng(p.y, p.x));
+	}
+	var linestring_len = linestring.length;
+	var last_point_ix = linestring.length - 1;
+	var bounds = map.getBoundsForPoints(linestring);
+	var s_e_markers = map.placeMarkers([linestring[0],
+					    linestring[last_point_ix]],
+					   [map.start_icon, map.end_icon]);
+	var s_mkr = s_e_markers[0];
+	var e_mkr = s_e_markers[1];
+	GEvent.addListener(s_mkr, 'click', function() { 
+	  map.showMapBlowup(linestring[0]);
+	});	           
+	GEvent.addListener(e_mkr, 'click', function() { 
+	  map.showMapBlowup(linestring[last_point_ix]); 
+	});			
+	map.centerAndZoomToBounds(bounds);
+	map.drawPolyLine(linestring, colors[color_index++]);
+	if (color_index == colors_len) {
+	  color_index = 0;
 	}
 	break;			 
       case 300: // Multiple matches
@@ -302,12 +346,12 @@ byCycle.UI = (function() {
     setSelected: function(selected) {
       // Handle called-as-slot
       if (typeof(selected.src) == 'function') {
-        logDebug('setSelected called-as-slot');
+        byCycle.logDebug('setSelected called-as-slot');
 	var event = selected;
 	var link = event.src();
 	selected = link.name;
       }
-      logDebug('selected:', selected);
+      byCycle.logDebug('selected:', selected);
       if (selected == self.selected) {
 	return;
       }
@@ -364,7 +408,7 @@ byCycle.UI = (function() {
 
     showStatus: function(content, error) {	      
       if (content) {
-	setResult('<div id="status">' + content + '</div>', error);
+	self.setResult('<div id="status">' + content + '</div>', error);
       }
     },
 
@@ -378,30 +422,33 @@ byCycle.UI = (function() {
       } else {
 	setElStyle('result', 'color', 'black');
       }
-      setIH('result', content.toString());
+      $('result').innerHTML = content;
     },
 
 
     /* Map */
 
-    setElVToMapLonLat: function(id) {
-      if (!self.map) return;
-      var lon_lat = map.getCenter();
+    getCenterString: function() {
+      var lon_lat = self.map.getCenter();
       var x = Math.round(lon_lat.x * 1000000) / 1000000;
       var y = Math.round(lon_lat.y * 1000000) / 1000000;
-      setElV(id, "lon=" + x + ", " + "lat=" + y);
+      return "lon=" + x + ", " + "lat=" + y;
+    },
+
+    findAddressAtCenter: function() {
+      var center = self.getCenterString();
+      self.q_el.value = center;
+      self.doFind('query', center);
     },
 
     clearMap: function() {  
-      if (map) {
-	map.clearOverlays();
-	for (var reg_key in regions) {
-	  var reg = regions[reg_key];
-	  if (!reg.all)
-	    _showRegionOverlays(reg, true);
-	}
-	map.setCenter(map.getCenter());
+      self.map.clearOverlays();
+      for (var reg_key in regions) {
+	var reg = regions[reg_key];
+	if (!reg.all)
+	  _showRegionOverlays(reg, true);
       }
+      self.map.setCenter(map.getCenter());
     },
 
     showGeocode: function(index, open_info_win) {
@@ -414,51 +461,47 @@ byCycle.UI = (function() {
 
     /* Regions */
 
+    setRegionFromSelectBox: function() {
+      var opts = self.region_el.options;
+      var region = opts[self.region_el.selectedIndex].value;
+      self.setRegion(region);
+    },
+
     setRegion: function(region) {
+      var regions = byCycle.regions;
       region = regions[region] || regions.all;
       document.title = 'byCycle - Bicycle Trip Planner - ' + region.heading;  
       self._initRegion(region);
-      self.map.centerAndZoomToBounds(region.bounds.gbounds, region.center);
+      self.map.centerAndZoomToBounds(region.bounds, region.center);
       if (region.all) {
 	var reg;
 	for (var reg_key in regions) {
 	  reg = regions[reg_key];
 	  if (!reg.all) {
 	    self._initRegion(reg);
-	    self._showRegionOverlays(reg);
+	    //self._showRegionOverlays(reg);
 	  }
 	}
       } else {
-	self._showRegionOverlays(region);
+	//self._showRegionOverlays(region);
       }
-    },
-
-    setRegionFromSelectBox: function() {
-      var opts = self.region_el.options;
-      var i = self.region_el.selectedIndex;
-      self.setRegion(opts[i].value);
     },
 
     _initRegion: function(region) {
-      if (!region.bounds.gbounds) {
-	var sw = region.bounds.sw;
-	var ne = region.bounds.ne;
-	region.bounds.gbounds = new GLatLngBounds(new GLatLng(sw.lat, sw.lng),
-						  new GLatLng(ne.lat, ne.lng));
+      if (!region.bounds.bounds) {
+	region.bounds.bounds = self.map.makeBounds(region.bounds)
       }
       if (!region.center) {
-	region.center = self.map.getCenterOfBounds(region.bounds.gbounds);
+	region.center = self.map.getCenterOfBounds(region.bounds);
       }
       if (!region.linestring) {
-	var sw = region.bounds.gbounds.getSouthWest();
-	var ne = region.bounds.gbounds.getNorthEast();
-	var nw = new GLatLng(ne.lat(), sw.lng());
-	var se = new GLatLng(sw.lat(), ne.lng());
-	region.linestring = [nw, ne, se, sw, nw];
+	region.linestring = [region.nw, region.ne, region.se, region.sw, 
+			     region.nw];
       }
     },
 
     _showRegionOverlays: function(region, use_cached) {
+      return;
       if (!region.marker) {
 	var icon = new GIcon();
 	icon.image = "images/x.png";
