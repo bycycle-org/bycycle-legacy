@@ -211,51 +211,59 @@
 	      <!-- Center Panel -->
 	      <td id="center_panel" class="panel">
 
-		
-		<!-- Map Menu -->
-		<div id="map_menu" class="page_section">
-		  <a id="find_center_map"
-		     href="#find_address_at_center"
-		     title="Find address nearest to red dot at center of map"
-		     >Find address at center</a>		
-		  &middot;
-		  <a id="clear_map"
-		     href=""
-		     title="Clear everything from the map"
-		     >Clear map</a>
-		  &middot;
-		  <a id="bookmark_link"
-		     href="http://tripplanner.bycycle.org/"
-		     title="This link lets you bookmark the current result"
-		     >Bookmark for This Result</a> 
-		</div>
-		<!-- End Map Menu -->
-		
 
-		<!-- Map -->
-		<div id="map">
-		  <div id="map_msg" style="padding: 5px;">
-		    <noscript>
-		      <p>
-			To display a map here, JavaScript must be enabled in your browser. If you would like to view the map, please enable JavaScript and 
-			<a href="">try again</a>.
-		      </p>
-		      <p>
-			Note that you must have a relatively recent browser for the map to display. We test in Mozilla Firefox 1.5 on 
-			Linux, Mac OS X, and Windows; Safari on Mac OS X; and Internet Explorer 6 on Windows. Although we try our best to make the Trip Planner work the same
-			in all of these browsers, we do the most testing with Firefox, and as a result it is the best choice for running the Trip Planner. Firefox is a great
-			browser and we recommned trying it if you haven't already.
-		      </p>
-		      <p>
-			If you don't have one of the above browsers, you may want to leave JavaScript turned off. On the other hand, if you feel like experimenting, you can 
-			<a href="http://www.bycycle.org/contact.html">let us know</a> if the bicycle Trip Planner does or does not work in other browsers.
-		      </p>
-		    </noscript>
+		<!-- Map Container -->
+		<div id="map_container">
+		  
+
+		  <!-- Map Menu -->
+		  <div id="map_menu" class="page_section">
+		    <a id="find_center_map"
+		       href="#find_address_at_center"
+		       title="Find address nearest to red dot at center of map"
+		       >Find address at center</a>		
+		    &middot;
+		    <a id="clear_map"
+		       href=""
+		       title="Clear everything from the map"
+		       >Clear map</a>
+		    &middot;
+		    <a id="bookmark_link"
+		       href="http://tripplanner.bycycle.org/"
+		       title="This link lets you bookmark the current result"
+		       >Bookmark for This Result</a> 
 		  </div>
-		</div>
-		<!-- End Map -->
+		  <!-- End Map Menu -->
+		  
 
+		  <!-- Map -->
+		  <div id="map">
+		    <div id="map_msg" style="padding: 5px;">
+		      <noscript>
+			<p>
+			  To display a map here, JavaScript must be enabled in your browser. If you would like to view the map, please enable JavaScript and 
+			  <a href="">try again</a>.
+			</p>
+			<p>
+			  Note that you must have a relatively recent browser for the map to display. We test in Mozilla Firefox 1.5 on 
+			  Linux, Mac OS X, and Windows; Safari on Mac OS X; and Internet Explorer 6 on Windows. Although we try our best to make the Trip Planner work the same
+			  in all of these browsers, we do the most testing with Firefox, and as a result it is the best choice for running the Trip Planner. Firefox is a great
+			  browser and we recommned trying it if you haven't already.
+			</p>
+			<p>
+			  If you don't have one of the above browsers, you may want to leave JavaScript turned off. On the other hand, if you feel like experimenting, you can 
+			  <a href="http://www.bycycle.org/contact.html">let us know</a> if the bicycle Trip Planner does or does not work in other browsers.
+			</p>
+		      </noscript>
+		    </div>
+		  </div>
+		  <!-- End Map -->
+
+
+		</div>
+		<!-- End Map Container -->
 		
+
 		<!-- Footer -->
 		<div id="footer">
 		  Hosted at <a href="http://affil.aplus.net/Affiliates/click.jsp?bid=111&amp;aid=1003145">aPlus.net</a> &middot; <a href="http://www.bikeportland.org/">Portland bike news @ BikePortland.org</a>
@@ -311,7 +319,7 @@
     <script type="text/javascript" src="static/js/gmap.js"></script>
     <script type="text/javascript" src="static/js/regions.js"></script>
     <script type="text/javascript">
-      byCycle.Map[byCycle.config.map_type].mapPreload();
+      byCycle.Map[byCycle.UI.map_type].mapPreload();
       MochiKit.Signal.connect(window, 'onload', byCycle.UI.init);
     </script>
 

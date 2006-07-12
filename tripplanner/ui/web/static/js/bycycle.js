@@ -8,7 +8,7 @@ var _prod_config = {
 var _dev_config = {
   debug: 1,
   local: 1,
-  map_type: 'Google',
+  map_type: 'Base',
   map_state: 1
 };
 
@@ -27,6 +27,23 @@ var byCycle = (function() {
     base_url: base_url,
     domain: domain,
     query_pairs: parseQueryString(window.location.search.substr(1)),
+    default_map_type: 'Base',
+
+    /**
+     * Get value for variable from query string if possible, otherwise use the
+     * global config value
+     */
+    getVal: function(var_name, func) {
+      var v = byCycle.query_pairs[var_name];
+      if (typeof(v) == 'undefined') {
+	v = byCycle.config[var_name];
+      } else if (typeof(func) == 'function') {
+	// Override config setting with query string setting
+	logDebug('Overriding config', var_name);
+	v = func(v);
+      }
+      return v;
+    },
 
     logInfo: function() {
       if (arguments.length < 1) return;
