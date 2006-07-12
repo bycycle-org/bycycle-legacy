@@ -12,9 +12,6 @@ byCycle.Map.Google = {
  * inline because it does a document.write to load the actual API.
  */
   mapPreload: function() {
-    if (!byCycle.UI.map_state) {
-      return;
-    }
     var api_url = 'http://maps.google.com/maps?file=api&amp;v=2&amp;key=';
     var api_keys = {
       'tripplanner.bycycle.org': 'ABQIAAAAd_4WmZlgvQzchd_BQM0MPhQ8y5tnWrQRsyOlME1eHkOS3wQveBSeFCpOUAfP10H6ec-HcFWPgiJOCA',
@@ -31,7 +28,6 @@ byCycle.Map.Google = {
       byCycle.logDebug('No API key found for ' + byCycle.domain);
     }
   },
-  
   
   mapIsLoadable: function() {
     var is_loadable = false;
@@ -50,9 +46,6 @@ byCycle.Map.Google = {
  */
 byCycle.Map.Google.Map = function(parent, container) {
   byCycle.Map.Map.call(this, parent, container);
-  //this.parent = parent;
-  //this.container = container;
-  this.createMap(container);
   this.createIcons();
   this.addListeners();
 };
@@ -60,9 +53,7 @@ byCycle.Map.Google.Map = function(parent, container) {
 
 byCycle.Map.Google.Map.prototype = update(new byCycle.Map.Map(), {
 
-
   center_marker_html: '<div class="info_win"><p><a href="javascript:void(0);" onclick="setElVToMapLonLat(\'q\'); doFind(\'geocode\');">Find address of closest intersection</a></p><p>Set as <a href="javascript:void(0);" onclick="setElVToMapLonLat(\'fr\')">From</a> or <a href="javascript:void(0);" onclick="setElVToMapLonLat(\'to\')">To</a> address for route</p></div>',
-
 
   createMap: function(container) {
     var map = new GMap2(container);
@@ -77,7 +68,6 @@ byCycle.Map.Google.Map.prototype = update(new byCycle.Map.Map(), {
 
     this.map = map;
   },
-
 
   createIcons: function() {
     // Center icon
@@ -105,7 +95,6 @@ byCycle.Map.Google.Map.prototype = update(new byCycle.Map.Map(), {
     this.end_icon = end_icon;
   },
 
-
   addListeners: function() {
     var self = this;
     GEvent.addListener(self.map, 'moveend', function() {
@@ -124,7 +113,6 @@ byCycle.Map.Google.Map.prototype = update(new byCycle.Map.Map(), {
     });
   },
 
-
   setSize: function(width, height) {
     if (!(width || height)) {
       return;
@@ -139,23 +127,19 @@ byCycle.Map.Google.Map.prototype = update(new byCycle.Map.Map(), {
     this.map.setCenter(this.map.getCenter());
   },
 
-
   setHeight: function(height) {
     this.container.style.height = height + 'px';
     this.map.checkResize();
     this.map.setCenter(this.map.getCenter());
   },
 
-
   unload: function() {
     GUnload();
   },
 
-
   getCenter: function() {
     return this.map.getCenter();
   },
-
 
   setCenter: function(center, zoom) {
     if (zoom) {
@@ -165,31 +149,25 @@ byCycle.Map.Google.Map.prototype = update(new byCycle.Map.Map(), {
     }
   },
 
-
   openInfoWindowHtml: function(point, html) {
     this.map.openInfoWindowHtml(point, html);
   },
-
 
   closeInfoWindow: function() {
     this.map.closeInfoWindow();
   },
 
-
   showMapBlowup: function(point) {
     this.map.showMapBlowup(point);
   },
-
 
   addOverlay: function(overlay) {
     this.map.addOverlay(overlay);
   },
 
-
   removeOverlay: function(overlay) {
     this.map.removeOverlay(overlay);
   },
-
 
   drawPolyLine: function(points, color, weight, 
 			 opacity) {
@@ -198,13 +176,11 @@ byCycle.Map.Google.Map.prototype = update(new byCycle.Map.Map(), {
     return line;
   },
 
-
   placeMarker: function(point, icon) {
     var marker = new GMarker(point, icon);
     this.map.addOverlay(marker);
     return marker;
   },
-
 
   /**
    * Put some markers on the map
@@ -230,7 +206,6 @@ byCycle.Map.Google.Map.prototype = update(new byCycle.Map.Map(), {
     return markers;
   },
 
-
   getBoundsForPoints: function(points) {
     var min_x = 180;
     var max_x = -180;
@@ -249,7 +224,6 @@ byCycle.Map.Google.Map.prototype = update(new byCycle.Map.Map(), {
 			     new GLatLng(max_y, max_x));
   },
 
-
   /**
    * @param bounds A set of point representing a bounding box (GBounds)
    * @return GLatLng at center of bounding box
@@ -260,12 +234,10 @@ byCycle.Map.Google.Map.prototype = update(new byCycle.Map.Map(), {
     return new GLatLng(center.y, center.x);
   },
 
-
   centerAndZoomToBounds: function(bounds, center) {
     var center = center || this.getCenterOfBounds(bounds);
     this.map.setCenter(center, this.map.getBoundsZoomLevel(bounds.bounds));
   },
-
 
   showGeocode: function(geocode) {
     var self = this;
@@ -281,7 +253,6 @@ byCycle.Map.Google.Map.prototype = update(new byCycle.Map.Map(), {
     this.map.setCenter(point, 14);
     this.map.openInfoWindowHtml(point, html);
   },
-
 
   makeBounds: function(bounds) {
     var sw = bounds.sw;

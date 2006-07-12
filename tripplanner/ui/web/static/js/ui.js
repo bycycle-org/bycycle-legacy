@@ -2,8 +2,7 @@
 
 
 byCycle.UI = (function() {
-  /* private: */
-
+  // private:
   var self = null;
 
   // Route colors
@@ -13,12 +12,20 @@ byCycle.UI = (function() {
   var color_index = 0;
   var colors_len = colors.length;
 
+  var map_state = byCycle.getVal('map_state', function(map_state) {
+    if (map_state == '1' || map_state == 'on') {
+      return 1;
+    } else {
+      return 0;
+    }
+  });
+  logDebug('Map state:', map_state);
 
-  /* Query string config */
-  var map_state = byCycle.query_pairs.map_state;
-  map_state = ((map_state == '1' || map_state == 'on') || 
-	       byCycle.config.map_state);
+  var map_type = byCycle.getVal('map_type');
+  logDebug('Map type:', map_type);
 
+
+  // public:
   var _public = {
     input_sections: {
       query: {
@@ -45,9 +52,9 @@ byCycle.UI = (function() {
     result_el: $('result'),
 
     map: null,
-    map_state: map_state,
     map_el: $('map'),
-    map_type: byCycle.config.map_type,
+    map_state: map_state,
+    map_type: map_type,
 
     bookmark_el: $('bookmark_link'),
 
@@ -66,23 +73,25 @@ byCycle.UI = (function() {
 
     init: function() {
       self = byCycle.UI;
-      var map_type = 'base';
       if (!self.map_state) {
 	$('map_msg').innerHTML = 'Map off';
+	$('center_panel').style.display = 'none';
+	self.map = self.getMap(byCycle.default_map_type);
       } else if (byCycle.Map[self.map_type].mapIsLoadable()) {
-	map_type = self.map_type;
+	byCycle.logInfo('Loading map', self.map_type);
+	self.map = self.getMap(self.map_type);
       } else {
-	// Map is not loadable; do something here to indicate that
+	self.map_type = byCycle.default_map_type;
+	self.map = self.getMap(self.map_type);
       }
       self.setEventHandlers();
-      self.map = self.getMap(map_type);
       self.onResize();
       self.setRegionFromSelectBox();
       self.handleQuery();
     },
 
     getMap: function(map_type) {
-      byCycle.logDebug(map_type);
+      byCycle.logDebug('Map type:', map_type);
       if (!self[map_type]) {
 	var map = new byCycle.Map[map_type].Map(self, self.map_el);
 	self[map_type] = map;
