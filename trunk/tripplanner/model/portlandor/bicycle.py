@@ -104,7 +104,7 @@ class Mode(portlandor.Mode):
         bh = 1
         bc = 2
         bcc = 4
-        bccc = 8            
+        bccc = 8
         
         # Adjust for 'perceptual time'
         if bikemode:

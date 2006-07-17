@@ -44,7 +44,8 @@ class TripPlanner(object):
 
         # Analyze the query to determine the service and prepare the query for 
         # the service.
-        params.update(self.analyzeQuery(**params))
+        A = self.analyzeQuery(**params)
+        params['service'], params['q'], params['fr'], params['to'] = A
         service = params['service']
 
         # Base path to web services
@@ -92,10 +93,10 @@ class TripPlanner(object):
         return status, response_text, params
 
 
-    def analyzeQuery(self, service=None, q=None, **params):
+    def analyzeQuery(self, service=None, q=None, fr=None, to=None, **params):
         """Look at query variables and decide what type of query was made."""
         # Note: When a param is None, that means it wasn't passed via CGI
-        if service == 'query':
+        if service == 'query' or (service is None and q is not None):
             # If param q contains the substring " to " between two other
             # substrings
             # OR if param q is a string repr of a list with at least two items,
@@ -113,20 +114,21 @@ class TripPlanner(object):
             if isinstance(words, list) and len(words) > 1:
                 service = 'route'    
                 q = words
+                fr = q[0]
+                to = q[1]
             else:
                 # q doesn't look like a route query; assume it's geocode query
-                service = 'geocode'
-        elif service == 'route':
-            try:
-                words = eval(q)
-            except:
-                service = 'error'
-            else:
-                if isinstance(words, list) and len(words) > 1:
-                    q = words
-                else:
-                    service = 'error'
-        return dict(service=service, q=q)
+                service = 'geocode'        
+        elif (service == 'route' or 
+              (service is None and q is None and
+               fr is not None and to is not None)):
+            service = 'route'
+            q = [fr or '', to or '']
+        elif service is not None:
+            pass
+        else:
+            service = None
+        return service, q or '', fr or '', to or ''
 
 
     def render(self, status, response_text, format='html', **params):
@@ -155,7 +157,7 @@ class TripPlanner(object):
                 content = simplejson.dumps(result_set)
         elif format == 'html':
             content_type = 'text/html'
-            template = 'templates/tripplanner.html'
+            template = 'tripplanner.html'
 
             if response_text is None:
                 result = self.getWelcomeMessage(template)
@@ -175,14 +177,6 @@ class TripPlanner(object):
             params['response_text'] = urllib.quote(simplejson.dumps(result_set))
             params['regions_opt_list'] = self.makeRegionsOptionList(**params)
             params['result'] = result
-
-            service = params['service']
-            if service == 'route':
-                q = params['q']
-                fr, to = q[0], q[1]
-            else:
-                fr, to = None, None
-            params.update(dict(fr=fr, to=to))
 
             for p in params:
                 if params[p] is None:
@@ -246,14 +240,14 @@ class TripPlanner(object):
                 result.append('<li>'
                               '  %s<br/>'
                               '  <a href="javascript:void(0);"'
-                              '     onclick="map.setCenter({y: %s, x: %s},'
-                              '                            14)"; '
-                              '              return false;"'
+                              '     onclick="if (map) '
+                              'map.setCenter(new GLatLng(%s, %s)); '
+                              'return false;"'
                               '>Show on map</a>'
                               '  &middot;'
                               '  <a href="?region=%s&q=%s"'
-                              '     onclick="showGeocode(%s); '
-                              '              return false;"'
+                              '     onclick="showGeocode(%s, true); '
+                              'return false;"'
                               '>Select</a>'
                               '</li>' % (disp_addr,
                                          code['y'], code['x'],
@@ -307,7 +301,7 @@ class TripPlanner(object):
                               '  %s<br/>'
                               '  <a href="javascript:void(0);"'
                               '     onclick='
-                              '"map.setCenter({y: %s, x: %s}, 14); '
+                              '"if (map) map.setCenter(new GLatLng(%s, %s)); '
                               'return false;"'
                               '>Show on map</a>'
                               '  &middot;'
@@ -408,36 +402,48 @@ class TripPlanner(object):
 
     def getWelcomeMessage(self, template):
         return '''
-		  <p style="margin-top: 0;">
-                    The bicycle Trip Planner is under active development. Please <a href="http://www.bycycle.org/contact.html" title="Send us problem reports, comments, questions, and suggestions">contact us</a> with any problems, comments, questions, or suggestions.
-                  </p>
-        
-                  %s
-
-                  <p>
-                    &copy; 2006 
-                    <a href="http://www.bycycle.org/"
-                       title="byCycle Home Page">byCycle.org</a>
-                    <br/>
-                    Last modified: %s
-                  </p>
+        <p style="margin-top:0;">
+        The bicycle Trip Planner is under active development. Please
+        <a href="http://www.bycycle.org/contact.html"
+        title="Send us problem reports, comments, questions, and suggestions"
+        >contact us</a>
+        with any problems, comments, questions, or suggestions.
+        </p>
+        %s
+        <p>
+        &copy; 2006 
+        <a href="http://www.bycycle.org/" 
+        title="byCycle Home Page"
+        >byCycle.org</a>
+        <br/>
+        Last modified: %s
+        <br/>
+        </p>
         ''' % (self.getDisclaimer(), self.getLastModified(template))
         return welcome_message
 
 
     def getDisclaimer(self):
         return '''
-		  <p>
-                    If you find this site useful or would like help it improve, please consider <b><a href="http://www.bycycle.org/support.html#donate" target="_new">donating</a></b>. Any amount helps. 
-                  </p>
+        <p>
+        If you find this site useful or would like help it improve, please
+        consider <b><a href="http://www.bycycle.org/support.html#donate" 
+        target="_new">donating</a></b>. Any amount helps. 
+        </p>
 
-                  <p>
-                    <b>Disclaimer</b>: As you are riding, please keep in mind that you don\'t <i>have</i> to follow the suggested route. <i>It may not be safe at any given point.</i> If you see what looks like an unsafe or undesirable stretch in the suggested route, you can decide to walk, ride on the sidewalk, or go a different way.
-                  </p>
+        <p>
+        <b>Disclaimer</b>: As you are riding, please keep in mind that you  
+        don\'t <i>have</i> to 
+        follow the suggested route. <i>It may not be safe at any given
+        point.</i> If you see what looks like an unsafe or undesirable
+        stretch in the suggested route, you can decide to walk, ride on the
+        sidewalk, or go a different way.
+        </p>
 
-                  <p>
-                    Users should independently verify all information presented here. This service is provided <b>AS IS</b> with <b>NO WARRANTY</b> of any kind. 
-                  </p>        
+        <p>
+        Users should independently verify all information presented here. This
+        service is provided <b>AS IS</b> with <b>NO WARRANTY</b> of any kind. 
+        </p>        
         '''
 
 
