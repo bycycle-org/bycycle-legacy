@@ -1,0 +1,146 @@
+Installation directions for byCycle Trip Planner
+01/23/2006
+
+
+Version
+-------
+
+0.3
+
+
+Software Prerequisites
+----------------------
+
+There are few pieces of additional software necessary to run the byCycle
+system. All of these are free and available for just about any platform:
+
+- Python 2.4.latest <http://www.python.org/>
+- MySQL 4.1.latest <http://www.mysql.org/>
+- MySQLdb 1.2.1 <http://sourceforge.net/projects/mysql-python>
+  Note: In the future, when we have a dedicated server to run the system
+        on, we will most likely migrate to PostgreSQL + PostGIS
+  Note: It is also possible to implement a particular data mode using a 
+        different database (e.g., SQLite), but how much work that would 
+        take is unknown
+
+If you want to be able to interact with the system locally through a web 
+browser, you will need:
+- Apache 2.0.latest <http://httpd.apache.org/>
+
+For the Google Map, you will need:
+- A Google Maps API key, v2 <http://www.google.com/apis/maps/>
+  Note: You will need a publicly accessible web address for this to work,
+        and you will need to set up your Apache installation first so you 
+        know what directory tree to use for the API key (the key works in
+        a particular directory in your web tree and its subdirectories)
+
+If you want to be able to import data from a shapefile, you will need:
+- libmygis 0.5.5 <http://jcole.us/software/libmygis/>
+
+Other versions of the above software may work, but other combinations have not 
+been tested. In general, we are going to keep up with the latest stable 
+releases of all supporting software.
+
+
+Placement of Files
+------------------
+
+Unpack the byCycle package somewhere that's in your PYTHONPATH.
+
+Maybe the easiest way to do this is to unpack it under
+/path_to_python2.4_lib/site-packages. For example, we installed python2.4
+under /usr/local/ so our site-packages directory is
+/usr/local/lib/python2.4/site-packages. The other likely location is
+/usr/lib/python2.4/site-packages.
+
+For Windows, this will probably be C:\Python24\Lib\site-packages
+
+If you really wanted to, you could also unpack to some abitrary directory and
+then add that directory to your PYTHONPATH.
+
+Whatever you do, make sure that if you have multiple version of Python you are
+installing any and all related Python packages under the same version of
+Python. At the current time, what that means is, make sure PySQLite is
+installed under the same Python as the byCycle package.
+
+For the Web interface you can do one of two things:
+
+1) Leave the web files in the byCycle package and create a symbolic link from
+somewhere under your web tree to the web interface directory, like so:
+'ln -s /usr/local/lib/python2.4/site-packages/byCycle/tripplanner/ui/web/ /var/www/html/tripplanner'
+
+2) The other option is to copy the the web files into your web tree:
+'mkdir /var/www/html/tripplanner'
+'cp -R tripplanner/ui/web/* /var/www/html/tripplanner'
+'cp -R webservices /var/www/html/tripplanner'
+
+Personally, I would avoid option 2 if possible. On Windows, I have no idea how
+to make symbolic links or something equivalent, so option 2 is what I use if I
+happen to be working on Windows.
+
+At this point, you should be able to navigate to the appropriate URL in your
+web browser and view the interface, but you may not be able to find addresses
+or routes just yet...
+
+
+Data
+----
+
+Under certain circumstances, the package will be provided with the database
+and routing matrix included. In this case, you shouldn't have to do anything
+else.
+
+When the data is not supplied, here's what you do to add a new data mode and
+its associated travel modes to the model:
+
+- Make sure you have mysqlgisimport (part of libmygis) installed first and that
+  it is on your PATH
+
+- Make a new directory in the model for the data and associated scripts
+  'mkdir tripplanner/model/timbuktu'
+
+- Create a directory to hold your data files
+  'mkdir tripplanner/model/timbuktu/data'
+
+- Put your data files for import (e.g., timbuktu.shp, timbuktu.dbf) in a 
+  subdirectory of the data directory. It doesn't really matter what the
+  directory is called; just make it something meaningful for you and something
+  that will distinguish it from any future versions of your data.
+
+- Copy the files __init__.py and bicycle.py from tripplanner/model/portlandor to
+  tripplanner/model/timbuktu/
+
+- Copy the files shp2sql.py and schema.sql from tripplanner/model/portlandor/data
+  to tripplanner/model/timbuktu/data
+
+- Here's where it gets hard: now you have to modify schema.sql and shp2sql.py
+  to be able to import your data. How you will do this depends on your data. If
+  your data is similar to other datasets we've seen, then it will be fairly
+  easy; if not, it might be hard, possibly very hard (or just tedious and
+  annoying).
+
+- If you get past the above step, you now need to modify __init__.py and
+  bicycle.py. You will modify __init__.py to create the adjacency matrix for
+  routing. This shouldn't be too difficult. You just need to specify which
+  fields from the DB you want to use. To create the adjacency matrix, run
+  __init__.py as a script. Next, you will modify bicycle.py to create the
+  weight (or cost if you prefer) function using the fields that should now be
+  in the adjacency matrix.
+
+If everything went well, you should now be able to look up addresses and find
+routes using the data you imported and the files modified as detailed above.
+
+One thing to keep in mind when doing the above is to make sure you keep the
+structure the same as the other data modes in the model. In other words, you
+want the same directory structure and the same paths, except you'll
+change metro to timbuktu and add or remove fields as appropriate to your data.
+
+
+Problems and Issues
+-------------------
+
+If you have any problems with any of this, please feel free to contact us:
+Email: wyatt@bycycle.org
+Web Form: http://www.byCycle.org/contact.html
+
+
