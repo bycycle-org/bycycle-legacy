@@ -5,8 +5,6 @@ paths = (# Typical UNIX installation
          '/usr/local/lib/python2.4/site-packages/byCycle/',
          '/usr/lib/python2.4/site-packages/byCycle/',
 
-         # UNIX $HOME installation
-         '/home/bycycle/lib/python2.4/site-packages/byCycle/',
          '/home/u6/bycycle/lib/python2.4/site-packages/byCycle/',
 
          # Typical  Windows installation

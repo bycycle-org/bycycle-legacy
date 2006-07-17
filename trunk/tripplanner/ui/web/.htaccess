@@ -1,18 +1,16 @@
-RewriteEngine on
-RewriteCond %{REQUEST_URI} !^/tpdev/static/
-RewriteCond %{REQUEST_URI} !^/tpdev/dispatch.cgi
-RewriteRule ^(.*)$ dispatch.cgi/$1 [L]
-
 <Files .htaccess>
-  order allow,deny
-  deny from all
+order allow,deny
+deny from all
 </Files>
 
-Options +ExecCGI
+DirectoryIndex index.py
+Options +ExecCGI +FollowSymLinks
+AddHandler cgi-script py
 
-<Files dispatch.cgi>
-    SetHandler cgi-script
-</Files>
-
-ReadmeName README.txt
+RewriteEngine On
+RewriteBase /
+RewriteCond %{REQUEST_URI} !(geocode|route|js|css|images|src|index)/?$ [NC]
+RewriteRule ^([a-z,]+)(/?)$ http://%{HTTP_HOST}/?region=$1&%{QUERY_STRING} [NC,R=temp,L]
+RewriteRule ^(geocode)$ http://%{HTTP_HOST}/?service=$1&%{QUERY_STRING} [NC,R=temp,L]
+RewriteRule ^(route)$ http://%{HTTP_HOST}/?service=$1&%{QUERY_STRING} [NC,R=temp,L]
 

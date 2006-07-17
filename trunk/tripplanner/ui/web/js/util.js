@@ -1,20 +1,7 @@
 function echo(str) { document.write(str); }
 
-
-function writeScript(src, type) {
-  var type = type || 'text/javascript';
-  document.write('<script src="' + src + '" type="' + type + '"></script>');
-}
-
-function appendScript(src, type) {
-  var script = document.createElement('script');
-  script.type = type || 'text/javascript';
-  script.src = src;
-  document.getElementsByTagName('head')[0].appendChild(script);
-}
-
-
-function fixScroll()  {
+function fixScroll() 
+{
   var div = el("content");
   var content = div.innerHTML;
   div.innerHTML = "<a id='fix_scroll' href=''></a>" + content;
