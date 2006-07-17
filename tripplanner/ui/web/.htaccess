@@ -1,6 +1,6 @@
 RewriteEngine on
-RewriteCond %{REQUEST_URI} !^/tpcurr/static/
-RewriteCond %{REQUEST_URI} !^/tpcurr/dispatch.cgi
+RewriteCond %{REQUEST_URI} !^/tpdev/static/
+RewriteCond %{REQUEST_URI} !^/tpdev/dispatch.cgi
 RewriteRule ^(.*)$ dispatch.cgi/$1 [L]
 
 <Files .htaccess>
@@ -15,3 +15,4 @@ Options +ExecCGI
 </Files>
 
 ReadmeName README.txt
+
