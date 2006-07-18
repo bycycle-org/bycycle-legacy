@@ -142,11 +142,19 @@
 		      onsubmit="doFind('geocode'); return false;">
 		  
 		  <div class="input_title">Find an Address</div>
+
+		  <div>
+		    <small>Enter address -OR- pick from map
+		    <a href="#" 
+		       onclick="setResult('You can type in an address or intersection -OR- choose a point from the map. Please note that you can\'t enter businesses or other points of interest at this time, only addresses. &lt;br/>&lt;br/>To pick a point from the map, first zoom in and center the map on the point you want, then click the red dot and choose the link \'Find address of closest intersection.\'&lt;br/>&lt;br/>The easiest way to center the map is to double click it. The point you double-click will move to the center.');"
+		       >?</a>
+		    </small>
+		  </div>
 		  
 		  <div>
 		    <input type="hidden" name="region" value="%(region)s"/>
 		    <input type="hidden" name="service" value="query"/>
-		    <input type="text" id="q" name="q" class="input_field" tabindex="1" value="%(q)s"/>
+		    <input type="text" id="q" name="q" class="input_field" tabindex="1" title="Address or intersection (no businesses or other points of interest)" value="%(q)s"/>
 		    <input name="gb"
 			   class="input_button"
 			   title="Click to look up address"
@@ -164,13 +172,21 @@
 		      style="margin-bottom: 0;">
 
 		  <div class="input_title">Find a Route</div>
+
+		  <div>
+		    <small>Enter 'from' and 'to' addresses -OR- pick from map
+		    <a href="#" 
+		       onclick="setResult('For each of your \'from\' and \'to\' addresses you can type in address or intersection -OR- choose a point from the map. Please note that you can\'t enter businesses or other points of interest at this time, only addresses. &lt;br/>&lt;br/>To pick a point from the map, first zoom in and center the map on the point you want, then click the red dot and choose the \'From\' or \'To\' link in \'Set as From or To address for route.\' &lt;br/>&lt;br/>The easiest way to center the map is to double click it. The point you double-click will move to the center.');"
+		       >?</a>
+		    </small>
+		  </div>
 		  
 		  <table>
 		    <tr>
 		      <td>
 			<input type="hidden" name="region" value="%(region)s"/>
 			<input type="hidden" name="service" value="route"/>
-			<input type="text" id="fr" name="fr" class="input_field" tabindex="1" value="%(fr)s"/>
+			<input type="text" id="fr" name="fr" class="input_field" tabindex="1" title="From address or intersection (no business names)" value="%(fr)s"/>
 		      </td>
 
 		      <td id="swap" rowspan="2">
@@ -183,7 +199,7 @@
 		    
 		    <tr>
 		      <td>
-			<input type="text" id="to" name="to" class="input_field" tabindex="1" value="%(to)s"/>
+			<input type="text" id="to" name="to" class="input_field" tabindex="1"  title="To address or intersection (no business names)" value="%(to)s"/>
 		      </td>
 		    </tr>
 		  </table>
@@ -305,22 +321,28 @@
 
 	    <!-- Google Ads Panel-->
 	    <td id="google_ads_panel">
-	      <script type="text/javascript">
-		google_ad_client = "pub-6971619329897557";
-		google_ad_width = 120;
-		google_ad_height = 600;
-		google_ad_format = "120x600_as";
-		google_ad_type = "text_image";
-		google_ad_channel ="";
-		google_color_border = "A7CC95";
-		google_color_bg = "FFFFFF";
-		google_color_link = "000000";
-		google_color_text = "000000";
-		google_color_url = "4466DD";
-	      </script>
-	      <script type="text/javascript"
-		      src="http://pagead2.googlesyndication.com/pagead/show_ads.js">
-	      </script>
+	      <div id="google_ads_div">
+		<a href="#" 
+		   style="text-align: right;"
+		   onclick="setElStyle('google_ads_div', 'display', 'none'); setElStyle('google_ads_panel', 'width', '0px');"
+		   >Hide Ads</a>
+		<script type="text/javascript">
+		  google_ad_client = "pub-6971619329897557";
+		  google_ad_width = 120;
+		  google_ad_height = 600;
+		  google_ad_format = "120x600_as";
+		  google_ad_type = "text_image";
+		  google_ad_channel ="";
+		  google_color_border = "A7CC95";
+		  google_color_bg = "FFFFFF";
+		  google_color_link = "000000";
+		  google_color_text = "000000";
+		  google_color_url = "4466DD";
+		</script>
+		<script type="text/javascript"
+			src="http://pagead2.googlesyndication.com/pagead/show_ads.js">
+		</script>
+	      </div>
 	    </td>
 	    <!-- End Google Ads Panel -->
 	    
