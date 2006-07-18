@@ -89,8 +89,8 @@ timer = None
 
     
 def shpToRawSql():
-    datasource = 'route_roads84psrenode'
-    layer = 'route_roads84psrenode'
+    datasource = 'route_roads84bktrail_FINAL_20060717'
+    layer = datasource
     path = os.path.join(os.getcwd(), datasource)
     # Drop existing raw table
     Q = 'DROP TABLE IF EXISTS %s' % raw
@@ -123,20 +123,20 @@ def addColumns():
 def fixRaw():
     # Abbreviate bike modes
     Q = 'UPDATE %s SET bike_facil="%%s" WHERE bike_facil="%%s"' % raw
-    bm = (("t", "bike trail"),
-          ("r", "bike route"),
-          ("l", "bike lane"),
-          ("p", "preferred street"),
+    bm = (('t', 'bike trail'),
+          ('r', 'bike route'),
+          ('l', 'bike lane'),
+          ('p', 'preferred street'),
           )
     for m in bm:
         _execute(Q % (m[0], m[1]))
     # Fix CFCC for bike trails
     _execute('UPDATE %s SET cfcc="a71" WHERE bike_facil="t"' % raw)
     # Fix one_way (0 => 'n', 1 => 'ft', 2 => 'tf', 3 => '')
-    Q = 'UPDATE %s SET one_way="%s" WHERE one_way="%s"'
-    M = {'0': 'n', '1': 'ft', '2': 'tf', '3': ''}
-    for m in M:
-        _execute(Q % (raw, M[m], m))
+    #Q = 'UPDATE %s SET one_way="%s" WHERE one_way="%s"'
+    #M = {'0': 'n', '1': 'ft', '2': 'tf', '3': ''}
+    #for m in M:
+    #    _execute(Q % (raw, M[m], m))
 
 def createSchema():
     tables = ('layer_street', 'layer_node', 'streetname', 'city', 'state')
@@ -168,7 +168,7 @@ def unifyAddressRanges():
 
 def transferStreetNames():
     """Transfer street names to their own table."""
-    Q = 'INSERT INTO %s_streetname (prefix, name, type, suffix) '\
+    Q = 'INSERT INTO %s_streetname (prefix, name, sttype, suffix) '\
         'SELECT DISTINCT fedirp, fename, fetype, fedirs FROM %s'
     _execute(Q % (region, raw))
 
@@ -181,7 +181,7 @@ def updateRawStreetNameIds():
     # Index each street name ID by its street name
     # {(stname)=>streetname_id}
     stnames = {}
-    Q = 'SELECT id, prefix, name, type, suffix FROM %s_streetname' % region
+    Q = 'SELECT id, prefix, name, sttype, suffix FROM %s_streetname' % region
     _execute(Q)
     for row in db.fetchAll():
         stnames[(row[1],row[2],row[3],row[4])] = row[0]
