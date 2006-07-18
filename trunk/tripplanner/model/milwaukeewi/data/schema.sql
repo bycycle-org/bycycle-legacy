@@ -32,10 +32,10 @@ CREATE TABLE `milwaukeewi_layer_street` (
   `city_r_id`     INTEGER NOT NULL,
   `state_l_id`    CHAR(2) NOT NULL,
   `state_r_id`    CHAR(2) NOT NULL,
-  `zip_l`         MEDIUMINT(5) NOT NULL,
-  `zip_r`         MEDIUMINT(5) NOT NULL,
+  `zip_code_l`    MEDIUMINT(5) NOT NULL,
+  `zip_code_r`    MEDIUMINT(5) NOT NULL,
   -- Region-specific attributes
-  `one_way`       ENUM('', 'ft', 'tf', 'n') NOT NULL,
+  `one_way`       TINYINT NOT NULL,
   `code`          CHAR(3) NOT NULL,	
   `bikemode`      ENUM('', 't', 'r', 'l', 'p'),
   `lanes`         TINYINT NULL,	
@@ -51,8 +51,8 @@ CREATE TABLE `milwaukeewi_layer_street` (
   INDEX (`city_r_id`),
   INDEX (`state_l_id`),
   INDEX (`state_r_id`),
-  INDEX (`zip_l`),
-  INDEX (`zip_r`)
+  INDEX (`zip_code_l`),
+  INDEX (`zip_code_r`)
 );
 
 CREATE TABLE `milwaukeewi_layer_node` (
@@ -65,11 +65,11 @@ CREATE TABLE `milwaukeewi_streetname` (
   `id`     INTEGER PRIMARY KEY NOT NULL AUTO_INCREMENT,
   `prefix` CHAR(2) NOT NULL,
   `name`   VARCHAR(255) NOT NULL,
-  `type`   CHAR(4) NOT NULL,
+  `sttype`   CHAR(4) NOT NULL,
   `suffix` CHAR(2) NOT NULL,
   INDEX (`prefix`),
   INDEX (`name`),
-  INDEX (`type`),
+  INDEX (`sttype`),
   INDEX (`suffix`)
 );
 
