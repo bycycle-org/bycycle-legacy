@@ -113,7 +113,7 @@ def addColumns():
     cols = ('addr_f', 'addr_t', 'streetname_id', 'city_l_id', 'city_r_id')
     for col in cols:
         _execute(Q % (col, 'INTEGER'))
-    # CHAR(s) columns
+    # CHAR columns
     cols = ('state_l_id', 'state_r_id')
     for col in cols:
         _execute(Q % (col, 'CHAR(2)'))
@@ -122,7 +122,7 @@ def addColumns():
 
 def fixRaw():
     # Abbreviate bike modes
-    Q = 'UPDATE %s SET bike_facil="%%s" WHERE bike_facil="%%s"' % raw
+    Q = 'UPDATE %s SET bike_facil="%%s" WHERE lower(bike_facil)="%%s"' % raw
     bm = (('t', 'bike trail'),
           ('r', 'bike route'),
           ('l', 'bike lane'),
