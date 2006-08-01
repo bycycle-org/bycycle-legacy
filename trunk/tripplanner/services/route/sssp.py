@@ -19,7 +19,7 @@ def singleSourceShortestPaths(G, s, d=None,
 
     Args:
     G -- adjacency matrix {'nodes': {v: {u: e,...}, ...},
-                           'edges': {e: (e.weight,e.attr1,e.attr2,...), ...}}
+                           'edges': {e: (e.weight, e.attr1, e.attr2,...), ...}}
          edges _must_ contain the weight entry first; it may also contain 
          other attributes of the edge. These other attributes can be used to
          determine a different weight for the edge.
@@ -47,8 +47,6 @@ def singleSourceShortestPaths(G, s, d=None,
     open = [(0, s)]
     # predecessor of each node that has shortest path from s
     P = {}
-    # list of all edges already crossed, in order
-    E = []       
     
     nodes, edges = G["nodes"], G["edges"]
 
@@ -57,7 +55,7 @@ def singleSourceShortestPaths(G, s, d=None,
         count += 1
         # In the nodes remaining in G that have a known weight from s,
         # find the node, u, that currently has the shortest path from s
-        w_s_to_u, u = heapq.heappop(open)
+        w_of_s_to_u, u = heapq.heappop(open)
 
         # Get the attributes of the segment crossed to get to u
         try:
@@ -74,10 +72,7 @@ def singleSourceShortestPaths(G, s, d=None,
 
         # ...and explore the edges that connect u to those nodes, updating
         # the weight of the shortest paths to any or all of those nodes as
-        # necessary. v is the name of the node across the current edge from u. 
-        #print
-        #print "Currently sitting at:", u, "<br>"
-        #print "Exploring surrounding nodes...", "<br>"
+        # necessary. v is the node across the current edge from u. 
         for v in A:
             e = A[v]
 
@@ -88,8 +83,7 @@ def singleSourceShortestPaths(G, s, d=None,
             except KeyError:
                 continue
 
-            # Get the weight of the edge running from u to v
-            
+            # Get the weight of the edge running from u to v            
             try:
                 w_of_e = weightFunction(v, e_attrs, prev_e_attrs)
             except TypeError:
@@ -98,7 +92,7 @@ def singleSourceShortestPaths(G, s, d=None,
             # Weight of s to u plus the weight of u to v across e--this is *a*
             # weight from s to v that may or may not be less than the current
             # known weight to v
-            w_of_s_to_u_plus_w_of_e = w_s_to_u + w_of_e
+            w_of_s_to_u_plus_w_of_e = w_of_s_to_u + w_of_e
 
             # When there is a heuristic function, we use a "guess-timated"
             # weight, which is the normal weight plus some other heuristic
@@ -117,9 +111,9 @@ def singleSourceShortestPaths(G, s, d=None,
                 # If no path to v had been found previously, v's path-weight 
                 # from s will have been previously unknown (infinity); 
                 # since we have just found a path from s to v, we need to add
-                # v's path-weight from s to the list of  nodes with known
+                # v's path-weight from s to the list of nodes with known
                 # weights from s
-                w_of_s_to_v = infinity
+                w_of_s_to_v = infinity  # note: this gets used below
                 heapq.heappush(open, (w_of_s_to_u_plus_w_of_e, v))
 
             # If the current known weight from s to v is greater than the new
@@ -138,7 +132,6 @@ def singleSourceShortestPaths(G, s, d=None,
                 open = None
                 break
 
-    #print count
     # There is no path from start to d when the weight to d is infinite
     if W[d] == infinity:
         raise SingleSourceShortestPathsNoPathError
@@ -155,7 +148,7 @@ def extractShortestPathFromPredecessorList(P, d):
 
     @return
     V A list of the node IDs on the lightest path from start to d
-    V A list of the edge IDs on the lightest path from start to d
+    E A list of the edge IDs on the lightest path from start to d
     W A list of the weights of the segments on the lightest path from s to d
     w The total weight of the segments with IDs in E
 
