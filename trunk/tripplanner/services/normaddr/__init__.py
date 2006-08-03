@@ -47,6 +47,8 @@ def get(region='', q='', **params):
 
     if not region:
         errors.append('Please select a region')
+
+    q = q.strip('"')
             
     if not q:
         errors.append('Please enter an address')

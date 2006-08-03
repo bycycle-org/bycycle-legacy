@@ -51,6 +51,8 @@ function mapCreate()
   var overview = document.getElementById('map_overview');
   document.getElementById("map").appendChild(overview);
  
+  new GKeyboardHandler(map);
+
   var icon = new GIcon();
   icon.image = 'images/reddot15.png';
   icon.iconSize = new GSize(15, 15);
