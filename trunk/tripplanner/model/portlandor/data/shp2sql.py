@@ -1,41 +1,57 @@
 # shp2mysql.py 
-#  Portland, OR, shp/dbf import
-#   
+#     Portland, OR, shp/dbf import
+#      
 # AUTHOR 
-#  Wyatt Baldwin <wyatt@bycycle.org>
+#     Wyatt Baldwin <wyatt@bycycle.org>
 # DATE 
-#  January 27, 2006
-#  March 25, 2006 [Converted to interactive; Switched from SQLite to MySQL]
-#  April 4, 2006 [Converted to single-DB, shared with other regions]
+#     January 27, 2006
+#     March 25, 2006 [Converted to interactive; Switched from SQLite to MySQL]
+#     April 4, 2006 [Converted to single-DB, shared with other regions]
 # VERSION 
-#  0.1
+#     0.1.3
 # PURPOSE 
-#  Script to import line geometry and associated attributes from a street layer
-#  shapefile into a normalized database
+#     Script to import line geometry and associated attributes from a street layer
+#     shapefile into a normalized database
+# REQUIREMENTS
+#     libmygis 0.5.5 <http://jcole.us/software/libmygis/>
+#     This script uses the mysqlgisimport from libmygis
+#         tar xvzf libmygis-0.5.5.tar.gz
+#         cd libmygis-0.5.5
+#         ./configure --prefix=$HOME
+#         make
+#         cd tools
+#         make && make install
+#     If this script is being run from the byCycle package, _openDB needs to be
+#     rewritten with custom code to open a database connection.
 # USAGE 
-#  python shp2mysql.py
-#  Note: Run from the region/data directory
+#     python shp2sql.py [start] [no_prompt] [only]
+#     - start The index of the function to start from [0, n]
+#       Ex: python shp2sql.py 2
+#     - no_prompt Include this flag to "just do it"
+#       Ex: python shp2sql.py no_prompt
+#     - include this flag to only do one function
+#       Ex: python shp2sql.py 2 only
+#     Note: Run from the region/data directory
 # LICENSE 
-#  GNU Public License (GPL)
-#  See LICENSE in top-level package directory
+#     ???
 # WARRANTY 
-#  This program comes with NO warranty, real or implied.
+#     This program comes with NO warranty, real or implied.
 # TODO
-#  Turn this into a derived class; create a base class that all regions can use
+#     Turn this into a derived class; create a base class that all regions can use
 import sys, os
-from byCycle.lib import gis, meter
+from byCycle.lib import meter
 
 
 CWD = os.getcwd()
 
 
-# -- Edit variables for region
+# -- Configuration for region
 
 BYCYCLE_PATH = '/home/u6/bycycle/lib/python2.4/site-packages/byCycleCurr'
 
 region = 'portlandor'
 
-# Full path to mysqlgisimport executable
+# Path to mysqlgisimport executable
 mysqlgisimport = 'mysqlgisimport'
 
 # Directory containing shp/dbf files
@@ -121,7 +137,7 @@ bikemodes = {'mu': 't',
 state_id = 'or'
 state = 'oregon'
 
-# -- End edit variables for region
+# -- End configuration for region
 
 
 # Command-line args
@@ -463,7 +479,7 @@ def run():
         apply(func, args)
         print timer.stop()
     else:
-        # Do all functions, starting from specified
+        # Do multiple (possibly all) functions
         for i, p in enumerate(pairs):
             msg, func = p[0], p[1]
             if i < start:

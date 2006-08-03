@@ -70,3 +70,5 @@ street_types_ftoa = {'alley': 'aly', 'annex': 'anx', 'arcade': 'arc',
                      'wall': 'wall', 'way': 'way', 'ways': 'ways',
                      'well': 'wl', 'wells': 'wls'}
 street_types_atof = swapKeysAndValues(street_types_ftoa)
+street_types_atof['pky'] = 'parkway'
+
