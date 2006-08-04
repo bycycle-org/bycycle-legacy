@@ -1,6 +1,7 @@
 # Base Mode
 # 11/07/2005
 
+import os
 import MySQLdb
 from byCycle import install_path
 from byCycle.lib import gis, util
@@ -8,7 +9,7 @@ import address, segment, intersection
 
 
 class Mode(object):
-    path = '%stripplanner/model/' % install_path
+    path = os.path.join(install_path, 'tripplanner/model')
     # The number of digits to save when encoding a float as an int
     int_exp = 6
     # Multiplier to create int-encoded float
@@ -25,11 +26,12 @@ class Mode(object):
 
         
         # Set up path to data files
-        self.data_path = '%s%s/' % (self.path, self.region)
-        self.matrix_path = '%smatrix.pyc' % self.data_path
+        self.data_path = os.path.join(self.path, self.region)
+        self.matrix_path = os.path.join(self.data_path, 'matrix.pyc')
 
         # Set up database connection
-        pw = open('%s.pw' % self.path).read().strip()
+        pw_path = os.path.join(self.path, '.pw')
+        pw = open(pw_path).read().strip()
         self.connection = MySQLdb.connect(db='bycycle-1',
                                           host='localhost',
                                           user='bycycle-1',
