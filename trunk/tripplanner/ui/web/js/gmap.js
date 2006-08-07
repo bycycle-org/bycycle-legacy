@@ -41,6 +41,10 @@ function mapLoad()
 function mapCreate()
 {
   map = new GMap2(el('map'));
+
+  map.addMapType(makeMercatorMapType(G_NORMAL_MAP, 'Bike/Map', 18));
+  map.addMapType(makeMercatorMapType(G_SATELLITE_MAP, 'Bike/Sat', 20));
+
   map.setCenter(new GLatLng(0, 0), 2);
   
   map.addControl(new GLargeMapControl());
@@ -49,7 +53,7 @@ function mapCreate()
 
   map.addControl(new GOverviewMapControl());
   var overview = document.getElementById('map_overview');
-  document.getElementById("map").appendChild(overview);
+  document.getElementById('map').appendChild(overview);
  
   new GKeyboardHandler(map);
 
@@ -62,10 +66,8 @@ function mapCreate()
     if (center_marker)
       map.removeOverlay(center_marker);
     var center = map.getCenter();
-    center.x = Math.round(center.x * 1000000) /
-      1000000;
-    center.y = Math.round(center.y * 1000000) /
-      1000000;
+    center.x = Math.round(center.x * 1000000) / 1000000;
+    center.y = Math.round(center.y * 1000000) / 1000000;
     center_marker = new GMarker(center, icon);
     map.addOverlay(center_marker);
     GEvent.clearListeners(center_marker, 'click');
@@ -74,7 +76,12 @@ function mapCreate()
 			     center_marker_html);
     });
   });
-  
+  GEvent.addListener(map, 'maptypechanged', function() {
+    var map_type = map.getCurrentMapType();
+    if (map_type.onChangeTo) {
+      map_type.onChangeTo();
+    }
+  });
   base_icon = new GIcon();
   base_icon.shadow = 'images/shadow50.png';
   base_icon.iconSize = new GSize(20, 34);
@@ -91,6 +98,90 @@ function mapCreate()
   selectRegion(reg_el[reg_el.selectedIndex].value);
 }
 
+
+/**
+ * Factory for creating Mercator map types (or at least it will be; right
+ * now it's Metro-specific).
+ */
+function makeMercatorMapType(base_type, name, zoom_levels) {
+  var domain = 'mica.metro-region.org';
+  var transparent_png = 'http://' + domain + 
+    '/bycycle/images/transparent.png';
+  var copyrights = new GCopyrightCollection("&copy; Metro");
+  var wms_url = 'http://' + domain + 
+    '/cgi-bin/mapserv-postgis?map=/var/www/html/bycycle/bycycle.map&';
+  var layers = 'bike';
+  var tile_size = 256;
+  var tile_size_less_one = tile_size - 1;
+  var img_format = 'image/gif';
+  var srs = "EPSG:4326";
+  var se, nw;
+  var min_zoom = 9;
+  var url = [wms_url,
+	     "SERVICE=WMS",
+	     "&VERSION=1.1.1",
+	     "&REQUEST=GetMap",
+	     "&LAYERS=", layers,
+	     "&STYLES=",
+	     "&FORMAT=", img_format,
+	     "&BGCOLOR=0xFFFFFF",
+	     "&TRANSPARENT=TRUE",
+	     "&SRS=", srs,
+	     "&WIDTH=", tile_size,
+	     "&HEIGHT=", tile_size].join('');
+
+  var pdx_bounds = regions.portlandor.bounds;
+  var sw = pdx_bounds.sw;
+  var ne = pdx_bounds.ne;
+  var bounds = new GLatLngBounds(new GLatLng(sw.lat, sw.lng), 
+				 new GLatLng(ne.lat, ne.lng));
+
+  var projection = new GMercatorProjection(zoom_levels);
+  projection.tileCheckRange = function(tile,  zoom,  tilesize) {
+    var x = tile.x * tile_size;
+    var y = tile.y * tile_size;
+    var sw_point = new GPoint(x, y + tile_size_less_one);
+    var ne_point = new GPoint(x + tile_size_less_one, y);
+    sw = this.fromPixelToLatLng(sw_point, zoom);
+    ne = this.fromPixelToLatLng(ne_point, zoom );
+    var tile_bounds = new GLatLngBounds(sw, ne);
+    if (tile_bounds.intersects(bounds)) {
+      return true;
+    } else {
+      return false;
+    }      
+  };
+
+  var layer = new GTileLayer(copyrights, 0, zoom_levels - 1);
+  layer.getTileUrl = function(tile, zoom) {
+    if (zoom < min_zoom) {
+      var tile_url = transparent_png;
+    } else {
+      var bbox = [sw.x, sw.y, ne.x, ne.y].join(',');
+      var tile_url = [url, "&BBOX=", bbox].join('');	
+    }
+    return tile_url;
+  };
+
+  layer.isPng = function() { 
+    return true; 
+  };
+
+  layer.getOpacity = function() { 
+    return .5; 
+  };
+
+  var layers = [base_type.getTileLayers()[0], layer];
+  var opts = {errorMessage: 'Here Be Dragons'};
+  var map_type = new GMapType(layers, projection, name, opts);
+  
+  map_type.onChangeTo = function() {
+    if (map.getZoom() < min_zoom) {
+      map.setZoom(min_zoom);
+    }
+  };
+  return map_type;
+}
 
 function drawPolyLine(points, color, weight, opacity)
 {
@@ -176,76 +267,3 @@ function centerAndZoomToBounds(bounds, center)
 }
 
 
-function hideBikeThereNetwork()
-{
-  network_visible = false;
-  el('bikeThereToggle').onclick = showBikeThereNetwork;
-  el('bikeThereToggle').innerHTML = 'Show Bike Route Network';
-  map.clearOverlays();
-}
-
-
-var network_visible = false;
-var network = false;
-function showBikeThereNetwork()
-{
-  var processResponse = function(req) {
-    // Note: this is going to get called AFTER the outer function returns!!!
-    var colors = {'mu': '#660099',
-		  'bl': '#0000ff',
-		  'lt': '#006600',
-		  'mt': '#FF9933',
-		  'ht': '#FF6600',
-		  'ca': '#CC0033'}
-    if (!network) { eval('network = ' + req.responseText + ';'); }
-
-
-    el('bikeThereMsg').innerHTML = 'Drawing network. Please wait...';
-    var modelines;
-    var line;
-    var color;
-    var last_idx;
-
-    // TODO: only draw inside some particular size bounds, not just whatever
-    // size the map happens to be (like inside a square mile centered at map
-    // center).
-    // function to determine if a point is in bounds
-    // function to draw network
-
-    var bounds = map.getBoundsLatLng();
-    minX = bounds.minX;
-    maxX = bounds.maxX;
-    minY = bounds.minY;
-    maxY = bounds.maxY;
-    for (var mode in network) {
-      modelines = network[mode];
-      color = colors[mode];
-      for (var i = 0; i < modelines.length; ++i) {
-	line = modelines[i];
-	last_idx = line.length - 1;
-	if (((minX <= line[0].x && line[0].x <= maxX) &&
-	     (minY <= line[0].y && line[0].y <= maxY)) ||
-	    ((minX <= line[last_idx].x && line[last_idx].x <= maxX) &&
-	     (minY <= line[last_idx].y && line[last_idx].y <= maxY))) {
-	  map.addOverlay(new GPolyline(line, color, 3, 1));
-	}
-      }
-    }
-
-    network_visible = true;
-    el('bikeThereMsg').innerHTML = '';
-    el('bikeThereToggle').style.display = '';
-    el('bikeThereToggle').innerHTML = 'Hide Bike Route Network';
-  };
-
-  if (map.getZoomLevel() > 1) map.zoomTo(1);
-  el('bikeThereToggle').style.display = 'none';
-  el('bikeThereToggle').onclick = hideBikeThereNetwork;
-
-  if (!network) {
-    el('bikeThereMsg').innerHTML = 'Getting network data. Please wait...';
-    doXmlHttpReq('GET', '/static/javascript/bikethere.json', processResponse);
-  } else {
-    processResponse();
-  }
-}
