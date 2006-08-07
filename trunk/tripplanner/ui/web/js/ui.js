@@ -126,7 +126,7 @@ function doFind(service, fr, to)
     var link = el('print_link');
     link.href = bookmark;
     link.innerHTML = bookmark;
-    el('bookmark_link').href = bookmark;
+    el('bookmark').href = bookmark;
 
     url_parts.pop();
     url_parts.push('json');
