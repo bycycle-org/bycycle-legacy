@@ -17,45 +17,45 @@ var regions = {
   
   portlandor: 
   {
-    'id': 'portlandor',
+    id: 'portlandor',
     
-    'heading': 'Portland, OR',
+    heading: 'Portland, OR',
     
-    'subheading': 'Developed in cooperation with <a href="http://www.metro-region.org/">Metro</a>.',
+    subheading: 'Developed in cooperation with <a href="http://www.metro-region.org/">Metro</a>.',
     
-    'bounds': {sw: {lat: 44.885219, lng: -123.485755},
-	       ne: {lat: 45.814153, lng: -121.649618}}
+    bounds: {sw: {lat: 44.885219, lng: -123.485755},
+	     ne: {lat: 45.814153, lng: -121.649618}}
   },
 
   
   milwaukeewi:
   {
-    'id': 'milwaukeewi',
+    id: 'milwaukeewi',
     
-    'heading': 'Milwaukee, WI',
+    heading: 'Milwaukee, WI',
     
-    'subheading': 'Developed in cooperation with the <a href="http://www.bfw.org/">Bicycle Federation of Wisconsin</a>.',
+    subheading: 'Developed in cooperation with the <a href="http://www.bfw.org/">Bicycle Federation of Wisconsin</a>.',
     
-    'bounds': {sw: {lat: 42.842059, lng: -88.069888}, 
-	       ne: {lat: 43.192647, lng: -87.828241}},
+    bounds: {sw: {lat: 42.842059, lng: -88.069888}, 
+	     ne: {lat: 43.192647, lng: -87.828241}},
     
-    'img_src': 'bfw_logo.gif',
-    'img_width': 70,
-    'img_height': 71,
-    'href': 'http://www.bfw.org/'
+    img_src: 'bfw_logo.gif',
+    img_width: 70,
+    img_height: 71,
+    href: 'http://www.bfw.org/'
   },
   
   
   pittsburghpa:
   {
-    'id': 'pittsburghpa',
+    id: 'pittsburghpa',
     
-    'heading': 'Pittsburgh, PA',
+    heading: 'Pittsburgh, PA',
     
-    'subheading': 'Developed in cooperation with Jessi.',
+    subheading: 'Developed in cooperation with Jessi.',
     
-    'bounds': {sw: {lat: 40.362070, lng: -80.088957},
-	       ne: {lat: 40.500887, lng: -79.866439}}
+    bounds: {sw: {lat: 40.362070, lng: -80.088957},
+	     ne: {lat: 40.500887, lng: -79.866439}}
   }
 
 };
