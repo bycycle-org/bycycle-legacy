@@ -384,12 +384,16 @@ function _showRegionOverlays(region, use_cached)
     GEvent.addListener(region.marker, "click", function() { 
       var id = region.id;
       var sel = el('region');
-      for (var i = 0; i < sel.length; ++i) {
-	var opt = sel.options[i];
-	if (opt.value == id) {
-	  sel.selectedIndex = i;
-	  selectRegion(id);
-	  break;
+      if (sel.type == 'hidden') {
+	selectRegion(id);
+      } else {
+	for (var i = 0; i < sel.length; ++i) {
+	  var opt = sel.options[i];
+	  if (opt.value == id) {
+	    sel.selectedIndex = i;
+	    selectRegion(id);
+	    break;
+	  }
 	}
       }
     });

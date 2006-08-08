@@ -17,3 +17,7 @@ v\:* {
 .summary, .directions {
   width: 280px;
 }
+
+#logo {
+  font-size: 14px;
+}
