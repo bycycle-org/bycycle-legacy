@@ -180,9 +180,9 @@ function makeMercatorMapType(base_type, name, zoom_levels) {
   var map_type = new GMapType(layers, projection, name, opts);
   
   map_type.onChangeTo = function() {
+    selectRegion('portlandor');
     if (map.getZoom() < min_zoom) {
       map.setZoom(min_zoom);
-      setRegion('portlandor');
     }
   };
   return map_type;
