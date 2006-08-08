@@ -19,6 +19,7 @@
     <!--[if IE]>
 	<link rel="stylesheet" href="css/base_ie.css" type="text/css"/>
 	<![endif]-->
+    <script type="text/javascript" src="js/util.js"></script>
   </head>
   
   <body onresize="resizeMap();" onunload="if (map) GUnload();">
@@ -336,9 +337,7 @@
 			google_color_link = "000000";
 			google_color_text = "000000";
 			google_color_url = "4466DD";
-		      </script>
-		      <script type="text/javascript"
-			      src="http://pagead2.googlesyndication.com/pagead/show_ads.js">
+			script("http://pagead2.googlesyndication.com/pagead/show_ads.js");
 		      </script>
 		    </div>
 		  </td>
@@ -359,7 +358,6 @@
 	<input type="hidden" id="response_text" name="response_text" value='%(response_text)s'/> 
 
 	<!-- Placement down here recommended by crockford.com -->
-	<script type="text/javascript" src="js/util.js"></script>
 	<script type="text/javascript" src="js/ginit.js"></script>
 	<script type="text/javascript" src="js/ajax.js"></script>
 	<script type="text/javascript" src="js/regions.js"></script>

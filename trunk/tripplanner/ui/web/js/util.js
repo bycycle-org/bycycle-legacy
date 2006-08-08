@@ -1,5 +1,9 @@
 function echo(str) { document.write(str); }
 
+function script(src) { 
+  echo('<'+'script src="'+src+'"'+' type="text/javascript"><'+'/script>'); 
+}
+
 function fixScroll() 
 {
   var div = el("content");
