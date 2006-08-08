@@ -90,9 +90,13 @@ hr {
   margin-right: 10px;
 }
 
-#logo * {
+#logo a {
   text-decoration: none;
   color: #000;
+}
+
+#logo a:hover {
+  color: #f08000;
 }
 
 #links {
