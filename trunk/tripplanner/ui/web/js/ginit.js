@@ -18,7 +18,10 @@ var urls_to_keys_map = {
   'ABQIAAAAd_4WmZlgvQzchd_BQM0MPhQSskL_eAzZotWlegWekqLPLda0sxQZNf0_IshFell3z8qP8s0Car117A',
   
   'www.bycycle.org':
-  'ABQIAAAAd_4WmZlgvQzchd_BQM0MPhQ9bMyOoze7XFWIje4XR3o1o-U-cBTwScNT8SYtwSl70gt4wHCO-23Y3g'
+  'ABQIAAAAd_4WmZlgvQzchd_BQM0MPhQ9bMyOoze7XFWIje4XR3o1o-U-cBTwScNT8SYtwSl70gt4wHCO-23Y3g',
+  
+  'bycycle.metro-region.org':
+  'ABQIAAAAd_4WmZlgvQzchd_BQM0MPhR7upyhxOh7UQa5Yu3ebGZe2uQ8SxRPJtyMUYYgIBQsAROpcOySx6G1RQ'
 };
 
 
@@ -32,10 +35,3 @@ if (local) {
 } else if (api_key) {
   script('http://maps.google.com/maps?file=api&amp;v=2&amp;key=' + api_key);
 }
-
-
-function script(src) 
-{ 
-  echo('<'+'script src="'+src+'"'+' type="text/javascript"><'+'/script>'); 
-}
-

@@ -182,11 +182,7 @@ function _geocodeCallback(status, result_set)
     }
 }
 	
-var colors = ['#0000ff', '#00ff00', '#ff0000', 
-	      '#00ffff', '#ff00ff', '#ff8800',
-	      '#000000'];	
-var color_index = 0;
-var colors_len = colors.length;
+var route_line_color = '#000000';
 function _routeCallback(status, result_set)
 {
   var route = result_set.result_set.result;
@@ -215,10 +211,8 @@ function _routeCallback(status, result_set)
 	    map.showMapBlowup(linestring[last_point_ix]); 
 	  });			
 	  centerAndZoomToBounds(bounds);
-	  drawPolyLine(linestring, colors[color_index++]);
-	  if (color_index == colors_len)
-	    color_index = 0;
-	}
+	  drawPolyLine(linestring, route_line_color, null, 1);
+      }
       break;			 
     case 300: // Multiple matches
       break;

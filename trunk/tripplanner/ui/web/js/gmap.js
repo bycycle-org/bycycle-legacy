@@ -113,7 +113,7 @@ function makeMercatorMapType(base_type, name, zoom_levels) {
   var layers = 'bike';
   var tile_size = 256;
   var tile_size_less_one = tile_size - 1;
-  var img_format = 'image/gif';
+  var img_format = 'image/png';
   var srs = "EPSG:4326";
   var se, nw;
   var min_zoom = 9;
@@ -168,7 +168,7 @@ function makeMercatorMapType(base_type, name, zoom_levels) {
   };
 
   layer.getOpacity = function() { 
-    return .5; 
+    return .625; 
   };
 
   var layers = [base_type.getTileLayers()[0], layer];
@@ -178,6 +178,7 @@ function makeMercatorMapType(base_type, name, zoom_levels) {
   map_type.onChangeTo = function() {
     if (map.getZoom() < min_zoom) {
       map.setZoom(min_zoom);
+      setRegion('portlandor');
     }
   };
   return map_type;
