@@ -3,6 +3,8 @@ import cgi, os, sys, urllib
 
 class TripPlanner(object):
     def run(self):
+        self.host = os.environ['HTTP_HOST']
+
         try:
             # Get the CGI vars and put them into a standard dict
             cgi_vars = cgi.FieldStorage()
@@ -157,8 +159,13 @@ class TripPlanner(object):
                 content = simplejson.dumps(result_set)
         elif format == 'html':
             content_type = 'text/html'
-            template = 'tripplanner.html'
 
+            # Select template based on host
+            if self.host == 'bycycle.metro-region.org':
+                template = 'tripplanner.metro.html'
+            else:
+                template = 'tripplanner.html'
+                
             if response_text is None:
                 result = self.getWelcomeMessage(template)
             elif status >= 400:
@@ -403,21 +410,29 @@ class TripPlanner(object):
     def getWelcomeMessage(self, template):
         return '''
         <p style="margin-top:0;">
-        The bicycle Trip Planner is under active development. Please
-        <a href="http://www.bycycle.org/contact.html"
-        title="Send us problem reports, comments, questions, and suggestions"
-        >contact us</a>
-        with any problems, comments, questions, or suggestions.
+          The <a href="byCycle.org"
+                 title="byCycle Home Page"
+                 >byCycle.org</a>
+          bicycle trip planner is under active development.
+          Please <a href="http://www.bycycle.org/contact.html"
+          title="Send us problem reports, comments, questions, and suggestions"
+          >contact us</a> with any problems, comments, questions, or
+          suggestions.
         </p>
+        <p>
+          If you find this site useful or would like help it improve, please
+          consider <b><a href="http://www.bycycle.org/support.html#donate" 
+          target="_new">donating</a></b>. Any amount helps. 
+        </p>        
         %s
         <p>
-        &copy; 2006 
-        <a href="http://www.bycycle.org/" 
-        title="byCycle Home Page"
-        >byCycle.org</a>
-        <br/>
-        Last modified: %s
-        <br/>
+          &copy; 2006 
+          <a href="http://www.bycycle.org/" 
+             title="byCycle Home Page"
+             >byCycle.org</a>
+          <br/>
+          Last modified: %s
+          <br/>
         </p>
         ''' % (self.getDisclaimer(), self.getLastModified(template))
         return welcome_message
@@ -426,23 +441,17 @@ class TripPlanner(object):
     def getDisclaimer(self):
         return '''
         <p>
-        If you find this site useful or would like help it improve, please
-        consider <b><a href="http://www.bycycle.org/support.html#donate" 
-        target="_new">donating</a></b>. Any amount helps. 
+          <b>Disclaimer</b>: As you are riding, please keep in mind that you  
+          don\'t <i>have</i> to 
+          follow the suggested route. <i>It may not be safe at any given
+          point.</i> If you see what looks like an unsafe or undesirable
+          stretch in the suggested route, you can decide to walk, ride on the
+          sidewalk, or go a different way.
         </p>
-
         <p>
-        <b>Disclaimer</b>: As you are riding, please keep in mind that you  
-        don\'t <i>have</i> to 
-        follow the suggested route. <i>It may not be safe at any given
-        point.</i> If you see what looks like an unsafe or undesirable
-        stretch in the suggested route, you can decide to walk, ride on the
-        sidewalk, or go a different way.
-        </p>
-
-        <p>
-        Users should independently verify all information presented here. This
-        service is provided <b>AS IS</b> with <b>NO WARRANTY</b> of any kind. 
+          Users should independently verify all information presented here.
+          This service is provided <b>AS IS</b> with <b>NO WARRANTY</b> of any
+          kind. 
         </p>        
         '''
 

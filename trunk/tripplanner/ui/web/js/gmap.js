@@ -95,7 +95,11 @@ function mapCreate()
   end_icon.image = 'images/dd-end.png';
 
   var reg_el = el('region');
-  selectRegion(reg_el[reg_el.selectedIndex].value);
+  try {
+    selectRegion(reg_el[reg_el.selectedIndex].value);
+  } catch(e) {
+    selectRegion(reg_el.value);
+  }
 }
 
 
