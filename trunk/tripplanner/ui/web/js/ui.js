@@ -348,6 +348,7 @@ function selectRegion(region)
 
 function _initRegion(region)
 {
+  // WTF?: Why is this here when it could be in the regions file???
   if (map) {
     if (!region.bounds.gbounds) {
       var sw = region.bounds.sw;
@@ -358,7 +359,7 @@ function _initRegion(region)
     if (!region.center) {
       region.center = getCenterOfBounds(region.bounds.gbounds);
     }
-    if (!region.linestring) {
+    if (typeof(region.linestring) == 'undefined') {
       var sw = region.bounds.gbounds.getSouthWest();
       var ne = region.bounds.gbounds.getNorthEast();
       var nw = new GLatLng(ne.lat(), sw.lng());
@@ -401,9 +402,9 @@ function _showRegionOverlays(region, use_cached)
     map.addOverlay(region.marker);
   }
   
-  if (!region.line)
+  if (typeof(region.line) == 'undefined')
     region.line = drawPolyLine(region.linestring); 
-  else if (use_cached)
+  else if (region.line && use_cached)
     map.addOverlay(region.line);
 }
 

@@ -114,7 +114,7 @@ function makeMercatorMapType(base_type, name, zoom_levels) {
   var copyrights = new GCopyrightCollection("&copy; Metro");
   var wms_url = 'http://' + domain + 
     '/cgi-bin/mapserv-postgis?map=/var/www/html/bycycle/bycycle.map&';
-  var layers = 'bike';
+  var layers = 'pirate_network,county_lines';
   var tile_size = 256;
   var tile_size_less_one = tile_size - 1;
   var img_format = 'image/png';

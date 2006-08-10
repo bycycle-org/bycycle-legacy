@@ -24,7 +24,13 @@ var regions = {
     subheading: 'Developed in cooperation with <a href="http://www.metro-region.org/">Metro</a>.',
     
     bounds: {sw: {lat: 44.885219, lng: -123.485755},
-	     ne: {lat: 45.814153, lng: -121.649618}}
+	     ne: {lat: 45.814153, lng: -121.649618}},
+
+    center: new GLatLng(45.523127, -122.667761),
+
+    linestring: null,
+
+    line: null
   },
 
   
