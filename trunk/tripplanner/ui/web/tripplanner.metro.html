@@ -7,7 +7,7 @@
   <head>
     <meta http-equiv="Content-Type" content="application/xhtml+xml; charset=iso-8859-1"/>
     <meta http-equiv="Pragma" content="no-cache"/>
-    <title>byCycle - Bicycle Bicycle Trip Planner/Route Finder</title>
+    <title>byCycle/Metro - Bicycle Trip Planner/Route Finder</title>
     
     <meta name="keywords" 
 	  content="bicycle, bike, bicycle trip planner, bicycle route finder, bike trip planner, bike route finder, bicycle route, bicycle trip, bike route, bike trip, bicycle routing, bike routing, maps, bicycle maps, bike maps, bicycle advocacy, community, sustainability, portland, oregon, milwaukee, wisconsin"/>
@@ -32,7 +32,7 @@
       
 
       <div id="print_header">
-	<a id="print_link" href="http://bycycle.metro-region.org/">byCycle/Metro Bicycle Trip Planner &raquo; http://bycycle.metro-region.org/</a>
+	<a id="print_link" href="http://byCycle.metro-region.org/">byCycle/Metro Bicycle Trip Planner &raquo; http://byCycle.metro-region.org/</a>
       </div>
 
 
@@ -42,11 +42,11 @@
 	  <tbody>
 	    <tr>
 
-	      <td style="width: 305px;">
+	      <td>
 
 		<!-- Logo -->
 		<div id="logo">
-		  <a href="http://bycycle.org/" title="byCycle Home Page">byCycle</a>/<a href="http://www.metro-region.org/">Metro</a> <a href="/">Bicycle Trip Planner</a>
+		  <a href="http://byCycle.org/" title="byCycle Home Page">byCycle</a>/<a href="http://www.metro-region.org/">Metro</a> <a href="/">Bicycle Trip Planner</a>
 		</div>
 		<!-- End Logo -->
 
@@ -58,13 +58,19 @@
 		 
 		  <!-- Links -->
 		  <span id="links">
-		    <a href="http://bycycle.org/"
+		    <a href="http://byCycle.org/"
 		       title="byCycle.org Home Page"
 		       >byCycle.org</a>
 		    
 		    &middot;
 		    
-		    <a href="http://bycycle.org/tripplanner"
+		    <a href="http://www.metro-region.org/"
+		       title="Metro Home Page"
+		       >Metro</a>
+
+		    &middot;
+		    
+		    <a href="http://byCycle.org/tripplanner"
 		       title="Get more information about the bicycle Trip Planner"
 		       >About</a>
 		    
@@ -82,27 +88,34 @@
 
 		    &middot;
 
-		    <a href="http://bycycle.org/contact.html" 
+		    <a href="http://byCycle.org/contact.html" 
 		       title="Send us problem reports, comments, questions, and suggestions"
 		       >Feedback</a>
 
 		    &middot;
 		    
-		    <a href="http://bycycle.org/tripplanner/help.html" 
+		    <a href="http://byCycle.org/tripplanner/help.html" 
 		       title="Get help on using the bicycle Trip Planner (and some technical info)"
 		       >Help/Info</a>
 
 		    &middot;
 		    
-		    <a href="http://bycycle.org/tripplanner/linkhere.html" 
+		    <a href="http://byCycle.org/tripplanner/linkhere.html" 
 		       title="Link your site to this page"
 		       >Link here</a>
 
 		    &middot;
 		    
-		    <a href="http://bycycle.org/support.html" 
+		    <a href="http://byCycle.org/support.html" 
 		       title="Get involved, buy a shirt, donate, ..."
 		       >Support this project</a>
+
+		    &middot;
+
+		    <a href="http://trac.byCycle.org/tripplanner/"
+		       title="Information for Developers"
+		       >Developers</a>
+
 		  </span>
 		  <!-- End Links -->
 
@@ -245,9 +258,9 @@
 			 onclick="setElVToMapLonLat('q'); doFind('geocode');"
 			 >Find address at center</a>		
 		      &middot;
-		      <a href="/"
+		      <a href="javascript:void(0);"
 			 title="Clear everything from the map"
-			 onclick="clearMap(); return false;"
+			 onclick="clearMap();"
 			 >Clear map</a>
 		      &middot;
 		      <a id="bookmark"
@@ -277,7 +290,7 @@
 			  <p>
 			    If you don't have one of the above browsers, you may want to leave JavaScript 
 			    turned off. On the other hand, if you feel like experimenting, you can
-			    <a href="mailto:feedback@bycycle.org">let us know</a> if the bicycle Trip Planner does 
+			    <a href="mailto:feedback@byCycle.org">let us know</a> if the bicycle Trip Planner does 
 			    or does not work in other browsers.
 			  </p>
 			</div>

@@ -80,14 +80,15 @@ hr {
   margin-bottom: 10px;
   }
 
-#header {
+#header t 
+{
+  vertical-align: bottom;
+  }
 
-}
-
-#logo {
+#logo 
+{
   font-weight: bold;
-  font-size: 16px;
-  margin-right: 10px;
+  font-size: 14px;
 }
 
 #logo a {
