@@ -1,1 +1,0 @@
-/* This module initializes the interface. */
