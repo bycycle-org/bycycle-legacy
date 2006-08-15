@@ -1,11 +1,36 @@
-#!/home/bycycle/bin/python
-"""Command-line interface to the byCycle library."""
+#!/usr/bin/python
+"""$Id$
+
+Command-line interface to the byCycle library.
+
+Copyright (C) 2006 Wyatt Baldwin, byCycle.org <wyatt@bycycle.org>
+
+All rights reserved
+
+TERMS AND CONDITIONS FOR USE, MODIFICATION, REPRODUCTION, AND DISTRIBUTION
+
+1. The software may be used and modified by individuals for noncommercial, 
+private use.
+
+2. The software, whether modified or not, may NOT be redistributed.
+
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND 
+ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED 
+WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE 
+DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR 
+ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES 
+(INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; 
+LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON 
+ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT 
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS 
+SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+"""
 import sys
-import getopt
-from byCycle.tripplanner.model import regions
+from byCycle.model import regions
 
-
-import_path = 'byCycle.tripplanner.services.%s'
+import_path = 'byCycle.services.%s'
 
 services = {
     'n': 'normaddr',
@@ -14,18 +39,12 @@ services = {
     }
 
 errors = []
-            
     
-def main():
-    try:
-        opts, args = getopt.gnu_getopt(sys.argv[1:], '')
-    except getopt.GetoptError:
-        addError('Unkown option(s) specified')
-
+def main(argv):
     checkForErrors()
 
     try:
-        service = args[0]
+        service = argv[1]
     except IndexError:
         addError('No service specified')
     else:
@@ -35,10 +54,11 @@ def main():
             service_module = __import__(import_path % service,
                                         globals(), locals(), [''])
         except ImportError:
+            raise
             addError('Unknown service "%s"' % service)
         
     try:
-        q = args[1]
+        q = argv[2]
     except IndexError:
         addError('No query specified')
 
@@ -53,7 +73,7 @@ def main():
     checkForErrors()
 
     try:
-        region = args[2]
+        region = argv[3]
     except IndexError:
         region = ''
 
@@ -82,5 +102,5 @@ def usage(msgs=[]):
 
 
 if __name__ == '__main__':
-    main()
+    main(sys.argv)
     
