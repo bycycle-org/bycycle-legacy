@@ -224,7 +224,7 @@ class Point(object):
                     try:
                         # See if x_y is string that will evaluate as 2-tuple
                         tmp_x_y = eval(x_y)
-                    except:
+                    except NameError:
                         # Last effort: See if x_y is a point given as a
                         # kwargs-style string or a WKT POINT
                         # Both will raise a ValueError if they can't parse

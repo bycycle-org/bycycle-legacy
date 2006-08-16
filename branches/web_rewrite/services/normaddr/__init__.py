@@ -11,9 +11,8 @@ Accepts these types of addresses:
 
 import re
 from byCycle.lib import gis
-from byCycle.tripplanner.services import excs
-from byCycle.tripplanner.model import (mode, address, regions, states,
-                                       sttypes, compass)
+from byCycle.services import excs
+from byCycle.model import (mode, address, regions, states, sttypes, compass)
 
 
 # RE to check to see if a string has at least one word char
@@ -244,7 +243,7 @@ import byCycle.tripplanner.model    - It *can* contain a city & state OR zip cod
     try:
         # If a full street type was entered...
         full_sttype
-    except NameError:
+    except UnboundLocalError, NameError:
         name = num_name
     else:
         name_type = '%s %s' % (name, full_sttype)
