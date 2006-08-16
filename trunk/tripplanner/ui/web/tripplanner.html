@@ -39,7 +39,7 @@
 	  <tbody>
 	    <tr>
 
-	      <td style="width: 305px;">
+	      <td>
 
 		<!-- Logo -->
 		<div id="logo">
@@ -50,81 +50,60 @@
 	      </td>
 
 	      <td>
-		<form id="region_form" class="input_form"
-		      action="." 
-		      method="get" 
-		      onsubmit="return false;">
-		  <div>
-		    <select id="region" name="region" 
-			    tabindex="2"
-			    title="Set the active region and zoom into it"
-			    onchange="selectRegion(this.options[this.selectedIndex].value);">
-		      <option value="">- Select Region -</option>
-		      <option value="">All Regions</option>
-		      %(regions_opt_list)s			    
-		    </select>
-		    
-		    <noscript>
-		      <input class="input_button"
-			     title="Click to go to region"
-			     tabindex="3" 
-			     type="submit" 
-			     value="Go!"/>		      
-		    </noscript>
-		    
-		    <!-- Links -->
-		    <span id="links">
-		      <a href="http://bycycle.org/"
-			 title="byCycle.org Home Page"
-			 >byCycle.org</a>
-		      
-		      &middot;
-		      
-		      <a href="http://bycycle.org/tripplanner"
-			 title="Get more information about the bicycle Trip Planner"
-			 >About</a>
-		      
-		      &middot;
-		      
-		      <a href="http://byCycle.org/blog/category/trip-planner/"
-			 title="Trip Planner Blog &amp; News"
-			 >Blog &amp; News</a>
 
-		      &middot;
-		      
-		      <a href="http://groups.google.com/group/byCycle"
-			 title="Use instead of feedback to make public comments, questions, and suggestions"
-			 >Discuss</a>
+		
+		<!-- Links -->
+		<div id="links">
+		  <a href="http://bycycle.org/"
+		     title="byCycle.org Home Page"
+		     >byCycle.org</a>
+		  
+		  &middot;
+		  
+		  <a href="http://bycycle.org/tripplanner"
+		     title="Get more information about the bicycle Trip Planner"
+		     >About</a>
+		  
+		  &middot;
+		  
+		  <a href="http://byCycle.org/blog/category/trip-planner/"
+		     title="Trip Planner Blog &amp; News"
+		     >Blog &amp; News</a>
 
-		      &middot;
+		  &middot;
+		  
+		  <a href="http://groups.google.com/group/byCycle"
+		     title="Use instead of feedback to make public comments, questions, and suggestions"
+		     >Discuss</a>
 
-		      <a href="http://bycycle.org/contact.html" 
-			 title="Send us problem reports, comments, questions, and suggestions"
-			 >Feedback</a>
+		  &middot;
 
-		      &middot;
-		      
-		      <a href="http://bycycle.org/tripplanner/help.html" 
-			 title="Get help on using the bicycle Trip Planner (and some technical info)"
-			 >Help/Info</a>
+		  <a href="http://bycycle.org/contact.html" 
+		     title="Send us problem reports, comments, questions, and suggestions"
+		     >Feedback</a>
 
-		      &middot;
-		      
-		      <a href="http://bycycle.org/tripplanner/linkhere.html" 
-			 title="Link your site to this page"
-			 >Link here</a>
+		  &middot;
+		  
+		  <a href="http://bycycle.org/tripplanner/help.html" 
+		     title="Get help on using the bicycle Trip Planner (and some technical info)"
+		     >Help/Info</a>
 
-		      &middot;
-		      
-		      <a href="http://bycycle.org/support.html" 
-			 title="Get involved, buy a shirt, donate, ..."
-			 >Support this project</a>
-		    </span>
-		    <!-- End Links -->
-		  </div>
-		</form>
+		  &middot;
+		  
+		  <a href="http://bycycle.org/tripplanner/linkhere.html" 
+		     title="Link your site to this page"
+		     >Link here</a>
+
+		  &middot;
+		  
+		  <a href="http://bycycle.org/support.html" 
+		     title="Get involved, buy a shirt, donate, ..."
+		     >Support this project</a>
+		</div>
+		<!-- End Links -->
+
+
 	      </td>
-
 	    </tr>
 	  </tbody>
 	</table>
@@ -166,7 +145,7 @@
 			
 			<div>
 			  <input type="hidden" name="region" value="%(region)s"/>
-			  <input type="hidden" name="service" value="query"/>
+			  <input type="hidden" name="service" value="geocode"/>
 			  <input type="text" id="q" name="q" class="input_field" tabindex="1" title="Address or intersection (no businesses or other points of interest)" value="%(q)s"/>
 			  <input name="gb"
 				 class="input_button"
@@ -256,20 +235,44 @@
 
 		    <!-- Map Menu -->
 		    <div id="map_menu">
-		      <a href="javascript:void(0);"
-			 title="Find address nearest to red dot at center of map"
-			 onclick="setElVToMapLonLat('q'); doFind('geocode');"
-			 >Find address at center</a>		
-		      &middot;
-		      <a href="/"
-			 title="Clear everything from the map"
-			 onclick="clearMap(); return false;"
-			 >Clear map</a>
-		      &middot;
-		      <a id="bookmark"
-			 href=""
-			 title="Link you can use to bookmark the current result"
-			 >Bookmark</a>
+
+		      <form id="region_form" class="input_form"
+			    action="." 
+			    method="get" 
+			    onsubmit="return false;">
+			<div>
+			  <select id="regions" name="region" 
+				  tabindex="2"
+				  title="Set the active region and zoom into it"
+				  onchange="selectRegion(this.options[this.selectedIndex].value);">
+			    <option value="">- Select Region -</option>
+			    <option value="">All Regions</option>
+			    %(regions_opt_list)s			    
+			  </select>
+			  <noscript>
+			    <input class="input_button"
+				   title="Click to go to region"
+				   tabindex="3" 
+				   type="submit" 
+				   value="Go!"/>		      
+			  </noscript>
+			  
+			  <a href="javascript:void(0);"
+			     title="Find address nearest to red dot at center of map"
+			     onclick="setElVToMapLonLat('q'); doFind('geocode');"
+			     >Find address at center</a>		
+			  &middot;
+			  <a href="/"
+			     title="Clear everything from the map"
+			     onclick="clearMap(); return false;"
+			     >Clear map</a>
+			  &middot;
+			  <a id="bookmark"
+			     href=""
+			     title="Link you can use to bookmark the current result"
+			     >Bookmark</a>
+			</div>
+		      </form>
 		    </div>
 		    <!-- End Map Menu -->
 		    
@@ -322,7 +325,7 @@
 
 
 		  <!-- Google Ads Panel-->
-		  <td id="google_ads_panel">
+		  <td id="google_ads_panel" style="display: none;">
 		    <div id="google_ads_div" style="border: 1px solid gray;">
 		      <div style="border-bottom: 1px solid gray; padding: 5px; text-align: right;">
 			<span style="border: 1px solid gray;">
@@ -345,7 +348,7 @@
 			google_color_link = "000000";
 			google_color_text = "000000";
 			google_color_url = "4466DD";
-			script("http://pagead2.googlesyndication.com/pagead/show_ads.js");
+			if (0) script("http://pagead2.googlesyndication.com/pagead/show_ads.js");
 		      </script>
 		    </div>
 		  </td>

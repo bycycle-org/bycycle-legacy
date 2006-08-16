@@ -1,10 +1,7 @@
-#!/home/u6/bycycle/bin/python -OO
-
-import os
-os.environ['PYTHON_EGG_CACHE'] = '/home/u6/bycycle/.python-eggs'
+#!/usr/bin/python -OO
 
 import sys
-byCycle_path = '/home/u6/bycycle/byCycle/Live'
+byCycle_path = '/home/u6/bycycle/byCycle/live'
 sys.path.insert(0, byCycle_path)
 
 import tripplanner

@@ -1,5 +1,7 @@
 # Portland, OR Data Mode
 # 11/07/2005
+import sys
+sys.path.insert(0, '/home/bycycle/byCycle/Live')
 
 import math
 from byCycle.tripplanner.model import mode
@@ -23,12 +25,10 @@ if __name__ == '__main__':
     from byCycle.lib import meter
     
     t = meter.Timer()
-    
     md = Mode();
     
-    G1 = md.createAdjacencyMatrix()
-    
-    assert(isinstance(G1, dict))
+    #G1 = md.createAdjacencyMatrix()
+    #assert(isinstance(G1, dict))
     
     t.start()
     print 'Getting adjacency matrix...'
@@ -37,5 +37,3 @@ if __name__ == '__main__':
     
     print G2['edges'].popitem()
     
-    assert(isinstance(G2, dict))
-    assert(G1 == G2)
