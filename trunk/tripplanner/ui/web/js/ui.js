@@ -1,4 +1,35 @@
-/* User Interface */
+/** $Id$
+ *
+ * User Interface.
+ * 
+ * Copyright (C) 2006 Wyatt Baldwin, byCycle.org <wyatt@bycycle.org>
+ * 
+ * All rights reserved.
+ * 
+ * TERMS AND CONDITIONS FOR USE, MODIFICATION, DISTRIBUTION
+ * 
+ * 1. The software may be used and modified by individuals for noncommercial, 
+ * private use.
+ * 
+ * 2. The software may not be used for any commercial purpose.
+ * 
+ * 3. The software may not be made available as a service to the public or within 
+ * any organization.
+ * 
+ * 4. The software may not be redistributed.
+ * 
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND 
+ * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED 
+ * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE 
+ * DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR 
+ * ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES 
+ * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; 
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON 
+ * ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT 
+ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS 
+ * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ *
+ */
 var mach_q;
 var mach_fr;
 var mach_to;
@@ -11,8 +42,7 @@ var center;
 var start_ms;
 
 
-function getVal(id, mach_v, user_v)
-{
+function getVal(id, mach_v, user_v) {
   var el_v = cleanString(elV(id));
   if (mach_v == undefined) {
     var val = el_v;
@@ -27,8 +57,7 @@ function getVal(id, mach_v, user_v)
 }
 
 
-function setVal(id, mach_v, user_v)
-{
+function setVal(id, mach_v, user_v) {
   if (mach_v != undefined) {
     eval(['mach_', id, ' = "', mach_v, '"'].join(''));
   }
@@ -39,8 +68,7 @@ function setVal(id, mach_v, user_v)
 }
 
 
-function swapFrAndTo()
-{
+function swapFrAndTo() {
   var fr = elV('fr');
   setElV('fr', elV('to'));
   setElV('to', fr);
@@ -53,8 +81,7 @@ function swapFrAndTo()
 }
 
 
-function doFind(service, fr, to)
-{
+function doFind(service, fr, to) {
   start_ms = new Date().getTime();
   clearResult('');
   showStatus('Processing. Please wait<blink>...</blink>');
@@ -142,8 +169,7 @@ function doFind(service, fr, to)
 /** 
  * Do stuff that's common to all callbacks in here
  */
-function _callback(req)
-{
+function _callback(req) {
   var status = req.status;
   var response_text = req.responseText;
   //alert(status + '\n' + response_text);
@@ -167,8 +193,7 @@ function _callback(req)
   }
 }
 
-function _geocodeCallback(status, result_set)
-{
+function _geocodeCallback(status, result_set) {
   geocodes = result_set.result_set.result;
   switch (status)
     {
@@ -182,8 +207,7 @@ function _geocodeCallback(status, result_set)
 }
 	
 var route_line_color = '#000000';
-function _routeCallback(status, result_set)
-{
+function _routeCallback(status, result_set) {
   var route = result_set.result_set.result;
   switch (status) 
     {
@@ -221,8 +245,7 @@ function _routeCallback(status, result_set)
 
 /* UI Manipulation */
 
-function setStatus(content, error)
-{
+function setStatus(content, error) {
   if (error) 
     setElStyle('status', 'color', 'red');
   else 
@@ -236,13 +259,11 @@ function showStatus(content, error)
     setResult('<div id="status">' + content + '</div>', error);
 }
 
-function hideStatus()
-{
+function hideStatus() {
   setElStyle('status', 'display', 'none');
 }
 
-function setResult(content, error)
-{
+function setResult(content, error) {
   if (error) 
     setElStyle('result', 'color', 'red');
   else 
@@ -250,16 +271,14 @@ function setResult(content, error)
   setIH('result', content.toString());
 }
 
-function clearResult()
-{
+function clearResult() {
   setIH('result', '');
 }
 
 
 /* Map */
 
-function setElVToMapLonLat(id)
-{
+function setElVToMapLonLat(id) {
   if (!map) 
     return;
   var lon_lat = map.getCenter();
@@ -281,8 +300,7 @@ function clearMap()
   }
 }
 
-function resizeMap() 
-{
+function resizeMap()  {
   var win_height = getWindowHeight();
   var height = win_height - elOffset('map') - 25;
   if (height >= 0) {
@@ -297,8 +315,7 @@ function resizeMap()
     el('result').style.height =  height + 'px'; 
 }
 
-function showGeocode(index, open_info_win)
-{
+function showGeocode(index, open_info_win) {
   var geocode = geocodes[index];
   var html = unescape(geocode.html);
   setResult(html);
@@ -321,8 +338,7 @@ function showGeocode(index, open_info_win)
 
 /* Regions */
 
-function selectRegion(region)
-{
+function selectRegion(region) {
   region = regions[region] || regions.all;
 
   document.title = 'byCycle - Bicycle Trip Planner - ' + region.heading;
@@ -345,8 +361,7 @@ function selectRegion(region)
   }
 }
 
-function _initRegion(region)
-{
+function _initRegion(region) {
   // WTF?: Why is this here when it could be in the regions file???
   if (map) {
     if (!region.bounds.gbounds) {
@@ -368,8 +383,7 @@ function _initRegion(region)
   }
 }
 
-function _showRegionOverlays(region, use_cached)
-{
+function _showRegionOverlays(region, use_cached) {
   if (!map)
     return;
 
@@ -407,20 +421,17 @@ function _showRegionOverlays(region, use_cached)
     map.addOverlay(region.line);
 }
 
-function showBookmarkForThisPage()
-{
+function showBookmarkForThisPage() {
   setElStyle('bookmark', 'display', 'block');
   resizeMap();
 }
 
-function hideBookmarkForThisPage()
-{
+function hideBookmarkForThisPage() {
   setElStyle('bookmark', 'display', 'none');
   resizeMap();  
 }
 
-function reverseDirections(fr, to)
-{
+function reverseDirections(fr, to) {
   doFind('route', fr, to);
   swapFrAndTo();
 }
