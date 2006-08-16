@@ -1,19 +1,23 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 """$Id$
 
 Command-line interface to the byCycle library.
 
 Copyright (C) 2006 Wyatt Baldwin, byCycle.org <wyatt@bycycle.org>
 
-All rights reserved
+All rights reserved.
 
-TERMS AND CONDITIONS FOR USE, MODIFICATION, REPRODUCTION, AND DISTRIBUTION
+TERMS AND CONDITIONS FOR USE, MODIFICATION, DISTRIBUTION
 
 1. The software may be used and modified by individuals for noncommercial, 
 private use.
 
-2. The software, whether modified or not, may NOT be redistributed.
+2. The software may not be used for any commercial purpose.
 
+3. The software may not be made available as a service to the public or within 
+any organization.
+
+4. The software may not be redistributed.
 
 THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND 
 ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED 
@@ -103,4 +107,3 @@ def usage(msgs=[]):
 
 if __name__ == '__main__':
     main(sys.argv)
-    
