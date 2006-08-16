@@ -1,9 +1,36 @@
-/**
+/** $Id$
+ *
  * This module contains variables and functions relating to the Google Map. It 
  * should be considered an extension of the ui module.
+ * 
+ * Copyright (C) 2006 Wyatt Baldwin, byCycle.org <wyatt@bycycle.org>
+ * 
+ * All rights reserved.
+ * 
+ * TERMS AND CONDITIONS FOR USE, MODIFICATION, DISTRIBUTION
+ * 
+ * 1. The software may be used and modified by individuals for noncommercial, 
+ * private use.
+ * 
+ * 2. The software may not be used for any commercial purpose.
+ * 
+ * 3. The software may not be made available as a service to the public or within 
+ * any organization.
+ * 
+ * 4. The software may not be redistributed.
+ * 
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND 
+ * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED 
+ * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE 
+ * DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR 
+ * ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES 
+ * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; 
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON 
+ * ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT 
+ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS 
+ * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ *
  */
-
-
 var map;
 var center_marker;
 var center_point;
@@ -15,8 +42,7 @@ var start_icon;
 var end_icon;
 
 
-function mapLoad()
-{
+function mapLoad() {
   var bRet = true;
   if (GBrowserIsCompatible()) {
     mapCreate();
@@ -38,8 +64,7 @@ function mapLoad()
 }
 
 
-function mapCreate()
-{
+function mapCreate() {
   map = new GMap2(el('map'));
 
   map.addMapType(makeMercatorMapType(G_NORMAL_MAP, 'Bike/Map', 18));
@@ -191,16 +216,14 @@ function makeMercatorMapType(base_type, name, zoom_levels) {
   return map_type;
 }
 
-function drawPolyLine(points, color, weight, opacity)
-{
+function drawPolyLine(points, color, weight, opacity) {
   var line = new GPolyline(points, color, weight, opacity);
   map.addOverlay(line);
   return line;
 }
 
 
-function placeMarker(point, icon)
-{
+function placeMarker(point, icon) {
   var marker = new GMarker(point, icon);
   map.addOverlay(marker);
   return marker;
@@ -211,8 +234,7 @@ function placeMarker(point, icon)
  * @param points An array of GPoints
  * @param icons An array of GIcons (optional)
  */
-function placeMarkers(points, icons)
-{
+function placeMarkers(points, icons) {
   var markers = [];
   var len = points.length;
   if (icons) {
@@ -232,14 +254,12 @@ function placeMarkers(points, icons)
 }
 
 
-function showMapBlowup(index) 
-{
+function showMapBlowup(index)  {
   map.showMapBlowup(linestring[index]);
 }
 
 
-function getBoundsForPoints(points)
-{
+function getBoundsForPoints(points) {
   var min_x = 180;
   var max_x = -180;
   var min_y = 90;
@@ -258,8 +278,7 @@ function getBoundsForPoints(points)
 }
 
 
-function getCenterOfBounds(bounds)
-{
+function getCenterOfBounds(bounds) {
   var sw = bounds.getSouthWest();
   var ne = bounds.getNorthEast();
   var lon = (sw.lng() + ne.lng()) / 2.0;
@@ -268,10 +287,7 @@ function getCenterOfBounds(bounds)
 }
 
 
-function centerAndZoomToBounds(bounds, center)
-{
+function centerAndZoomToBounds(bounds, center) {
   var center = center || getCenterOfBounds(bounds);
   map.setCenter(center, map.getBoundsZoomLevel(bounds));
 }
-
-
