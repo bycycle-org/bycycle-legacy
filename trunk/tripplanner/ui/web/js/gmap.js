@@ -94,7 +94,7 @@ function mapCreate()
   end_icon = new GIcon(base_icon);
   end_icon.image = 'images/dd-end.png';
 
-  var reg_el = el('region');
+  var reg_el = el('regions');
   try {
     selectRegion(reg_el[reg_el.selectedIndex].value);
   } catch(e) {
@@ -135,13 +135,13 @@ function makeMercatorMapType(base_type, name, zoom_levels) {
 	     "&HEIGHT=", tile_size].join('');
 
   var pdx_bounds = regions.portlandor.bounds;
-  var sw = pdx_bounds.sw;
-  var ne = pdx_bounds.ne;
-  var bounds = new GLatLngBounds(new GLatLng(sw.lat, sw.lng), 
-				 new GLatLng(ne.lat, ne.lng));
+  var pdx_sw = pdx_bounds.sw;
+  var pdx_ne = pdx_bounds.ne;
+  var bounds = new GLatLngBounds(new GLatLng(pdx_sw.lat, pdx_sw.lng), 
+				 new GLatLng(pdx_ne.lat, pdx_ne.lng));
 
   var projection = new GMercatorProjection(zoom_levels);
-  projection.tileCheckRange = function(tile,  zoom,  tilesize) {
+  projection.XXXtileCheckRange = function(tile,  zoom,  tile_size) {
     var x = tile.x * tile_size;
     var y = tile.y * tile_size;
     var sw_point = new GPoint(x, y + tile_size_less_one);
@@ -158,10 +158,11 @@ function makeMercatorMapType(base_type, name, zoom_levels) {
 
   var layer = new GTileLayer(copyrights, 0, zoom_levels - 1);
   layer.getTileUrl = function(tile, zoom) {
+    projection.XXXtileCheckRange(tile, zoom, tile_size);
     if (zoom < min_zoom) {
       var tile_url = transparent_png;
     } else {
-      var bbox = [sw.x, sw.y, ne.x, ne.y].join(',');
+      var bbox = [sw.lng(), sw.lat(), ne.lng(), ne.lat()].join(',');
       var tile_url = [url, "&BBOX=", bbox].join('');	
     }
     return tile_url;

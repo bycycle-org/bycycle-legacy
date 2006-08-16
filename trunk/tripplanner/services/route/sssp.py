@@ -48,7 +48,7 @@ def singleSourceShortestPaths(G, s, d=None,
     # predecessor of each node that has shortest path from s
     P = {}
     
-    nodes, edges = G["nodes"], G["edges"]
+    nodes, edges = G['nodes'], G['edges']
 
     count = 0
     while open:
@@ -72,7 +72,7 @@ def singleSourceShortestPaths(G, s, d=None,
 
         # ...and explore the edges that connect u to those nodes, updating
         # the weight of the shortest paths to any or all of those nodes as
-        # necessary. v is the node across the current edge from u. 
+        # necessary. v is the node across the current edge from u.
         for v in A:
             e = A[v]
 
@@ -83,7 +83,7 @@ def singleSourceShortestPaths(G, s, d=None,
             except KeyError:
                 continue
 
-            # Get the weight of the edge running from u to v            
+            # Get the weight of the edge running from u to v
             try:
                 w_of_e = weightFunction(v, e_attrs, prev_e_attrs)
             except TypeError:
@@ -127,7 +127,7 @@ def singleSourceShortestPaths(G, s, d=None,
                 # include the edge's other attributes too.
                 P[v] = (u, e, e_attrs)
 
-            # If a destination node was specified and we've found it, we're done
+            # If a destination node was specified and we reached it, we're done
             if v == d:
                 open = None
                 break

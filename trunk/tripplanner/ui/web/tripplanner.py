@@ -1,4 +1,5 @@
 import cgi, os, sys, urllib
+from byCycle.lib import wsrest
 
 
 class TripPlanner(object):
@@ -40,8 +41,6 @@ class TripPlanner(object):
 
 
     def processQuery(self, method='get', **params):    
-        from byCycle.lib import wsrest
-
         params['region'] = self.getRegion(**params)
 
         # Analyze the query to determine the service and prepare the query for 
@@ -157,7 +156,7 @@ class TripPlanner(object):
             else:
                 result_set['result_set']['html'] = urllib.quote(html) 
                 content = simplejson.dumps(result_set)
-        elif format == 'html':
+        else:
             content_type = 'text/html'
 
             # Select template based on host
@@ -349,6 +348,9 @@ class TripPlanner(object):
     ## Helpers
 
     def getRegion(self, region='', **params):
+        region = ''.join(region.split())
+        region = region.replace(',', '')
+        region = region.lower()
         region_aliases = {'mil': 'milwaukeewi',
                           'milwaukee': 'milwaukeewi',
                           'metro': 'portlandor',

@@ -146,6 +146,7 @@ def getPostalAddressGeocodes(oMode, oAddr, edge_id=None):
             setattr(s_addr.street, attr, attrs[attr])
         for attr in ('city_id', 'city', 'state_id', 'zip_code'):
             setattr(s_addr.place, attr, attrs[attr])
+        # TODO: Replace this with s.splitAtNum
         xy = gis.getInterpolatedXY(s.linestring,
                                    max(s.addr_f, s.addr_t) -
                                    min(s.addr_f, s.addr_t),

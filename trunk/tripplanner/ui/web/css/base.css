@@ -80,7 +80,7 @@ hr {
   margin-bottom: 10px;
   }
 
-#header t 
+#header td
 {
   vertical-align: bottom;
   }
@@ -100,8 +100,10 @@ hr {
   color: #f08000;
 }
 
-#links {
-}
+#links 
+{
+  text-align: right;         
+  }
 
 
 /* Content */

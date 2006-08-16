@@ -59,7 +59,7 @@ function doFind(service, fr, to)
   clearResult('');
   showStatus('Processing. Please wait<blink>...</blink>');
 
-  var el_region = el('region');
+  var el_region = el('regions');
   var region = el_region.value;
   var errors = [];
 
@@ -128,8 +128,7 @@ function doFind(service, fr, to)
     link.innerHTML = bookmark;
     el('bookmark').href = bookmark;
 
-    url_parts.pop();
-    url_parts.push('json');
+    url_parts[url_parts.length-1] = 'json';
     url = url_parts.join('');
     
     //alert(url);
@@ -211,7 +210,7 @@ function _routeCallback(status, result_set)
 	    map.showMapBlowup(linestring[last_point_ix]); 
 	  });			
 	  centerAndZoomToBounds(bounds);
-	  drawPolyLine(linestring, route_line_color, null, 1);
+	  drawPolyLine(linestring, route_line_color, null, .625);
       }
       break;			 
     case 300: // Multiple matches
@@ -384,7 +383,7 @@ function _showRegionOverlays(region, use_cached)
     region.marker = placeMarker(region.center, icon);
     GEvent.addListener(region.marker, "click", function() { 
       var id = region.id;
-      var sel = el('region');
+      var sel = el('regions');
       if (sel.type == 'hidden') {
 	selectRegion(id);
       } else {
