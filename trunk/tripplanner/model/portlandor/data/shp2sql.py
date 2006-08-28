@@ -1,6 +1,6 @@
 """$Id$
 
-Description goes here.
+Portland, OR, shp/dbf import.
 
 Copyright (C) 2006 Wyatt Baldwin, byCycle.org <wyatt@bycycle.org>
 
@@ -18,10 +18,10 @@ any organization.
 
 4. The software may not be redistributed.
 
-THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND 
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
 ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED 
 WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE 
-DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR 
+DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR
 ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES 
 (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; 
 LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON 
@@ -29,67 +29,56 @@ ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS 
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+DATE 
+    January 27, 2006
+    March 25, 2006 [Converted to interactive; Switched from SQLite to MySQL]
+    April 4, 2006 [Converted to single-DB, shared with other regions]
+VERSION 
+    0.1.3
+PURPOSE 
+    Script to import line geometry and associated attributes from a street 
+    layer shapefile into a normalized database
+REQUIREMENTS
+    libmygis 0.5.5 <http://jcole.us/software/libmygis/>
+    This script uses the mysqlgisimport tool from libmygis
+        tar xvzf libmygis-0.5.5.tar.gz
+        cd libmygis-0.5.5
+        ./configure --prefix=$HOME
+        make
+        cd tools
+        make && make install
+    If this scipt isn't being run from the byCycle package, _openDB needs to
+    be rewritten with custom code to open a database connection.
+USAGE 
+    python shp2sql.py [start] [no_prompt] [only]
+    - start The index of the function to start from [0, n]
+      Ex: python shp2sql.py 2
+    - no_prompt Include this flag to "just do it"
+      Ex: python shp2sql.py no_prompt
+    - include this flag to only do one function
+      Ex: python shp2sql.py 2 only
+    Note: Run from the region/data directory
+TODO
+    Turn this into a derived class; create a base class that all regions can
+    use
+
 """
-# shp2mysql.py 
-#     Portland, OR, shp/dbf import
-#      
-# AUTHOR 
-#     Wyatt Baldwin <wyatt@bycycle.org>
-# DATE 
-#     January 27, 2006
-#     March 25, 2006 [Converted to interactive; Switched from SQLite to MySQL]
-#     April 4, 2006 [Converted to single-DB, shared with other regions]
-# VERSION 
-#     0.1.3
-# PURPOSE 
-#     Script to import line geometry and associated attributes from a street layer
-#     shapefile into a normalized database
-# REQUIREMENTS
-#     libmygis 0.5.5 <http://jcole.us/software/libmygis/>
-#     This script uses the mysqlgisimport from libmygis
-#         tar xvzf libmygis-0.5.5.tar.gz
-#         cd libmygis-0.5.5
-#         ./configure --prefix=$HOME
-#         make
-#         cd tools
-#         make && make install
-#     If this script is being run from the byCycle package, _openDB needs to be
-#     rewritten with custom code to open a database connection.
-# USAGE 
-#     python shp2sql.py [start] [no_prompt] [only]
-#     - start The index of the function to start from [0, n]
-#       Ex: python shp2sql.py 2
-#     - no_prompt Include this flag to "just do it"
-#       Ex: python shp2sql.py no_prompt
-#     - include this flag to only do one function
-#       Ex: python shp2sql.py 2 only
-#     Note: Run from the region/data directory
-# LICENSE 
-#     ???
-# WARRANTY 
-#     This program comes with NO warranty, real or implied.
-# TODO
-#     Turn this into a derived class; create a base class that all regions can use
 import sys, os
+from byCycle import install_path
 from byCycle.lib import meter
 
-
-CWD = os.getcwd()
-
-
 # -- Configuration for region
-
-BYCYCLE_PATH = '/home/u6/bycycle/lib/python2.4/site-packages/byCycleCurr'
 
 region = 'portlandor'
 
 # Path to mysqlgisimport executable
 mysqlgisimport = 'mysqlgisimport'
 
+data_path = '/home/bycycle/byCycle/data'
 # Directory containing shp/dbf files
-datasource = '20051219'
+datasource = 'pirate/WGS84'
 # shp/dbf base name
-layer = 'new1'
+layer = 'str04aug'
 
 # Fields we want from the DBF
 dbf_fields = ('FNODE',
@@ -142,14 +131,14 @@ db_fields = ('geo',
 
 db_name = 'bycycle-1'
 db_user = db_name
-path = os.path.join(BYCYCLE_PATH, 'tripplanner/model/.pw')
+path = os.path.join(install_path, 'tripplanner/model/.pw')
 db_pass = open(path).read().strip()
 
 # dbf value => database value
-one_ways = {'n': 0,
-           'f': 1,
-           't': 2,
-           '': 3,
+one_ways = {'N': 0,
+            'F': 1,
+            'T': 2,
+            '': 3,
            }
 
 # dbf value => database value
@@ -188,7 +177,7 @@ timer = None
 
     
 def shpToRawSql():
-    path = os.path.join(CWD, datasource, layer)
+    path = os.path.join(data_path, region, datasource, layer)
     # Drop existing raw table
     Q = 'DROP TABLE IF EXISTS %s' % raw
     if not _wait(Q):
@@ -242,14 +231,6 @@ def updateBikeModes():
     for bm in bikemodes: 
         _execute(Q % (bikemodes[bm], bm))
 
-def createSchema():
-    tables = ('layer_street', 'layer_node', 'streetname', 'city', 'state')
-    for table in tables:
-        _execute('DROP TABLE IF EXISTS %s_%s' % (region, table))
-    cmd = 'mysql -u %s --password="%s" %s < ./schema.sql' % \
-          (db_user, db_pass, db_name)
-    _system(cmd)
-        
 def unifyAddressRanges():
     #'LEFTADD1', 'LEFTADD2', 'RGTADD1', 'RGTADD2'
     """Combine left and right side address number into a single value."""
@@ -272,28 +253,45 @@ def unifyAddressRanges():
     _execute(QEL % raw)
     _execute(QER % raw)
 
+def createSchema():
+    tables = ('layer_street', 'layer_node', 'streetname', 'city', 'state')
+    for table in tables:
+        _execute('DROP TABLE IF EXISTS %s_%s' % (region, table))
+    cmd = 'mysql -u %s --password="%s" %s < ./schema.sql' % \
+          (db_user, db_pass, db_name)
+    _system(cmd)
+        
 def transferStreetNames():
     """Transfer street names to their own table."""
-    Q = 'INSERT INTO %s_streetname (prefix, name, sttype, suffix) '\
-        'SELECT DISTINCT fdpre, fname, ftype, fdsuf FROM %s'
+    # Lower-case all street name fields first
+    Q = '''UPDATE %s
+    SET fdpre=LOWER(fdpre), fname=LOWER(fname), ftype=LOWER(ftype),
+    fdsuf=LOWER(fdsuf) 
+    '''
+    _execute(Q % raw)
+    # Then copy the lower-case names to the street name table
+    Q = '''
+    INSERT INTO %s_streetname (prefix, name, sttype, suffix) 
+    SELECT DISTINCT fdpre, fname, ftype, fdsuf 
+    FROM %s 
+    '''
     _execute(Q % (region, raw))
 
 def updateRawStreetNameIds():
     """Set the street name ID of each raw record."""
-    # Get all the distinct street names
-    Q = 'SELECT DISTINCT fdpre, fname, ftype, fdsuf FROM %s' % raw
-    _execute(Q)
-    rows = db.fetchAll()
     # Index each street name ID by its street name
-    # {(stname)=>streetname_id}
+    # {(prefix, name, type, suffix) => streetname_id}
     stnames = {}
     Q = 'SELECT id, prefix, name, sttype, suffix FROM %s_streetname' % region
     _execute(Q)
     for row in db.fetchAll():
         stnames[(row[1],row[2],row[3],row[4])] = row[0]
+        
     # Index raw row IDs by their street name ID {streetname_id=>[row IDs]}
     stid_rawids = {}
-    Q  = 'SELECT id, fdpre, fname, ftype, fdsuf FROM %s' % raw
+    Q  = '''
+    SELECT id, fdpre, fname, ftype, fdsuf 
+    FROM %s''' % raw
     _execute(Q)
     for row in db.fetchAll():
         stid = stnames[(row[1],row[2],row[3],row[4])]
@@ -301,6 +299,7 @@ def updateRawStreetNameIds():
             stid_rawids[stid].append(row[0])
         else: 
             stid_rawids[stid] = [row[0]]
+            
     # Iterate over street name IDs and set street name IDs of raw records
     Q = 'UPDATE %s SET streetname_id=%%s WHERE id IN %%s' % raw
     met = meter.Meter()
@@ -320,6 +319,10 @@ def updateRawStreetNameIds():
 
 def transferCityNames():
     """Transfer city names to their own table."""
+    # Lower-case the city names first
+    Q = 'UPDATE %s SET lcity=LOWER(lcity), rcity=LOWER(rcity)'
+    _execute(Q % raw)
+    # Copy the city names to the city name table
     Q = 'INSERT INTO %s_city (city) ' \
         'SELECT DISTINCT lcity FROM %s' % (region, raw)
     _execute(Q)
@@ -444,11 +447,11 @@ def run():
              ('Update bike modes in raw table',
               updateBikeModes),
              
-             ('Create byCycle schema tables',
-              createSchema),
-             
              ('Unify address ranges',
               unifyAddressRanges),
+             
+             ('Create byCycle schema tables',
+              createSchema),
              
              ('Transfer street names',
               transferStreetNames),
