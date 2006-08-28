@@ -1,6 +1,6 @@
 """$Id$
 
-Description goes here.
+Portland, OR Bicycle Travel Mode. 11/07/2005.
 
 Copyright (C) 2006 Wyatt Baldwin, byCycle.org <wyatt@bycycle.org>
 
@@ -30,15 +30,37 @@ ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 """
-# Portland, OR Bicycle Travel Mode
-# 11/07/2005
-
 from byCycle.tripplanner.model import portlandor
 
 
 FASTER, SHORTER, FLATTER, SAFER, DEFAULT = range(5)
 
+# bikemode of "x" means avoid segment
+mu = None
+mm = None
+lt = None
+mt = None
+ht = None
+ca = None   # bikemode "ca" OR primary road (1300)
+cca = None  # state highway
+ccca = None # freeway
+xxx = 1000  # avoid
+# bike lane
+blt = None
+bmt = None
+bht = None
+bca = None
+bcca = None
+bccca = None 
+# no bike mode
+no_bm_lt = None
+no_bm_mt = None
+no_bm_ht = None
+no_bm_ca = None
+no_bm_cca = None
+no_bm_ccca = None
 
+            
 class Mode(portlandor.Mode):
     def __init__(self, tmode='bicycle', pref='', **kwargs):
         """
@@ -53,8 +75,61 @@ class Mode(portlandor.Mode):
                            (0,    0.65, 1.8, 3.7, 7,  12, 21,  500)]
         self.mph_up     =  (12.5, 11,   9.5, 7.5, 5,  3,  2.5, 2.5)
         self.mph_down   =  (12.5, 14,   17,  21,  26, 31, 32,  32)
- 
 
+        global mu, mm, lt, mt, ht, ca, cca, ccca, xxx
+        global blt, bmt, bht, bca, bcca, bccca
+        global no_bm_lt, no_bm_mt, no_bm_ht, no_bm_ca, no_bm_cca, no_bm_ccca
+        if self.pref == SAFER:
+            mu = .85
+            mm = .9
+            lt = 1
+            mt = 2
+            ht = 4
+            ca = xxx
+            cca = xxx
+            ccca = xxx
+            # bike lane
+            blt = .75
+            bmt = 1
+            bht = 2
+            bca = xxx
+            bcca = xxx
+            bccca = xxx
+            # no bike mode
+            mult = 3
+            no_bm_lt = blt * mult
+            no_bm_mt = bmt * mult
+            no_bm_ht = bht * mult
+            no_bm_ca = xxx
+            no_bm_cca = xxx
+            no_bm_ccca = xxx
+        else:
+            mult = 2
+            mu = .85
+            mm = .9
+            lt = 1
+            mt = 1.17
+            ht = 1.33            
+            ca = 2.67
+            cca = 10
+            ccca = 100
+            # bike lane
+            blt = .75
+            bmt = .875
+            bht = 1
+            bca = 2
+            bcca = 3
+            bccca = 4 
+            # no bike mode
+            mult = 2
+            no_bm_lt = blt * mult
+            no_bm_mt = bmt * mult
+            no_bm_ht = bht * mult
+            no_bm_ca = bca * mult
+            no_bm_cca = bcca * mult
+            no_bm_ccca = bccca * mult
+            
+            
     def getEdgeWeight(self, v, edge_attrs, prev_edge_attrs):
         """Calculate weight for edge given it & last crossed edge's attrs."""
         length = edge_attrs[self.indices['length']] * self.int_decode
@@ -65,12 +140,10 @@ class Mode(portlandor.Mode):
         downfrac = 1 - upfrac
         node_f_id = edge_attrs[self.indices['node_f_id']]
         streetname_id = edge_attrs[self.indices['streetname_id']]
-        cpd = edge_attrs[self.indices['cpd']]
+        #cpd = edge_attrs[self.indices['cpd']]
  
-
         # -- Calculate base weight of edge (in hours)
         
-
         # Length of segment that is uphill in from => to direction
         up_len = length * upfrac
 
@@ -110,73 +183,46 @@ class Mode(portlandor.Mode):
         # Add those together for estimated total time to traverse segment
         hours = up_time + down_time
 
-
         # -- Adjust weight based on user preference
-
-        # Multiply bike lane values by `mult` to get non-network weights
-        if self.pref == SAFER:
-            mult = 3
-            t = .75
-            p = .8
-            c = 4
-        else:
-            mult = 2
-            t = .85
-            p = .9
-            c = 2.67
-            
-        # no bike lane
-        l = 1
-        m = 1.17
-        h = 1.33
-        x = 1000
-        # bike lane
-        bl = .75
-        bm = .875
-        bh = 1
-        bc = 2
-        bcc = 4
-        bccc = 8
         
-        # Adjust for 'perceptual time'
         if bikemode:
             # Adjust bike network street
-            if   bikemode == 't': hours *= t
-            elif bikemode == 'p': hours *= p
+            if   bikemode == 't':          hours *= mu
+            elif bikemode == 'p':          hours *= mm
             elif bikemode == 'b':
                 # Adjust bike lane for traffic (est. from st. type)
-                if   code in (1500, 1521):      hours *= bl    #lt
-                elif code == 1450:              hours *= bm    #mt
-                elif code == 1400:              hours *= bh    #ht
-                elif code == 1300:              hours *= bc    #ca
-                elif 1200 <= code < 1300:       hours *= bcc   #ca+
-                elif 1100 <= code < 1200:       hours *= bccc  #ca++
-                else:                           hours *= x     #?          
-            elif bikemode == 'l': hours *= l
-            elif bikemode == 'm': hours *= m
-            elif bikemode == 'h': hours *= h
-            elif bikemode == 'c': hours *= c
-            elif bikemode == 'x': hours *= x
+                if   code in (1500, 1521): hours *= blt    #lt
+                elif code == 1450:         hours *= bmt    #mt
+                elif code == 1400:         hours *= bht    #ht
+                elif code == 1300:         hours *= bca    #ca
+                elif 1200 <= code < 1300:  hours *= bcca   #ca+
+                elif 1100 <= code < 1200:  hours *= bccca  #ca++
+                else:                      hours *= xxx    #?          
+            elif bikemode == 'l':          hours *= lt
+            elif bikemode == 'm':          hours *= mt
+            elif bikemode == 'h':          hours *= ht
+            elif bikemode == 'c':          hours *= ca
+            elif bikemode == 'x':          hours *= xxx
         else:
             # Adjust normal (i.e., no bikemode) street based on traffic
             # (est. from st. type)
-            if code == 3200:                     hours *= t
-            elif code in (3230, 3240, 3250):  hours *= p
+            if code == 3200:                 hours *= mu
+            elif code in (3230, 3240, 3250): hours *= mm
             else:
-                if code in (1500, 1521):         hours *= bl * mult    #lt
-                elif code == 1450:               hours *= bm * mult    #mt
-                elif code == 1400:               hours *= bh * mult    #ht
-                elif code == 1300:               hours *= bc * mult    #ca
-                elif 1200 <= code < 1300:        hours *= bcc * mult   #ca+
-                elif 1100 <= code < 1200:        hours *= bccc * mult  #ca++
-                else:                            hours *= x * mult     #?
+                if code in (1500, 1521):     hours *= no_bm_lt
+                elif code == 1450:           hours *= no_bm_mt
+                elif code == 1400:           hours *= no_bm_ht
+                elif code == 1300:           hours *= no_bm_ca
+                elif 1200 <= code < 1300:    hours *= no_bm_cca
+                elif 1100 <= code < 1200:    hours *= no_bm_ccca
+                else:                        hours *= xxx
 
 
         # Penalize edge if it has different street name from previous edge
         try:
             prev_ix_sn = prev_edge_attrs[self.indices['streetname_id']]
             if streetname_id != prev_ix_sn:
-                hours += .005555555555555  # 20 seconds
+                hours += .0027777  # 10 seconds
         except TypeError:
             pass        
 
