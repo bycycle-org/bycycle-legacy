@@ -54,10 +54,12 @@ class Mode(seattlewa.Mode):
     def __init__(self, tmode='bicycle', **kwargs):
         seattlewa.Mode.__init__(self)
 
-        self.pct_slopes = [p*.01 for p in
-                           (0,    0.65, 1.8, 3.7, 7,  12, 21,  500)]
-        self.mph_up     =  (12.5, 11,   9.5, 7.5, 5,  3,  2.5, 2.5)
-        self.mph_down   =  (12.5, 14,   17,  21,  26, 31, 32,  32)
+        self.avg_mph = 10
+
+#        self.pct_slopes = [p*.01 for p in
+#                           (0,    0.65, 1.8, 3.7, 7,  12, 21,  500)]
+#        self.mph_up     =  (12.5, 11,   9.5, 7.5, 5,  3,  2.5, 2.5)
+#        self.mph_down   =  (12.5, 14,   17,  21,  26, 31, 32,  32)
 
     def getEdgeWeight(self, v, edge_attrs, prev_edge_attrs):
         """Calculate weight for edge given it & last crossed edge's attrs."""
@@ -67,16 +69,7 @@ class Mode(seattlewa.Mode):
         streetname_id = edge_attrs[self.indices['streetname_id']]
  
         # TODO: implement slope awareness
-        up_spd = self.mph_up[0]
-        down_spd = self.mph_down[0]
-
-        # Based on uphill length and speed, calculate time to traverse uphill
-        # part of segment
-        up_time = up_len / up_spd
-        # Likewise for downhill part of segment
-        down_time = down_len / down_spd
-        # Add those together for estimated total time to traverse segment
-        hours = up_time + down_time
+        hours = length * self.avg_mph;
 
         map = DesignationWeightMap()
         hours *= map[ bikeclass ]
