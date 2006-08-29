@@ -64,8 +64,12 @@ CREATE TABLE `seattlewa_city` (
   `city`  VARCHAR(255) NOT NULL
 );
 
+INSERT INTO seattlewa_city(city) VALUES('Seattle');
+
 CREATE TABLE `seattlewa_state` (
   `id`    CHAR(2) PRIMARY KEY NOT NULL, 
   `state` VARCHAR(255) NOT NULL
 );
+
+INSERT INTO seattlewa_state(state) VALUES('WA');
 
