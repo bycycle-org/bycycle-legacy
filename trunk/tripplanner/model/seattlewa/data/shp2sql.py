@@ -313,6 +313,11 @@ def updateRawStateIds():
         (raw, 'wa', the_couv_id)
     _execute(Q)
 
+def setCityState():
+  # there is only one city and state covered by this region
+  _execute('UPDATE seattlewa_layer_street SET city_l_id = 1, city_r_id = 1,'\
+      'state_l_id = 1, state_r_id = 1')
+
 def createNodes():
     Q = 'INSERT INTO %s_layer_node ' \
         '(SELECT DISTINCT fnode_, startpoint(geo)' \
@@ -408,7 +413,10 @@ def run():
              
 #             ('Update state IDs in raw table',
 #              updateRawStateIds),
-             
+
+             ('Set city and State',
+               setCityState),
+
              ('Create nodes',
               createNodes),
              
