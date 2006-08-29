@@ -36,7 +36,7 @@ class BikeDesignation:
   NOT_DESIGNATED, PATH, LANE, URBAN_CONNECTOR, NEIGHBORHOOD_CONNECTOR = range(5)
 
 class DesignationWeightMap(dict):
-  __init__(self):
+  def __init__(self):
     # avoid anything without any designation
     self[ BikeDesignation.NOT_DESIGNATED ] = 1000;
 
