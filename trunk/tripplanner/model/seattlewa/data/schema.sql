@@ -51,7 +51,7 @@ CREATE TABLE `seattlewa_layer_node` (
   SPATIAL INDEX (`geom`)
 );
 
-CREATE TABLE `seattlewa_street_name` (
+CREATE TABLE `seattlewa_streetname` (
   `id`     INTEGER PRIMARY KEY NOT NULL AUTO_INCREMENT,
   `prefix` CHAR(2) NOT NULL,
   `name`   VARCHAR(255) NOT NULL,
@@ -60,16 +60,16 @@ CREATE TABLE `seattlewa_street_name` (
 );
 
 CREATE TABLE `seattlewa_city` (
-  `id`    INTEGER PRIMARY KEY NOT NULL AUTO_INCREMENT,
+  `id`    INTEGER PRIMARY KEY NOT NULL,
   `city`  VARCHAR(255) NOT NULL
 );
 
-INSERT INTO seattlewa_city(city) VALUES('Seattle');
+INSERT INTO seattlewa_city(id, city) VALUES(0, 'seattle');
 
 CREATE TABLE `seattlewa_state` (
   `id`    CHAR(2) PRIMARY KEY NOT NULL, 
   `state` VARCHAR(255) NOT NULL
 );
 
-INSERT INTO seattlewa_state(state) VALUES('WA');
+INSERT INTO seattlewa_state(id, state) VALUES('wa', 'Washington');
 
