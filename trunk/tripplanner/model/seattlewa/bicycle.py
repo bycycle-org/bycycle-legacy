@@ -37,14 +37,14 @@ class BikeDesignation:
 
 class DesignationWeightMap(dict):
   def __init__(self):
-    # avoid anything without any designation
-    self[ BikeDesignation.NOT_DESIGNATED ] = 1000;
+    # avoid anything without a designation
+    self[ BikeDesignation.NOT_DESIGNATED ] = 2;
 
     # bike paths are the most preferable route
     self[ BikeDesignation.PATH ] = .75;
 
     # lanes are the next best thing
-    self[ BikeDesignation.PATH ] = .9;
+    self[ BikeDesignation.LANE ] = .9;
 
     # not sure what these will mean...
     self[ BikeDesignation.URBAN_CONNECTOR ] = 1;
@@ -83,4 +83,3 @@ class Mode(seattlewa.Mode):
             pass        
 
         return hours
-

@@ -187,7 +187,7 @@ def updateBikeModes():
         _execute(Q % (bikemodes[bm], bm))
 
 def createSchema():
-    tables = ('layer_street', 'layer_node', 'street_name', 'city', 'state')
+    tables = ('layer_street', 'layer_node', 'streetname', 'city', 'state')
     for table in tables:
         _execute('DROP TABLE IF EXISTS %s_%s' % (region, table))
     cmd = 'mysql -u %s --password="%s" %s < ./schema.sql' % \
@@ -218,8 +218,13 @@ def unifyAddressRanges():
 
 def transferStreetNames():
     """Transfer street names to their own table."""
-    Q = 'INSERT INTO %s_street_name (prefix, name, sttype, suffix) '\
-        'SELECT DISTINCT pre_dir, street_nam, street_typ, suf_dir FROM %s'
+
+    Q = 'UPDATE %s SET pre_dir = LOWER(pre_dir), street_nam = LOWER(street_nam),'\
+        'street_typ = LOWER(street_typ), suf_dir = LOWER(suf_dir)'
+    _execute(Q % (raw))
+
+    Q = 'INSERT INTO %s_streetname (prefix, name, sttype, suffix) '\
+        'SELECT DISTINCT LOWER(pre_dir), LOWER(street_nam), LOWER(street_typ), LOWER(suf_dir) FROM %s'
     _execute(Q % (region, raw))
 
 def updateRawStreetNameIds():
@@ -231,7 +236,7 @@ def updateRawStreetNameIds():
     # Index each street name ID by its street name
     # {(stname)=>street_name_id}
     stnames = {}
-    Q = 'SELECT id, prefix, name, sttype, suffix FROM %s_street_name' % region
+    Q = 'SELECT id, prefix, name, sttype, suffix FROM %s_streetname' % region
     _execute(Q)
     for row in db.fetchAll():
         stnames[(row[1],row[2],row[3],row[4])] = row[0]
