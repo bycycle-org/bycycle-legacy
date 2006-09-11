@@ -1,152 +1,150 @@
 """$Id$
 
-Description goes here.
+Route Service Module (28 Dec 2004)
 
-Copyright (C) 2006 Wyatt Baldwin, byCycle.org <wyatt@bycycle.org>
-
-All rights reserved.
-
-TERMS AND CONDITIONS FOR USE, MODIFICATION, DISTRIBUTION
-
-1. The software may be used and modified by individuals for noncommercial, 
-private use.
-
-2. The software may not be used for any commercial purpose.
-
-3. The software may not be made available as a service to the public or within 
-any organization.
-
-4. The software may not be redistributed.
-
-THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND 
-ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED 
-WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE 
-DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR 
-ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES 
-(INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; 
-LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON 
-ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT 
-(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS 
-SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+Copyright (C) 2006 Wyatt Baldwin, byCycle.org <wyatt@bycycle.org>. All rights 
+reserved. Please see the LICENSE file included in the distribution. The
+license is also available online at http://bycycle.org/tripplanner/license.txt
+or by writing to license@bycycle.org.
 
 """
-# Route Service Module
-# 28 Dec 2004
-
 import time
 from byCycle.lib import gis
-from byCycle.tripplanner.services import excs
-from byCycle.tripplanner.model import address, intersection
-from byCycle.tripplanner.services import geocode
+from byCycle.services import excs
+from byCycle.model import address, intersection
+from byCycle.services import geocode
 import sssp
 
 
-class RouteError(Exception):
-    def __init__(self, desc=''):
-        if desc: self.description = desc
-        else: self.description = 'Route Error'
+class RouteError(excs.ByCycleError):
+    def __init__(self, desc='Route Error'):
+        excs.ByCycleError.__init__(self, desc)
     def __str__(self):
         return self.description
 
 class NoRouteError(RouteError):
-    def __init__(self, desc=''):
+    def __init__(self, desc='No Route Error'):
         RouteError.__init__(self, desc=desc)
 
 class MultipleMatchingAddressesError(RouteError):
-    def __init__(self, route):
-        self.route = route
-        desc = 'Multiple matches found'
+    def __init__(self, desc='Multiple Matches Found',
+                 start_choices=None, end_choices=None):
+        print start_choices
+        print end_choices
+        self.start_choices = start_choices
+        self.end_choices = end_choices
         RouteError.__init__(self, desc=desc)
 
 
-def get(q=[], region='', tmode='bicycle', pref='', return_messages=False, 
-        **params):
-    """Get a route for q in specified region using specified mode of travel.
+def get(q, region='', tmode='bicycle', pref='', return_messages=False):
+    """Get a route for the addresses in the waypoint list q.
     
-    @param region Data mode (TODO: Make determinable from place in geocoder) 
-    @param tmode The travel mode
-    @param q A list of address strings (currently only 2 supported)
-    @param options A dict of optional user options (sent off to tmode)
+    @param region: Geographic region to find the input addresses and route in
+    @type region: string
+    @param tmode The travel mode (currently only 'bicycle' is supported)
+    @type tmode: string
+    @param q A list of addresses (currently only 2 supported)
+    @type q: sequence<string>
+    @param pref:  User's route preference
+    @type pref: string
 
+    @return: Route
+    @rtype: dict
+    
+    @raise excs.InputError: No start and/or end address
+    @raise MultipleMatchingAddressesError: Multiple geocode matches for start 
+      and/or end address
+    @raise NoRouteError: No route found between start and end addresses
+
+    TODO: 
+      - Make less monolithic
+      - Make logging & timing orthogonal to get (it's all cluttered up with
+        logging & timing statements
+      - Support more than 2 waypoints
+      
     """
     st_tot = time.time()
     messages, errors = [], []
 
-    # Query
+    #-- Do basic input check
+    
     if not q:
-        errors.append('Please specify a route')
+        errors.append('Please enter start and end addresses')
     else:
         try:
-            fr = q[0].strip()
-            if not fr:
+            start = q[0].strip()
+            if not start:
                 raise IndexError
         except IndexError:
-            errors.append('Please specify a From address')
+            errors.append('Please enter a start address')
         try:
-            to = q[1].strip()
-            if not to:
+            end = q[1].strip()
+            if not end:
                 raise IndexError
         except IndexError:
-            errors.append('Please specify a To address')
+            errors.append('Please enter an end address')
 
     # Let multiple input errors fall through to here
     if errors:
         raise excs.InputError(errors)
+
+    #-- Get geocodes matching start and end addresses
     
-    ## Get geocodes matching from and to addresses
-    route = {'fr': {'geocode': [], 'original': fr},
-             'to': {'geocode': [], 'original': to}}
-         
+    start_choices = {'choices': [], 'original': start}
+    end_choices = {'choices': [], 'original': end}
+             
     st = time.time()
     try:
-        fcodes = geocode.get(q=fr, region=region)
+        start_geocodes = geocode.get(q=start, region=region)
     except geocode.AddressNotFoundError, e:
         errors.append(e.description)
     except geocode.MultipleMatchingAddressesError, e:
-        route['fr']['geocode'] = e.geocodes
+        start_choices['choices'] = e.geocodes
     messages.append('Time to get from address: %s' % (time.time() - st))
     
     st = time.time()
     try:
-        tcodes = geocode.get(q=to, region=region)
+        end_geocodes = geocode.get(q=end, region=region)
     except geocode.AddressNotFoundError, e:
         errors.append(e.description)
     except geocode.MultipleMatchingAddressesError, e:
-        route['to']['geocode'] = e.geocodes
+        end_choices['choices'] = e.geocodes
     messages.append('Time to get to address: %s' % (time.time() - st))
-          
-    if route['fr']['geocode'] or route['to']['geocode']:
-        raise MultipleMatchingAddressesError(route)
 
-    # Let multiple multiple match errors fall through to here
-    if errors:
-        raise excs.InputError(errors)
+    # Let multiple multiple-match errors fall through to here
+    if start_choices['choices'] or end_choices['choices']:
+        if not start_choices['choices']:
+            start_choices = None
+        if not end_choices['choices']:
+            end_choices = None        
+        raise MultipleMatchingAddressesError(start_choices=start_choices,
+                                             end_choices=end_choices)
 
     # Precise (enough) addresses were entered
-    fcode, tcode = fcodes[0], tcodes[0]
+    start_geocode, end_geocode = start_geocodes[0], end_geocodes[0]
 
     # TODO: Make this check actually work
-    if fcode == tcode:
+    if start_geocode == end_geocode:
         raise excs.InputError('From and To addresses appear to be the same')
 
 
     # The mode is a combination of the data/travel modes
     st = time.time()
-    region = tcode.address.region.region
-    path = 'byCycle.tripplanner.model.%s.%s'
+    path = 'byCycle.model.%s.%s'
     module = __import__(path % (region, tmode), globals(), locals(), [''])
     mode = module.Mode(pref=pref)
     messages.append('Time to instantiate mode: %s' % (time.time() - st))
 
-    ## Made it through that maze--now fetch the main adjacency matrix, G
+    #-- Made it through that maze--now fetch the main adjacency matrix, G
+    
     st = time.time()
     G = mode.getAdjacencyMatrix()
     if not G:
         raise NoRouteError('Graph is empty')
     messages.append('Time to get G: %s' % (time.time() - st))
 
-
-    ## Get or synthesize the from and to intersections
+    #-- Get or synthesize the start and end intersections
+    
     def __getIntersectionForGeocode(geocode, id, eid1, eid2):
         """Get or synthesize intersection for geocode.
 
@@ -178,7 +176,7 @@ def get(q=[], region='', tmode='bicycle', pref='', return_messages=False,
             st.number = num
             data = {'id': id,
                     'cross_streets': [st],
-                    'lon_lat': nt_seg.linestring[0]}
+                    'xy': nt_seg.linestring[0]}
             i = intersection.Intersection(data)
             #
             # Update G's nodes
@@ -211,17 +209,17 @@ def get(q=[], region='', tmode='bicycle', pref='', return_messages=False,
     nodes, edges = G['nodes'], G['edges']
 
     st = time.time()
-    fint = __getIntersectionForGeocode(fcode, -1, -1, -2)
+    fint = __getIntersectionForGeocode(start_geocode, -1, -1, -2)
     messages.append('Time to get from intersection: %s' % (time.time() - st))
 
     st = time.time()
-    tint = __getIntersectionForGeocode(tcode, -2, -3, -4)
+    tint = __getIntersectionForGeocode(end_geocode, -2, -3, -4)
     messages.append('Time to get to intersection: %s' % (time.time() - st))
 
     node_f_id, node_t_id = fint.id, tint.id
-
     
-    ## Try to find a path
+    #-- Try to find a path
+    
     st = time.time()
     try:
         V, E, W, w = sssp.findPath(G, node_f_id, node_t_id,
@@ -229,13 +227,13 @@ def get(q=[], region='', tmode='bicycle', pref='', return_messages=False,
                                    heuristicFunction=None)
     except sssp.SingleSourceShortestPathsNoPathError:
         raise NoRouteError('Unable to find a route from "%s" to "%s"' % \
-                           (str(fcode).replace('\n', ', '),
-                            str(tcode).replace('\n', ', ')))
+                           (str(start_geocode).replace('\n', ', '),
+                            str(end_geocode).replace('\n', ', ')))
     messages.append('Time to findPath: %s' % (time.time() - st))
 
-
-    ## A path was found
-    ## Get intersections and segments along path
+    #-- A path was found
+    
+    # Get intersections and segments along path
     st = time.time()
     I = mode.getIntersectionsById(V)
     if I[0] is None: I[0] = fint   # When from is in a segment
@@ -248,17 +246,17 @@ def get(q=[], region='', tmode='bicycle', pref='', return_messages=False,
     if S[-1] is None: S[-1] = split_segs[E[-1]] # When to is in a segment
     messages.append('Time to fetch segs by ID %s' % (time.time()-st))
 
-
-    ## Convert route data to output format
+    #-- Convert route data to output format
+    
     st = time.time()
     directions = makeDirections(I, S)
     messages.append('Time to make directions: %s' % (time.time() - st))
     route = {
-        'fr': {'geocode': fcode,
-               'original': fr,
+        'start': {'geocode': start_geocode,
+               'original': start,
                },
-        'to': {'geocode': tcode,
-               'original': to,
+        'end': {'geocode': end_geocode,
+               'original': end,
                },
         'linestring': [],
         'directions': [],
@@ -327,7 +325,7 @@ def makeDirections(I, S):
         # toward its start or end
         sls = s.linestring
         if s.node_f_id == toi.id:
-            # Moving to => fr
+            # Moving to => start
             sls.reverse()
         frlonlat, tolonlat = sls[0], sls[1]
         e_frlonlat, e_tolonlat = sls[-2], sls[-1]
@@ -542,13 +540,13 @@ if __name__ == '__main__':
                ('3150 lisbon', 'walnut & n 16th '),
                ('124th and county line, franklin', '3150 lisbon'),
                ('124th and county line, franklin',
-                'lon=-87.940407, lat=43.05321'),
-               ('lon=-87.973645, lat=43.039615',
-                'lon=-87.978623, lat=43.036086'),
+                'x=-87.940407, y=43.05321'),
+               ('x=-87.973645, y=43.039615',
+                'x=-87.978623, y=43.036086'),
                ),
               'portlandor':
                (('x=-122.668104, y=45.523127', '4807 se kelly'),
-                ('lon=-122.67334,lat=45.621662', '8220 N Denver Ave'),
+                ('x=-122.67334,y=45.621662', '8220 N Denver Ave'),
                 ('633 n alberta', '4807 se kelly'),
                 ('sw hall & denney', '44th and se stark'),
                 ('-122.645488, 45.509475', 'sw hall & denney'),
@@ -574,8 +572,8 @@ if __name__ == '__main__':
             #    print e
             else:
                 D = r['directions']
-                print r['fr']['geocode']
-                print r['to']['geocode']
+                print r['start']['geocode']
+                print r['end']['geocode']
                 for d in D:
                     print '%s on %s toward %s -- %s mi [%s]' % \
                           (d['turn'],
