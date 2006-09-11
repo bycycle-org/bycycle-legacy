@@ -1,40 +1,16 @@
 """$Id$
 
-Description goes here.
+Geocode Service Module.
 
-Copyright (C) 2006 Wyatt Baldwin, byCycle.org <wyatt@bycycle.org>
-
-All rights reserved.
-
-TERMS AND CONDITIONS FOR USE, MODIFICATION, DISTRIBUTION
-
-1. The software may be used and modified by individuals for noncommercial, 
-private use.
-
-2. The software may not be used for any commercial purpose.
-
-3. The software may not be made available as a service to the public or within 
-any organization.
-
-4. The software may not be redistributed.
-
-THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND 
-ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED 
-WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE 
-DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR 
-ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES 
-(INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; 
-LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON 
-ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT 
-(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS 
-SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+Copyright (C) 2006 Wyatt Baldwin, byCycle.org <wyatt@bycycle.org>. All rights 
+reserved. Please see the LICENSE file included in the distribution. The license 
+is also available online at http://bycycle.org/tripplanner/license.txt or by 
+writing to license@bycycle.org.
 
 """
-"""Geocode Service Module"""
-
 from byCycle.lib import gis
-from byCycle.tripplanner.model import mode, address, geocode
-from byCycle.tripplanner.services import excs, normaddr
+from byCycle.model import mode, address, geocode
+from byCycle.services import excs, normaddr
 
 
 class GeocodeError(excs.ByCycleError):
@@ -55,7 +31,7 @@ class MultipleMatchingAddressesError(GeocodeError):
         GeocodeError.__init__(self, desc=desc)
 
  
-def get(q='', region='', **params):
+def get(q, region=''):
     """Get the geocode of the address, according to the data mode.
     
     Choose the geocoding function based on the type of the input address. Call
@@ -314,12 +290,12 @@ def getPointGeocodes(oRegion, oAddr):
         # Set address number to num at min_nid end of segment
         if min_id == s.node_f_id:
             oAddr.number = s.addr_f
-            lon_lat = s.linestring[0]
+            xy = s.linestring[0]
         else:
             oAddr.number = s.addr_t
-            lon_lat = s.linestring[-1]
+            xy = s.linestring[-1]
         _setStreetAndPlaceFromSegment(oAddr.street, oAddr.place, s)
-        code = geocode.PostalGeocode(oAddr, s, lon_lat)
+        code = geocode.PostalGeocode(oAddr, s, xy)
         code.intersection = i
     return [code]
 
