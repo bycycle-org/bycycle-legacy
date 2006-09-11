@@ -32,29 +32,29 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 """
 if __name__ == '__main__':
     import unittest
-    from byCycle.tripplanner.services.geocode import *
-    from byCycle.tripplanner.model import portlandor
+    from byCycle.services.geocode import *
+    from byCycle.model import portlandor
 
     class DontTestMilwaukee(unittest.TestCase):
         A = {#' ',
             # Milwaukee
             'milwaukeewi':
             ('0 w hayes ave',
-             'lon=-87.940407, lat=43.05321',
-             'lon=-87.931137, lat=43.101234',
-             'lon=-87.934399, lat=43.047126',
+             'x=-87.940407, y=43.05321',
+             'x=-87.931137, y=43.101234',
+             'x=-87.934399, y=43.047126',
              '125 n milwaukee',
              '125 n milwaukee milwaukee wi',
              '27th and lisbon',
              '27th and lisbon milwaukee',
              '27th and lisbon milwaukee, wi',
-             'lon=-87.961178, lat=43.062993',
-             'lon=-87.921953, lat=43.040791',
+             'x=-87.961178, y=43.062993',
+             'x=-87.921953, y=43.040791',
              'n 8th st & w juneau ave, milwaukee, wi ',
              '77th and burleigh',
              '2750 lisbon',
              '(-87.976885, 43.059544)',
-             'lon=-87.946243, lat=43.041669',
+             'x=-87.946243, y=43.041669',
              '124th and county line',
              '124th and county line wi',
              '5th and center',

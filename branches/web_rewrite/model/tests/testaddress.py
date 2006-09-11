@@ -32,7 +32,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 """
 if __name__ == "__main__":
     import unittest
-    from byCycle.tripplanner.model.address import *
+    from byCycle.model.address import *
 
     class TestPostalAddress(unittest.TestCase):
         def testPostalAddress(self):

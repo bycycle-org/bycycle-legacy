@@ -32,9 +32,9 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 """
 if __name__ == '__main__':
     import unittest
-    from byCycle.tripplanner.services.normaddr import *
-    from byCycle.tripplanner.model import *
-    from byCycle.tripplanner.model import portlandor
+    from byCycle.services.normaddr import *
+    from byCycle.model import *
+    from byCycle.model import portlandor
 
 
     class TestGetCrossStreets(unittest.TestCase):

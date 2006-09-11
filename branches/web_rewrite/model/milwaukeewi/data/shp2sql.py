@@ -313,7 +313,7 @@ def _wait(msg='Continue or skip'):
 def _openDB():
     """Set up DB connection."""
     global db
-    path = 'byCycle.tripplanner.model.%s' % region
+    path = 'byCycle.model.%s' % region
     db = __import__(path, globals(), locals(), ['']).Mode()
  
 def _execute(Q, show=True):
