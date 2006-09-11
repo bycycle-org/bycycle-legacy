@@ -33,7 +33,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 # Portland, OR Bicycle Travel Mode
 # 11/07/2005
 
-from byCycle.tripplanner.model import portlandor
+from byCycle.model import portlandor
 
 
 FASTER, SHORTER, FLATTER, SAFER, DEFAULT = range(5)
