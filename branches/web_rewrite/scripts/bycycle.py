@@ -31,7 +31,22 @@ ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 """
+import os
+def __getbyCycleImportPath(level):
+    """Get path to dir containing the byCycle package this module is part of.
+    
+    ``level`` `int`
+        How many levels up the dir containing the package is.
+    
+    """
+    path = os.path.abspath(__file__)
+    opd = os.path.dirname
+    for i in range(level):
+        path = opd(path)
+    return path
+
 import sys
+sys.path.insert(0, __getbyCycleImportPath(3))
 from byCycle.model import regions
 
 import_path = 'byCycle.services.%s'
