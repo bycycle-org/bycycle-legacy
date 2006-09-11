@@ -128,18 +128,18 @@ class Validator(object):
         if long < -180.0 or long > 180.0: return False
 
         words = longitude.strip().split(".")
-        if len(words[-1]) != common.lon_lat_fraction_len: return False
+        if len(words[-1]) != common.xy_fraction_len: return False
 
         return True
 
     def validateLatitude(self, latitude):
-        try: lat = float(str(latitude))
+        try: y = float(str(latitude))
         except Exception: return False
         
-        if lat < -90.0 or lat > 90.0: return False
+        if y < -90.0 or y > 90.0: return False
 
         words = latitude.strip().split(".")
-        if len(words[-1]) != common.lon_lat_fraction_len: return False
+        if len(words[-1]) != common.xy_fraction_len: return False
 
         return True
     

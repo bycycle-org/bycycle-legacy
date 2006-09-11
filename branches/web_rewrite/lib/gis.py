@@ -39,22 +39,22 @@ equator_circumference = 24902
 miles_per_degree_at_equator = equator_circumference/360
 
 
-def getDistanceBetweenTwoPointsOnEarth(lon_lat_a=None, lon_lat_b=None,
-                                       lon_a=None, lat_a=None,
-                                       lon_b=None, lat_b=None):
-    if lon_lat_a and lon_lat_b:
-        lon_a = lon_lat_a.x
-        lat_a = lon_lat_a.y
-        lon_b = lon_lat_b.x
-        lat_b = lon_lat_b.y
-    if lon_a == lon_b and lat_a == lat_b:
+def getDistanceBetweenTwoPointsOnEarth(xy_a=None, xy_b=None,
+                                       x_a=None, y_a=None,
+                                       x_b=None, y_b=None):
+    if xy_a and xy_b:
+        x_a = xy_a.x
+        y_a = xy_a.y
+        x_b = xy_b.x
+        y_b = xy_b.y
+    if x_a == x_b and y_a == y_b:
         return 0
     return earth_radius * \
-           acos(cos(radians(lat_a)) * \
-                cos(radians(lat_b)) * \
-                cos(radians(lon_b-lon_a)) + \
-                sin(radians(lat_a)) * \
-                sin(radians(lat_b)))
+           acos(cos(radians(y_a)) * \
+                cos(radians(y_b)) * \
+                cos(radians(x_b-x_a)) + \
+                sin(radians(y_a)) * \
+                sin(radians(y_b)))
 
 
 def getLengthOfLineString(linestring,
@@ -74,12 +74,12 @@ def getDistanceBetweenTwoPoints(p, q):
     return length
 
 
-def getDistanceBetweenTwoLatitudes(lat_a, lat_b):
-    return miles_per_degree_at_equator * abs(lat_b - lat_a)
+def getDistanceBetweenTwoLatitudes(y_a, y_b):
+    return miles_per_degree_at_equator * abs(y_b - y_a)
 
 
-def getDistanceBetweenTwoLongitudes(lat, lon_a, lon_b):
-    return cos(radians(lat)) * miles_per_degree_at_equator * abs(lon_b - lon_a)
+def getDistanceBetweenTwoLongitudes(y, x_a, x_b):
+    return cos(radians(y)) * miles_per_degree_at_equator * abs(x_b - x_a)
 
 
 def getBearingGivenStartAndEndPoints(p, q):
@@ -261,7 +261,7 @@ class Point(object):
 
         @param x_y String like 'x=-123, y=45'
                x can be one of x, lng, lon, long, longitude
-               y can be one of y, lat, latitude
+               y can be one of y, y, latitude
                [When x or y is not in the list, the positional value will be
                 used]
                = can be one of =, :
