@@ -1,0 +1,11 @@
+DirectoryIndex index.py
+Options +ExecCGI +FollowSymLinks
+AddHandler cgi-script py
+
+RewriteEngine On
+RewriteBase /
+RewriteCond %{REQUEST_URI} !(geocode|route|js|css|images|index)/?$ [NC]
+RewriteRule ^([a-z,]+)(/?)$ http://%{HTTP_HOST}/?region=$1&%{QUERY_STRING} [NC,R=temp,L]
+RewriteRule ^(geocode)$ http://%{HTTP_HOST}/?service=$1&%{QUERY_STRING} [NC,R=temp,L]
+RewriteRule ^(route)$ http://%{HTTP_HOST}/?service=$1&%{QUERY_STRING} [NC,R=temp,L]
+

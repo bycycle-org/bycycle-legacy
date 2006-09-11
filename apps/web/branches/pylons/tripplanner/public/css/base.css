@@ -1,0 +1,420 @@
+html, body, table, td, tr, form 
+{  
+  padding: 0; 
+  margin: 0;
+  }
+
+html, body 
+{
+  overflow: hidden;
+  height: 100%;
+  }
+
+body
+{ 
+  min-width: 700px;
+ }
+
+body, td
+{
+  font-family: Verdana, Helvetica, Arial, sans-serif;
+  font-size: 12px;
+  background-color: white;
+  color: black;
+  }
+
+table
+{ 
+  border-collapse: collapse;
+ }
+
+td
+{   
+  vertical-align: top;
+ }
+
+img
+{
+  border: 0;
+  }
+
+h1
+{
+  font-size: 20px;
+  }
+
+h2
+{
+  font-size: 16px;
+  }
+
+h3
+{
+  font-size: 14px;
+  }
+
+h4
+{
+  font-size: 12px;
+  }
+
+a
+{
+  color: #46d;
+  }
+
+a:hover
+{
+  color: red;
+  }
+
+hr
+{
+  color: gray;
+  background-color: gray;
+  height: 1px;
+  border: none;
+  }
+
+
+/* General */
+
+.clear 
+{ 
+  clear: both;
+  }
+
+.page_section
+{
+  padding: 4px;
+  border-bottom: 1px solid gray; 
+  }
+
+
+/* Windows */
+
+.title_bar
+{ 
+  background: #99b3cc;
+  font-size: 12px;
+  font-weight: bold;
+  line-height: 12px;
+  position: relative;
+  height: 22px;
+  border-bottom: 1px solid gray;
+ }
+
+.title_bar a
+{ 
+  display: block;
+  padding: 2px;
+  border: 1px solid gray;
+  color: gray;
+  text-decoration: none;
+  }
+
+.title_bar a:hover
+{ 
+  color: black;
+  border: 1px solid black;
+  }
+
+.close_button
+{ 
+  position: absolute;
+  top: 2px;
+  right: 2px;
+ }
+
+
+/* Tabs */
+
+.tab_pane
+{ 
+ 
+  }
+
+.tab_labels
+{ 
+  padding-bottom: 0;
+  }
+
+.tab_labels ul 
+{
+  width: auto;
+  list-style: none;
+  margin: 0;
+  padding : 0;
+  }
+
+.tab_label
+{ 
+  width: auto;
+  float: left;
+  margin: 0px;
+  padding: 0px;
+  text-align: center;
+  margin: 0 1px -1px 0;
+  padding: 0 4px;
+  background: #99b3cc;
+  border: 1px solid gray;
+ }
+
+.tab_label a
+{
+  width: auto;
+  float: left;
+  display: block;
+  text-decoration: none;
+  color: black;
+ }
+
+.tab_label a:hover
+{ 
+  color: white;
+  }
+
+.selected
+{ 
+  background: white;
+  border-bottom: 1px solid white;
+  }
+
+.selected a:hover
+{ 
+  color: black;
+  }
+
+
+/* Header & Footer */
+
+#header table, #footer table
+{ 
+  width: 100%;
+ }
+
+#header, #header td, #footer, #footer td
+{ 
+  background: #a7cc95;
+  }
+
+#header td
+{ 
+  color: white;
+  font-weight: bold;
+  }
+
+#header a
+{ 
+  color: white;
+  text-decoration: none;
+  }
+
+#footer 
+{ 
+  border-bottom: none;
+ }
+
+#footer td
+{ 
+  color: black;
+ }
+
+#footer a
+{ 
+  color: black;
+  text-decoration: none;
+ }
+
+#about, #copyright
+{ 
+  text-align: right;
+ }
+
+/* Input */
+
+#input_menu table
+{ 
+  width: 100%;
+ }
+
+#bookmark
+{ 
+  text-align: right;
+ }
+
+#q
+{ 
+  width: 400px;
+ }
+
+#fr, #to
+{ 
+  width: 150px;
+ }
+
+#swap_fr_and_to 
+{
+  text-decoration: none;
+  }
+
+.input_label
+{ 
+  margin-top: 5px;
+  font-size: 11px;
+  color: #404040;
+ }
+
+
+/* Content */
+
+#content
+{
+  padding: 0;
+  }
+
+#content table
+{ 
+
+  }
+
+#content td
+{
+  vertical-align: top;
+  padding: 0;
+  margin: 0;
+  }
+
+/* Display */
+
+#display
+{
+  width: 300px;
+  padding: 4px;
+  overflow: auto;
+  }
+
+#reverse_div 
+{  
+  margin-bottom: 4px;
+  }
+
+.disclaimer
+{
+  font-size: 10px;
+  font-style: italic;
+  color: #444;
+  }
+
+
+/* Map */
+
+#map
+{
+  display: none;
+  background: #99b3cc;
+  }
+
+#map_msg
+{
+  padding: 4px;
+  }
+
+.info_win
+{
+  width: 250px;
+  }
+
+
+/* Google Ads */
+
+#google_ads
+{
+  display: none;
+  width: 120px;
+  overflow: hidden;
+  }
+
+
+/* Directions Table */
+
+.start
+{
+  color: green;
+  }
+
+.end
+{
+  color: red;
+  }
+
+.summary, .directions
+{
+
+  }
+
+/*.start h2, .end h2, .total_distance h2*/
+.summary h2
+{
+  padding: 0px;
+  margin: 0px;
+  font-size: 14px;
+  }
+
+.summary td, .directions td
+{
+  border: 1px solid gray;
+  padding: 2px;
+  }
+
+.error
+{
+  color: red;
+  }
+
+.a
+{
+  background: #ddd;
+  }
+
+.b
+{
+  background: #fff;
+  }
+
+.count 
+{
+  vertical-align: middle;
+  text-align: center;
+  }
+
+.mma_list li
+{
+  margin-bottom: 10px;
+  }
+
+
+/* Print Rules */
+
+@media print 
+{ 
+  html, body, #result
+  {  
+    overflow: visible;
+    }
+  
+  #print_header
+  {  
+    display: block;
+    }
+  
+  #links, 
+  #input, 
+  #reverse_div, 
+  #map_menu, 
+  #footer,
+  #google_ads_panel
+  { 
+    display: none;
+    }
+}
