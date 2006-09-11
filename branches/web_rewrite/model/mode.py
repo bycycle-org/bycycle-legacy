@@ -1,38 +1,21 @@
 """$Id$
 
-Description goes here.
+Database Abstraction Layer (11/07/2005).
 
-Copyright (C) 2006 Wyatt Baldwin, byCycle.org <wyatt@bycycle.org>
+Copyright (C) 2006 Wyatt Baldwin, byCycle.org <wyatt@bycycle.org>. All rights 
+reserved. Please see the LICENSE file included in the distribution. The license 
+is also available online at http://bycycle.org/tripplanner/license.txt or by 
+writing to license@bycycle.org.
 
-All rights reserved.
-
-TERMS AND CONDITIONS FOR USE, MODIFICATION, DISTRIBUTION
-
-1. The software may be used and modified by individuals for noncommercial, 
-private use.
-
-2. The software may not be used for any commercial purpose.
-
-3. The software may not be made available as a service to the public or within 
-any organization.
-
-4. The software may not be redistributed.
-
-THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND 
-ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED 
-WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE 
-DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR 
-ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES 
-(INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; 
-LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON 
-ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT 
-(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS 
-SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+TODO:
+  - Use fancy-pants ORM (SQLAlchemy, for example) to create proper model/domain 
+    objects.
+  - Decouple regions from this class (i.e., they shouldn't be subclasses)--when
+    moving to using an ORM, move the region-common stuff into a Region base 
+    class.
+  - Make createAdjacencyMatrix available through bycycle script.
 
 """
-# Base Mode
-# 11/07/2005
-
 import os
 import MySQLdb
 from byCycle import install_path
@@ -41,7 +24,7 @@ import address, segment, intersection
 
 
 class Mode(object):
-    path = os.path.join(install_path, 'tripplanner/model')
+    path = os.path.join(install_path, 'model')
     # The number of digits to save when encoding a float as an int
     int_exp = 6
     # Multiplier to create int-encoded float
@@ -49,20 +32,14 @@ class Mode(object):
     # Multiplier to get original value back
     int_decode = 10 ** -int_exp
             
-    def __init__(self, region):
-        """Create a new data mode.
-
-        @param region A Region object
-
-        """
-        region_name = region.name
+    def __init__(self):
+        """Create a new data mode."""
+        region_name = self.region
         self.tables = {'edges': '%s_layer_street' % region_name,
                        'nodes': '%s_layer_node' % region_name,
                        'streetnames': '%s_streetname' % region_name,
                        'cities': '%s_city' % region_name,
                        'states': '%s_state' % region_name}
-
-        self.region = region
 
         # Database connection parameters
         host = 'localhost'
@@ -92,26 +69,106 @@ class Mode(object):
         # (code), and streetname_id attributes.
         # TODO: This should be moved to the new Region class that's planned
         self.edge_attrs = ['length', 'code', 'streetname_id'] + \
-                          region.edge_attrs
+                          self.edge_attrs
         self.indices = {}
-        for i, attr in enumerate(region.edge_attrs):
+        for i, attr in enumerate(self.edge_attrs):
             self.indices[attr] = i
 
-
     def __str__(self):
-        return '%s, %s' % (self.region.name[:-2].title(),
-                           self.region.name[-2:].upper())
+        return '%s, %s' % (self.region[:-2].title(),
+                           self.region[-2:].upper())
 
-
-    # Adjacency Matrix Methods ------------------------------------------------
+    #-- Adjacency Matrix Methods
 
     def createAdjacencyMatrix(self):
-        """Create this mode's adj. matrix, store it in the DB, and return it.
+        """Create this mode's adjacency matrix, serialize it, and return it.
 
         Build a matrix suitable for use with the route service. The structure
         of the matrix is defined by/in the sssp module of the route service.
 
-        @return G -- the adjacency matrix
+        @return: Adjacency matrix for a given region
+        @rtype: dict
+
+        """
+        import math
+        from byCycle.lib import gis, meter
+
+        t = meter.Timer()
+
+        # Get the number of nodes
+        Q = 'SELECT COUNT(*) FROM %s' % self.tables['nodes']
+        self.execute(Q)
+        num_nodes = self.fetchRow()[0]
+        
+        # Get the edge attributes
+        t.start()
+        print 'Fetching edge attributes...'
+        Q = 'SELECT id, node_f_id, node_t_id, one_way, ' \
+            '%s, ' \
+            'AsText(geom) AS wkt_geometry ' \
+            'FROM %s' % (', '.join(self.edge_attrs[1:]), self.tables['edges'])
+        print Q
+        self.executeDict(Q)
+        rows = self.fetchAllDict()
+        num_edges = len(rows)        
+        print 'Took %s' % t.stop()
+
+        print 'Number of edges: %s' % num_edges
+        print 'Number of nodes: %s' % num_nodes
+        
+        G = {'nodes': {}, 'edges': {}}
+        nodes = G['nodes']
+        edges = G['edges']
+
+        print 'Creating adjacency matrix...'
+        met = meter.Meter(num_items=len(rows), start_now=True)
+        for i, row in enumerate(rows):
+            self._adjustRowForMatrix(row)
+
+            ix = row['id']
+            node_f_id, node_t_id = row['node_f_id'], row['node_t_id']
+
+            # 0 => no travel in either direction
+            # 1 => travel FT only
+            # 2 => travel TF only
+            # 3 => travel in both directions
+            one_way = row['one_way']
+            ft = one_way & 1
+            tf = one_way & 2
+
+            linestring = gis.importWktGeometry(row['wkt_geometry'])
+            length = gis.getLengthOfLineString(linestring)
+            length = int(math.floor(length * self.int_encode))
+            row['length'] = length
+
+            entry = tuple([row[a] for a in self.edge_attrs])
+            edges[ix] = entry
+
+            if ft:
+                if not node_f_id in nodes: nodes[node_f_id] = {}
+                nodes[node_f_id][node_t_id] = ix
+            if tf:
+                if not node_t_id in nodes: nodes[node_t_id] = {}
+                nodes[node_t_id][node_f_id] = ix
+
+            met.update(i+1)
+        print
+        
+        t.start()
+        print 'Saving adjacency matrix...'
+        self._saveMatrix(G)
+        self.G = G
+        print 'Took %s' % t.stop()
+        return G
+    
+    def createAdjacencyMatrixListType(self):
+        """Create this mode's adjacency matrix, serialize it, and return it.
+
+        Build a matrix suitable for use with the route service. The structure
+        of the matrix is defined by/in the sssp module of the route service.
+
+        @return: Adjacency matrix for a given region
+        @rtype: list
 
         """
         import math
@@ -184,7 +241,7 @@ class Mode(object):
 
         nodes = [tuple(v_list) or None for v_list in nodes]
         edges = [attrs or None for attrs in edges]
-
+        G = tuple(G)
         
         timer.start()
         print '\nSaving adjacency matrix...'
@@ -211,8 +268,7 @@ class Mode(object):
             loadfile.close()
         return self.G
     
-    
-    # Intersection Methods ----------------------------------------------------
+    #-- Intersection Methods
 
     def getIntersectionsById(self, ids):
         if not ids:
@@ -261,10 +317,10 @@ class Mode(object):
                 node_f_id, node_t_id =  row['node_f_id'],  row['node_t_id']
                 if id == node_f_id:
                     data['id'] = node_f_id
-                    data['lon_lat'] = linestring[0]
+                    data['xy'] = linestring[0]
                 elif id == node_t_id:
                     data['id'] = node_t_id
-                    data['lon_lat'] = linestring[-1]
+                    data['xy'] = linestring[-1]
                 # Get all segments that have the intersection at one end
                 S = seg_rows[id]
                 # Get the cross streets
@@ -309,12 +365,12 @@ class Mode(object):
 
 
     def getIntersectionClosestToSTIDandNum(self, streetname_id, num,
-                                           lon_lat=None):
+                                           xy=None):
         """Get the intersection closest to the specified street address.
 
         @param streetname_id -- the id of the addresses's street name
         @param num -- the street number of the address
-        @param lon_lat -- the lon/lat of the address (if known)
+        @param xy -- the (x, y) coordinate of the address (if known)
         @return -- the closest intersection and the intersection accross from
                    it on the segment containing address
 
@@ -348,11 +404,11 @@ class Mode(object):
 
         # The closest might actually be the one that's "further" away in terms
         # street numbers
-        if lon_lat:
-            cll = closest.lon_lat
-            afcll = acrossFromClosest.lon_lat
-            if gis.getDistanceBetweenTwoPointsOnEarth(afcll, lon_lat) < \
-                   gis.getDistanceBetweenTwoPointsOnEarth(cll, lon_lat):
+        if xy:
+            cll = closest.xy
+            afcll = acrossFromClosest.xy
+            if gis.getDistanceBetweenTwoPointsOnEarth(afcll, xy) < \
+                   gis.getDistanceBetweenTwoPointsOnEarth(cll, xy):
                 closest, acrossFromClosest = acrossFromClosest, closest
 
         return closest, acrossFromClosest
@@ -367,24 +423,24 @@ class Mode(object):
         streetname_ids, num = self.getStreetIdsForAddress(addr=addr)
         streetname_id, full_name = streetname_ids.popitem()
         i = self.getIntersectionClosestToSTIDandNum(streetname_id, num,
-                                                    lon_lat)
+                                                    xy)
         return i
  
 
     def getDistanceBetweenTwoIntersections(self, a, b):
-        Q = "SELECT lon_lat FROM %s WHERE " \
+        Q = "SELECT xy FROM %s WHERE " \
             "id=%s OR id=%s" % (self.tables['nodes'], a.id, b.id)
         if not self.executeDict(Q): return None
-        ll_a = gis.Point(self.fetchRow()["lon_lat"])
-        ll_b = gis.Point(self.fetchRow()["lon_lat"])
+        ll_a = gis.Point(self.fetchRow()["xy"])
+        ll_b = gis.Point(self.fetchRow()["xy"])
         return gis.getDistanceBetweenTwoPointsOnEarth(ll_a, ll_b)
 
 
     def getLonLatById(self, id):
-        Q = "SELECT lon_lat FROM %s WHERE id=%s" % \
+        Q = "SELECT xy FROM %s WHERE id=%s" % \
             (self.tables['nodes'], id)
         if not self.executeDict(Q): return None
-        return gis.Point(self.fetchRow()["lon_lat"])
+        return gis.Point(self.fetchRow()["xy"])
 
 
     # Segment Methods ---------------------------------------------------------
