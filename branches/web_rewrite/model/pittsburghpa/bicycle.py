@@ -33,7 +33,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 # Pittsburgh Travel Mode
 # 11/07/2005
 
-from byCycle.tripplanner.model import pittsburghpa
+from byCycle.model import pittsburghpa
 
 class Mode(pittsburghpa.Mode):
     def __init__(self, tmode='bicycle', pref='', **kwargs):

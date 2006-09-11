@@ -33,7 +33,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 # Milwaukee, WI Data Mode
 # 11/07/2005
 
-from byCycle.tripplanner.model import mode
+from byCycle.model import mode
  
 
 class Mode(mode.Mode):

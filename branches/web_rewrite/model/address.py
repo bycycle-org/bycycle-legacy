@@ -417,9 +417,9 @@ class Place(object):
 
     def setRegion(self, region):
         if region:
-            from byCycle.tripplanner.model.mode import Mode
+            from byCycle.model.mode import Mode
             if not isinstance(region, Mode):
-                import_path = 'byCycle.tripplanner.model.%s'
+                import_path = 'byCycle.model.%s'
                 self.oRegion = __import__(import_path % region, globals(),
                                           locals(), ['']).Mode()
             self.region = self.oRegion.region
