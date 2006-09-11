@@ -44,7 +44,7 @@ Accepts these types of addresses:
 import re
 from byCycle.lib import gis
 from byCycle.services import excs
-from byCycle.model import (mode, address, regions, states, sttypes, compass)
+from byCycle.model import mode, address, regions, states, sttypes, compass
 
 
 # RE to check to see if a string has at least one word char
@@ -61,7 +61,7 @@ states_atof = states.states_atof
 
 no_region_msg = 'Please set your region'
 
-def get(q='', region='', **params):
+def get(q, region=''):
     """Get a normalized address for the input address.
 
     @param string q Input address
@@ -142,7 +142,7 @@ def parse(sAddress, region=''):
 
     - The address *must* contain a street name
     - The address must *not* contain a house number
-import byCycle.tripplanner.model    - It *can* contain a city & state OR zip code OR both
+    - It *can* contain a city & state OR zip code OR both
 
     @param string sAddress A street & place with no number
            (e.g., Main St, Portland, OR)
