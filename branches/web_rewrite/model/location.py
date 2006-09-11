@@ -45,7 +45,7 @@ class Location(object):
         self.category = ""
         self.name = "" 
         self.street_id = ""
-        self.lon_lat = None
+        self.xy = None
         self.address = ""
         self.hood = ""
         if data: self.init(data)
@@ -56,7 +56,7 @@ class Location(object):
         if "category"  in data: self.category = data["category"]
         if "name"      in data: self.name     = data["name"]
         if "street_id" in data: self.street_name = data["street_id"]
-        if "lon_lat"   in data: self.lon_lat  = gis.Point(data["lon_lat"])
+        if "xy"   in data: self.xy  = gis.Point(data["xy"])
         if "address"   in data: self.address  = data["address"]
         if "hood"      in data: self.hood     = data["hood"]
 

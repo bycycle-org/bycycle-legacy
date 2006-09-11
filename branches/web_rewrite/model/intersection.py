@@ -34,7 +34,7 @@ class Intersection(object):
     """Representation of an intersection."""
     def __init__(self, data={}):
         cross_streets = []  # list of Street objects
-        lon_lat = None      # gis.Point object
+        xy = None      # gis.Point object
         self.__dict__.update(data)
 
     def __str__(self):
