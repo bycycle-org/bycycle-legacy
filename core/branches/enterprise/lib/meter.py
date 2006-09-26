@@ -121,8 +121,15 @@ class Meter(object):
 
 
 class Timer(object):
-    """Super simple wall clock timer."""    
+    """Super simple wall clock timer."""
+    
     def __init__(self, start_now=True):
+        """Create a new `Timer`, usually not started until `start` is called.
+        
+        ``start_now`` -- If set, start now instead of waiting for `start` to
+        be called.
+        
+        """
         self.start_time = 0
         self.elapsed_time = 0
         self.paused = True        
@@ -143,22 +150,19 @@ class Timer(object):
         self.unpause()
         
     def stop(self):
+        """Stop this timer and return the number of seconds elapsed."""
         self.pause()
-        units = 'second'
-        if self.elapsed_time > 60:
-            self.elapsed_time /= 60.0
-            units = 'minute'
-        if self.elapsed_time != 1:
-            units += 's'
-        return '%.2f %s' % (self.elapsed_time, units)
+        return self.elapsed_time
 
     def pause(self):
+        """Pause this timer."""
         if self.paused:
             return        
         self.paused = True
         self.elapsed_time += (time.time() - self.start_time)
 
     def unpause(self):
+        """Unpause this timer."""
         if not self.paused:
             return
         self.paused = False
