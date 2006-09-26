@@ -33,7 +33,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 class Intersection(object):
     """Representation of an intersection."""
     def __init__(self, data={}):
-        cross_streets = []  # list of Street objects
+        cross_streets = []  # list of Edge objects
         xy = None      # gis.Point object
         self.__dict__.update(data)
 

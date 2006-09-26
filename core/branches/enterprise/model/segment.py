@@ -1,36 +1,15 @@
-"""$Id$
-
-Description goes here.
-
-Copyright (C) 2006 Wyatt Baldwin, byCycle.org <wyatt@bycycle.org>
-
-All rights reserved.
-
-TERMS AND CONDITIONS FOR USE, MODIFICATION, DISTRIBUTION
-
-1. The software may be used and modified by individuals for noncommercial, 
-private use.
-
-2. The software may not be used for any commercial purpose.
-
-3. The software may not be made available as a service to the public or within 
-any organization.
-
-4. The software may not be redistributed.
-
-THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND 
-ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED 
-WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE 
-DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR 
-ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES 
-(INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; 
-LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON 
-ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT 
-(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS 
-SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-
-"""
-from byCycle.lib import gis
+###########################################################################
+# $Id$
+# Created ???.
+#
+# Segment.
+#
+# Copyright (C) 2006 Wyatt Baldwin, byCycle.org <wyatt@bycycle.org>.
+# All rights reserved.
+#
+# For terms of use and warranty details, please see the LICENSE file included
+# in the top level of this distribution. This software is provided AS IS with
+# NO WARRANTY OF ANY KIND.
 
 
 class Segment(object):
@@ -38,31 +17,37 @@ class Segment(object):
     def __init__(self, data={}):
         self.__dict__.update(data)
 
-
     def getAttrsOnNumSide(self, num):
-        """Get attributes for side of segment num is on.
+        """Get attributes for side of edge ``num`` is on.
 
-        Get all the attributes from this segment that end in 'l' or 'r',
-        depending on whether num is on the right or left side of s.
+        Get all left or right side attributes, depending on whether ``num`` is
+        on the right or left side of this `Edge`.
 
-        Args:
-        num -- a street number (hopefully it's actually within the segment)
+        ``num`` `int`
+            A edge number within this `Edge`
 
-        Return:
-        A dict of the attributes, with the 'l' or 'r' stripped off the keys
+        return `dict`
+            The attributes, with the 'l' or 'r' stripped from the keys
 
         """
+        # Is the left or right side of this edge the even side?
         odd_side = ('l', 'r')[self.even_side == 'l']
+        # Is ``num`` on the even or odd side of this edge?
         side = (odd_side, self.even_side)[int(num) % 2 == 0]
+        # Get attributes for the side ``num`` is on
         return self.getAttrsOnSide(side)
 
-
     def getAttrsOnSide(self, side='left'):
-        """Get attributes on side. Also get attrs that aren't side-specific.
+        """Get attributes on ``side`` and attrs that aren't side-specific.
 
-        Return a dict of the attributes. The side-specific attrs will have
-        their last char (l or r) stripped off. If the attr then ends with '_',
-        that will be stripped off too.
+        ``side``
+            Side to get attrs from (one of left, l, right, r). Side specific
+            attrs look like "attr_l" or "attr_l_id".
+
+        return `dict`
+            The attributes. The side-specific attrs will have _l/_r removed
+            from their keys. If an attr happens to end with an _, it will be
+            stripped off.
 
         """
         if side.strip().lower() in ('left', 'l'):
@@ -84,19 +69,18 @@ class Segment(object):
             else:
                 suffix = words[-1]
                 del words[-1]
-                
+
             # Side-specific attr
             if suffix == char:
                 key = '_'.join(words)
                 if key[-1] == '_':
                     key = key[:-1]
                 A[key] = attrs[attr]
-                
+
             # Non side-specific attr
             elif suffix != opp_char:
                 A[attr] = attrs[attr]
         return A
-
 
     def getIDOfSharedIntersection(self, other_segment):
         try:
@@ -110,7 +94,6 @@ class Segment(object):
             return 0
         return node_id
 
-                    
     def splitAtNum(self, num, fnid=-1, ntid=-2, nid=-1):
         """Split the segment at num. Return two new segments.
 
@@ -121,7 +104,7 @@ class Segment(object):
         @param ntid An optional segment ID for the segment split=>to
         @param nid An optional shared node ID for the split
         @return s, t The from=>split and split=>to segments
-        
+
         """
         num = int(num)
         sls = self.linestring
@@ -133,12 +116,12 @@ class Segment(object):
             min_add = min(fa, ta)
         except ValueError:
             min_add = 0
-            
+
         try:
             max_add = max(fa, ta)
         except ValueError:
             max_add = 0
-            
+
         seg_len = (max_add - min_add + 1) * 1.0
         pct_from_start = (num - min_add) / seg_len
         pct_from_end = 1.0 - pct_from_start
@@ -185,7 +168,7 @@ class Segment(object):
         # linestring
         for i in range(ll_idx): s.linestring.append(sls[i])
         s.linestring.append(ll)
-        t.linestring.append(ll)        
+        t.linestring.append(ll)
         for i in range(ll_idx, sls_len): t.linestring.append(sls[i])
         # weight (length)
         s.getWeight(True)
@@ -199,7 +182,6 @@ class Segment(object):
         s.node_t_id, t.node_f_id = nid, nid
         return s, t
 
-
     def getWeight(self, force=False):
         """Get the length of this segment (and cache it)."""
         try:
@@ -210,11 +192,7 @@ class Segment(object):
             self.weight = gis.getLengthOfLineString(self.linestring)
         return self.weight
 
-               
     def clone(self):
         from copy import deepcopy
         return deepcopy(self)
 
-
-    def __str__(self):
-        return ' '.join((self.prefix, self.name, self.type))
