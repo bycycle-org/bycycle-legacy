@@ -1,0 +1,43 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<%doc>
+    autohandler
+</%doc>
+
+
+<%flags>
+    inherit = None  
+</%flags>
+
+
+<%python scope="request">
+    # each execution gets a context dictionary where
+    # we store stuff
+    context = {}
+</%python>
+
+
+<%method section>
+    <%doc>
+        Grab the content for a specified section. The section content will be
+        stuffed into the appropriate place (section) in layout.myt.
+    </%doc>
+
+    <%args>
+        # Name of section to store
+        name
+    </%args>
+
+    <%python scope="init">
+        context[name] = m.content()
+    </%python>
+</%method>
+
+
+<%python>
+    comp = m.fetch_next()
+    subcomp = m.fetch_next()
+    main = m.scomp(subcomp, **m.get_request_args())
+    m.comp(comp, **context)
+</%python>
