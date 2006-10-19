@@ -1,50 +1,39 @@
 /**
- * Implements the byCycle Map interface for a Google Map. 
+ * Implements the byCycle Map interface for a Google Map.
  */
-
-
-
-var EARTH_RADIUS_M = 6378137;
-var RAD_PER_DEG = 0.0174532925199433;
-function dd2MercMetersLng(lng) {
-  return EARTH_RADIUS_M * lng * RAD_PER_DEG;
-}
-function dd2MercMetersLat(lat) {
-  lat = lat > 85 ? 85 : lat;
-  lat = lat < -85 ? -85 : lat;
-  var lat_rad = lat * RAD_PER_DEG;
-  return EARTH_RADIUS_M * Math.log(Math.tan((lat_rad + Math.PI / 2.0) / 2.0));
-}
 
 
 // Register this map type in the byCycle Map namespace
-byCycle.Map.Google = {
-  
+byCycle.Map.google = {
+
+  description: 'Google Map',
+
 /**
  * Do map initialization that needs to happen before page is done loading.
- * For example, for Google Maps, the API init script needs to be loaded 
+ * For example, for Google Maps, the API init script needs to be loaded
  * inline because it does a document.write to load the actual API.
  */
-  mapPreload: function() {
+  beforeLoad: function() {
     var api_url = 'http://maps.google.com/maps?file=api&amp;v=2&amp;key=';
     var api_keys = {
       'tripplanner.bycycle.org': 'ABQIAAAAd_4WmZlgvQzchd_BQM0MPhQ8y5tnWrQRsyOlME1eHkOS3wQveBSeFCpOUAfP10H6ec-HcFWPgiJOCA',
       'dev.bycycle.org': 'ABQIAAAAd_4WmZlgvQzchd_BQM0MPhQSskL_eAzZotWlegWekqLPLda0sxQZNf0_IshFell3z8qP8s0Car117A',
+      'dev.bycycle.org:5000': 'ABQIAAAAd_4WmZlgvQzchd_BQM0MPhTkxokDJkt52pLJLqHCpDW3lL7iXBTREVLn9gCRhMUesO754WIidhTq2g',
       'www.bycycle.org': 'ABQIAAAAd_4WmZlgvQzchd_BQM0MPhQ9bMyOoze7XFWIje4XR3o1o-U-cBTwScNT8SYtwSl70gt4wHCO-23Y3g'
     }
     var api_key = api_keys[byCycle.domain];
     if (api_key) {
       writeScript(api_url + api_key);
-      byCycle.Map.Google.api_loaded = true;
+      byCycle.Map.google.api_loaded = true;
       byCycle.logInfo('Google Maps API Loaded');
     } else {
       byCycle.logDebug('No API key found for ' + byCycle.domain);
     }
   },
-  
-  mapIsLoadable: function() {
+
+  isLoadable: function() {
     var is_loadable = false;
-    if (byCycle.Map.Google.api_loaded && GBrowserIsCompatible()) {
+    if (byCycle.Map.google.api_loaded && GBrowserIsCompatible()) {
       is_loadable = true;
     } else {
       byCycle.logInfo('<p style="margin:10px;">Your browser doesn\'t seem to meet the requirements for using this application. The following browsers are currently supported and are all free to download (<a href="http://www.mozilla.com/">Firefox</a> is an excellent choice):</p><ul><li><a href="http://www.microsoft.com/windows/ie/downloads/default.asp">IE</a> 5.5+ (Windows)</li><li><a href="http://www.mozilla.com/">Firefox</a> 0.8+ (Windows, Mac, Linux)</li><li><a href="http://www.apple.com/safari/download/">Safari</a> 1.2.4+ (Mac)</li><li><a href="http://channels.netscape.com/ns/browsers/download.jsp">Netscape</a> 7.1+ (Windows, Mac, Linux)</li><li><a href="http://www.mozilla.org/products/mozilla1.x/">Mozilla</a> 1.4+ (Windows, Mac, Linux)</li><li><a href="http://www.opera.com/download/">Opera</a> 7.5+ (Windows, Mac, Linux)</li></ul>');
@@ -60,7 +49,7 @@ byCycle.Map.Google = {
  * @param parent UI object
  * @param container Widget that contains this map
  */
-byCycle.Map.Google.Map = function(parent, container) {
+byCycle.Map.google.Map = function(parent, container) {
   byCycle.Map.Map.call(this, parent, container);
   this.createIcons();
   this.initListeners();
@@ -70,27 +59,27 @@ byCycle.Map.Google.Map = function(parent, container) {
 /**
  * byCycle Google Map Methods
  */
-byCycle.Map.Google.Map.prototype = update(new byCycle.Map.Map(), {
+byCycle.Map.google.Map.prototype = update(new byCycle.Map.Map(), {
 
-  center_marker_html: '<div class="info_win"><p><a href="javascript:void(0);" onclick="byCycle.UI.findAddressAtCenter();">Find address of closest intersection</a></p><p>Set as <a href="javascript:void(0);" onclick="byCycle.UI.fr_el = byCycle.UI.getCenterString();">From</a> or <a href="javascript:void(0);" onclick="byCycle.UI.to_el = byCycle.UI.getCenterString();">To</a> address for route</p></div>',
+  center_marker_html: '<div class="info_win"><p><a href="javascript:void(0);" onclick="byCycle.UI.findAddressAtCenter();">Find address of closest intersection</a></p><p>Set as <a href="javascript:void(0);" onclick="byCycle.UI.s_el = byCycle.UI.map.getCenterString();">From</a> or <a href="javascript:void(0);" onclick="byCycle.UI.s_el = byCycle.UI.map.getCenterString();">To</a> address for route</p></div>',
 
 
   /* Initialization */
 
   createMap: function(container) {
     var map = new GMap2(container);
-    map.addMapType(this.makeMercatorMapType(G_NORMAL_MAP, 'Bike/Map', 18));
-    map.addMapType(this.makeMercatorMapType(G_SATELLITE_MAP, 'Bike/Sat', 20));
-    map.setCenter(new GLatLng(-123.485755, 44.885219), 8);
+    //map.addMapType(this.makeMercatorMapType(G_NORMAL_MAP, 'Bike/Map', 18));
+    //map.addMapType(this.makeMercatorMapType(G_SATELLITE_MAP, 'Bike/Sat', 20));
+    map.setCenter(new GLatLng(0, 0), 7);
     map.addControl(new GLargeMapControl());
     map.addControl(new GMapTypeControl());
     map.addControl(new GScaleControl());
     map.addControl(new GOverviewMapControl());
     // Change default styling of map overview so it sits flush in the corner
     var style = $('map_overview').firstChild.firstChild.style;
-    style.width = '120px';
-    style.height = '120px';
-    style.border = 'none';
+    style.top = '8px';
+    style.left = '7px';
+    //style.borderTop = style.borderBottom;
     // Add keyboard navigation
     new GKeyboardHandler(map);
     this.map = map;
@@ -99,12 +88,12 @@ byCycle.Map.Google.Map.prototype = update(new byCycle.Map.Map(), {
   createIcons: function() {
     // Center icon
     var center_icon = new GIcon();
-    center_icon.image = 'static/images/reddot15.png';
+    center_icon.image = '/images/reddot15.png';
     center_icon.iconSize = new GSize(15, 15);
     center_icon.iconAnchor = new GPoint(7, 7);
     // Base icon for start and end of route icons
     var base_icon = new GIcon();
-    base_icon.shadow = 'static/images/shadow50.png';
+    base_icon.shadow = '/images/shadow50.png';
     base_icon.iconSize = new GSize(20, 34);
     base_icon.shadowSize = new GSize(37, 34);
     base_icon.iconAnchor = new GPoint(9, 34);
@@ -112,10 +101,10 @@ byCycle.Map.Google.Map.prototype = update(new byCycle.Map.Map(), {
     base_icon.infoShadowAnchor = new GPoint(18, 25);
     // Start icon
     var start_icon = new GIcon(base_icon);
-    start_icon.image = 'static/images/dd-start.png';
+    start_icon.image = '/images/dd-start.png';
     // End icon
     var end_icon = new GIcon(base_icon);
-    end_icon.image = 'static/images/dd-end.png';
+    end_icon.image = '/images/dd-end.png';
     // Assign icons to self
     this.center_icon = center_icon;
     this.start_icon = start_icon;
@@ -127,11 +116,11 @@ byCycle.Map.Google.Map.prototype = update(new byCycle.Map.Map(), {
     GEvent.addListener(self.map, 'moveend', function() {
       self.center = self.map.getCenter();
       if (typeof(self.center_marker) == 'undefined') {
-	self.center_marker = new GMarker(self.center, self.center_icon);
-	self.map.addOverlay(self.center_marker);
-	GEvent.addListener(self.center_marker, 'click', function() {
-	  self.map.openInfoWindowHtml(self.center, self.center_marker_html);
-	});
+        self.center_marker = new GMarker(self.center, self.center_icon);
+        self.map.addOverlay(self.center_marker);
+        GEvent.addListener(self.center_marker, 'click', function() {
+          self.map.openInfoWindowHtml(self.center, self.center_marker_html);
+        });
       }
       self.center_marker.setPoint(self.center);
     });
@@ -164,17 +153,28 @@ byCycle.Map.Google.Map.prototype = update(new byCycle.Map.Map(), {
     this.setSize({w: undefined, h: height})
   },
 
-  getcenter: function() {
-    var c = this.map.getcenter();
-    return {x: c.x, y: c.y};
+  getCenter: function() {
+    var c = this.map.getCenter();
+    return {x: c.lng(), y: c.lat()};
   },
 
-  setcenter: function(center, zoom) {
-    //if (typeof(zoom) != 'undefined') {
-    //  this.map.setcenter(new glatlng(center.y, center.x), zoom);
-    //} else {
-    this.map.setCenter(new GLatLng(center.y, center.x), zoom);
-    //}
+  getCenterString: function() {
+    var c = this.map.getCenter();
+    var x = Math.round(c.lng() * 1000000) / 1000000;
+    var y = Math.round(c.lat() * 1000000) / 1000000;
+    return "longitude=" + x + ", " + "latitude=" + y;
+  },
+
+  setCenter: function(center, zoom) {
+    if (typeof(zoom) == 'undefined') {
+      this.map.setCenter(new GLatLng(center.y, center.x));
+    } else {
+      this.map.setCenter(new GLatLng(center.y, center.x), zoom);
+    }
+  },
+
+  setZoom: function(zoom) {
+    this.map.setZoom(zoom);
   },
 
 
@@ -205,15 +205,19 @@ byCycle.Map.Google.Map.prototype = update(new byCycle.Map.Map(), {
     var len = points.length;
     if (icons) {
       for (var i = 0; i < len; ++i) {
-	var marker = new GMarker(points[i], icons[i]);
-	markers.push(marker);
-	this.map.addOverlay(marker);
+        var p = points[i];
+        var ll = new GLatLng(p.y, p.x);
+        var marker = new GMarker(ll, {icon: icons[i]});
+        markers.push(marker);
+        this.map.addOverlay(marker);
       }
     } else {
       for (var i = 0; i < len; ++i) {
-	var marker = new GMarker(points[i]);
-	markers.push(marker);
-	this.map.addOverlay(marker);
+        var p = points[i];
+        var ll = new GLatLng(p.y, p.x);
+        var marker = new GMarker(ll);
+        markers.push(marker);
+        this.map.addOverlay(marker);
       }
     }
     return markers;
@@ -221,24 +225,16 @@ byCycle.Map.Google.Map.prototype = update(new byCycle.Map.Map(), {
 
   makeRegionMarker: function(region) {
     var icon = new GIcon();
-    icon.image = 'static/images/x.png';
+    icon.image = '/images/x.png';
     icon.iconSize = new GSize(17, 19);
     icon.iconAnchor = new GPoint(9, 10);
     icon.infoWindowAnchor = new GPoint(9, 10);
     icon.infoShadowAnchor = new GPoint(9, 10);
     var marker = this.placeMarker(region.center, icon);
+    var self = this;
     GEvent.addListener(marker, 'click', function() {
-      var reg_el = this.parent.region_el;
-      var id = region.id;
-      var opt;
-      for (var i = 0; i < reg_el.options.length; ++i) {
-	opt = reg_el.options[i];
-	if (opt.value == id) {
-	  reg_el.selectedIndex = i;
-	  self.setRegion(id);
-	  break;
-	}
-      }
+      // TODO: Get active params and send those too
+      window.location = region.id + '?map_type=google';
     });
     return marker;
   },
@@ -256,8 +252,8 @@ byCycle.Map.Google.Map.prototype = update(new byCycle.Map.Map(), {
     center = new GLatLng(center.y, center.x);
     var sw = bounds.sw;
     var ne = bounds.ne;
-    var gbounds = new GLatLngBounds(new GLatLng(sw.y, sw.x), 
-				    new GLatLng(ne.y, ne.x));
+    var gbounds = new GLatLngBounds(new GLatLng(sw.y, sw.x),
+                    new GLatLng(ne.y, ne.x));
     this.map.setCenter(center, this.map.getBoundsZoomLevel(gbounds));
   },
 
@@ -283,8 +279,8 @@ byCycle.Map.Google.Map.prototype = update(new byCycle.Map.Map(), {
     if (!geocode.marker) {
       geocode.marker = this.placeMarker(point);
       GEvent.addListener(geocode.marker, 'click', function() {
-	self.map.openInfoWindowHtml(point, html);
-	this.parent.setResult(html);
+    self.map.openInfoWindowHtml(point, html);
+    this.parent.setResult(html);
       });
     }
     this.map.setCenter(new GLatLng(geocode.y, geocode.x), 14);
@@ -299,10 +295,10 @@ byCycle.Map.Google.Map.prototype = update(new byCycle.Map.Map(), {
    */
   makeMercatorMapType: function(base_type, name, zoom_levels) {
     var domain = 'mica.metro-region.org';
-    var transparent_png = 'http://' + domain + 
+    var transparent_png = 'http://' + domain +
     '/bycycle/images/transparent.png';
     var copyrights = new GCopyrightCollection("&copy; Metro");
-    var wms_url = 'http://' + domain + 
+    var wms_url = 'http://' + domain +
     '/cgi-bin/mapserv-postgis?map=/var/www/html/bycycle/bycycle.map&';
     var layers = 'pirate_network,county_lines';
     var tile_size = 256;
@@ -312,23 +308,23 @@ byCycle.Map.Google.Map.prototype = update(new byCycle.Map.Map(), {
     var se, nw;
     var min_zoom = 9;
     var url = [wms_url,
-	       "SERVICE=WMS",
-	       "&VERSION=1.1.1",
-	       "&REQUEST=GetMap",
-	       "&LAYERS=", layers,
-	       "&STYLES=",
-	       "&FORMAT=", img_format,
-	       "&BGCOLOR=0xFFFFFF",
-	       "&TRANSPARENT=TRUE",
-	       "&SRS=", srs,
-	       "&WIDTH=", tile_size,
-	       "&HEIGHT=", tile_size].join('');
+           "SERVICE=WMS",
+           "&VERSION=1.1.1",
+           "&REQUEST=GetMap",
+           "&LAYERS=", layers,
+           "&STYLES=",
+           "&FORMAT=", img_format,
+           "&BGCOLOR=0xFFFFFF",
+           "&TRANSPARENT=TRUE",
+           "&SRS=", srs,
+           "&WIDTH=", tile_size,
+           "&HEIGHT=", tile_size].join('');
 
     var pdx_bounds = byCycle.regions.portlandor.bounds;
     var pdx_sw = pdx_bounds.sw;
     var pdx_ne = pdx_bounds.ne;
-    var bounds = new GLatLngBounds(new GLatLng(pdx_sw.y, pdx_sw.x), 
-				   new GLatLng(pdx_ne.y, pdx_ne.x));
+    var bounds = new GLatLngBounds(new GLatLng(pdx_sw.y, pdx_sw.x),
+                   new GLatLng(pdx_ne.y, pdx_ne.x));
 
     var projection = new GMercatorProjection(zoom_levels);
     projection.XXXtileCheckRange = function(tile, zoom, tile_size) {
@@ -340,42 +336,42 @@ byCycle.Map.Google.Map.prototype = update(new byCycle.Map.Map(), {
       ne = this.fromPixelToLatLng(ne_point, zoom );
       var tile_bounds = new GLatLngBounds(sw, ne);
       if (tile_bounds.intersects(bounds)) {
-	return true;
+        return true;
       } else {
-	return false;
-      }      
+        return false;
+      }
     };
-    
+
     var layer = new GTileLayer(copyrights, 0, zoom_levels - 1);
     layer.getTileUrl = function(tile, zoom) {
       projection.XXXtileCheckRange(tile, zoom, tile_size);
       if (zoom < min_zoom) {
-	var tile_url = transparent_png;
+        var tile_url = transparent_png;
       } else {
-	var bbox = [sw.lng(), sw.lat(), ne.lng(), ne.lat()].join(',');
-	var tile_url = [url, "&BBOX=", bbox].join('');	
+        var bbox = [sw.lng(), sw.lat(), ne.lng(), ne.lat()].join(',');
+        var tile_url = [url, "&BBOX=", bbox].join('');
       }
       return tile_url;
     };
 
-    layer.isPng = function() { 
-      return true; 
+    layer.isPng = function() {
+      return true;
     };
 
-    layer.getOpacity = function() { 
-      return .625; 
+    layer.getOpacity = function() {
+      return .625;
     };
 
     var layers = [base_type.getTileLayers()[0], layer];
     var opts = {errorMessage: 'Here Be Dragons'};
     var map_type = new GMapType(layers, projection, name, opts);
-  
+
     map_type.onChangeTo = function() {
       if (map.getZoom() < min_zoom) {
-	map.setZoom(min_zoom);
+    map.setZoom(min_zoom);
       }
       if (!bounds.intersects(map.getBounds())) {
-	selectRegion('portlandor');
+    selectRegion('portlandor');
       }
     };
     return map_type;
@@ -391,7 +387,7 @@ byCycle.Map.Google.Map.prototype = update(new byCycle.Map.Map(), {
     var transparent_png = 'http://' + domain +
     '/bycycle/images/transparent.png';
     var copyrights = new GCopyrightCollection("&copy; Metro");
-    var wms_url = 'http://' + domain + 
+    var wms_url = 'http://' + domain +
     '/cgi-bin/mapserv-postgis?map=/var/www/html/bycycle/bycycle.map&';
     var layers = 'bike';
     var tile_size = 256;
@@ -399,55 +395,55 @@ byCycle.Map.Google.Map.prototype = update(new byCycle.Map.Map(), {
     var img_format = 'image/gif';
     var srs = "EPSG:4326";
     var url = [wms_url,
-	       "SERVICE=WMS",
-	       "&VERSION=1.1.1",
-	       "&REQUEST=GetMap",
-	       "&LAYERS=", layers,
-	       "&STYLES=",
-	       "&FORMAT=", img_format,
-	       "&BGCOLOR=0xFFFFFF",
-	       "&TRANSPARENT=TRUE",
-	       "&SRS=", srs,
-	       "&WIDTH=", tile_size,
-	       "&HEIGHT=", tile_size].join('');
+           "SERVICE=WMS",
+           "&VERSION=1.1.1",
+           "&REQUEST=GetMap",
+           "&LAYERS=", layers,
+           "&STYLES=",
+           "&FORMAT=", img_format,
+           "&BGCOLOR=0xFFFFFF",
+           "&TRANSPARENT=TRUE",
+           "&SRS=", srs,
+           "&WIDTH=", tile_size,
+           "&HEIGHT=", tile_size].join('');
 
     var projection = new GMercatorProjection(18);
     var pdx_bounds = byCycle.regions.portlandor.bounds;
     var sw = pdx_bounds.sw;
     var ne = pdx_bounds.ne;
-    var bounds = new GLatLngBounds(new GLatLng(sw.y, sw.x), 
-				   new GLatLng(ne.y, ne.x));
-    
+    var bounds = new GLatLngBounds(new GLatLng(sw.y, sw.x),
+                   new GLatLng(ne.y, ne.x));
+
     var metro_layer = new GTileLayer(copyrights, 0, 17);
     metro_layer.getTileUrl = function(tile, zoom) {
       var tile_url;
       if (zoom < 6) {
         tile_url = transparent_png;
       } else {
-	var x = tile.x * tile_size;
-	var y = tile.y * tile_size;
-	var sw_point = new GPoint(x, y + tile_size_less_one);
-	var ne_point = new GPoint(x + tile_size_less_one, y);
-	var sw = projection.fromPixelToLatLng(sw_point, zoom);
-	var ne = projection.fromPixelToLatLng(ne_point, zoom );
-	var tile_bounds = new GLatLngBounds(sw, ne);
-	if (tile_bounds.intersects(bounds)) {
-	  var bbox = [sw.x, sw.y, ne.x, ne.y].join(',');
-	  tile_url = [url, "&BBOX=", bbox].join('');	
-	} else {
-	  tile_url = transparent_png;
-	}
+    var x = tile.x * tile_size;
+    var y = tile.y * tile_size;
+    var sw_point = new GPoint(x, y + tile_size_less_one);
+    var ne_point = new GPoint(x + tile_size_less_one, y);
+    var sw = projection.fromPixelToLatLng(sw_point, zoom);
+    var ne = projection.fromPixelToLatLng(ne_point, zoom );
+    var tile_bounds = new GLatLngBounds(sw, ne);
+    if (tile_bounds.intersects(bounds)) {
+      var bbox = [sw.x, sw.y, ne.x, ne.y].join(',');
+      tile_url = [url, "&BBOX=", bbox].join('');
+    } else {
+      tile_url = transparent_png;
+    }
       }
       byCycle.logDebug(tile_url);
       return tile_url;
     };
-    
-    metro_layer.isPng = function() { 
-      return true; 
+
+    metro_layer.isPng = function() {
+      return true;
     };
-    
-    metro_layer.getOpacity = function() { 
-      return .5; 
+
+    metro_layer.getOpacity = function() {
+      return .5;
     };
 
     var layers = [G_NORMAL_MAP.getTileLayers()[0], metro_layer];
@@ -467,7 +463,7 @@ var x = function() {
     // Or... it's half the size of a tile for the given zoom level
     // Take what will fit into a tile of size n and then shrink the tile down
     // to 256x256
-    var e = this.bd[zoom]; 
+    var e = this.bd[zoom];
 
     // Move right half tile; divide the result by px/deg at this zoom level
     // Result is longitude

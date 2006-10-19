@@ -1,20 +1,21 @@
 /**
- * byCycle.Map namespace 
+ * byCycle.Map namespace
  */
 byCycle.Map = {
   // Mapping of map type to map object
-  Base: {
-    mapPreload: function() {},
-    mapIsLoadable: function() {
+  base: {
+    description: 'Default byCycle map type',
+    beforeLoad: function() {},
+    isLoadable: function() {
       return true;
     }
   },
 
-  mapPreload: function() {
+  beforeLoad: function() {
     // pass
   },
 
-  mapIsLoadable: function() {
+  isLoadable: function() {
     return false;
   }
 };
@@ -32,7 +33,7 @@ byCycle.Map.Map = function (parent, container) {
 };
 
 
-byCycle.Map.Base.Map = byCycle.Map.Map;
+byCycle.Map.base.Map = byCycle.Map.Map;
 
 
 byCycle.Map.Map.prototype = {
@@ -73,7 +74,13 @@ byCycle.Map.Map.prototype = {
     return {x: 0, y: 0};
   },
 
-  setCenter: function(center, zoom) {},
+  setCenter: function(center, zoom) {
+    this.map.innerHTML += ('<br/>' + center.y + ', ' + center.x);
+  },
+
+  setZoom: function(zoom) {
+    this.map.innerHTML += ('<br/>New zoom level: ' + zoom);
+  },
 
   openInfoWindowHtml: function(point, html) {},
 
@@ -91,7 +98,9 @@ byCycle.Map.Map.prototype = {
 
   drawPolyLine: function(points, color, weight, opacity) {},
 
-  placeMarker: function(point, icon) {},
+  placeMarker: function(point, icon) {
+    this.map.innerHTML += ('<br/>' + point.y + ', ' + point.x);
+  },
 
   /**
    * Put some markers on the map
@@ -109,7 +118,7 @@ byCycle.Map.Map.prototype = {
       markers.push(marker);
       this.addOverlay(marker);
     }
-    return markers;    
+    return markers;
   },
 
   makeRegionMarker: function() {
@@ -167,5 +176,3 @@ byCycle.Map.Map.prototype = {
 
 
 byCycle.Map.Map.prototype.base = byCycle.Map.Map.prototype;
-
-
