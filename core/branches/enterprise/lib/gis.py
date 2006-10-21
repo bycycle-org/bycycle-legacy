@@ -86,7 +86,8 @@ def getBearingGivenStartAndEndPoints(p, q):
     dx = q.x - p.x
     dy = q.y - p.y
     deg = degrees(atan2(dx, dy))
-    while deg < 0: deg += 360
+    while deg < 0: 
+        deg += 360
     return deg
 
 
