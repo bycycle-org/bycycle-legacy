@@ -68,17 +68,18 @@
                       # This will call the `show` method of the query
                       # controller with ``q`` and ``region`` as params.
                       h.form_remote_tag(
-                        url='/%s/query/:q/' % c.region_key,
+                        url='/%s/query/:q/?format=frag' % c.region_key,
                         method='get',
-                        before='byCycle.UI.beforeSearchQuery(this)',
                         update='result',
-                        position='top',
+                        position='top',                        
+                        before='byCycle.UI.beforeSearchQuery(this)',
                         loading='byCycle.UI.onQueryLoading(request, "Searching...");',
                         loaded='byCycle.UI.onQueryLoaded(request);',
                         success='byCycle.UI.onSearchSuccess(request);',
                         failure='byCycle.UI.onSearchFailure(request);',
                         complete='byCycle.UI.onSearchComplete(request);',
-                        html=dict(id='query_form', method='get')
+                        html=dict(id='query_form', method='get', 
+                                  action='/%s/query' % c.region_key)
                       )
                     %>
                       <div>
@@ -184,7 +185,7 @@
                 <span id="regions_container">
                   <b>Region:</b>
                   <span id="active_region"><% region %></span>
-                  <a href="" onclick="byCycle.UI.showRegionSelectBox(); return false;">change</a>
+                  <a id="change_region_link" href="" onclick="byCycle.UI.showRegionSelectBox(); return false;">change</a>
                   <div id="regions_win" class="window">
                     <div class="title_bar">
                       <table>
@@ -199,18 +200,8 @@
                       </table>
                     </div>
                     <div class="content_pane">
-                      <form id="regions_form" method="get" action="/">
-                        <div style="margin-bottom: 2px;">
-                          <select id="regions" name="region">
-                            <option value="">All Regions</option>
-                            <% c.region_options %>
-                          </select>
-                        </div>
-                        <div style="text-align: right;">
-                          <input type="submit" value="Go" />
-                          <input type="button" value="Cancel" onclick="hideElement('regions_win'); return false;" />
-                        </div>
-                      </form>
+                      <!-- Render a partial, so to speak. -->
+                      <& _regions_form.myt &>
                     </div>
                   </div>
                 </span>
@@ -263,6 +254,7 @@
                 <div id="help">
                 </div>
                 <div id="errors">
+                  <% c.error %>
                 </div>
               </div>
               <!-- End Display Area -->
@@ -347,7 +339,7 @@
       byCycle.UI.beforeLoad();
       // Values calculated in the controller
       byCycle.UI.region = '<% c.region_key or 'all' %>';
-      byCycle.UI.service = '<% c.service or 'query' %>';
+      byCycle.UI.service = '<% c.service_name or 'query' %>';
       byCycle.UI.http_status = <% c.http_status or 'null' %>;
       byCycle.UI.response_text = <% [('"' + c.response_text + '"'), 'null'][not c.response_text] %>;
       //]]>
@@ -358,5 +350,6 @@
 
 <%args>
     region
-    route_pref
+    route_pref = None
+    result = None
 </%args>
