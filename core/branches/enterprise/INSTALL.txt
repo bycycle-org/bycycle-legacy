@@ -1,49 +1,77 @@
-Installation directions for byCycle Trip Planner
+Installation Directions for the byCycle Trip Planner
+++++++++++++++++++++++++++++++++++++++++++++++++++++
+
 01/23/2006
+09/26/2006
 
 
 Version
--------
+=======
 
-0.3
+0.4
+
+
+Changes
+=======
+
+- Migrated from MySQL to PostgreSQL
+- Using SQLAlchemy to interact with the database instead of using raw SQL
+- Using PostGIS to handle spatial stuff
+- Moved services into classes that have a common base
+- Switched to a reStructuredText style of docstrings
+- Cleaned up the route service quite a bit
+- Added a unittest test suite for the route service
+- Created a route class
+- Removed support for WKT point address input (too complicated and not that
+useful)
 
 
 Software Prerequisites
-----------------------
+======================
 
 There are few pieces of additional software necessary to run the byCycle
-system. All of these are free and available for just about any platform:
+system. All of these are free and available for just about any platform.
 
+Core Dependencies
+-----------------
 - Python 2.4.latest <http://www.python.org/>
-- MySQL 4.1.latest <http://www.mysql.org/>
-- MySQLdb 1.2.1 <http://sourceforge.net/projects/mysql-python>
-  Note: In the future, when we have a dedicated server to run the system
-        on, we will most likely migrate to PostgreSQL + PostGIS
-  Note: It is also possible to implement a particular data mode using a 
-        different database (e.g., SQLite), but how much work that would 
-        take is unknown
+- PostgreSQL 8.1.latest <http://www.postgresql.org/>
+- PostGIS 1.1.latest <http://postgis.refractions.net/>
+- SQLAlchemy 0.2.8 <http://www.sqlalchemy.org/>
+- psycopg2 DBAPI module <http://initd.org/tracker/psycopg/wiki/PsycopgTwo>
 
-If you want to be able to interact with the system locally through a web 
-browser, you will need:
-- Apache 2.0.latest <http://httpd.apache.org/>
+Web Interface
+-------------
+- Pylons 0.9.latest <http://pylonshq.com/>
 
-For the Google Map, you will need:
-- A Google Maps API key, v2 <http://www.google.com/apis/maps/>
-  Note: You will need a publicly accessible web address for this to work,
-        and you will need to set up your Apache installation first so you 
-        know what directory tree to use for the API key (the key works in
-        a particular directory in your web tree and its subdirectories)
+Google Map
+----------
+If you want to view the Google Map on a local installation, you will need a 
+Google Maps API key for the domain name it runs under. 
+<http://www.google.com/apis/maps/>.
 
-If you want to be able to import data from a shapefile, you will need:
-- libmygis 0.5.5 <http://jcole.us/software/libmygis/>
+Deployment
+----------
+- Apache 2.2.latest <http://httpd.apache.org/>
+- mod_python
 
 Other versions of the above software may work, but other combinations have not 
 been tested. In general, we are going to keep up with the latest stable 
 releases of all supporting software.
 
 
+Installation
+============
+
+
+Testing
+=======
+
+
+
+
 Placement of Files
-------------------
+==================
 
 Unpack the byCycle package somewhere that's in your PYTHONPATH.
 
@@ -84,7 +112,7 @@ or routes just yet...
 
 
 Data
-----
+====
 
 Under certain circumstances, the package will be provided with the database
 and routing matrix included. In this case, you shouldn't have to do anything
@@ -137,10 +165,10 @@ change metro to timbuktu and add or remove fields as appropriate to your data.
 
 
 Problems and Issues
--------------------
+===================
 
-If you have any problems with any of this, please feel free to contact us:
+If you have any problems with any of this, please feel free to contact us.
+
 Email: wyatt@bycycle.org
-Web Form: http://www.byCycle.org/contact.html
 
-
+Web Form: http://byCycle.org/contact.html
