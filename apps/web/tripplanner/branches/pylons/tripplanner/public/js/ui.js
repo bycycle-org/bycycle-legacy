@@ -148,11 +148,13 @@ byCycle.UI = (function() {
 
     beforeQuery: function(form, service, q, errors) {
       byCycle.logDebug('Entered beforeQuery...');
+      byCycle.logDebug('Entering showErrors...');
       if (self.showErrors(errors)) {
         self.abort_request = true;
-        byCycle.logDebug('Query errors encountered.');
+        byCycle.logDebug('Errors encountered before query.');
         return;
       }
+      byCycle.logDebug('No errors; continuing...');
       self.abort_request = false;
       self.form = form;
       self.start_ms = new Date().getTime();
@@ -174,7 +176,6 @@ byCycle.UI = (function() {
     },
 
     showErrors: function(errors) {
-      // TODO: Cancel AJAX request (How?)
       // Show the list of errors; return true if errors, false if not
       var has_errors = (errors.length > 0);
       if (has_errors) {
