@@ -64,7 +64,7 @@ cities_atof = {
     "sndy": "sandy",        
     "tig": "tigard",    
     "tro": "troutdale",    
-    "tual": "tualitin",     
+    "tual": "tualatin",     
     "van": "vancouver",   
     "wash": "washington",   
     "wils": "wilsonville",  

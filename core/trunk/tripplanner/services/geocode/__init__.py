@@ -1,6 +1,6 @@
 """$Id$
 
-Description goes here.
+Geocode Service Module.
 
 Copyright (C) 2006 Wyatt Baldwin, byCycle.org <wyatt@bycycle.org>
 
@@ -30,8 +30,6 @@ ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 """
-# Geocode Service Module
-
 from byCycle.lib import gis
 from byCycle.tripplanner.model import mode, address, geocode
 from byCycle.tripplanner.services import excs, normaddr
@@ -62,12 +60,15 @@ def get(region='', q='', **params):
     the appropriate geocoding function. Return a list of Geocode objects or
     raise exception when no geocodes.
 
-    @param region Either the name of a region mode OR a mode
-           object. In the first case a mode will be instantiated to geocode the
-           address; in the second the object will be used directly.
-    @param q An address string that can be normalized & geocoded in the mode
-    @return A list of possible geocodes for the input address OR raise
-            AddressNotFoundError if the address can't be geocoded
+    @param region: Either the name of a region mode OR a mode
+      object. In the first case a mode will be instantiated to geocode the
+      address; in the second the object will be used directly.
+    @param q: An address string that can be normalized & geocoded in the mode
+    
+    @return: A list of possible geocodes for the input address
+    @rtype: list of Geocode objects
+    
+    @raise AddressNotFoundError: The address can't be geocoded
     
     """
     # Check input

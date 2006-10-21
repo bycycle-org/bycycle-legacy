@@ -1,66 +1,76 @@
 """$Id$
 
 Portland, OR, shp/dbf import.
+Created 2006-01-27
 
-Copyright (C) 2006 Wyatt Baldwin, byCycle.org <wyatt@bycycle.org>
-
+Copyright (C) 2006 Wyatt Baldwin, byCycle.org <wyatt@bycycle.org>.
 All rights reserved.
 
-TERMS AND CONDITIONS FOR USE, MODIFICATION, DISTRIBUTION
+For terms of use and warranty, please see the LICENSE file included in the
+top level of this distribution. This software is provided AS IS with NO
+WARRANTY OF ANY KIND.
 
-1. The software may be used and modified by individuals for noncommercial, 
-private use.
 
-2. The software may not be used for any commercial purpose.
+Change Log
+==========
 
-3. The software may not be made available as a service to the public or within 
-any organization.
+2006-03-25
+----------
+- Made the script interactive
+- Switched from SQLite (back) to MySQL
 
-4. The software may not be redistributed.
+2006-04-04
+----------
+- Converted to single-DB, shared with other regions
 
-THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
-ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED 
-WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE 
-DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR
-ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES 
-(INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; 
-LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON 
-ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT 
-(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS 
-SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-DATE 
-    January 27, 2006
-    March 25, 2006 [Converted to interactive; Switched from SQLite to MySQL]
-    April 4, 2006 [Converted to single-DB, shared with other regions]
-VERSION 
-    0.1.3
-PURPOSE 
-    Script to import line geometry and associated attributes from a street 
-    layer shapefile into a normalized database
-REQUIREMENTS
-    libmygis 0.5.5 <http://jcole.us/software/libmygis/>
-    This script uses the mysqlgisimport tool from libmygis
-        tar xvzf libmygis-0.5.5.tar.gz
-        cd libmygis-0.5.5
-        ./configure --prefix=$HOME
-        make
-        cd tools
-        make && make install
-    If this scipt isn't being run from the byCycle package, _openDB needs to
-    be rewritten with custom code to open a database connection.
-USAGE 
-    python shp2sql.py [start] [no_prompt] [only]
-    - start The index of the function to start from [0, n]
-      Ex: python shp2sql.py 2
-    - no_prompt Include this flag to "just do it"
-      Ex: python shp2sql.py no_prompt
-    - include this flag to only do one function
-      Ex: python shp2sql.py 2 only
-    Note: Run from the region/data directory
-TODO
-    Turn this into a derived class; create a base class that all regions can
-    use
+Description
+===========
+
+Script to import geometry from a shapefile and associated attributes into a
+normalized database.
+
+
+Requirements
+============
+
+- libmygis 0.5.5 <http://jcole.us/software/libmygis/>
+  This script uses the mysqlgisimport tool from libmygis
+  
+  - tar xvzf libmygis-0.5.5.tar.gz
+  - cd libmygis-0.5.5
+  - ./configure --prefix=$HOME
+  - make
+  - cd tools
+  - make && make install
+  
+If this scipt isn't being run from the byCycle package, _openDB needs to
+be rewritten with custom code to open a database connection.
+
+
+Usage
+=====
+
+Note: Run from the region/data directory
+
+python shp2sql.py [start] [no_prompt] [only]
+
+- start: The index of the function to start from [0, n]
+  Ex: python shp2sql.py 2
+
+- no_prompt: Include this flag to "just do it"
+  Ex: python shp2sql.py no_prompt
+
+- only: include this flag to only do one function
+  Ex: python shp2sql.py 2 only
+
+
+ToDo
+====
+
+- Factor out common stuff from all regional import scripts.
+- Use getopts to parse command-line args
+
 
 """
 import sys, os
