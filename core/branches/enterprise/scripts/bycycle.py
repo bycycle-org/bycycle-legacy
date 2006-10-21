@@ -96,7 +96,7 @@ def main(argv):
     except IndexError:
         region = ''
 
-    region = regions.getRegion(region)
+    region = regions.getRegionKey(region)
     response = service_module.get(q=q, region=region)
     print response
 
