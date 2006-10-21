@@ -1,6 +1,6 @@
 """$Id$
 
-Description goes here.
+Geocode model classes.
 
 Copyright (C) 2006 Wyatt Baldwin, byCycle.org <wyatt@bycycle.org>
 
@@ -30,9 +30,6 @@ ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 """
-# Geocode classes
-
-
 from byCycle.lib import gis
 
     
@@ -46,16 +43,20 @@ class PostalGeocode(Geocode):
         self.address = address
         self.segment = segment
         self.xy = xy
+        self.network_id = self.segment.id
         
     def __repr__(self):
-        result = {'type': 'postal',
-                  'number': self.address.number,
-                  'street': self.address.street,
-                  'place': self.address.place,
-                  'address': str(self.address),
-                  'x': '%.6f' % self.xy.x,
-                  'y': '%.6f' % self.xy.y,
-                  'edge_id': self.segment.id}
+        result = {
+            'type': 'postal',
+            'number': self.address.number,
+            'street': self.address.street,
+            'place': self.address.place,
+            'address': str(self.address),
+            'x': '%.6f' % self.xy.x,
+            'y': '%.6f' % self.xy.y,
+            'edge_id': self.segment.id,
+            'network_id': self.network_id
+        }
         return repr(result)
 
     
@@ -64,15 +65,19 @@ class IntersectionGeocode(Geocode):
         self.address = address
         self.intersection = intersection
         self.xy = intersection.lon_lat
+        self.network_id = self.intersection.id
 
     def __repr__(self):
-        result = {'type': 'intersection',
-                  'street1': self.address.street1,
-                  'street2': self.address.street2,
-                  'place1': self.address.place1,
-                  'place2': self.address.place2,
-                  'address': str(self.address),                  
-                  'x': '%.6f' % self.xy.x,
-                  'y': '%.6f' % self.xy.y,
-                  'node_id': self.intersection.id}
+        result = {
+            'type': 'intersection',
+            'street1': self.address.street1,
+            'street2': self.address.street2,
+            'place1': self.address.place1,
+            'place2': self.address.place2,
+            'address': str(self.address),                  
+            'x': '%.6f' % self.xy.x,
+            'y': '%.6f' % self.xy.y,
+            'node_id': self.intersection.id,
+            'network_id': self.network_id         
+            }
         return repr(result)
