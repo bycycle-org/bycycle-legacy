@@ -1,50 +1,37 @@
-"""$Id$
+###########################################################################
+# $Id$
+# Created ???.
+#
+# Address Normalization service.
+#
+# Copyright (C) 2006 Wyatt Baldwin, byCycle.org <wyatt@bycycle.org>.
+# All rights reserved.
+#
+# For terms of use and warranty details, please see the LICENSE file included
+# in the top level of this distribution. This software is provided AS IS with
+# NO WARRANTY OF ANY KIND.
 
-Description goes here.
 
-Copyright (C) 2006 Wyatt Baldwin, byCycle.org <wyatt@bycycle.org>
+"""Provides address normalization via the `query` method of the `Service` class.
 
-All rights reserved.
+Address normalization is the process of parsing a free form string supplied by
+a user and determining the parts of the address, such as the street direction
+(N, SE, etc), street name and type (St, Rd, etc), and city, state, and zip.
 
-TERMS AND CONDITIONS FOR USE, MODIFICATION, DISTRIBUTION
+The service recognizes these types of addresses:
 
-1. The software may be used and modified by individuals for noncommercial, 
-private use.
-
-2. The software may not be used for any commercial purpose.
-
-3. The software may not be made available as a service to the public or within 
-any organization.
-
-4. The software may not be redistributed.
-
-THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND 
-ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED 
-WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE 
-DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR 
-ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES 
-(INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; 
-LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON 
-ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT 
-(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS 
-SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-
-"""
-"""
-Address Normalizer
-
-Accepts these types of addresses:
 - Postal (e.g., 633 N Alberta, Portland, OR)
 - Intersection (e.g., Alberta & Kerby)
 - Point (e.g., x=-123, y=45)
 - Node (i.e., node ID)
-- Edge (i.e., number + edge ID)
-"""
+- Edge (i.e., number + edge ID).
 
+"""
 import re
-from byCycle.lib import gis
-from byCycle.services import excs
-from byCycle.model import mode, address, regions, states, sttypes, compass
+from byCycle import services
+from byCycle.services.exceptions import ByCycleError, InputError
+from byCycle.model import address, regions, states, sttypes, compass, domain
+from byCycle.model.domain import *
 
 
 # RE to check to see if a string has at least one word char
@@ -59,294 +46,382 @@ sttypes_atof = sttypes.street_types_atof
 states_ftoa = states.states_ftoa
 states_atof = states.states_atof
 
+no_address_msg = 'Please enter an address'
 no_region_msg = 'Please set your region'
 
-def get(q, region=''):
-    """Get a normalized address for the input address.
 
-    @param string q Input address
-    @param string region Region
-    @return Address An address object with normalized attributes
+class Service(services.Service):
+    """Address Normalization Service."""
 
-    """
-    errors = []
-    
-    original_q = q
-    q = q.strip().lower()
-    if not q:
-        errors.append('Please enter an address')
+    name = 'address'
 
-    original_region = region
-    region = regions.getRegion(region)
+    def __init__(self, region=None, dbh=None):
+        """
 
-    # Node?
-    try:
-        node_id = int(q)
-    except ValueError:
-        pass
-    else:
-        if not region:
-            raise excs.InputError([no_region_msg])         
-        return address.NodeAddress(node_id, region)
+        ``region`` `Region` | `string` -- `Region` or region key
 
-    # Edge?
-    try:
-        lAddr = q.split()        
-        number = int(lAddr[0])
-        edge_id = int(lAddr[1])
-    except (IndexError, ValueError):
-        pass
-    else:
-        if not region:
-            raise excs.InputError([no_region_msg])         
-        return address.EdgeAddress(number, edge_id, region)
-    
-    # Intersection?
-    try:
-        street1, street2 = getCrossStreets(q)
-    except ValueError:
-        pass
-    else: 
-        # parse streets and return IntersectionAddress
-        street1, place1 = parse(street1, region)
-        street2, place2 = parse(street2, region)
-        return address.IntersectionAddress(street1, place1, street2, place2)
-    
-    # Postal Address?
-    try:
-        number, street = getNumberAndStreet(q)
-    except ValueError:
-        pass
-    else:
-        # parse street and return PostalAddress
-        street, place = parse(street, region)
-        return address.PostalAddress(number, street, place)
+        """
+        services.Service.__init__(self, region=region)
 
-    # Point?
-    try:
-        point = gis.Point(q)
-    except ValueError:
-        pass
-    else:
-        if not region:
-            raise excs.InputError([no_region_msg])         
-        return address.PointAddress(point.x, point.y, region)
+    def query(self, q, region=None, dbh=None):
+        """Get a normalized address for the input address.
 
-    # Raise an exception if we get here: address is unnormalizeable
-    raise ValueError('We could not understand the address you entered, "%s".'
-                     % original_q)
+        Try to parse the parts of the address in ``q``. Return an `Address` of
+        the appropriate type for ``q`` or raises a `ValueError` if the address
+        isn't "understood".
 
+        ``q`` `string`
+            An address to be normalized in the given ``region``.
 
-def parse(sAddress, region=''):
-    """Parse input address string
+        ``region`` `Region` | `string`
+        ``dbh`` `DB`
+            See Service base class for details.
+            
+        return `Address` -- `Address` object with normalized attributes
 
-    - The address *must* contain a street name
-    - The address must *not* contain a house number
-    - It *can* contain a city & state OR zip code OR both
+        raise `InputError`
+            - ``q`` is empty
+            - No region supplied for edge or node type address
+            - Region not supplied & can't be determined for other address types
 
-    @param string sAddress A street & place with no number
-           (e.g., Main St, Portland, OR)
-    @param string|oRegion region A region string or object
-    @return object street, object place, string region, object region (Mode)
+        raise `ValueError` -- ``q`` cannot be parsed
 
-    """
-    sAddress = sAddress.replace(',', ' ')
-    sAddress = sAddress.replace('.', '')
-    tokens = sAddress.lower().split()
-
-    name = []
-
-    street = address.Street()
-    place = address.Place()
-
-    try:
-        # If there's only one token, it must be the name
-        if len(tokens) == 1:
-            raise IndexError
-
-        # -- Front to back
+        """
+        # Do query initialization
+        self._beforeQuery(q, region=region, dbh=dbh)
         
-        # prefix
-        prefix = tokens[0]
-        if (prefix in directions_atof or prefix in directions_ftoa):
-            if prefix in directions_ftoa:
-                prefix = directions_ftoa[prefix]
-            street.prefix = prefix
+        original_q = q
+        q = q.strip().lower()
+        if not q:
+            raise InputError([no_address_msg])
+
+        # Node?
+        try:
+            node_id = int(q)
+        except ValueError:
+            pass
+        else:
+            if not self.region:
+                raise InputError([no_region_msg])
+            return address.NodeAddress(node_id)
+
+        # Edge?
+        try:
+            lAddr = q.split()
+            number = int(lAddr[0])
+            edge_id = int(lAddr[1])
+        except (IndexError, ValueError):
+            pass
+        else:
+            if not self.region:
+                raise InputError([no_region_msg])
+            return address.EdgeAddress(number, edge_id)
+
+        # Intersection?
+        try:
+            street_name1, street_name2 = self._getCrossStreets(q)
+        except ValueError:
+            pass
+        else:
+            # parse streets and return IntersectionAddress
+            parse_info1 = self._parse(street_name1)
+            stname1, sttype1, place1, city_region1, zip_region1 = parse_info1
+            parse_info2 = self._parse(street_name2)
+            stname2, sttype2, place2, city_region2, zip_region2 = parse_info2            
+            try:
+                self._checkAndMaybeSetRegion(city_region1, zip_region1)
+            except InputError:
+                self._checkAndMaybeSetRegion(city_region2, zip_region2)
+            self._adjustName(stname1, sttype1)
+            self._adjustName(stname2, sttype2)
+            return address.IntersectionAddress(
+                stname1, place1, stname2, place2
+            )
+
+        # Postal Address?
+        try:
+            number, street_name = self._getNumberAndStreetName(q)
+        except ValueError:
+            pass
+        else:
+            # parse street and return PostalAddress
+            parse_info = self._parse(street_name)
+            stname, sttype, place, city_region, zip_region = parse_info
+            self._checkAndMaybeSetRegion(city_region, zip_region)
+            self._adjustName(stname, sttype)
+            return address.PostalAddress(number, stname, place)
+
+        # Point?
+        try:
+            point_addr = address.PointAddress(q)
+        except ValueError, e:
+            pass
+        else:
+            if not self.region:
+                raise InputError([no_region_msg])
+            else:
+                return point_addr
+
+        # Raise an exception if we get here: address is unnormalizeable
+        raise ValueError(
+            'We could not understand the address you entered, "%s".' %
+            str(original_q)
+        )
+
+    def _parse(self, addr):
+        """Parse input address string.
+
+        ``addr`` `string` -- A street name & place with no number (e.g., Main
+        St, Portland, OR). It *must* contain at least the name part of a
+        street name. It must *not* contain a house number. It *can* contain a
+        city & state OR zip code OR both.
+
+        return
+            - `StreetName` -- Prefix, name, type, and suffix
+            - `string` -- Full street type, iff found, or None
+            - `Place` -- City name (but not city ID!), state ID (two letter
+            state abbreviation), state name, and zip code
+            - `string` -- Region key determined from city and state
+            - `string` -- region key determined from zip code
+
+        TODO: For some cases, we could actually fill in more info. For
+        example, if a zip code is given, we can fill in at least the state and
+        possibly the city (if there happens to be just one city in the zip
+        code). This could help out a lot with geocoding.
+
+        """
+        addr = addr.replace(',', ' ')
+        addr = addr.replace('.', '')
+        tokens = addr.lower().split()
+        name = []
+        street_name = StreetName()
+        full_sttype = None                    
+        place = Place()
+        city_region_key, zip_region_key = None, None
+
+        try:
+            # If there's only one token, it must be the name
+            if len(tokens) == 1:
+                raise IndexError
+
+            # -- Front to back
+
+            # prefix
+            prefix = tokens[0]
+            if (prefix in directions_atof or prefix in directions_ftoa):
+                if prefix in directions_ftoa:
+                    prefix = directions_ftoa[prefix]
+                street_name.prefix = prefix
+                del tokens[0]
+
+            # name
+            # Name must have at least one word
+            name.append(tokens[0])
             del tokens[0]
 
-        # name
-        # Name must have at least one word
-        name.append(tokens[0])
-        del tokens[0]
+            # -- Back to front
 
-        # -- Back to front
+            # zip code
+            zip_region_key = None
+            zip_code = tokens[-1]
+            try:
+                zip_code = int(zip_code)
+            except ValueError:
+                pass
+            else:
+                del tokens[-1]
+                if zip_code in regions.zip_codes:
+                    if not self.region:
+                        zip_region_key = regions.zip_codes[zip_code]
+                    place.zip_code = zip_code
 
-        # zip code
-        zip_region = None
-        zip_code = tokens[-1]
-        try:
-            zip_code = int(zip_code)
-        except ValueError:
-            pass
-        else:
-            del tokens[-1]
-            if zip_code in regions.zip_codes:
-                if not region:
-                    zip_region = regions.zip_codes[zip_code]
-                place.zip_code = zip_code
-
-        # state
-        for i in (-1, -2, -3, -4):
-            state_id = ' '.join(tokens[i:])
-            if (state_id in states_atof or state_id in states_ftoa):
-                if state_id in states_ftoa:
-                    state = state_id
-                    state_id = states_ftoa[state_id]
-                else:
-                    state = states_atof[state_id]
-                place.state_id = state_id
-                place.state = state
-                del tokens[i:]
-                break
-
-        try:
-            cities = regions.states_cities[place.state_id]
-        except KeyError:
-            cities = regions.cities
-
-        # city
-        for i in (-1, -2, -3, -4):
-            city = ' '.join(tokens[i:])
-            if city in cities:
-                if not region:
-                    reg = cities[city]
-                    if isinstance(reg, list):
-                        if len(reg) == 1:
-                            region = reg[0]
+            # state
+            for i in (-1, -2, -3, -4):
+                state_id = ' '.join(tokens[i:])
+                if (state_id in states_atof or state_id in states_ftoa):
+                    if state_id in states_ftoa:
+                        state = state_id
+                        state_id = states_ftoa[state_id]
                     else:
-                        region = reg
-                place.city = city
-                del tokens[i:]
-                break
+                        state = states_atof[state_id]
+                    place.state_id = state_id
+                    place.state_name = state
+                    del tokens[i:]
+                    break
 
-        # Didn't find a city/state region; try the zip code region (i.e., was
-        # there a valid zip code found above?)
-        if not region:
-            region = zip_region
+            # Get cities for state if state; else use list of all cities
+            try:
+                cities = regions.states_cities[place.state_id]
+            except KeyError:
+                cities = regions.cities
 
-        # At this point we should have figured out the region; if not, fail...
-        if not region:
-            errors = ['Please enter a city and state -OR- a zip code -OR- '
-                      'set your region']
-            raise excs.InputError(errors)
+            # city
+            city_region_key = None
+            for i in (-1, -2, -3, -4):
+                city = ' '.join(tokens[i:])
+                if city in cities:
+                    if not self.region:
+                        _region = cities[city]
+                        if isinstance(_region, list):
+                            if len(_region) == 1:
+                                city_region_key = _region[0]
+                        else:
+                            city_region_key = _region
+                    place.city_name = city
+                    del tokens[i:]
+                    break
 
-        place.setRegion(region)
-        oRegion = place.oRegion
+            # suffix
+            suffix = tokens[-1]
+            if (suffix in directions_atof or suffix in suffixes_atof or
+                suffix in directions_ftoa or suffix in suffixes_ftoa):
+                if suffix in directions_ftoa:
+                    suffix = directions_ftoa[suffix]
+                elif suffix in suffixes_ftoa:
+                    suffix = suffixes_ftoa[suffix]
+                street_name.suffix = suffix
+                del tokens[-1]
 
-        # suffix
-        suffix = tokens[-1]
-        if (suffix in directions_atof or suffix in suffixes_atof or
-            suffix in directions_ftoa or suffix in suffixes_ftoa):
-            if suffix in directions_ftoa:
-                suffix = directions_ftoa[suffix]
-            elif suffix in suffixes_ftoa:
-                suffix = suffixes_ftoa[suffix]             
-            street.suffix = suffix
-            del tokens[-1]
-
-        # street type
-        sttype = tokens[-1]
-        if (sttype in sttypes_atof or sttype in sttypes_ftoa): 
-            if sttype in sttypes_atof:
-                # Make sure we have the official abbreviation
-                sttype = sttypes_atof[sttype]
-                sttype = sttypes_ftoa[sttype]
-            elif sttype in sttypes_ftoa:
-                full_sttype = sttype
-                sttype = sttypes_ftoa[sttype]
-            street.sttype = sttype
-            del tokens[-1]
-    except IndexError:
-        pass
-
-    # Check name
-    name = ' '.join(name + tokens)
-    num_name = appendSuffixToNumberStreetName(name)
-    try:
-        # If a full street type was entered...
-        full_sttype
-    except UnboundLocalError, NameError:
-        name = num_name
-    else:
-        name_type = '%s %s' % (name, full_sttype)
-        # ...and there is no street name in the DB with the name & type
-        Q1 = 'SELECT id FROM %s_streetname WHERE name="%s" AND sttype="%s"' % \
-             (oRegion.region, num_name, street.sttype)
-        # ...but there is one with the name with type appended to it
-        Q2 = 'SELECT id FROM %s_streetname WHERE name = "%s"' % \
-             (oRegion.region, name_type)
-        if not oRegion.execute(Q1) and oRegion.execute(Q2):
-            # ...use the name with type appended as the name
-            name = name_type
-            # ...and assume there was no street type entered
-            street.sttype = ''
-    street.name = name
-
-    return street, place
-
-
-def appendSuffixToNumberStreetName(name):
-    # Add suffix to number street (if needed), e.g. 10 => 10th
-    try:
-        int(name)
-    except ValueError:
-        pass
-    else:
-        last_char = name[-1]
-        try:
-            last_two_chars = name[-2:]
+            # street type
+            sttype = tokens[-1]
+            if (sttype in sttypes_atof or sttype in sttypes_ftoa):
+                if sttype in sttypes_atof:
+                    # Make sure we have the official abbreviation
+                    sttype = sttypes_atof[sttype]
+                    sttype = sttypes_ftoa[sttype]
+                elif sttype in sttypes_ftoa:
+                    full_sttype = sttype
+                    sttype = sttypes_ftoa[sttype]
+                street_name.sttype = sttype
+                del tokens[-1]
         except IndexError:
-            last_two_chars = ''
-        if   last_char == '1' and last_two_chars != '11': name += 'st'
-        elif last_char == '2' and last_two_chars != '12': name += 'nd'
-        elif last_char == '3' and last_two_chars != '13': name += 'rd'
+            pass
+        street_name.name = ' '.join(name + tokens)
+        return street_name, full_sttype, place, city_region_key, zip_region_key
+
+    def _checkAndMaybeSetRegion(self, city_region_key, zip_region_key):
+        if not self.region:
+            if city_region_key:
+                # Prefer city/state region
+                self.region = city_region_key
+            elif zip_region_key:
+                # No city/state region found; try zip code region
+                self.region = zip_region_key
+            else:
+                # By here, we should have figured out the region; if not, fail.
+                errors = ['Please enter a city and state -OR- a zip code ' 
+                          '-OR- set your region']
+                raise InputError(errors)
+
+    def _adjustName(self, street_name, sttype):
+        """Adjust ``street_name``'s name.
+        
+        ``street_name`` `StreetName`
+        ``sttype`` `string` -- Original street type found by `_parse`
+        
+        First, if the name is a number, add a suffix: 1 => 1st, 11 => 11th,
+        etc. Then, if the name can't be found in the DB and the street type
+        entered was not abbreviated, then see if we can find the name+type in
+        the DB. If so, use the name+type as the name and unset the street
+        type.
+        
+        Note: self.region & self.dbh must be set before calling this.
+        
+        """
+        name = street_name.name
+        num_name = self._appendSuffixToNumberStreetName(name)
+        if sttype in sttypes_ftoa:            
+            # If a full street type was entered...
+            # E.g., street name is 'johnson' and street type is 'creek'            
+            t = self.dbh.tables.street_names
+            c = t.c                        
+            q = t.count((c.name == num_name) & (c.sttype == sttype))
+            count1 = q.execute().fetchone()[0]
+            if not count1:
+                # ...and there is no street in the DB with the name & type...
+                # i.e., there's no street named 'johnson' with type 'creek'
+                name_type = '%s %s' % (name, sttype)                            
+                q = t.count(c.name == name_type)
+                count2 = q.execute().fetchone()[0]
+                if count2:
+                    # ...but there is one with that looks like 'name type'...
+                    # i.e., there's a street named 'johnson creek' with type x                    
+                    # ...use the name with type appended as the street's name...
+                    # i.e., use 'johnson creek' as the name
+                    name = name_type
+                    # ...and assume there was no street type entered.
+                    street_name.sttype = ''
         else:
-            name += 'th'
-    return name
+            name = num_name
+        street_name.name = name
+         
+    def _appendSuffixToNumberStreetName(self, name):
+        """Add suffix to number street ``name`` if needed (e.g. 10 => 10th).
 
+        ``name`` `string`
 
-def getCrossStreets(sAddr):
-    """Try to extract two cross streets from the input address."""
-    # Try splitting input addr on 'and', 'at', '&', '@', '+', '/', or '\'
-    # 'and' or 'at' must have whitespace on both sides
-    # All must have at least one word character on both sides
-    sRe = r'\s+and\s+|\s+at\s+|\s*[&@\+/\\]\s*'
-    oRe = re.compile(sRe, re.I)
-    streets = re.split(oRe, sAddr)
-    if (len(streets) > 1 and
-        re.match(re_word_plus, streets[0]) and
-        re.match(re_word_plus, streets[1])):
-        return streets
-    err = '"%s" could not be parsed as an intersection address' % sAddr
-    raise ValueError(err)
+        return `string` -- If ``name`` is not a number, it's just returned as
+        is; otherwise, return ``name`` with suffix appended.
 
-
-def getNumberAndStreet(sAddr):
-    """Try to extract a house number and street from the input address."""
-    tokens = sAddr.split()
-    if len(tokens) > 1:
-        num = tokens[0]
+        """
         try:
-            # Is num an int (house number)?
-            num = int(num)
+            int(name)
         except ValueError:
-            # No.
             pass
         else:
-            # num is an int; is street a string with at least one word char?
-            street = ' '.join(tokens[1:])
-            if re.match(re_word_plus, street):
-                # Yes.
-                return num, street 
-    err = '"%s" could not be parsed as a postal address' % sAddr   
-    raise ValueError(err)
+            last_char = name[-1]
+            try:
+                last_two_chars = name[-2:]
+            except IndexError:
+                last_two_chars = ''
+            if last_char == '1' and last_two_chars != '11':
+                name += 'st'
+            elif last_char == '2' and last_two_chars != '12':
+                name += 'nd'
+            elif last_char == '3' and last_two_chars != '13':
+                name += 'rd'
+            else:
+                name += 'th'
+        return name
+
+    def _getCrossStreets(self, sAddr):
+        """Try to extract two cross streets from the input address.
+
+        Try splitting ``addr`` on 'and', 'at', '&', '@', '+', '/', or '\'.
+        'and' &and 'at' must have whitespace on both sides. All must have at
+        least one word character on both sides.
+
+        ``addr`` `string` -- An intersection-style address with a pair of
+        cross streets separated by one of the symbols listed above.
+
+        """
+        sRe = r'\s+and\s+|\s+at\s+|\s*[&@\+/\\]\s*'
+        oRe = re.compile(sRe, re.I)
+        streets = re.split(oRe, sAddr)
+        if (len(streets) > 1 and
+            re.match(re_word_plus, streets[0]) and
+            re.match(re_word_plus, streets[1])):
+            return streets
+        err = '"%s" could not be parsed as an intersection address' % sAddr
+        raise ValueError(err)
+
+    def _getNumberAndStreetName(self, sAddr):
+        """Try to extract a house number and street name from input address."""
+        tokens = sAddr.split()
+        if len(tokens) > 1:
+            num = tokens[0]
+            try:
+                # Is num an int (house number)?
+                num = int(num)
+            except ValueError:
+                # No.
+                pass
+            else:
+                # num is an int; is street name a string with at least one 
+                # word char?
+                street_name = ' '.join(tokens[1:])
+                if re.match(re_word_plus, street_name):
+                    # Yes.
+                    return num, street_name
+        err = '"%s" could not be parsed as a postal address' % sAddr
+        raise ValueError(err)

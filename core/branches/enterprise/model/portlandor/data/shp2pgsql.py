@@ -1,5 +1,5 @@
 #!/usr/bin/python
-################################################################################
+###########################################################################
 # $Id: shp2pgsql.py 187 2006-08-16 01:26:11Z bycycle $
 # Created 2006-09-07
 #
@@ -7,25 +7,26 @@
 #
 # Copyright (C) 2006 Wyatt Baldwin, byCycle.org <wyatt@bycycle.org>.
 # All rights reserved.
-# 
+#
 # For terms of use and warranty details, please see the LICENSE file included
 # in the top level of this distribution. This software is provided AS IS with
 # NO WARRANTY OF ANY KIND.
-################################################################################
+
+
 """
 Usage: shp2pgsql.py [various options]
 
 There are three forms for running this script:
-- This will prompt you to run all actions:
+- This will run through all the actions, prompting you for each one:
   shp2pgsql.py
-  
+
 - This will either prompt you to run the actions from indices i to j in the
   actions list or just run all the actions from i to j if `no_prompt` is
   specified:
-  shp2pgsql.py [--start <i>] [--end <j>] [--no_prompt]
-  
+  shp2pgsql.py [--start|-s <i>] [--end|-e <j>] [--no_prompt|-n]
+
 - This will run only the action at index i without prompting:
-  shp2pgsql.py --only <i>
+  shp2pgsql.py --only|-o <i>
 
 Defaults:
     - start=0
@@ -35,12 +36,12 @@ Defaults:
 
 If no args are supplied, you will be prompted to run all actions.
 
-If either of ``start`` or ``end`` (or both) is present, the ``only`` option 
+If either of ``start`` or ``end`` (or both) is present, the ``only`` option
 must not be present.
 
 If ``only`` is present, ``no_prompt`` is implied.
-"""
 
+"""
 import os
 def __getbyCycleImportPath():
     """Get path to dir containing the byCycle package this module is part of."""
@@ -53,12 +54,18 @@ def __getbyCycleImportPath():
 import sys
 sys.path.insert(0, __getbyCycleImportPath())
 import getopt
+
 import psycopg2
 import psycopg2.extensions
-import sqlalchemy as orm
+
+import sqlalchemy
+from sqlalchemy.sql import func, select, bindparam
+from sqlalchemy.schema import Column
+from byCycle.model.data.sqltypes import Geometry
+
 from byCycle import install_path
 from byCycle.lib import meter
-import byCycle.model.portlandor.data.tables
+from byCycle.model.portlandor.data.tables import Tables, SRID
 from byCycle.model.portlandor.data.cities import cities_atof
 
 
@@ -101,8 +108,8 @@ bikemodes = {
     'ca': 'c',
     'pm': 'x',
     'up': 'u',
-    'pb': '',
-    'xx': '',
+    'pb': 'n',
+    'xx': 'n',
     None: None,
 }
 
@@ -121,11 +128,11 @@ shp2sql_args = '-c -i -I -s %s %s %s > %s' \
 # Path to database executable
 sql_exe = '/usr/bin/psql'
 
-# args template for importing SQL into database 
+# args template for importing SQL into database
 sql_args = '--quiet -d %s -f %s'  # % (database, SQL file)
 
 # Base path to regional shapefiles
-base_data_path = '/home/bycycle/byCycle/data'
+base_data_path = '/home/bycycle/byCycleData'
 
 # Name of database
 db_name = 'bycycle'
@@ -178,7 +185,7 @@ connection = None
 cursor = None
 
 # Database engine
-db = None
+engine = None
 
 # Metadata for schema tables
 metadata = None
@@ -198,13 +205,13 @@ raw_data = None
 # Reused/reset for each action
 timer = None
 
-# Street names {(prefix, name, type, suffix) => street name ID}
+# Edge names {(prefix, name, type, suffix) => street name ID}
 # Created in `transferStreetNames`
 street_names = None
 
 # Cities {full city name => city ID}
 # Created in `transferCities`
-cities = {}
+cities = None
 
 
 ### Setup actions that always need to be done (or at least, they *can* always
@@ -219,21 +226,20 @@ def createConnection():
 
 
 def createDatabaseEngine(creator):
-    db = orm.engine.create_engine('postgres://', creator=creator)
-    return db
+    engine = sqlalchemy.engine.create_engine('postgres://', creator=creator)
+    return engine
 
 
-def createMetadata(db):
-    metadata = orm.schema.BoundMetaData(db)
+def createMetadata(engine):
+    metadata = sqlalchemy.schema.BoundMetaData(engine)
     metadata.engine.echo = True
     return metadata
 
 
 def getTables(metadata, raw_metadata, schema):
-    t = byCycle.model.portlandor.data.tables
-    schema_tables = t.createSchemaTables(metadata, schema)
-    raw_table = t.createRawTable(raw_metadata, schema)
-    return schema_tables, raw_table
+    tables = Tables(schema, metadata, raw_metadata, add_geometry=False)
+    raw_table = tables.raw_table
+    return tables, raw_table
 
 
 ### Utilities used by the actions below
@@ -260,11 +266,11 @@ def prompt(msg='', prefix=None, default='no'):
 
     ``msg`` `string`
         The prompt message, in the form of a question.
-        
+
     ``prefix``
         Something to prefix the prompt with (like a number to indicate which
         action we're on).
-        
+
     ``default`` `string` `bool`
         The default response for this prompt (when the user just presses
         Enter). Can be 'n', 'no', or anything that will evaluate as False to
@@ -313,9 +319,9 @@ def dropTable(table):
     try:
         # FIXME: checkfirst doesn't seem to work
         table.drop(checkfirst=True)
-    except orm.exceptions.SQLError, e:
+    except sqlalchemy.exceptions.SQLError, e:
         if not 'does not exist' in str(e):
-            raise    
+            raise
 
 
 def recreateTable(table):
@@ -337,14 +343,43 @@ def turnSQLEchoOff(md):
 def turnSQLEchoOn(md):
     """Turn echoing of SQL statements on for ``md``."""
     md.engine.echo = True
-    
-    
-def vacuum():
+
+
+def vacuum(table=''):
     """Vacuum all tables."""
     print 'Vacuuming all tables...'
     connection.set_isolation_level(0)
-    cursor.execute('VACUUM FULL ANALYZE')
-    connection.set_isolation_level(2)        
+    cursor.execute('VACUUM FULL ANALYZE %s' % table)
+    connection.set_isolation_level(2)
+
+
+def getEvenSide(addr_f_l, addr_f_r, addr_t_l, addr_t_r):
+    """Figure out which side of the edge even addresses are on."""
+    if ((addr_f_l and addr_f_l % 2 == 0) or
+        (addr_t_l and addr_t_l % 2 == 0)):
+        # Left?
+        even_side = 'l'
+    elif ((addr_f_r and addr_f_r % 2 == 0) or
+          (addr_t_r and addr_t_r % 2 == 0)):
+        # Right?
+        even_side = 'r'
+    else:
+        # Couldn't tell.
+        even_side = None
+    return even_side
+
+
+def getTimeWithUnits(seconds):
+    """Convert ``seconds`` to minutes if >= 60. Return time with units."""
+    if seconds >= 60:
+        time = seconds / 60.0
+        units = 'minute'
+    else:
+        time = seconds
+        units = 'second'
+    if time == 1.0:
+        units +=  's'
+    return '%.2f %s' % (time, units)
 
 
 ### Actions the user may or may not want to take
@@ -352,15 +387,15 @@ def vacuum():
 def shp2sql():
     """Convert shapefile to SQL and save to file."""
     system(shp2sql_cmd)
-    
-    
+
+
 def shp2db():
     """Read shapefile into database table."""
     raw_table.drop(checkfirst=True)
     system(sql2db_cmd)
     vacuum()
-    
-    
+
+
 def dropTables():
     """Drop all schema tables (excluding raw)."""
     metadata.drop_all()
@@ -369,37 +404,52 @@ def dropTables():
 def createTables():
     """Create all tables. (Ignores existing tables.)"""
     metadata.create_all()
-  
-    
+    # Add geometry columns after tables are created
+    Q = "SELECT AddGeometryColumn('%s', '%s', 'geom', %s, '%s', 2)"
+    table_names = ('layer_edges', 'layer_nodes')
+    types = ('MULTILINESTRING', 'POINT')
+    for name, type_ in zip(table_names, types):
+        cursor.execute(Q % (db_schema, name, SRID, type_) )
+    # Add gist INDEXes to geometry columns
+    Q = ('CREATE INDEX "%s_the_geom_gist" ON "%s"."%s" '
+         'using gist ("geom" gist_geometry_ops)')
+    for name in table_names:
+        cursor.execute(Q % (name, db_schema, name))
+    # Save all that
+    connection.commit()
+    # The above added cols to the DB; this adds them to SQLAlchemy table defs
+    tables._appendGeometryColumns()
+
+
 def transferStreetNames(modify=True):
     """Transfer street names from raw table to schema table.
 
-    This also has the side effect of setting the global `street_names`, which 
-    is a dict of {(prefix, name, type, suffix) => street name ID} that 
+    This also has the side effect of setting the global `street_names`, which
+    is a dict of {(prefix, name, type, suffix) => street name ID} that
     gets used in `transferStreets`.
-    
+
     ``modify`` `bool`
-        If this is set the street names table won't be modified in any way 
-        (i.e., rows won't be deleted and inserted), but the global 
+        If this is set the street names table won't be modified in any way
+        (i.e., rows won't be deleted and inserted), but the global
         `street_names` will still be created.
-    
+
     TODO: Convert all street types to USPS standard
-    
+
     """
     global street_names
     street_names = {}
     table = tables.street_names
     # Get all distinct street names from raw (in lowercase)
-    cols = (raw_table.c.fdpre, raw_table.c.fname, raw_table.c.ftype, 
+    cols = (raw_table.c.fdpre, raw_table.c.fname, raw_table.c.ftype,
             raw_table.c.fdsuf)
-    sel_cols = map(orm.sql.func.lower, cols)
-    result = orm.sql.select(sel_cols, distinct=True).execute()
+    sel_cols = map(sqlalchemy.sql.func.lower, cols)
+    result = sqlalchemy.sql.select(sel_cols, distinct=True).execute()
     # Transfer street names, creating sequential IDs for them
     l = []
     street_name_id = 1
     for row in result:
         p, n, s, t = row[0], row[1], row[2], row[3]
-        if (p or n or s or t or None) is not None: 
+        if (p or n or s or t or None) is not None:
             street_names[(p, n, s, t)] = street_name_id
             d = {}
             d['id'] = street_name_id
@@ -410,12 +460,13 @@ def transferStreetNames(modify=True):
             l.append(d)
             street_name_id += 1
     street_names[(None, None, None, None)] = None
+    result.close()
     # Delete all the old street names and insert the new ones
     if modify:
         deleteAllFromTable(table)
-        turnSQLEchoOff(metadata)        
+        turnSQLEchoOff(metadata)
         table.insert().execute(l)
-        turnSQLEchoOn(metadata)    
+        turnSQLEchoOn(metadata)
 
 
 def transferCities(modify=True):
@@ -423,27 +474,28 @@ def transferCities(modify=True):
 
     The city names are abbreviated in the raw table; they are looked up and
     converted to their (lowercase) full names after being transferred.
-    
+
     This also has the side effect of setting the global `cities`, which is a
     dict of {full city name => city ID} that gets used in `transferStreets`.
 
-    ``modify`` `bool` 
-        If this is set the cities table won't be modified in any way (i.e., 
-        rows won't be deleted and inserted), but the global `cities` will 
+    ``modify`` `bool`
+        If this is set the cities table won't be modified in any way (i.e.,
+        rows won't be deleted and inserted), but the global `cities` will
         still be created.
-    
+
     """
     global cities
     cities = {}
     table = tables.cities
     # Get distinct cities from raw (in lowercase)
     for col in (raw_table.c.lcity, raw_table.c.rcity):
-        col = orm.sql.func.lower(col)
-        sel = orm.sql.select([col], col != None, distinct=True)
+        col = sqlalchemy.sql.func.lower(col)
+        sel = sqlalchemy.sql.select([col], col != None, distinct=True)
         result = sel.execute()
         for row in result:
             city = row[0]
             cities[cities_atof[city]] = 1
+        result.close()
     # Transfer cities, creating sequential IDs for them
     l = []
     city_names = cities.keys()
@@ -458,10 +510,10 @@ def transferCities(modify=True):
             l.append(d)
             city_id += 1
     cities[None] = None
-    # Delete all the old cities and insert the new ones        
+    # Delete all the old cities and insert the new ones
     if modify:
         deleteAllFromTable(table)
-        turnSQLEchoOff(metadata)        
+        turnSQLEchoOff(metadata)
         table.insert().execute(l)
         turnSQLEchoOn(metadata)
 
@@ -472,90 +524,92 @@ def insertStates():
     table.insert().execute(states)
 
 
-def transferNodes(modify=True):
-    """Transfer node geometry and IDs to nodes table."""
+def transferNodeIDs(modify=True):
+    """Transfer node IDs from raw table to node table."""
     table = tables.layer_nodes
     c = raw_table.c
     nodes = {}
-    # Get distinct endpoints from raw
-    for n, f in ((c.fnode, 'startpoint'), (c.tnode, 'endpoint')):
-        cols = [n, '%s(raw.%s.the_geom)' % (f, db_schema)]
-        sel = orm.sql.select(cols, distinct=True)
-        result = sel.execute()
+    # Get distinct node IDs from raw table
+    for node_id in (c.fnode, c.tnode):
+        cols = [node_id.label('node_id')]
+        result = select(cols, distinct=True).execute()
         for row in result:
-            node_id = row[0]
-            nodes[node_id] = row[1]
-    # Transfer nodes
+            nodes[row.node_id] = 1
+        result.close()
+    # Transfer node IDs
     l = []
     for node_id in nodes:
+        # Collect all the row data so all the rows can be inserted at once
         d = {}
         d['id'] = node_id
-        d['geom'] = nodes[node_id]
+        d['geom'] = None
         l.append(d)
     if modify:
+        # Drop existing node rows and add all new nodes at once
         deleteAllFromTable(table)
-        turnSQLEchoOff(metadata)        
+        turnSQLEchoOff(metadata)
         table.insert().execute(l)
-        turnSQLEchoOn(metadata)  
-    
+        turnSQLEchoOn(metadata)
 
-def transferStreets(modify=True):
-    """Transfer street geometry and attributes to streets table."""
-    table = tables.layer_streets
+
+def transferEdges(modify=True):
+    """Transfer edge geometry and attributes to streets table."""
+    tables._appendGeometryColumns()
+    table = tables.layer_edges
     if street_names is None:
         print 'Getting street names...'
         transferStreetNames(modify=False)
     if cities is None:
         print 'Getting cities...'
         transferCities(modify=False)
-    vacuum()
     # Get selected columns for all rows in raw
     c = raw_table.c
-    func_lower = orm.sql.func.lower
+    func_lower = sqlalchemy.sql.func.lower
     cols = [
         # Core attributes
-        c.gid, 
+        c.gid,
         c.the_geom, c.fnode, c.tnode,
-        
+
+        # Core address attributes
         c.leftadd1, c.leftadd2, c.rgtadd1, c.rgtadd2,
-        func_lower(c.fdpre), func_lower(c.fname), func_lower(c.ftype), 
-        func_lower(c.fdsuf),
-        func_lower(c.lcity), func_lower(c.rcity),
+        func_lower(c.fdpre).label('prefix'),
+        func_lower(c.fname).label('name'),
+        func_lower(c.ftype).label('sttype'),
+        func_lower(c.fdsuf).label('suffix'),
+        func_lower(c.lcity).label('city_l'),
+        func_lower(c.rcity).label('city_r'),
         c.zipcolef, c.zipcorgt,
-        
+
         # Additional attributes
-        func_lower(c.one_way), c.localid, c.type, func_lower(c.bikemode), 
+        func_lower(c.one_way).label('one_way'),
+        c.localid, c.type,
+        func_lower(c.bikemode).label('bikemode'),
         c.up_frac, c.abs_slp, c.sscode, c.cpd
     ]
-    sel = orm.sql.select(cols)
-    result = sel.execute()
+    result = select(cols).execute()
     # Transfer streets
     l = []
     for i, row in enumerate(result):
         addr_f_l, addr_f_r = row.leftadd1, row.rgtadd1
         addr_t_l, addr_t_r = row.leftadd2, row.rgtadd2
         # Unify "from" addresses
-        addr_f = int(((addr_f_l or addr_f_r or 0) / 10.0) * 10)
+        if addr_f_l is not None or addr_f_r is not None:
+            addr_f = int(round((addr_f_l or addr_f_r) / 10.0) * 10) + 1
+        else: 
+            addr_f = None
         # Unify "to" addresses
-        addr_t = int(((addr_t_l or addr_t_r or 0) / 10.0) * 10)
-        # Figure out which side of the street the even addresses are on
-        if ((addr_f_l and addr_f_l % 2 == 0) or 
-            (addr_t_l and addr_t_l % 2 == 0)):
-            # Left?
-            even_side = 'l'
-        elif ((addr_f_r and addr_f_r % 2 == 0) or 
-              (addr_t_r and addr_t_r % 2 == 0)):
-            # Right?
-            even_side = 'r'
-        else:
-            # Couldn't tell.
-            even_side = None
+        if addr_t_l is not None or addr_t_r is not None:
+            addr_t = int(round((addr_t_l or addr_t_r) / 10.0) * 10)
+        else: 
+            addr_t = None
         # Street name: prefix, name, type, suffix
-        street_name_parts = (row[8], row[9], row[10], row[11])
-        lcity = row[12]
-        rcity = row[13]
-        one_way = row[16]
-        bikemode = row[19]            
+        street_name_parts = (
+            row.prefix, row.name, row.sttype, row.suffix
+        )
+        lcity = row.city_l
+        rcity = row.city_r
+        one_way = row.one_way
+        bikemode = row.bikemode
         d = {}
         d['id'] = row.gid
         d['geom'] = row.the_geom
@@ -563,7 +617,7 @@ def transferStreets(modify=True):
         d['node_t_id'] = row.tnode
         d['addr_f'] = addr_f
         d['addr_t'] = addr_t
-        d['even_side'] = even_side
+        d['even_side'] = getEvenSide(addr_f_l, addr_f_r, addr_t_l, addr_t_r)
         d['street_name_id'] = street_names[street_name_parts]
         d['city_l_id'] = cities[cities_atof[lcity]]
         d['city_r_id'] = cities[cities_atof[rcity]]
@@ -580,16 +634,82 @@ def transferStreets(modify=True):
         d['cpd'] = row.cpd
         d['sscode'] = row.sscode
         l.append(d)
+    result.close()
     if modify:
         deleteAllFromTable(table)
-        turnSQLEchoOff(metadata)        
+        turnSQLEchoOff(metadata)
         table.insert().execute(l)
         turnSQLEchoOn(metadata)
         vacuum()
-    
+
+
+def convertEdgeGeometryToLINESTRING():
+    """Convert edge geometry from MULTILINESTRING to LINESTRING."""
+    Qs = (
+        # Drop the MULTILINESTRING constraint.
+        """
+        ALTER TABLE
+        %s.layer_edges
+        DROP CONSTRAINT
+        enforce_geotype_geom
+        """ % db_schema,
+
+        # Update geometries, converting MULTILINESTRING to LINESTRING.
+        # TODO: Check for MULTILINESTRINGs with more than one LINESTRING and
+        # try to merge those LINESTRINGs together.
+        """
+        UPDATE
+        %s.layer_edges
+        SET geom = GeometryN(geom, 1)
+        """ % db_schema,
+
+        # Add a LINESTRING constraint to the geometry column.
+        """
+        ALTER TABLE
+        %s.layer_edges
+        ADD CONSTRAINT
+        enforce_geotype_geom
+        CHECK
+        ((geometrytype(geom) = 'LINESTRING'::text OR geom IS NULL))
+        """ % db_schema
+    )
+    for Q in Qs:
+        cursor.execute(Q)
+    connection.commit()
+
+
+def transferNodeGeometry(modify=True):
+    """Copy node geometry from edge table to node table."""    
+    tables._appendGeometryColumns()
+    table = tables.layer_nodes
+    layer_edges = tables.layer_edges
+    c = layer_edges.c
+    nodes = {}
+    # Get distinct node IDs from raw table
+    node_ids = (c.node_f_id, c.node_t_id)
+    funcs = (func.startpoint, func.endpoint)
+    for node_id, f in zip(node_ids, funcs):
+        cols = [node_id.label('node_id'), f(c.geom).label('point')]
+        result = select(cols, distinct=True).execute()
+        for row in result:
+            nodes[row.node_id] = row.point
+        result.close()
+    # Transfer node IDs
+    l = []
+    for node_id in nodes:
+        # Collect all the row data so all the rows can be updated at once
+        d = {}
+        d['id'] = node_id
+        d['geom'] = nodes[node_id]
+        l.append(d)
+    if modify:
+        turnSQLEchoOff(metadata)
+        table.update(table.c.id==bindparam('id')).execute(l)
+        turnSQLEchoOn(metadata)
+
 
 ### Actions list, in the order they will be run
-    
+
 actions = (
     # 0
     (shp2sql,
@@ -609,42 +729,56 @@ actions = (
      'Drop schema tables (not including raw table)',
      'Dropped schema tables, except raw.',
      ),
- 
+
     # 3
     (createTables,
      'Create schema tables (ignoring existing tables)',
-     'Created schema tables that didn\'t already exist.',     
+     'Created schema tables that didn\'t already exist.',
      ),
 
     # 4
     (transferStreetNames,
      'Transfer street names from raw table',
-     'Transferred street names from raw table to street_names table',
+     'Transferred street names from raw table to street name table',
     ),
 
     # 5
     (transferCities,
      'Transfer cities from raw table',
-     'Transferred cities from raw table to cities table',
-     ),    
+     'Transferred cities from raw table to city table',
+     ),
 
     # 6
     (insertStates,
      'Insert states',
-     'States inserted into states table'),
-    
+     'States inserted into state table'
+     ),
+
     # 7
-    (transferNodes,
-     'Transfer nodes from raw table',
-     'Transferred node geometry and IDs from raw table to streets table',
+    (transferNodeIDs,
+     'Transfer node IDs from raw table',
+     'Transferred node IDs from raw table to node table'
      ),
 
     # 8
-    (transferStreets,
-     'Transfer streets from raw table',
-     'Transferred street geometry and attributes from raw table to streets ' 
+    (transferEdges,
+     'Transfer edges from raw table',
+     'Transferred edge geometry and attributes from raw table to edge '
      'table',
-     ),   
+     ),
+
+    # 9
+    (convertEdgeGeometryToLINESTRING,
+     'Convert edge table geometry from MULTILINESTRING to LINESTRING',
+     'Converted edge table geometry to LINESTRING and'
+     'added LINESTRING check constraint',
+     ),
+
+    # 10
+    (transferNodeGeometry,
+     'Transfer node geometry from edge table',
+     'Transferred node geometry from edge table to node table',
+     ),
 )
 
 
@@ -657,7 +791,7 @@ def doActions(actions, start, end, no_prompt):
         func = action[0]
         before_msg = action[1]
         after_msg = action[2]
-        try: 
+        try:
             default_response = action[3]
         except IndexError:
             default_response = False
@@ -667,7 +801,7 @@ def doActions(actions, start, end, no_prompt):
             if do_prompt:
                 # Ask user, "Do you want do this action?"
                 overall_timer.pause()
-                response = prompt(msg=before_msg, prefix=i, 
+                response = prompt(msg=before_msg, prefix=i,
                                   default=default_response)
                 overall_timer.unpause()
             else:
@@ -681,19 +815,16 @@ def doActions(actions, start, end, no_prompt):
                     print '\n*** Errors encountered in action %s. ' \
                           'See log. ***' % i
                     raise
-                print after_msg, '\nTook %s.' % timer.stop()
+                print after_msg, '\nTook %s.' % getTimeWithUnits(timer.stop())
             else:
                 # No, don't do this action
                 print 'Skipped'
         print
-    print 'Total time: %s' % overall_timer.stop()
-
+    print 'Total time: %s' % getTimeWithUnits(overall_timer.stop())
 
 ### Event loop (so to speak)
 
 def run(start=0, end=len(actions)-1, no_prompt=False, only=None):
-    #resp = raw_input('What would you like to do? ')
-    #resp = ''.join(resp.strip().split()).lower()
     if only is not None:
         start = only
         end = only
@@ -701,21 +832,22 @@ def run(start=0, end=len(actions)-1, no_prompt=False, only=None):
     doActions(actions, start, end, no_prompt)
 
 
-def main(argv):    
+def main(argv):
     args_dict = getOpts(sys.argv[1:])
     # Set up globals
-    global connection, cursor, db, metadata, tables, raw_table, raw, timer
-    db = createDatabaseEngine(createConnection)
-    connection = db.raw_connection()
+    global connection, cursor, engine, metadata, tables, raw_table, raw, timer
+    engine = createDatabaseEngine(createConnection)
+    connection = engine.raw_connection()
     cursor = connection.cursor()
-    metadata = createMetadata(db)
-    raw_metadata = createMetadata(db)
+    metadata = createMetadata(engine)
+    raw_metadata = createMetadata(engine)
     tables, raw_table = getTables(metadata, raw_metadata, db_schema)
     # raw_data = ...
-    timer = meter.Timer(start_now=False)        
+    timer = meter.Timer(start_now=False)
     # Enter event loop
     sys.stderr = open('shp2pgsql.error.log', 'w')
     run(**args_dict)
+    vacuum()
 
 
 def getOpts(argv):

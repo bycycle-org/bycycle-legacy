@@ -1,199 +1,205 @@
-"""$Id$
+###########################################################################
+# $Id$
+# Created 2006-??-??.
+#
+# Unit tests for geocode service.
+#
+# Copyright (C) 2006 Wyatt Baldwin, byCycle.org <wyatt@bycycle.org>.
+# All rights reserved.
+#
+# For terms of use and warranty details, please see the LICENSE file included
+# in the top level of this distribution. This software is provided AS IS with
+# NO WARRANTY OF ANY KIND.
 
-Description goes here.
 
-Copyright (C) 2006 Wyatt Baldwin, byCycle.org <wyatt@bycycle.org>
+import unittest
+from byCycle.lib import meter
+from byCycle.services.geocode import *
+from byCycle.model.geocode import Geocode, PostalGeocode, IntersectionGeocode
 
-All rights reserved.
 
-TERMS AND CONDITIONS FOR USE, MODIFICATION, DISTRIBUTION
+service = Service(region='portlandor')
+quiet = 1
+if not quiet:
+    timer = meter.Timer()
 
-1. The software may be used and modified by individuals for noncommercial, 
-private use.
 
-2. The software may not be used for any commercial purpose.
+class TestPortlandOR(unittest.TestCase):
 
-3. The software may not be made available as a service to the public or within 
-any organization.
+    def _query(self, q):
+        if not quiet:
+            print '\n*****', q
+            timer.start()
+        _geocode = service.query(q)
+        self.assert_(isinstance(_geocode, Geocode))
+        if not quiet:
+            print timer.stop(), 'seconds\n'
+        return _geocode
 
-4. The software may not be redistributed.
+    def _queryRaises(self, q, exc):
+        self.assertRaises(exc, self._query, q)
 
-THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND 
-ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED 
-WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE 
-DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR 
-ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES 
-(INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; 
-LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON 
-ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT 
-(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS 
-SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+    ### Edge
 
-"""
+    def test_EdgeAddress_(self):
+        q = '633 1651'
+        geocode = self._query(q)
+
+    def test_EdgeAddress_BadID(self):
+        q = '633 16510'
+        self.assertRaises(AddressNotFoundError, self._query, q)
+
+    ### Intersection
+        
+    def test_IntersectionAddress_BothPlaces(self):
+        q = 'W Burnside St, Portland, OR 97204 AND NW 3rd Ave, Portland, OR 97209'
+        geocode = self._query(q)
+
+    def test_IntersectionAddress_DisambiguatedMultipleMatch(self):
+        q = '3rd / main 97024'
+        geocode = self._query(q)
+
+    def test_IntersectionAddress_Midblock(self):
+        q = '48th & kelly'
+        geocode = self._query(q)
+
+    def test_IntersectionAddress_MultipleMatches(self):
+        q = '3rd @ main'
+        self._queryRaises(q, MultipleMatchingAddressesError)
+        try:
+            self._query(q)
+        except MultipleMatchingAddressesError, e:
+            self.assert_(len(e.geocodes) == 10)
+
+    def test_IntersectionAddress_NoPlace(self):
+        q = '44th and stark'
+        geocode = self._query(q)
+
+    def test_IntersectionAddress_OnlyPlace1(self):
+        q = 'Burnside St, Portland, OR 97209 AT 3rd Ave'
+        geocode = self._query(q)
+        
+    def test_IntersectionAddress_OnlyPlace2(self):
+        q = 'Burnside St & 3rd Ave, Portland, OR 97209'
+        geocode = self._query(q)
+        
+    ### Node
+
+    def test_NodeAddress(self):
+        q = '1651'
+        geocode = self._query(q)
+
+    def test_NodeAddress_BadID(self):
+        q = '84700'
+        self._queryRaises(q, AddressNotFoundError)
+
+    ### Point
+
+    def test_PointAddress_KwargsString(self):
+        q = 'x=-120.432129, y=46.137977'
+        geocode = self._query(q)
+        q = 'lon=-122.609138, lat=45.497383'
+        geocode = self._query(q)
+
+    def test_PointAddress_PositionalKwargsString(self):
+        q = 'asldfj=-123.432129, aass=46.137977'
+        geocode = self._query(q)
+
+    def test_PointAddress_StringTuple_Parens(self):
+        q = '(-122.67334, 45.523307)'
+        geocode = self._query(q)
+        
+    def test_PointAddress_StringTuple_NoParens(self):   
+        q = '-122.67334, 45.523307'
+        geocode = self._query(q)
+
+    def test_PointAddress_WKT_1(self):
+        q = 'POINT(-120.432129 46.137977)'
+        geocode = self._query(q)
+
+    def test_PointAddress_WKT_2(self):
+        q = 'POINT(-120.025635 45.379161)'
+        geocode = self._query(q)
+
+    ### Postal
+
+    def test_PostalAddress_AllPartsNoCommas(self):
+        q = '4408 se stark st oregon 97215'
+        geocode = self._query(q)
+
+    def test_PostalAddress_BadState(self):
+        q = '4408 se stark, wi'
+        self._queryRaises(q, AddressNotFoundError)
+
+    def test_PostalAddress_Clackamas(self):
+        q = '37798 S Hwy 213 Hwy, Clackamas, OR 97362'
+        geocode = self._query(q)
+
+    def _test_PostalAddress_MultipleMatches(self):
+        q = '633 alberta'
+        self._queryRaises(q, MultipleMatchingAddressesError)
+        try:
+            self._query(q)
+        except MultipleMatchingAddressesError, e:
+            self.assert_(len(e.geocodes) == 2)
+        q = '300 main'
+        self._queryRaises(q, MultipleMatchingAddressesError)
+        try:
+            self._query(q)
+        except MultipleMatchingAddressesError, e:
+            self.assert_(len(e.geocodes) == 8)
+
+    def test_PostalAddress_NoCity(self):
+        q = '4408 se stark, or'
+        geocode = self._query(q)
+
+    def test_PostalAddress_NoCityOrState(self):
+        q = '4408 se stark'
+        geocode = self._query(q)
+
+    def test_PostalAddress_NoSuffixOnNumberStreetName(self):
+        q = '4550 ne 15'
+        geocode = self._query(q)
+
+    def test_PostalAddress_NotFound(self):
+        q = '300 bloofy lane, portland, or'
+        self._queryRaises(q, AddressNotFoundError)
+
+    def test_PostalAddress_Portland(self):
+        q = '633 n alberta st, portland, or, 97217'
+        geocode = self._query(q)
+
+    def test_PostalAddress_WithSuffixOnNumberStreetName(self):
+        q = '4550 ne 15th'
+        geocode = self._query(q)
+
+
+class DontTestMilwaukee(unittest.TestCase):
+    A = {
+        'milwaukeewi': (
+            '0 w hayes ave',
+            'x=-87.940407, y=43.05321',
+            'x=-87.931137, y=43.101234',
+            'x=-87.934399, y=43.047126',
+            '125 n milwaukee',
+            '125 n milwaukee milwaukee wi',
+            '27th and lisbon',
+            '27th and lisbon milwaukee',
+            '27th and lisbon milwaukee, wi',
+            'x=-87.961178, y=43.062993',
+            'x=-87.921953, y=43.040791',
+            'n 8th st & w juneau ave, milwaukee, wi ',
+            '77th and burleigh',
+            '2750 lisbon',
+            '(-87.976885, 43.059544)',
+            'x=-87.946243, y=43.041669',
+            '124th and county line',
+            '124th and county line wi',
+            '5th and center',
+            '6th and hadley',
+        )
+    }
+
+
 if __name__ == '__main__':
-    import unittest
-    from byCycle.services.geocode import *
-    from byCycle.model import portlandor
-
-    class DontTestMilwaukee(unittest.TestCase):
-        A = {#' ',
-            # Milwaukee
-            'milwaukeewi':
-            ('0 w hayes ave',
-             'x=-87.940407, y=43.05321',
-             'x=-87.931137, y=43.101234',
-             'x=-87.934399, y=43.047126',
-             '125 n milwaukee',
-             '125 n milwaukee milwaukee wi',
-             '27th and lisbon',
-             '27th and lisbon milwaukee',
-             '27th and lisbon milwaukee, wi',
-             'x=-87.961178, y=43.062993',
-             'x=-87.921953, y=43.040791',
-             'n 8th st & w juneau ave, milwaukee, wi ',
-             '77th and burleigh',
-             '2750 lisbon',
-             '(-87.976885, 43.059544)',
-             'x=-87.946243, y=43.041669',
-             '124th and county line',
-             '124th and county line wi',
-             '5th and center',
-             '6th and hadley',
-             )}
-
-    class TestPortlandOR(unittest.TestCase):
-        def _get(self, q):
-            region = 'portlandor'
-            return get(q=q, region=region)
-        
-        def testPostalAddress(self):
-            q = '633 n alberta'
-            geocodes = self._get(q)
-            self.assert_(len(geocodes) == 1)
-            q = '37800 S Hwy 213 Hwy, Clackamas, OR 97362'
-            geocodes = self._get(q)
-            self.assert_(len(geocodes) == 1)
-            
-        def testPostalAddressMultipleMatches(self):
-            q = '633 alberta'
-            self.assertRaises(MultipleMatchingAddressesError, self._get, q)
-            try:
-                self._get(q)
-            except MultipleMatchingAddressesError, e:
-                self.assert_(len(e.geocodes) == 2)
-                
-            q = '300 main'
-            self.assertRaises(MultipleMatchingAddressesError, self._get, q)
-            try:
-                self._get(q)
-            except MultipleMatchingAddressesError, e:
-                self.assert_(len(e.geocodes) == 12)
-
-        def testPostalAddressNoSuffixOnNumberStreetName(self):
-            q = '4550 ne 15'
-            geocodes = self._get(q)
-            self.assert_(len(geocodes) == 1)            
-
-        def testPostalAddressWithSuffixOnNumberStreetName(self):
-            q = '4550 ne 15th'
-            geocodes = self._get(q)
-            self.assert_(len(geocodes) == 1)            
-
-        def testPostalAddressNoState(self):
-            q = '4408 se stark'
-            geocodes = self._get(q)
-            self.assert_(len(geocodes) == 1)
-            
-        def testPostalAddressNoState(self):
-            q = '4408 se stark, or'
-            geocodes = self._get(q)
-            self.assert_(len(geocodes) == 1)
-
-        def testPostalAddressAllPartsNoCommas(self):
-            q = '4408 se stark st oregon 97215'
-            geocodes = self._get(q)
-            self.assert_(len(geocodes) == 1)
-            
-        def testPostalAddressBadState(self):
-            q = '4408 se stark, wi'
-            self.assertRaises(AddressNotFoundError, self._get, q)
-
-        def testPostalAddressBadState(self):
-            q = '300 bloofy lane'
-            self.assertRaises(AddressNotFoundError, self._get, q)
-
-        def testEdgeAddress(self):
-            q = '633 1651'
-            geocodes = self._get(q)
-            self.assert_(len(geocodes) == 1)
-            
-        def testEdgeAddressBadID(self):
-            q = '633 16510'
-            self.assertRaises(AddressNotFoundError, self._get, q)
-            
-        def testIntersectionAddress(self):
-            q = '44th and stark'
-            geocodes = self._get(q)
-            self.assert_(len(geocodes) == 1)
-            q = 'W Burnside St, Portland, OR 97204 & ' \
-                'NW 3rd Ave, Portland, OR 97209'
-            geocodes = self._get(q)
-            self.assert_(len(geocodes) == 1)
-            q = 'Burnside St, Portland, & 3rd Ave, Portland, OR 97209'
-            geocodes = self._get(q)
-            self.assert_(len(geocodes) == 1)
-            
-        def testIntersectionAddressMultipleMatches(self):
-            q = '3rd @ main'
-            self.assertRaises(MultipleMatchingAddressesError, self._get, q)
-            try:
-                self._get(q)
-            except MultipleMatchingAddressesError, e:
-                self.assert_(len(e.geocodes) == 10)
-
-        def testIntersectionAddressDisambiguatedMultipleMatch(self):
-            q = '3rd @ main 97024'
-            geocodes = self._get(q)
-            self.assert_(len(geocodes) == 1)
-
-        def testIntersectionAddressMidblock(self):
-            q = '48th & kelly'
-            geocodes = self._get(q)
-            self.assert_(len(geocodes) == 1)
-            
-        def testPointAddressWKT(self):
-            q = 'point(-120.432129 46.137977)'
-            geocodes = self._get(q)
-            self.assert_(len(geocodes) == 1)
-            q = 'point(-120.025635 45.379161)'
-            geocodes = self._get(q)
-            self.assert_(len(geocodes) == 1)
-        
-        def testPointAddressStringTuple(self):
-            q = '(-122.67334, 45.523307)'
-            geocodes = self._get(q)
-            self.assert_(len(geocodes) == 1)
-            q = '-122.67334, 45.523307'
-            geocodes = self._get(q)
-            self.assert_(len(geocodes) == 1)
-            
-        def testPointAddressKwargsString(self):
-            q = 'x=-120.432129, y=46.137977'
-            geocodes = self._get(q)
-            self.assert_(len(geocodes) == 1)
-
-        def testPointAddressPositionalKwargsString(self):
-            q = 'asldfj=-123.432129, aass=46.137977'
-            geocodes = self._get(q)
-            self.assert_(len(geocodes) == 1)
-
-        def testNodeAddress(self):
-            q = '1651'
-            geocodes = self._get(q)
-            self.assert_(len(geocodes) == 1)
-            
-        def testNodeAddressBadID(self):
-            q = '84700'
-            self.assertRaises(AddressNotFoundError, self._get, q)
-            
     unittest.main()

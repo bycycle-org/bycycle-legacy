@@ -47,7 +47,7 @@ dbf_fields = ('FNODE_', 'TNODE_',
 
 
 layer_fields = ('fnode_', 'tnode_',
-                'addr_f', 'addr_t', 'streetname_id', 'city_l_id', 'city_r_id',
+                'addr_f', 'addr_t', 'street_name_id', 'city_l_id', 'city_r_id',
                 'state_l_id', 'state_r_id', 'zipleft', 'ziprgt', 'wkt_geometry')
 attr_fields = ('oneway', 'cfcc', 'opdir')
 
@@ -88,7 +88,7 @@ def fixRaw():
 
     ## Add missing columns
     Q = 'ALTER TABLE raw ADD COLUMN %s'
-    cols = ('addr_f', 'addr_t', 'streetname_id', 'city_l_id', 'city_r_id',
+    cols = ('addr_f', 'addr_t', 'street_name_id', 'city_l_id', 'city_r_id',
             'state_l_id', 'state_r_id', 'code')
     for col in cols:
         execute(Q % col)
@@ -129,7 +129,7 @@ def fixRaw():
 
     cols = ('fnode_', 'tnode_',
             'addr_f', 'addr_t', 'leftadd1', 'leftadd2', 'rgtadd1', 'rgtadd2',
-            'streetname_id', 'city_l_id', 'city_r_id', 'zipleft', 'ziprgt'
+            'street_name_id', 'city_l_id', 'city_r_id', 'zipleft', 'ziprgt'
             #'tlid', 'lanes', 'adt', 'spd',
             #'oneway', 'opdir'
             )
@@ -263,7 +263,7 @@ def unifyAddressRanges():
 
 def transferStreetNames():
     """Transfer street names to their own table."""
-    Q = 'INSERT INTO streetname (prefix, name, type, suffix) '\
+    Q = 'INSERT INTO street_name (prefix, name, type, suffix) '\
         'SELECT DISTINCT prefix, name, type, suffix FROM raw'
     execute(Q)
     con.commit()
@@ -275,13 +275,13 @@ def updateRawStreetNameIds():
     execute(Q)
     rows = cur.fetchall()
     # Index each street name ID by its street name
-    # {(stname)=>streetname_id}
+    # {(stname)=>street_name_id}
     stnames = {}
-    Q = 'SELECT rowid, prefix, name, type, suffix FROM streetname'
+    Q = 'SELECT rowid, prefix, name, type, suffix FROM street_name'
     execute(Q)
     for row in cur.fetchall():
         stnames[(row[1],row[2],row[3],row[4])] = row[0]
-    # Index raw row IDs by their street name ID {streetname_id=>[row IDs]}
+    # Index raw row IDs by their street name ID {street_name_id=>[row IDs]}
     stid_rawids = {}
     Q  = 'SELECT rowid, prefix, name, type, suffix FROM raw'
     execute(Q)
@@ -290,7 +290,7 @@ def updateRawStreetNameIds():
         if stid in stid_rawids: stid_rawids[stid].append(row[0])
         else: stid_rawids[stid] = [row[0]]
     # Iterate over street name IDs and set street name IDs of raw records
-    Q = 'UPDATE raw SET streetname_id=%s WHERE rowid IN %s'
+    Q = 'UPDATE raw SET street_name_id=%s WHERE rowid IN %s'
     met = meter.Meter()
     met.setNumberOfItems(len(stid_rawids))
     met.startTimer()
@@ -394,7 +394,7 @@ def addIndexes():
           'CREATE INDEX db.addr_t on layer_street (addr_t)',
           'CREATE INDEX db.node_f_id on layer_street (node_f_id)',
           'CREATE INDEX db.node_t_id on layer_street (node_t_id)',
-          'CREATE INDEX db.stid on layer_street (streetname_id)',
+          'CREATE INDEX db.stid on layer_street (street_name_id)',
           'VACUUM',
          # 'ANALYZE',
           )

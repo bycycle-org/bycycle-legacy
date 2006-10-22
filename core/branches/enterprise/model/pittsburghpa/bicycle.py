@@ -70,7 +70,7 @@ class Mode(pittsburghpa.Mode):
         if elevt >0 and elevf > 0 and length > .00005: #length !=0:
             slope = abs(elevt -elevf)/(length * 100000.0) * 1300 #1100 #9000
             
-        ix_sn = edge_attrs[indices["streetname_id"]]
+        ix_sn = edge_attrs[indices["street_name_id"]]
         
         hours = length / self.mph
 
@@ -105,7 +105,7 @@ class Mode(pittsburghpa.Mode):
 
         try:
             # Penalize edge if it has different street name from previous edge
-            prev_ix_sn = prev_edge_attrs[indices["streetname_id"]]
+            prev_ix_sn = prev_edge_attrs[indices["street_name_id"]]
             if ix_sn != prev_ix_sn:
                 hours += .0075555555555555  #.0055555555555555        
         except TypeError:
