@@ -1,23 +1,32 @@
-"""$Id$
+###########################################################################
+# $Id$
+# Created 2004-12-28.
+#
+# Path finding functions.
+#
+# Copyright (C) 2006 Wyatt Baldwin, byCycle.org <wyatt@bycycle.org>.
+# All rights reserved.
+#
+# For terms of use and warranty details, please see the LICENSE file included
+# in the top level of this distribution. This software is provided AS IS with
+# NO WARRANTY OF ANY KIND.
 
-Dijkstra/A* path finding functions.
 
-Copyright (C) 2006 Wyatt Baldwin, byCycle.org <wyatt@bycycle.org>. All rights 
-reserved. Please see the LICENSE file included in the distribution. The license 
-is also available online at http://bycycle.org/tripplanner/license.txt or by 
-writing to license@bycycle.org.
+"""Path finding functions.
 
 TODO:
- - Write a function to do All Pairs Shortest Paths
+    - Write a function to do All Pairs Shortest Paths
 
 """
-infinity = 2147483647
+# TODO: use Fibonnaci heap instead of built-in!
+import heapq
 
-class SingleSourceShortestPathsError(Exception):
-    pass
 
-class SingleSourceShortestPathsNoPathError(SingleSourceShortestPathsError):
-    pass
+infinity = 2**31 - 1  # Largest signed int
+
+
+class SingleSourceShortestPathsError(Exception): pass
+class SingleSourceShortestPathsNoPathError(SingleSourceShortestPathsError): pass
 
 
 def singleSourceShortestPaths(G, s, d=None,
@@ -25,45 +34,45 @@ def singleSourceShortestPaths(G, s, d=None,
                               heuristicFunction=None):
     """Dijkstra with a few twists
 
-    Args:
-    G -- adjacency matrix
-    (# nodes
-     (((v, e), (v, e), (v, e)),
-      ((v, e), (v, e)),
-      .
-      .
-      .
-     ),
-     # edges
-     ((a, b, c, d),
-      (a, b, c, d),
-      .
-      .
-      .
-     )
-    )
+    ``G`` -- Graph of sorts
+        (# Adjacency list
+            (((v, e), (v, e), (v, e)),
+             ((v, e), (v, e)),
+             .
+             .
+             .
+            ),
+         # Edge attributes
+             ((a, b, c, d),
+              (a, b, c, d),
+              .
+              .
+              .
+             )
+        )
 
-         edges _must_ contain the weight entry first; it may also contain
-         other attributes of the edge. These other attributes can be used to
-         determine a different weight for the edge.
-    s -- start node ID
-    d -- destination node ID
-         If d is None (default) the algorithm is run normally
-         If d has a value, the algorithm is stopped when a path to
-         d has been found
-    weightFunction -- function to apply to each edge to modify its base weight
-    heuristicFunction -- function to apply at each iteration to help the
-                         poor dumb machine try to move toward the destination
-                         instead of just any and every which way
+        Edge attibute list _must_ contain the weight entry first; they may
+        also contain other attributes of the edge. These other attributes can
+        be used to determine a different weight for the edge.
+         
+    ``s`` -- Start node ID
+    
+    ``d`` -- Destination node ID. If d is None (default) the algorithm is run
+    normally. If d has a value, the algorithm is stopped when a path to d has
+    been found.
 
-    Return:
-    P -- predecessor list {v => (u, e), ...}
-    W -- the weights of the paths from s to all v in G
+    ``weightFunction`` -- Function to apply to each edge to modify its base
+    weight.
+
+    ``heuristicFunction`` -- A function to apply at each iteration to help the
+    poor dumb machine try to move toward the destination instead of just any
+    and every which way.
+
+    return
+        `list` -- Predecessor list {v => (u, e), ...}
+        `list` -- The weights of the paths from s to all v in G
 
     """
-    # TODO: use Fibonnaci heap instead of built-in!
-    import heapq
-
     # weights of shortest paths from s to all v (ID of v => w)
     W = {s: 0, d: infinity}
     # partially sorted list of nodes w/ known weights from s
@@ -165,20 +174,20 @@ def singleSourceShortestPaths(G, s, d=None,
 def extractShortestPathFromPredecessorList(P, d):
     """Extract ordered lists of nodes, edges, weights from predecessor list.
 
-    @param P Predecessor list {u: (v, e), ...}
-             u's predecessor is v via segment e
-    @param d Destination node ID. We find the path from
+    ``P`` -- Predecessor list {u: (v, e), ...} u's predecessor is v via e
+    
+    ``d`` -- Destination node ID
 
-    @return
-    V A list of the node IDs on the lightest path from start to d
-    E A list of the edge IDs on the lightest path from start to d
-    W A list of the weights of the segments on the lightest path from s to d
-    w The total weight of the segments with IDs in E
+    return
+        `list` -- The node IDs on the lightest path from start to d
+        `list` -- The edge IDs on the lightest path from start to d
+        `list` -- The weights of the edges on the shortest path from s to d
+        `int` -- The total weight of the segments with IDs in E
 
     """
-    V = [] # the nodes on the shortest path from s to d
-    E = [] # the edges on the shortest path from s to d
-    W = [] # the weights of the segments on the shortest route from s to d
+    V = []  # Node IDs on the shortest path from s to d
+    E = []  # Edge IDs on the shortest path from s to d
+    W = []  # Weights of the edges on the shortest path from s to d
     u = d
     while u in P:
         predecessor_data = P[u]
@@ -188,7 +197,7 @@ def extractShortestPathFromPredecessorList(P, d):
         E.append(e)
         W.append(attrs[0])
         u = predecessor_data[0]
-    V.append(u)  # Insert ID of starting node
+    V.append(u)  # Start node
     V.reverse(); E.reverse(); W.reverse()
     w = reduce(lambda x, y: x + y, W)
     return V, E, W, w
@@ -198,17 +207,19 @@ def findPath(G, s, d, weightFunction=None, heuristicFunction=None):
     """Find the shortest path from s to d in G.
 
     This function just combines finding the predecessor list with extracting
-    the nodes from that list in the proper (path) order, 'cause what you want
-    is probably that ordered list.
+    the node IDs from that list in the proper (path) order, 'cause what you
+    want is probably that ordered list.
 
-    @param G Graph
-    @param s Start node ID
-    @param d Destination node ID
-    @return -- V, E, W, w, which are the nodes, edges, weights and total
-               weight of the route from u to v
-
+    return
+        `list` -- The node IDs on the lightest path from start to d
+        `list` -- The edge IDs on the lightest path from start to d
+        `list` -- The weights of the edges on the shortest path from s to d
+        `int` -- The total weight of the segments with IDs in E
+    
     """
-    P, W = singleSourceShortestPaths(G, s, d,
-                                     weightFunction=weightFunction,
-                                     heuristicFunction=heuristicFunction)
+    P, W = singleSourceShortestPaths(
+        G, s, d,
+        weightFunction=weightFunction,
+        heuristicFunction=heuristicFunction
+    )
     return extractShortestPathFromPredecessorList(P, d)

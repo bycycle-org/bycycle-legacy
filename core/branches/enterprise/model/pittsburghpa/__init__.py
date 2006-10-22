@@ -95,6 +95,6 @@ if __name__ == '__main__':
 
         #NEED TO CORRECT
     #    attrs = ('length', 'cfcc',
-     #                  'streetname_id', 'pqi', 'no_lanes',#,
+     #                  'street_name_id', 'pqi', 'no_lanes',#,
       #           'bpType', 'bikeability',
        #              'slope',

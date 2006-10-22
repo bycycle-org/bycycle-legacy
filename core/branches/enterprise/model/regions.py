@@ -1,109 +1,59 @@
-"""$Id$
+###########################################################################
+# $Id$
+# Created 2006-08-??.
+#
+# Address Normalization service.
+#
+# Copyright (C) 2006 Wyatt Baldwin, byCycle.org <wyatt@bycycle.org>.
+# All rights reserved.
+#
+# For terms of use and warranty details, please see the LICENSE file included
+# in the top level of this distribution. This software is provided AS IS with
+# NO WARRANTY OF ANY KIND.
 
-Description goes here.
 
-Copyright (C) 2006 Wyatt Baldwin, byCycle.org <wyatt@bycycle.org>
+from byCycle.model.region import Region
 
-All rights reserved.
 
-TERMS AND CONDITIONS FOR USE, MODIFICATION, DISTRIBUTION
-
-1. The software may be used and modified by individuals for noncommercial, 
-private use.
-
-2. The software may not be used for any commercial purpose.
-
-3. The software may not be made available as a service to the public or within 
-any organization.
-
-4. The software may not be redistributed.
-
-THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND 
-ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED 
-WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE 
-DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR 
-ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES 
-(INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; 
-LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON 
-ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT 
-(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS 
-SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-
-"""
-unknown = None
+unknown_region = None
 portlandor = 'portlandor'
 milwaukeewi = 'milwaukeewi'
 pittsburghpa = 'pittsburghpa'
+seattlewa = 'seattlewa'
 
-states_cities = {
-    'or': {'columbia': portlandor,
-           'washington': portlandor,
-           'multnomah': portlandor,
-           'portland': portlandor,
-           'banks': portlandor,
-           'vancouver': portlandor,
-           'north plains': portlandor,
-           'hillsboro': portlandor,
-           'gresham': portlandor,
-           'fairview': portlandor,
-           'maywood park': portlandor,
-           'forest grove': portlandor,
-           'troutdale': portlandor,
-           'beaverton': portlandor,
-           'wood village': portlandor,
-           'cornelius': portlandor,
-           'hood river': portlandor,
-           'milwaukie': portlandor,
-           'clackamas': portlandor,
-           'happy valley': portlandor,
-           'tigard': portlandor,
-           'gaston': portlandor,
-           'yamhill': portlandor,
-           'lake oswego': portlandor,
-           'king city': portlandor,
-           'sandy': portlandor,
-           'johnson city': portlandor,
-           'durham': portlandor,
-           'tualitin': portlandor,
-           'gladstone': portlandor,
-           'west linn': portlandor,
-           'rivergrove': portlandor,
-           'oregon city': portlandor,
-           'sherwood': portlandor,
-           'wilsonville': portlandor,
-           'estacada': portlandor,
-           'canby': portlandor,
-           'barlow': portlandor,
-           'molalla': portlandor,
-           'marion': portlandor,
-           },
-    
-    'wi': {'bayside': milwaukeewi,
-           'brown deer': milwaukeewi,
-           'cudahy': milwaukeewi,
-           'fox point': milwaukeewi,
-           'franklin': milwaukeewi,
-           'glendale': milwaukeewi,
-           'greendale': milwaukeewi,
-           'greenfield': milwaukeewi,
-           'hales corners': milwaukeewi,
-           'milwaukee': milwaukeewi,
-           'oak creek': milwaukeewi,
-           'river hills': milwaukeewi,
-           'saint francis': milwaukeewi,
-           'shorewood': milwaukeewi,
-           'south milwaukee': milwaukeewi,
-           'wauwatosa': milwaukeewi,
-           'west allis': milwaukeewi,
-           'west milwaukee': milwaukeewi,
-           'whitefish bay': milwaukeewi,
-    },
 
-    'pa': {'pittsburgh': pittsburghpa
-    },
-    
-    }
+region_keys = (portlandor, milwaukeewi, pittsburghpa, seattlewa)
+regions = dict([(r, 1) for r in region_keys])
 
+
+states = ('or', 'pa', 'wa', 'wi')
+states_cities = dict([(s, {}) for s in states])
+states_cities['pa']['pittsburgh'] = pittsburghpa
+states_cities['wa']['vancouver'] = portlandor
+states_cities['wa']['seattle'] = seattlewa
+
+portlandor_cities = (
+    'columbia', 'washington', 'multnomah', 'portland', 'banks',
+    'north plains', 'hillsboro', 'gresham', 'fairview', 'maywood park',
+    'forest grove', 'troutdale', 'beaverton', 'wood village', 'cornelius',
+    'hood river', 'milwaukie', 'clackamas', 'happy valley', 'tigard', 'gaston',
+    'yamhill', 'lake oswego', 'king city', 'sandy', 'johnson city', 'durham',
+    'tualitin', 'gladstone', 'west linn', 'rivergrove', 'oregon city',
+    'sherwood', 'wilsonville', 'estacada', 'canby', 'barlow', 'molalla',
+    'marion'
+    )
+states_cities['or'].update(dict([(c, portlandor) for c in portlandor_cities]))
+
+milwaukeewi_cities = (
+    'bayside', 'brown deer', 'cudahy', 'fox point', 'franklin', 'glendale',
+    'greendale', 'greenfield', 'hales corners', 'milwaukee', 'oak creek',
+    'river hills', 'saint francis', 'shorewood', 'south milwaukee',
+    'wauwatosa', 'west allis', 'west milwaukee', 'whitefish bay'
+)
+states_cities['wi'].update(dict([(c, milwaukeewi) for c in milwaukeewi_cities]))
+
+
+# city => list of regions with city
 cities = {}
 for state in states_cities:
     cities_in_state = states_cities[state]
@@ -114,29 +64,85 @@ for state in states_cities:
         else:
             cities[city] = [region]
 
-zip_codes = {
-    97206: portlandor,
-    97217: portlandor,
-    }
 
-region_aliases = {
-    'mil': milwaukeewi,
-    'milwaukee': milwaukeewi,
-    'pgh': pittsburghpa,
-    'metro': portlandor,
-    'pdx': portlandor,
-    'por': portlandor,
-    'port': portlandor,
-    'portland': portlandor,
-    }
+# zip code => region key
+zip_codes = {}
 
-def getRegion(region):
-    """Find the proper region name for the input region."""
-    region = region.strip().lower()
-    region = region.replace(',', '')
+portlandor_zip_codes = (
+    97002, 97004, 97005, 97006, 97007, 97008, 97009, 97010, 97011, 97013,
+    97014, 97015, 97017, 97019, 97022, 97023, 97024, 97027, 97028, 97030,
+    97032, 97034, 97035, 97036, 97038, 97042, 97045, 97049, 97055, 97056,
+    97060, 97062, 97064, 97067, 97068, 97070, 97071, 97080, 97106, 97109,
+    97113, 97116, 97117, 97119, 97123, 97124, 97125, 97132, 97133, 97140,
+    97141, 97144, 97201, 97202, 97203, 97204, 97205, 97206, 97209, 97210,
+    97211, 97212, 97213, 97214, 97215, 97216, 97217, 97218, 97219, 97220,
+    97221, 97222, 97223, 97224, 97225, 97227, 97229, 97230, 97231, 97232,
+    97233, 97236, 97239, 97258, 97266, 97267, 97358, 97362, 97375, 97761,
+    98660
+)
+zip_codes.update(dict([(zc, portlandor) for zc in portlandor_zip_codes]))
+
+
+# region key alias => region key
+_aliases = ('all', '', None)
+region_aliases = dict([(a, 'all') for a in _aliases])
+
+_aliases = (milwaukeewi, 'mil', 'milwaukee')
+region_aliases.update(dict([(a, milwaukeewi) for a in _aliases]))
+
+_aliases = (portlandor, 'metro', 'pdx', 'portland')
+region_aliases.update(dict([(a, portlandor) for a in _aliases]))
+
+_aliases = (pittsburghpa, 'pgh')
+region_aliases.update(dict([(a, pittsburghpa) for a in _aliases]))
+
+
+def getRegionKey(region):
+    """Find the proper region key for ``region``.
+
+    ``region`` `string` -- A region proper name, alias, or key.
+
+    return `string` -- Lowercase region key.
+        
+    raise ValueError -- ``region`` is not a known region, alias, or key.
+
+    """
+    region = (region or '').strip()
     region = ''.join(region.split())
+    chars = (',', '.', '-')
+    for _c in chars:
+        region = region.replace(_c, '')
+    region = region.lower()
     try:
         region = region_aliases[region]
     except KeyError:
-        pass
+        raise ValueError('Could not determine region key for "%s"' % region)
     return region
+
+
+def getRegion(region):
+    """Get `Region` for ``region``.
+
+    If ``region`` is a `Region` or `None`, just return ``region``; if it's a 
+    valid region key, create a new `Region`.
+
+    ``region`` `Region` | `string` | `None`
+        Either a `Region` object or a region key. 
+    
+    return `Region` | None
+
+    """
+    if region:
+        if isinstance(region, Region):
+            _region = region
+        else:
+            region_key = getRegionKey(region)
+            if region_key == 'all':
+                _region = None
+            else:
+                path = 'byCycle.model.%s' % region_key
+                region_module = __import__(path, globals(), locals(), [''])
+                _region = region_module.Region()
+    else:
+        _region = None
+    return _region

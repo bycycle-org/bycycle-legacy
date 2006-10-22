@@ -1,590 +1,684 @@
-"""$Id$
+###########################################################################
+# $Id$
+# Created 2004-12-28.
+#
+# Route service.
+#
+# Copyright (C) 2006 Wyatt Baldwin, byCycle.org <wyatt@bycycle.org>.
+# All rights reserved.
+#
+# For terms of use and warranty details, please see the LICENSE file included
+# in the top level of this distribution. This software is provided AS IS with
+# NO WARRANTY OF ANY KIND.
 
-Route Service Module (28 Dec 2004)
 
-Copyright (C) 2006 Wyatt Baldwin, byCycle.org <wyatt@bycycle.org>. All rights 
-reserved. Please see the LICENSE file included in the distribution. The
-license is also available online at http://bycycle.org/tripplanner/license.txt
-or by writing to license@bycycle.org.
+"""Provides route finding via the `query` method of the `Service` class.
+
+Currently routing can only be done between two points. Some things have been
+changed for eventual support for routing between more than two points; there's
+still more to do though.
+
+Here's what the route service does:
+
+- Checks for at least two waypoints.
+
+- Checks that none of the waypoints are blank.
+
+- Geocodes each waypoint in the region specified by the user. The region is 
+  specified either explicitly or by including the city/state or zip code.
+
+- Creates a travel mode that provides a cost function to the single-source
+  shortest-paths algorithm. The default travel mode is bicycle. Other modes 
+  are supported, but none have been implemented.
+
+- Fetches the adjacency matrix for the region.
+
+- Inserts extra nodes and segments into the adjacency matrix for each geocode
+  that is within an edge (as opposed to being at a node).
+
+- Attempts to find a route between the geocodes, in the order they were
+  given by the user.
+
+- Returns a `Route` object that includes turn-by-turn directions, distance,
+  and other information about the route found.
 
 """
-import time
+from cartography.spatial.geometry import LineString
+
 from byCycle.lib import gis
-from byCycle.services import excs
-from byCycle.model import address, intersection
+
+from byCycle.services.exceptions import ByCycleError, InputError
+
+from byCycle.model.address import *
+from byCycle.model.geocode import *
+from byCycle.model.route import *
+from byCycle.model.domain import Node
+
+from byCycle import services
 from byCycle.services import geocode
-import sssp
+from byCycle.services.route import sssp
 
 
-class RouteError(excs.ByCycleError):
+###########################################################################
+class RouteError(ByCycleError):
     def __init__(self, desc='Route Error'):
-        excs.ByCycleError.__init__(self, desc)
-    def __str__(self):
-        return self.description
+        ByCycleError.__init__(self, desc)
 
 class NoRouteError(RouteError):
-    def __init__(self, desc='No Route Error'):
+    def __init__(self, desc='No Route'):
         RouteError.__init__(self, desc=desc)
 
 class MultipleMatchingAddressesError(RouteError):
-    def __init__(self, desc='Multiple Matches Found',
-                 start_choices=None, end_choices=None):
-        print start_choices
-        print end_choices
-        self.start_choices = start_choices
-        self.end_choices = end_choices
+    def __init__(self, desc='Multiple Matches Found', choices=None):
+        if choices is not None:
+            self.start_choices = choices[0]
+            self.end_choices = choices[1]
         RouteError.__init__(self, desc=desc)
 
 
-def get(q, region='', tmode='bicycle', pref='', return_messages=False):
-    """Get a route for the addresses in the waypoint list q.
+###########################################################################
+class Service(services.Service):
+    """Route-finding Service."""
+
+    name = 'route'
     
-    @param region: Geographic region to find the input addresses and route in
-    @type region: string
-    @param tmode The travel mode (currently only 'bicycle' is supported)
-    @type tmode: string
-    @param q A list of addresses (currently only 2 supported)
-    @type q: sequence<string>
-    @param pref:  User's route preference
-    @type pref: string
+    #----------------------------------------------------------------------
+    def __init__(self, region=None, dbh=None):
+        """
 
-    @return: Route
-    @rtype: dict
-    
-    @raise excs.InputError: No start and/or end address
-    @raise MultipleMatchingAddressesError: Multiple geocode matches for start 
-      and/or end address
-    @raise NoRouteError: No route found between start and end addresses
+        ``region`` `Region` | `string` -- Region key
 
-    TODO: 
-      - Make less monolithic
-      - Make logging & timing orthogonal to get (it's all cluttered up with
-        logging & timing statements
-      - Support more than 2 waypoints
-      
-    """
-    st_tot = time.time()
-    messages, errors = [], []
+        """
+        services.Service.__init__(self, region=region, dbh=dbh)
 
-    #-- Do basic input check
-    
-    if not q:
-        errors.append('Please enter start and end addresses')
-    else:
-        try:
-            start = q[0].strip()
-            if not start:
-                raise IndexError
-        except IndexError:
-            errors.append('Please enter a start address')
-        try:
-            end = q[1].strip()
-            if not end:
-                raise IndexError
-        except IndexError:
-            errors.append('Please enter an end address')
+    #----------------------------------------------------------------------
+    def query(self, q, region=None, dbh=None, tmode='bicycle', pref=''):
+        """Get a route for all the addresses in ``q`` [0 ==> 1 ==> 2 ...].
 
-    # Let multiple input errors fall through to here
-    if errors:
-        raise excs.InputError(errors)
+        ``q`` `list` -- A list of addresses to be normalized, geocoded, and
+        routed between in the given ``region``.
 
-    #-- Get geocodes matching start and end addresses
-    
-    start_choices = {'choices': [], 'original': start}
-    end_choices = {'choices': [], 'original': end}
-             
-    st = time.time()
-    try:
-        start_geocodes = geocode.get(q=start, region=region)
-    except geocode.AddressNotFoundError, e:
-        errors.append(e.description)
-    except geocode.MultipleMatchingAddressesError, e:
-        start_choices['choices'] = e.geocodes
-    messages.append('Time to get from address: %s' % (time.time() - st))
-    
-    st = time.time()
-    try:
-        end_geocodes = geocode.get(q=end, region=region)
-    except geocode.AddressNotFoundError, e:
-        errors.append(e.description)
-    except geocode.MultipleMatchingAddressesError, e:
-        end_choices['choices'] = e.geocodes
-    messages.append('Time to get to address: %s' % (time.time() - st))
+        ``region`` `Region` | `string`
+        ``dbh`` `DB`
+            See Service base class for details.
 
-    # Let multiple multiple-match errors fall through to here
-    if start_choices['choices'] or end_choices['choices']:
-        if not start_choices['choices']:
-            start_choices = None
-        if not end_choices['choices']:
-            end_choices = None        
-        raise MultipleMatchingAddressesError(start_choices=start_choices,
-                                             end_choices=end_choices)
+        return `Route` -- A `Route` between all the addresses in ``q``.
 
-    # Precise (enough) addresses were entered
-    start_geocode, end_geocode = start_geocodes[0], end_geocodes[0]
+        raise `InputError` -- Less than 2 addresses given or an address is
+        blank.
 
-    # TODO: Make this check actually work
-    if start_geocode == end_geocode:
-        raise excs.InputError('From and To addresses appear to be the same')
+        raise `InputError`, `ValueError` -- Some are raised in the normaddr
+        and geocode queries. Look there for details.
 
+        raise `AddressNotFoundError` -- Any of the addresses in ``q`` can't be
+        geocoded.
 
-    # The mode is a combination of the data/travel modes
-    st = time.time()
-    path = 'byCycle.model.%s.%s'
-    module = __import__(path % (region, tmode), globals(), locals(), [''])
-    mode = module.Mode(pref=pref)
-    messages.append('Time to instantiate mode: %s' % (time.time() - st))
+        raise `MultipleMatchingAddressesError` -- Multiple address found that
+        match any of the addresses in ``q``
 
-    #-- Made it through that maze--now fetch the main adjacency matrix, G
-    
-    st = time.time()
-    G = mode.getAdjacencyMatrix()
-    if not G:
-        raise NoRouteError('Graph is empty')
-    messages.append('Time to get G: %s' % (time.time() - st))
+        raise `NoRouteError` -- No route found between start and end
+        addresses.
 
-    #-- Get or synthesize the start and end intersections
-    
-    def __getIntersectionForGeocode(geocode, id, eid1, eid2):
-        """Get or synthesize intersection for geocode.
+        """
+        # Do common query initialization
+        self._beforeQuery(q, region=region, dbh=dbh)
 
-        If the geocode is at an intersection, just return the intersection;
-        otherwise, synthesize a mid-block intersection.
+        ### Process input waypoints (basic error checking)
+
+        waypoints = self._getWaypoints(q)
+
+        ### Get geocodes matching waypoints
+
+        geocodes = self._getGeocodes(waypoints)
+        # _getGeocodes may also create self.region and self.dbh
+
+        ### Get weight function for specified travel mode
+
+        path = 'byCycle.model.%s.%s' % (self.region.key, tmode)
+        module = __import__(path, globals(), locals(), [''])
+        mode = module.TravelMode(self.dbh, pref=pref)
+        getEdgeWeight = mode.getEdgeWeight
+        getHeuristicWeight = mode.getHeuristicWeight
         
-        @param id Shared node ID at split
-        @param eid1 Segment id for node-->id segment
-        @param eid2 Segment id for id-->other_node segment
-        @return An intersection object at at the split with a node ID of id
+        ### Fetch the adjacency matrix
+
+        G = self.dbh.getAdjacencyMatrix()
+        if not G:
+            raise NoRouteError('Graph is empty')
+        nodes, edges = G['nodes'], G['edges']
+
+        ### Get paths between adjacent waypoints
+
+        paths_info = []
+        for s, e in zip(geocodes[:-1], geocodes[1:]):
+            # path_info := node_ids, edge_ids, start_node, end_node, split_edges
+            path_info = self._getPathBetweenGeocodes(
+                s, e, G, nodes, edges, getEdgeWeight, getHeuristicWeight
+            )
+            paths_info.append(path_info)
+
+        ### Convert paths to `Route`s
+
+        routes = []
+        data = zip(
+            waypoints[:-1], waypoints[1:], 
+            geocodes[:-1], geocodes[1:], 
+            paths_info
+        )
+        # for start/end original, start/end geocode, path...
+        for so, eo, sg, eg, path_info in data:
+            # route_info := directions, linestring, distance
+            route_info = self._makeDirectionsForPath(*path_info)
+            route = Route(so, eo, sg, eg, *route_info)
+            routes.append(route)
+    
+        return routes
+        
+    #----------------------------------------------------------------------
+    def _getWaypoints(self, q):
+        """Check the waypoints in ``q`` and return a new list of waypoints.
+
+        ``q`` `sequence` -- A sequence of waypoint strings.
+
+        return `list` of `str` -- A list of waypoints with leading & trailing
+        whitespace removed.
+
+        raise `InputError` -- There are less than 2 waypoints or any of the
+        waypoints is blank (an empty string).
+
+        """
+        errors = []
+        waypoints = [(w or '').strip() for w in q]
+        if len(waypoints) < 2:
+            # Make sure there are at least two waypoints
+            errors.append('Please enter start and end addresses')
+        else:
+            # Make sure waypoints are not blank
+            if not waypoints[0]:
+                errors.append('Please enter a start address')
+            if not waypoints[-1]:
+                errors.append('Please enter an end address')
+            for w in waypoints:
+                if not w:
+                    errors.append('Addresses cannot be blank')
+                    break
+        # Let multiple input errors fall through to here
+        if errors:
+            raise InputError(errors)
+        return waypoints
+
+    #----------------------------------------------------------------------
+    def _getGeocodes(self, waypoints):
+        """Return a `list` of `Geocode`s associated with each ``waypoint``."""
+        geocode_service = geocode.Service(region=self.region, dbh=self.dbh)
+        geocodes = []
+        input_errors = []
+        multiple_match_found = False
+        choices = []
+        for w in waypoints:
+            try:
+                geocode_ = geocode_service.query(w)
+            except geocode.AddressNotFoundError, e:
+                input_errors.append(e.description)
+            except geocode.MultipleMatchingAddressesError, e:
+                multiple_match_found = True
+                choices.append({'choices': e.geocodes, 'original': w})
+            else:
+                geocodes.append(geocode_)
+                choices.append(None)
+                if not self.region and geocode_service.region:
+                    self.region = geocode_service.region
+        if input_errors:
+            raise InputError(input_errors)
+        elif multiple_match_found:
+            raise MultipleMatchingAddressesError(choices=choices)
+        return geocodes
+
+    #----------------------------------------------------------------------
+    def _getPathBetweenGeocodes(self, 
+                                start_geocode, end_geocode, 
+                                G, nodes, edges, 
+                                getEdgeWeight, getHeuristicWeight):
+        """Try to find a path between the start and end geocodes.
+        
+        A path in this case is a set of ordered node and edge IDs.
+        
+        ``start_geocode`` `Geocode` -- An object that has a geographic
+        coordinate and a network ID. The network ID is what we need here.
+            
+        ``end_geocode`` `Geocode` -- Same as ``start_geocode`` but for the
+        end of the path.
+
+        ``G`` `dict` -- The adjacency matrix to send to the path-finding 
+        algorithm.
+
+        ``nodes`` `dict` -- Technically, this is the adjacency matrix, and
+        it's really an adjacency list.
+        
+        ``edges`` `dict` -- Edge ID => edge attributes.
+
+        ``getEdgeWeight``
+        
+        ``getHeuristicWeight``
+        
+        return `tuple` (node IDs, edge IDs, split edges)
+        
+        TODO: Revert G to original state after each run
         
         """
-        try:
-            # Geocode is at an intersection--easy case
-            i = geocode.intersection
-        except AttributeError:
-            # Geocode is in a segment--hard case
-            # We have to generate an intersection in the middle of the segment
-            # and add data to G
-            #
-            # Split the geocode's segment
-            seg = geocode.segment
-            num = geocode.address.number
-            fn_seg, nt_seg = seg.splitAtNum(num, eid1, eid2, id)
-            split_segs[eid1], split_segs[eid2] = fn_seg, nt_seg
-            #
-            # Create an intersection at the split
-            st = seg.street
-            st.number = num
-            data = {'id': id,
-                    'cross_streets': [st],
-                    'xy': nt_seg.linestring[0]}
-            i = intersection.Intersection(data)
-            #
-            # Update G's nodes
-            node_f_id, node_t_id = seg.node_f_id, seg.node_t_id
-            __updateNodes(node_f_id, id, node_t_id, eid1, eid2)
-            __updateNodes(node_t_id, id, node_f_id, eid2, eid1)
-            #
-            # Update G's edges
-            eid = seg.id
-            edges[eid1] = [fn_seg.getWeight()] + list(edges[eid][1:])
-            edges[eid2] = [nt_seg.getWeight()] + list(edges[eid][1:])
-        return i
-    
-    def __updateNodes(id1, id, id2, eid1, eid2):
-        try:
-            nodes[id1][id2]
-        except KeyError:
-            # id1 does NOT go to id2--nothing to do
-            pass
-        else:
-            # id1 DOES go to id2
-            if id not in nodes: nodes[id] = {}
-            nodes[id1] = nodes[id1]
-            nodes[id1][id] = eid1
-            nodes[id][id2] = eid2
-            # Override original connection so it won't be used
-            nodes[id1][id2] = None  
-            
-    split_segs = {}
-    nodes, edges = G['nodes'], G['edges']
+        if start_geocode == end_geocode:
+            raise InputError('Start and end addresses appear to be the same')
 
-    st = time.time()
-    fint = __getIntersectionForGeocode(start_geocode, -1, -1, -2)
-    messages.append('Time to get from intersection: %s' % (time.time() - st))
-
-    st = time.time()
-    tint = __getIntersectionForGeocode(end_geocode, -2, -3, -4)
-    messages.append('Time to get to intersection: %s' % (time.time() - st))
-
-    node_f_id, node_t_id = fint.id, tint.id
-    
-    #-- Try to find a path
-    
-    st = time.time()
-    try:
-        V, E, W, w = sssp.findPath(G, node_f_id, node_t_id,
-                                   weightFunction=mode.getEdgeWeight,
-                                   heuristicFunction=None)
-    except sssp.SingleSourceShortestPathsNoPathError:
-        raise NoRouteError('Unable to find a route from "%s" to "%s"' % \
-                           (str(start_geocode).replace('\n', ', '),
-                            str(end_geocode).replace('\n', ', ')))
-    messages.append('Time to findPath: %s' % (time.time() - st))
-
-    #-- A path was found
-    
-    # Get intersections and segments along path
-    st = time.time()
-    I = mode.getIntersectionsById(V)
-    if I[0] is None: I[0] = fint   # When from is in a segment
-    if I[-1] is None: I[-1] = tint # When to is in a segment
-    messages.append('Time to fetch ints by ID %s' % (time.time()-st))
-
-    st = time.time()
-    S = mode.getSegmentsById(E)
-    if S[0] is None: S[0] = split_segs[E[0]]    # When from is in a segment
-    if S[-1] is None: S[-1] = split_segs[E[-1]] # When to is in a segment
-    messages.append('Time to fetch segs by ID %s' % (time.time()-st))
-
-    #-- Convert route data to output format
-    
-    st = time.time()
-    directions = makeDirections(I, S)
-    messages.append('Time to make directions: %s' % (time.time() - st))
-    route = {
-        'start': {'geocode': start_geocode,
-               'original': start,
-               },
-        'end': {'geocode': end_geocode,
-               'original': end,
-               },
-        'linestring': [],
-        'directions': [],
-        'distance': {},
-        'messages': [],
-        }
-    route.update(directions)
-    if return_messages:
-        messages.append('Total time: %s' % (time.time() - st_tot))
-        route['messages'] = messages
-    return route
-
-
-# -----------------------------------------------------------------------------
-
-def makeDirections(I, S):
-    """Process the shortest path into a nice list of directions.
-
-    @param S -- the segments on the route
-    @param I -- the intersections on the route
-    @return -- A dict containing...
-                 - a list of directions. Each direction has the following form:
-                   {
-                      'turn': 'left',
-                      'street': 'se stark st'
-                      'toward': 'se 45th ave'
-                      'ls_index': 3,
-                      'distance': {'mi': .03,
-                                   'km': .05,
-                                   'blocks': 0},
-                      'bikemode': 'bl',
-                      'jogs': [{'turn': 'left', 'street': 'ne 7th ave'}, ...]
-                    }
-                  - a linestring, which is a list of x, y coords. Each coord
-                    has the following form:
-                    {
-                       'x': -122,
-                       'y': -45
-                    }
-                  - a dict of total distances in units of miles, kilometers,
-                    and blocks, e.g.:
-                    {
-                       'mi': .45,
-                       'km': .73,
-                       'blocks': 9
-                    }
-                    
-    """
-    directions = []
-    linestring = []
-    distance = {}
-
-    # Get the actual segment weights since modified weights might have been
-    # used to find the route
-    W = [s.getWeight() for s in S]
-    w = reduce(lambda x, y: x + y, W)
-    mi = '%.2f' % w
-    km = '%.2f' % (w * 1.609344)
-    blocks = int(round(w / .05))
-
-    # Get bearing of travel for each segment
-    bearings = []
-    end_bearings = []
-    for (toi, s) in zip(I[1:], S):
-        # Get the bearing of the segment--based on whether we are moving
-        # toward its start or end
-        sls = s.linestring
-        if s.node_f_id == toi.id:
-            # Moving to => start
-            sls.reverse()
-        frlonlat, tolonlat = sls[0], sls[1]
-        e_frlonlat, e_tolonlat = sls[-2], sls[-1]
-
-        # This avoids duplicate x,y at intersections--below we'll have to
-        # append the last point for the last segment
-        linestring += [{'x': p.x, 'y': p.y} for p in sls[:-1]]
-        bearing = gis.getBearingGivenStartAndEndPoints(frlonlat, tolonlat)
-        bearings.append(bearing)
-        end_bearing = gis.getBearingGivenStartAndEndPoints(e_frlonlat,
-                                                           e_tolonlat)
-        end_bearings.append(end_bearing)
-    # Append the very last point in the route
-    p = sls[-1]
-    linestring.append({'x': p.x, 'y': p.y})
-    
-    # Add the lengths of successive same-named segments and set the first of
-    # the segments' length to that 'stretch' length, while setting the
-    # successive segments' lengths to 0. In the next for loop below,
-    # segments with length 0 are skipped.
-    prev_name_type = ''
-    stretch_start_x = 0
-    streets = []
-    jogs = []
-    for seg_x, s in enumerate(S):
-        st = address.Street(s.prefix, s.name, s.sttype, s.suffix)
-        streets.append(st)  # save for later
-        name_type = '%s %s' % (s.name, s.sttype)
-
-        try:
-            next_s = S[seg_x + 1]
-        except IndexError:
-            next_name_type = None
-        else:
-            next_name_type = '%s %s' % (next_s.name, next_s.sttype)
+        ### Get the start and end nodes for path finding. G may be updated.
         
-        if name_type == prev_name_type:
-            W[stretch_start_x] += W[seg_x]
-            W[seg_x] = None
-            prev_name_type = name_type
-        # Check for jog
-        elif prev_name_type and \
-                 W[seg_x] < .05 and name_type != prev_name_type and \
-                 next_name_type == prev_name_type:
-            W[stretch_start_x] += W[seg_x]
-            W[seg_x] = None
-            turn = calculateWayToTurn(bearings[seg_x], end_bearings[seg_x - 1])
-            jogs[-1].append({'turn': turn, 'street': str(st)})
-        else:
-            # Start of a new stretch (i.e., a new direction)
-            stretch_start_x = seg_x
-            prev_name_type = name_type
-            jogs.append([])
-
-
-    # Add 'stretches' between start and destination intersections
-    # (where a stretch consists of one or more segments that all have
-    #  the same name and type)
-    s_count = 0
-    d_count = 0
-    ls_index = 0
-    extra = []
-    for (toi, s, w) in zip(I[1:], S, W):        
-        st = streets[s_count]
-        st_str = str(st)
+        # A place to save the new edges formed from splitting an edge when a
+        # geocode is within an edge. This saving happens as a side effect in 
+        # _getNodeForGeocode.
+        split_edges = {}
         
-        if w is not None:
-            # Things in here only happen at the start of a stretch
+        # Get start node
+        node_id, edge_f_id, edge_t_id = -1, -1, -2
+        start_node = self._getNodeForGeocode(start_geocode, nodes, edges, 
+                                             node_id, edge_f_id, edge_t_id, 
+                                             split_edges)
+        # Get end node
+        node_id, edge_f_id, edge_t_id = -2, -3, -4
+        end_node = self._getNodeForGeocode(end_geocode, nodes, edges, 
+                                           node_id, edge_f_id, edge_t_id, 
+                                           split_edges)
+        
+        ### All set up--try to find a path in G between the start and end nodes
+        
+        try:
+            node_ids, edge_ids, weights, total_weight = sssp.findPath(
+                G, 
+                start_node.id, end_node.id,
+                weightFunction=getEdgeWeight,
+                heuristicFunction=getHeuristicWeight
+            )
+        except sssp.SingleSourceShortestPathsNoPathError:
+            raise NoRouteError(
+                'Unable to find a route from "%s" to "%s" in region "%s"' % (
+                    str(start_geocode).replace('\n', ', '),
+                    str(end_geocode).replace('\n', ', '),
+                    self.region
+                )
+            )
+        return node_ids, edge_ids, start_node, end_node, split_edges
+    
+    #----------------------------------------------------------------------
+    def _getNodeForGeocode(self, 
+                           geocode_, 
+                           nodes, edges, 
+                           node_id, 
+                           edge_f_id, edge_t_id,
+                           split_edges):
+        """Get or synthesize `Node` for ``geocode``.
 
-            bearing = bearings[s_count]
+        If the geocode is at an intersection, just return its `node`;
+        otherwise, synthesize and return a mid-block `Node`.
 
-            d = {'turn': '',
-                 'street': '',
-                 'toward': '',
-                 'ls_index': ls_index,
-                 'bikemode': [],
-                 'distance': {'mi': '%.2f' % w,
-                              'km': '%.2f' % (1.609344 * w),
-                              'blocks': 0},
-                 'jogs': jogs[d_count]
-                 }
+        ``geocode`` `Geocode`
 
-            # Get direction of turn and street to turn onto
-            if directions:
-                # Common case (i.e., all but first)
-                turn = calculateWayToTurn(bearing, stretch_end_bearing)
-                if turn == 'straight':
-                    # go straight onto next st. ('street a becomes street b')
-                    street = [stretch_end_name, st_str]
-                else:
-                    # turn onto next street
-                    street = st_str
-            else:
-                # The first direction is a bit different from the rest
-                turn = getDirectionFromBearing(bearing)
-                street = st_str
+        Parameters used when synthesizing a node:
 
-            # Get a street name for the intersection we're headed toward
-            # (one different from the name of the current seg)
-            toward = getDifferentNameInIntersection(st, toi)
+        ``node_id`` `int` -- Shared node ID at split
+        ``edge_f_id`` `int` -- Edge id for node-->id edge
+        ``edge_t_id`` `int` -- Edge id for id-->other_node edge
 
-            for var in ('turn', 'street', 'toward'):
-                d[var] = eval(var)
+        return `Node`
+
+        """
+        if isinstance(geocode_, IntersectionGeocode):
+            # Geocode is at a node--easy case
+            node = geocode_.node
+        else:
+            # Geocode is on an edge--hard case
+            # We have to generate a node in the middle of the edge and update G
+            # Split the geocode's edge
+            edge_f, edge_t = geocode_.edge.splitAtGeocode(
+                geocode_, node_id, edge_f_id, edge_t_id
+            )
+            # Create a node at the split
+            node = Node(node_id, geocode_.xy, [edge_f, edge_t])
+            # Update after split
+            split_edges[edge_f_id], split_edges[edge_t_id] = edge_f, edge_t
+            self._updateMatrixAfterSplit(
+                nodes, edges, node, geocode_.edge, edge_f, edge_t, split_edges
+            )
+        return node
+
+    #----------------------------------------------------------------------
+    def _updateMatrixAfterSplit(self, 
+                                nodes, edges, 
+                                node_at_split, 
+                                edge_that_was_split,
+                                edge_f, edge_t, 
+                                split_edges):
+        # Update adjacency of nodes affected by split
+        self._updateNodesAfterSplit(nodes, node_at_split, edge_f, edge_t)
+        # Insert attributes for edges created by split
+        # TODO: Distribute attributes proportionally on either side of split.
+        # This could be done by more-sophisticated edge-splitting.
+        edge_id = edge_that_was_split.id
+        edges[edge_f.id] = [len(edge_f)] + list(edges[edge_id][1:])
+        edges[edge_t.id] = [len(edge_t)] + list(edges[edge_id][1:])
             
-            directions.append(d)
-            d_count += 1
-
-        # Save bearing if this segment is the last segment in a stretch
-        try:
-            if toi and W[s_count+1]:
-                stretch_end_bearing = end_bearings[s_count] 
-                stretch_end_name = st_str
-        except IndexError:
-            pass
-
-        # Add segment's bikemode to list of bikemodes for current stretch
-        try:
-            bm = str(s.bikemode)
-        except AttributeError:
-            pass
-        else:
-            if bm:
-                try:
-                    # Only record changes in bikemode
-                    if bm != d['bikemode'][-1]:
-                        d['bikemode'].append(bm)
-                except IndexError:
-                    # First segment in stretch with a bikemode
-                    d['bikemode'].append(bm)
-
-        s_count += 1
-        ls_index += len(s.linestring) - 1
-
-    return {'directions': directions,
-            'linestring': linestring,
-            'distance': {'mi': mi, 'km': km, 'blocks': blocks}}
-
-
-def getDifferentNameInIntersection(st, i):
-    """Get street name from intersection that is different from street st."""
-    for i_st in i.cross_streets:
-        if st.name == i_st.name and st.sttype == i_st.sttype:
-            continue
-        else:
-            return str(i_st)
-    return ''
-
-
-def calculateWayToTurn(new_bearing, old_bearing):
-    """Given two bearings in [0, 360], gives the turn to go from old to new.
-
-    @param new_bearing -- the bearing of the new direction of travel
-    @param old_bearing -- the bearing of the old direction of travel
-    @return -- the way to turn to get from going in the old direction
-               to get going in the new direction ('right', 'left', etc.)
-
-    """
-    diff = new_bearing - old_bearing
-    while diff < 0: diff += 360
-    while diff > 360: diff -= 360
-    if     0 <= diff <   10: way = 'straight'
-    elif  10 <= diff <= 170: way = 'right'
-    elif 170 <  diff <  190: way = 'back'
-    elif 190 <= diff <= 350: way = 'left'
-    elif 350 <  diff <= 360: way = 'straight'
-    else: way = 'ERROR'
-    return way
-
-
-def getDirectionFromBearing(bearing):
-    arc = 45
-    half_arc = arc * .5
-    n =  (360 - half_arc, half_arc)
-    ne = (n[1],  n[1]  + arc)
-    e =  (ne[1], ne[1] + arc)
-    se = (e[1],  e[1]  + arc)
-    s =  (se[1], se[1] + arc)
-    sw = (s[1],  s[1]  + arc)
-    w =  (sw[1], sw[1] + arc)
-    nw = (w[1],  w[1]  + arc)
-    if   n[0]  < bearing <= 360 or 0 <= bearing < n[1]: return 'north'
-    elif ne[0] < bearing <= ne[1]: return 'northeast'
-    elif e[0]  < bearing <= e[1]:  return 'east'
-    elif se[0] < bearing <= se[1]: return 'southeast'
-    elif s[0]  < bearing <= s[1]:  return 'south'
-    elif sw[0] < bearing <= sw[1]: return 'southwest'
-    elif w[0]  < bearing <= w[1]:  return 'west'
-    elif nw[0] < bearing <= nw[1]: return 'northwest'
-
-
-if __name__ == '__main__':
-    import sys
-
-    def print_key(key):
-        for k in key:
-            print k, 
-            if type(key[k]) == type({}):
-                print
-                for l in key[k]:
-                    print '\t', l, key[k][l]
-            else: print key[k]
-        print
-
-    try:
-        region, q = sys.argv[1].split(',')
-    except IndexError:
-        Qs = {'milwaukeewi':
-              (('Puetz Rd & 51st St', '841 N Broadway St'),
-               ('27th and lisbon', '35th and w north'),
-               ('S 84th Street & Greenfield Ave',
-                'S 84th street & Lincoln Ave'),
-               ('3150 lisbon', 'walnut & n 16th '),
-               ('124th and county line, franklin', '3150 lisbon'),
-               ('124th and county line, franklin',
-                'x=-87.940407, y=43.05321'),
-               ('x=-87.973645, y=43.039615',
-                'x=-87.978623, y=43.036086'),
-               ),
-              'portlandor':
-               (('x=-122.668104, y=45.523127', '4807 se kelly'),
-                ('x=-122.67334,y=45.621662', '8220 N Denver Ave'),
-                ('633 n alberta', '4807 se kelly'),
-                ('sw hall & denney', '44th and se stark'),
-                ('-122.645488, 45.509475', 'sw hall & denney'),
-               ),
-              }
-    else:
-        q = q.split(' to ')
-        Qs = {region: (q,)}
-
-
-    for dm in Qs:
-        qs = Qs[dm]
-        for q in qs:
+    #----------------------------------------------------------------------
+    def _updateNodesAfterSplit(self, nodes, node, edge_1, edge_2):
+        """
+        
+        ``node`` -- Node at split
+        ``edge_1`` -- Edge on one side of split
+        ``edge_2`` -- Edge on other side of split
+        
+        """
+        split_id = node.id
+        
+        def updateOneNode(split_id, node_1_id, node_2_id, edge_1_id, edge_2_id):
             try:
-                st = time.time()
-                r = get(return_messages=1, region=dm, q=q)
-                et = time.time() - st
-            except MultipleMatchingAddressesError, e:
-                print e.route
-            except NoRouteError, e:
-                print e
-            #except Exception, e:
-            #    print e
+                nodes[node_1_id][node_2_id]
+            except KeyError:
+                # node_1_id does NOT go to node_2_id--nothing to do
+                pass
             else:
-                D = r['directions']
-                print r['start']['geocode']
-                print r['end']['geocode']
-                for d in D:
-                    print '%s on %s toward %s -- %s mi [%s]' % \
-                          (d['turn'],
-                           d['street'],
-                           d['toward'],
-                           d['distance']['mi'],
-                           d['bikemode'])
-                print
-                M = r['messages']
-                for m in M:
-                    print m
-                print 'Took %.2f' % et
-                print '----------------------------------------' \
-                      '----------------------------------------'
+                # node_1_id DOES go to node_2_id
+                if split_id not in nodes: 
+                    nodes[split_id] = {}
+                nodes[node_1_id][split_id] = edge_1_id
+                nodes[split_id][node_2_id] = edge_2_id
+                # Override original connection so it won't be used
+                # TODO: Should save this
+                nodes[node_1_id][node_2_id] = None
+
+        # Get node IDs NOT at split
+        node_1_id = [edge_1.node_f_id, edge_1.node_t_id][edge_1.node_t_id != split_id]
+        node_2_id = [edge_2.node_f_id, edge_2.node_t_id][edge_2.node_t_id != split_id]
+        # Get edge IDs for one arc direction
+        edge_1_id, edge_2_id = edge_1.id, edge_2.id                
+        # Update for one direction
+        updateOneNode(split_id, node_1_id, node_2_id, edge_1_id, edge_2_id)
+        # Swap the IDs and update for the other direction
+        node_1_id, node_2_id = node_2_id, node_1_id
+        edge_1_id, edge_2_id = edge_2_id, edge_1_id
+        updateOneNode(split_id, node_1_id, node_2_id, edge_1_id, edge_2_id)
+
+    #----------------------------------------------------------------------
+    def _makeDirectionsForPath(self, 
+                               node_ids, edge_ids, 
+                               start_node, end_node, 
+                               split_edges):
+        """Process the shortest path into a nice list of directions.
+
+        `edge_ids` `list` -- The IDs of the edges on the route
+        ``node_ids`` `list` -- The IDs of the nodes on the route
+
+        return directions, linestring, distance
+            - A list of directions. Each direction has the following form:
+              {
+                 'turn': 'left',
+                 'street': 'se stark st'
+                 'toward': 'se 45th ave'
+                 'linestring_index': 3,
+                 'distance': {
+                     'mi': .03,
+                     'km': .05,
+                     'blocks': 0
+                 },
+                 'bikemode': 'bl',
+                 'jogs': [{'turn': 'left', 'street': 'ne 7th ave'}, ...]
+               }
+               
+             - A linestring, which is a list of x, y coords. Each coordinate
+               has the following form:
+               {
+                  'x': -122,
+                  'y': -45
+               }
+               
+             - A `dict` of total distances in units of miles, kilometers, and 
+               blocks:
+               {
+                  'mi': .45,
+                  'km': .73,
+                  'blocks': 9
+               }
+
+        """
+        directions = []
+        linestring = None
+        distance = {'mi': None, 'km': None, 'blocks': None}
+        
+        # Get intersections and edges along path
+        nodes = self.dbh.getNodesById(node_ids)
+        edges = self.dbh.getEdgesById(edge_ids)
+            
+        # Check if start and end are in edges
+        edge_f_id = edge_ids[0]
+        if edge_f_id in split_edges:
+            # Start is in an edge
+            nodes = [start_node] + nodes
+            edges = [split_edges[edge_f_id]] + edges
+        edge_t_id = edge_ids[-1]
+        if edge_t_id in split_edges:
+            # End is in an edge
+            nodes.append(end_node)
+            edges.append(split_edges[edge_t_id])
+      
+        # Get the actual edge lengths since modified weights might have been
+        # used to find the path
+        edge_lengths = [len(e) for e in edges]
+        total_length = reduce(lambda x, y: x + y, edge_lengths)
+        mi = total_length
+        km = total_length * 1.609344
+        blocks = int(round(total_length / .05))
+        distance.update({'mi': mi, 'km': km, 'blocks': blocks})
+
+        # Get bearing of first and last segment of each edge. We use this
+        # later to calculate turns from one edge to another--turning from
+        # heading in an `end_bearing` direction to a `bearing` direction. This
+        # also gathers up all the points for the overall linestring (for the
+        # whole route).
+        bearings = []
+        end_bearings = []
+        linestring_points = []
+        for node_t, e in zip(nodes[1:], edges):
+            geom = e.geom  # Current edge's linestring
+            num_points = geom.numPoints()
+            points = [geom.pointN(i) for i in range(num_points)]
+            if e.node_f_id == node_t.id:
+                # Moving to => from on arc; reverse geometry
+                points.reverse()
+
+            # Append all but last point in current edge's linestring. This
+            # avoids duplicate points at intersections--below we'll have to
+            # append the last point for the last edge.
+            linestring_points += points[:-1]
+
+            # *b------e* b is bearing of first segment in edge; e is bearing
+            # of last segment in edge
+            _f = gis.getBearingGivenStartAndEndPoints
+            bearings.append(_f(points[0], points[1]))
+            end_bearings.append(_f(points[-2], points[-1]))
+            
+        # Append very last point in the route, then create overall linestring
+        linestring_points.append(points[-1])
+        linestring = LineString(points=linestring_points, srs=geom.srs)
+        
+        # Add the lengths of successive same-named edges and set the first of
+        # the edges' length to that "stretch" length, while setting the
+        # successive edges' lengths to `None`. In the next for loop below,
+        # edges with length `None` are skipped.
+        prev_name_type = None
+        stretch_start_i = 0
+        street_names = []
+        jogs = []
+        for i, e in enumerate(edges):
+            street_name = e.street_name
+            street_names.append(street_name)  # save for later
+            name_type = self._getNameAndType(street_name)
+
+            try:
+                next_e = edges[i + 1]
+            except IndexError:
+                next_name_type = None
+            else:
+                next_street_name = next_e.street_name
+                next_name_type = self._getNameAndType(next_street_name)
+                    
+            if name_type == prev_name_type:
+                edge_lengths[stretch_start_i] += edge_lengths[i]
+                edge_lengths[i] = None
+                prev_name_type = name_type
+            # Check for jog
+            elif (prev_name_type and
+                  edge_lengths[i] < .05 and 
+                  name_type != prev_name_type and
+                  next_name_type == prev_name_type):
+                edge_lengths[stretch_start_i] += edge_lengths[i]
+                edge_lengths[i] = None
+                turn = self._calculateWayToTurn(end_bearings[i-1], bearings[i])
+                jogs[-1].append({'turn': turn, 'street': str(street_name)})
+            else:
+                # Start of a new stretch (i.e., a new direction)
+                stretch_start_i = i
+                prev_name_type = name_type
+                jogs.append([])
+
+        # Make directions list, where each direction is for a stretch of the 
+        # route and a stretch consists of one or more edges that all have the 
+        # same name and type.
+        edge_count = 0
+        directions_count = 0
+        linestring_index = 0
+        for node_t, e, length in zip(nodes[1:], edges, edge_lengths):
+            street_name = street_names[edge_count]
+            str_street_name = str(street_name)
+
+            if length is not None:  # Only do this at the start of a stretch
+                bearing = bearings[edge_count]
+                # TODO: Create a Direction class???
+                direction = {
+                    'turn': '', 'street': '', 'toward': '', 'bikemode': [],
+                    'linestring_index': linestring_index,
+                    'jogs': jogs[directions_count],                    
+                    'distance': {
+                        'mi': length, 'km': 1.609344 * length, 'blocks': 0
+                    }
+                }
+
+                # Get direction of turn and street to turn onto
+                if directions:
+                    # Common case (i.e., all but first)
+                    turn = self._calculateWayToTurn(stretch_end_bearing, bearing)
+                    if turn == 'straight':
+                        # Go straight onto next street
+                        # ('street a becomes street b')
+                        street = [stretch_end_name, str_street_name]
+                    else:
+                        # Turn onto next street
+                        street = str_street_name
+                else:
+                    # The first direction is slightly different from the rest
+                    turn = self._getDirectionFromBearing(bearing)
+                    street = str_street_name
+                
+                # Get a street name for the intersection we're headed toward
+                # (one different from the name of the current seg)
+                _f = self._getDifferentStreetNameFromNode
+                toward = _f(street_name, node_t)
+
+                direction.update(dict(turn=turn, street=street, toward=toward))
+                directions.append(direction)
+                directions_count += 1
+
+            # Save bearing if this edge is the last edge in a stretch
+            try:
+                if node_t and edge_lengths[edge_count + 1]:
+                    stretch_end_bearing = end_bearings[edge_count]
+                    stretch_end_name = str_street_name
+            except IndexError:
+                pass
+
+            # Add edge's bikemode to list of bikemodes for current stretch
+            bm = e.bikemode
+            if bm is not None:
+                # Only record changes in bikemode
+                dbm = direction['bikemode']
+                if (dbm == [] or bm != dbm[-1]):
+                    dbm.append(bm)
+
+            edge_count += 1
+            linestring_index += e.geom.numPoints() - 1
+
+        return nodes, edges, directions, linestring, distance
+
+    #----------------------------------------------------------------------
+    def _getNameAndType(self, street_name):
+        try:
+            name, sttype = street_name.name, street_name.sttype
+        except AttributeError:
+            return None
+        return name, sttype
+        
+    #----------------------------------------------------------------------
+    def _getDifferentStreetNameFromNode(self, street_name, node):
+        """Get different street name from ``node``."""
+        name_type = self._getNameAndType(street_name)
+        for edge in node.edges:
+            sn = edge.street_name
+            other_name_type = self._getNameAndType(sn)
+            if other_name_type != name_type:
+                return str(sn or '[No Name]')
+        return ''
+
+    #----------------------------------------------------------------------
+    def _calculateWayToTurn(self, old_bearing, new_bearing):
+        """Given two bearings in [0, 360], gives the turn to go from old to new.
+
+        ``new_bearing`` -- The bearing of the new direction of travel.
+        ``old_bearing`` -- The bearing of the old direction of travel.
+        
+        return `string` -- The way to turn to get from going in the old direction
+        to get going in the new direction ('right', 'left', etc.).
+
+        """
+        diff = new_bearing - old_bearing
+        while diff < 0: 
+            diff += 360
+        while diff > 360: 
+            diff -= 360
+        if     0 <= diff <   10: way = 'straight'
+        elif  10 <= diff <= 170: way = 'right'
+        elif 170 <  diff <  190: way = 'back'
+        elif 190 <= diff <= 350: way = 'left'
+        elif 350 <  diff <= 360: way = 'straight'
+        else: 
+            raise ValueError(
+                'Could not calculate way to turn from %s and %s' % 
+                (new_bearing, old_bearing)
+            )
+        return way
+
+    #----------------------------------------------------------------------
+    def _getDirectionFromBearing(self, bearing):
+        """Translate ``bearing`` to a cardinal direction."""
+        arc = 45
+        half_arc = arc * .5
+        n =  (360 - half_arc, half_arc)
+        ne = ( n[1],  n[1] + arc)
+        e =  (ne[1], ne[1] + arc)
+        se = ( e[1],  e[1] + arc)
+        s =  (se[1], se[1] + arc)
+        sw = ( s[1],  s[1] + arc)
+        w =  (sw[1], sw[1] + arc)
+        nw = ( w[1],  w[1] + arc)
+        if       0 <= bearing <   n[1]: return 'north'
+        elif  n[0] <  bearing <=   360: return 'north'
+        elif ne[0] <  bearing <= ne[1]: return 'northeast'
+        elif  e[0] <  bearing <=  e[1]: return 'east'
+        elif se[0] <  bearing <= se[1]: return 'southeast'
+        elif  s[0] <  bearing <=  s[1]: return 'south'
+        elif sw[0] <  bearing <= sw[1]: return 'southwest'
+        elif  w[0] <  bearing <=  w[1]: return 'west'
+        elif nw[0] <  bearing <= nw[1]: return 'northwest'

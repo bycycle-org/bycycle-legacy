@@ -108,7 +108,7 @@ db_fields = ('geo',
              'addr_f',
              'addr_t',
              'even_side',
-             'streetname_id',
+             'street_name_id',
              'city_l_id',
              'city_r_id',
              'state_l_id',
@@ -191,7 +191,7 @@ def shpToRawSql():
 def addColumns():
     # INTEGER columns
     Q = 'ALTER TABLE %s ADD COLUMN %%s %%s NOT NULL' % raw
-    cols = ('addr_f', 'addr_t', 'streetname_id', 'city_l_id', 'city_r_id')
+    cols = ('addr_f', 'addr_t', 'street_name_id', 'city_l_id', 'city_r_id')
     for col in cols:
         _execute(Q % (col, 'INTEGER'))
     # TINY INTEGER columns
@@ -227,7 +227,7 @@ def updateBikeModes():
         _execute(Q % (bikemodes[bm], bm))
 
 def createSchema():
-    tables = ('layer_street', 'layer_node', 'streetname', 'city', 'state')
+    tables = ('layer_street', 'layer_node', 'street_name', 'city', 'state')
     for table in tables:
         _execute('DROP TABLE IF EXISTS %s_%s' % (region, table))
     cmd = 'mysql -u %s --password="%s" %s < ./schema.sql' % \
@@ -258,7 +258,7 @@ def unifyAddressRanges():
 
 def transferStreetNames():
     """Transfer street names to their own table."""
-    Q = 'INSERT INTO %s_streetname (prefix, name, sttype, suffix) '\
+    Q = 'INSERT INTO %s_street_name (prefix, name, sttype, suffix) '\
         'SELECT DISTINCT fdpre, fname, ftype, fdsuf FROM %s'
     _execute(Q % (region, raw))
 
@@ -269,13 +269,13 @@ def updateRawStreetNameIds():
     _execute(Q)
     rows = db.fetchAll()
     # Index each street name ID by its street name
-    # {(stname)=>streetname_id}
+    # {(stname)=>street_name_id}
     stnames = {}
-    Q = 'SELECT id, prefix, name, sttype, suffix FROM %s_streetname' % region
+    Q = 'SELECT id, prefix, name, sttype, suffix FROM %s_street_name' % region
     _execute(Q)
     for row in db.fetchAll():
         stnames[(row[1],row[2],row[3],row[4])] = row[0]
-    # Index raw row IDs by their street name ID {streetname_id=>[row IDs]}
+    # Index raw row IDs by their street name ID {street_name_id=>[row IDs]}
     stid_rawids = {}
     Q  = 'SELECT id, fdpre, fname, ftype, fdsuf FROM %s' % raw
     _execute(Q)
@@ -286,7 +286,7 @@ def updateRawStreetNameIds():
         else: 
             stid_rawids[stid] = [row[0]]
     # Iterate over street name IDs and set street name IDs of raw records
-    Q = 'UPDATE %s SET streetname_id=%%s WHERE id IN %%s' % raw
+    Q = 'UPDATE %s SET street_name_id=%%s WHERE id IN %%s' % raw
     met = meter.Meter()
     met.setNumberOfItems(len(stid_rawids))
     met.startTimer()

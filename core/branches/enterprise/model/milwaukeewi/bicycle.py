@@ -59,7 +59,7 @@ class Mode(milwaukeewi.Mode):
         lanes = edge_attrs[indices["lanes"]]
         adt = edge_attrs[indices["adt"]]
         spd = edge_attrs[indices["spd"]]
-        ix_sn = edge_attrs[indices["streetname_id"]]
+        ix_sn = edge_attrs[indices["street_name_id"]]
 
         hours = length / self.mph
 
@@ -90,7 +90,7 @@ class Mode(milwaukeewi.Mode):
             
             try:
                 # Penalize edge if it has different street name from previous edge
-                prev_ix_sn = prev_edge_attrs[indices["streetname_id"]]
+                prev_ix_sn = prev_edge_attrs[indices["street_name_id"]]
                 if ix_sn != prev_ix_sn: hours += .0055555555555555
             except TypeError:
                 pass

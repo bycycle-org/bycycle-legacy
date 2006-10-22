@@ -1,324 +1,448 @@
-"""$Id$
+###########################################################################
+# $Id$
+# Created ???.
+#
+# Geocode service.
+#
+# Copyright (C) 2006 Wyatt Baldwin, byCycle.org <wyatt@bycycle.org>.
+# All rights reserved.
+#
+# For terms of use and warranty details, please see the LICENSE file included
+# in the top level of this distribution. This software is provided AS IS with
+# NO WARRANTY OF ANY KIND.
 
-Geocode Service Module.
 
-Copyright (C) 2006 Wyatt Baldwin, byCycle.org <wyatt@bycycle.org>. All rights 
-reserved. Please see the LICENSE file included in the distribution. The license 
-is also available online at http://bycycle.org/tripplanner/license.txt or by 
-writing to license@bycycle.org.
+"""Provides geocoding via the `query` method of the `Service` class.
+
+Geocoding is the process of determining a location on earth associated with a
+an address (or other feature). This service also determines which network
+features input addresses are associated with and supplies this information
+through the `Geocode` class as a node or edge ID, depending on the type of the
+input address.
+
+The service recognizes these types of addresses, which are first normalized by
+the Address Normalization service (normaddr):
+
+- Postal (e.g., 633 N Alberta, Portland, OR)
+- Intersection (e.g., Alberta & Kerby)
+- Point (e.g., x=-123, y=45)
+- Node (i.e., node ID)
+- Edge (i.e., number + edge ID).
 
 """
-from byCycle.lib import gis
-from byCycle.model import mode, address, geocode
-from byCycle.services import excs, normaddr
+from sqlalchemy import orm
+from sqlalchemy.sql import select, func, and_, or_
+from sqlalchemy.exceptions import InvalidRequestError
+
+from byCycle.model.address import *
+from byCycle.model.geocode import *
+from byCycle.model.domain import Point
+
+from byCycle import services
+from byCycle.services import normaddr
+from byCycle.services.exceptions import ByCycleError
 
 
-class GeocodeError(excs.ByCycleError):
-    def __init__(self, desc=''): 
-        if not desc:
-            desc = 'Geocode Error'
-        excs.ByCycleError.__init__(self, desc)
+class GeocodeError(ByCycleError):
+    """Base Error class for Geocode service."""
+    def __init__(self, desc='Geocode Error'):
+        ByCycleError.__init__(self, desc)
 
 class AddressNotFoundError(GeocodeError):
-    def __init__(self, region='', address=''):
-        desc = 'Unable to find address "%s" in region "%s"' % (address, region)
+    def __init__(self, desc='Address Not Found', address='', region=''):
+        if region and address:
+            desc = ('Unable to find address "%s" in region "%s"' %
+                    (address, region.name))
         GeocodeError.__init__(self, desc=desc)
-                
+
 class MultipleMatchingAddressesError(GeocodeError):
-    def __init__(self, geocodes=[]):
+    def __init__(self, desc='Multiple Matches Found', geocodes=[]):
         self.geocodes = geocodes
-        desc = 'Multiple matches found'
         GeocodeError.__init__(self, desc=desc)
 
- 
-def get(q, region=''):
-    """Get the geocode of the address, according to the data mode.
-    
-    Choose the geocoding function based on the type of the input address. Call
-    the appropriate geocoding function. Return a list of Geocode objects or
-    raise exception when no geocodes.
 
-    @param region Either the name of a region mode OR a mode
-           object. In the first case a mode will be instantiated to geocode the
-           address; in the second the object will be used directly.
-    @param q An address string that can be normalized & geocoded in the mode
-    @return A list of possible geocodes for the input address OR raise
-            AddressNotFoundError if the address can't be geocoded
-    
-    """
-    oAddr = normaddr.get(q=q, region=region)
-    oRegion = oAddr.region
+class Service(services.Service):
+    """Geocoding Service."""
 
-    if isinstance(oAddr, address.PostalAddress):
-        geocodes = getPostalAddressGeocodes(oRegion, oAddr)
-    elif isinstance(oAddr, address.EdgeAddress):
-        geocodes = getPostalAddressGeocodes(oRegion, oAddr)
-    elif isinstance(oAddr, address.PointAddress):
-        geocodes = getPointGeocodes(oRegion, oAddr)
-    elif isinstance(oAddr, address.NodeAddress):
-        geocodes = getPointGeocodes(oRegion, oAddr)
-    elif isinstance(oAddr, address.IntersectionAddress):
-        try:
-            geocodes = getIntersectionGeocodes(oRegion, oAddr)
-        except AddressNotFoundError, e:
+    name = 'geocode'
+
+    def __init__(self, region=None, dbh=None):
+        """
+
+        ``region`` `Region` | `string` -- Region key
+
+        """
+        services.Service.__init__(self, region=region, dbh=dbh)
+
+    def query(self, q, region=None, dbh=None):
+        """Find and return `Geocodes` in ``region`` matching the address ``q``.
+
+        Choose the appropriate geocoding method based on the type of the input
+        address. Call the geocoding method and return a `Geocode`. If the
+        input address can't be found or there is more than one match for it,
+        an exception will be raised.
+
+        ``q`` `string`
+            An address to be normalized & geocoded in the given ``region``.
+
+        ``region`` `Region` | `string`
+        ``dbh`` `DB`
+            See Service base class for details.
+
+        return `Geocode` -- A `Geocode` object corresponding to the input
+        address, ``q``.
+
+        raise `ValueError` -- Type of input address can't be determined
+
+        raise `InputError`, `ValueError` -- Some are raised in the normaddr
+        query. Look there for details.
+
+        raise `AddressNotFoundError` -- The address can't be geocoded
+
+        raise `MultipleMatchingAddressesError` -- Multiple address found that
+        match the input address, ``q``
+
+        """
+        # Do common query initialization
+        self._beforeQuery(q, region=region, dbh=dbh)
+
+        # First, normalize the address, getting back an `Address` object.
+        # The NA service may find a region, iff `region` isn't already set. If
+        # so, we want to use that region as the region for this query.
+        na_service = normaddr.Service(region=self.region, dbh=self.dbh)
+        oAddr = na_service.query(q)
+        self.region = na_service.region
+
+        if isinstance(oAddr, PostalAddress):
+            geocodes = self.getPostalGeocodes(oAddr)
+        elif isinstance(oAddr, EdgeAddress):
+            geocodes = self.getPostalGeocodes(oAddr)
+        elif isinstance(oAddr, PointAddress):
+            geocodes = self.getPointGeocodes(oAddr)
+        elif isinstance(oAddr, NodeAddress):
+            geocodes = self.getPointGeocodes(oAddr)
+        elif isinstance(oAddr, IntersectionAddress):
             try:
-                num = int(oAddr.name1[:-2])
-            except (TypeError, ValueError):
+                geocodes = self.getIntersectionGeocodes(oAddr)
+            except AddressNotFoundError, _not_found_exc:
+                # Couldn't find something like "48th & Main" or "Main & 48th"
+                # Try "4800 Main" instead
                 try:
-                    num = int(oAddr.name2[:-2])
+                    num = int(oAddr.street_name1.name[:-2])
                 except (TypeError, ValueError):
-                    pass
+                    try:
+                        num = int(oAddr.street_name2.name[:-2])
+                    except (TypeError, ValueError):
+                        pass
+                    else:
+                        street_name = oAddr.street_name1
                 else:
-                    street=oAddr.street1
-            else:
-                street = oAddr.street2
-            try:
-                oAddr = address.PostalAddress(number=num*100,
-                                              street=street,
-                                              place=oAddr.place1)
-                geocodes = getPostalAddressGeocodes(oRegion, oAddr)
-            except (NameError, AddressNotFoundError):
-                raise e
-    else:
-        raise ValueError('Could not determine address type for address "%s" '
-                         'in region "%s"' % (q, region))
-        
-    if len(geocodes) > 1:
-        raise MultipleMatchingAddressesError(geocodes)
-    
-    return geocodes
+                    street_name = oAddr.street_name2
 
+                try:
+                    postal_addr = PostalAddress(number=num*100,
+                                                street_name=street_name,
+                                                place=oAddr.place)
+                    geocodes = self.getPostalGeocodes(postal_addr)
+                except (NameError, UnboundLocalError, AddressNotFoundError), e:
+                    # Neither of the cross streets had a number street name OR
+                    # the faked postal address couldn't be found.
+                    raise _not_found_exc
+        else:
+            raise ValueError('Could not determine address type for address '
+                             '"%s" in region "%s"' %
+                             (q, region or '[No region specified]'))
 
-# Each get*Geocode function returns a list of possible geocodes for the input
-# address or raises an error when no matches are found.
+        if len(geocodes) > 1:
+            raise MultipleMatchingAddressesError(geocodes=geocodes)
 
-def getPostalAddressGeocodes(oRegion, oAddr, edge_id=None):
-    place = oAddr.place
+        return geocodes[0]
 
-    # Build the WHERE clause
-    where = []
-    where.append('(%s BETWEEN LEAST(addr_f, addr_t) AND '
-                 'GREATEST(addr_f, addr_t))' % oAddr.number)
-    
-    try:
-        # Number EdgeID
-        where.append('id = %s' % oAddr.edge_id)
-    except AttributeError:
-        # Number Street Place
+    ### Each get*Geocode function returns a list of possible geocodes for the 
+    ### input address or raises an error when no matches are found.
+
+    def getPostalGeocodes(self, oAddr):
+        """Geocode postal address represented by ``oAddr``.
+
+        ``oAddr`` -- A `PostalAddress` (e.g., 123 Main St, Portland) OR an
+        `EdgeAddress`. An edge "address" contains just the ID of some edge.
+
+        return `list` -- A list of `PostalGeocode`s.
+
+        raise `AddressNotFoundError` -- Address doesn't match any edge in the
+        database.
+
+        """
+        geocodes = []
+        num = oAddr.number
+        tables = self.dbh.tables
+        layer_edges = tables.layer_edges
+        _c = layer_edges.c
+        query = self.session.query(self.dbh.layer_edges_mapper)
+
         try:
-            ids = oRegion.getStreetNameIds(oAddr.street)
-        except ValueError:
-            raise AddressNotFoundError(oRegion, oAddr)
+            # Try to look up edge by network ID first
+            network_id = oAddr.network_id
+        except AttributeError:
+            # No network ID, so look up addr by other attrs (street name & place)
+            select_ = layer_edges.select(and_(
+                query.join_to('street_name'),
+                func.least(_c.addr_f, _c.addr_t) <= num,
+                num <= func.greatest(_c.addr_f, _c.addr_t)
+            ))
+            self._appendWhereClausesToSelect(
+                select_,
+                self._getStreetNameWhereClause(oAddr.street_name),
+                self._getPlaceWhereClause(oAddr.place)
+            )
+            # Get rows and map to Edge objects
+            edges = query.select(select_)
         else:
-            streetname_ids = ','.join([str(i) for i in ids])
-            where.append('streetname_id IN (%s)' % streetname_ids)
-        where += _getPlaceWhere(place)
-        
-    where = ' AND '.join(where)
+            edges = query.select_by(
+                _c.id == network_id,
+                func.least(_c.addr_f, _c.addr_t) <= num,
+                num <= func.greatest(_c.addr_f, _c.addr_t)
+            )
 
-    # Get segments matching oAddr
-    Q = 'SELECT id FROM %s WHERE %s' % (oRegion.tables['edges'], where)
-    oRegion.execute(Q)
-    rows = oRegion.fetchAll()
-    if rows:
-        ids = [r[0] for r in rows]
-    else:
-        raise AddressNotFoundError(oRegion, oAddr)
-    
-    # Make list of geocodes for segments matching oAddr
-    geocodes = []
-    num = oAddr.number
-    segs = oRegion.getSegmentsById(ids)
-    for s in segs:
-        s_addr = address.PostalAddress(num)
-        attrs = s.getAttrsOnNumSide(num)
+        if not edges:
+            raise AddressNotFoundError(address=oAddr, region=self.region)
+
+        # Make list of geocodes for edges matching oAddr
+        for e in edges:
+            place = e.getPlaceOnSideNumberIsOn(num)
+            e_addr = PostalAddress(num, e.street_name, place)
+            geocodes.append(PostalGeocode(e_addr, e))
+        return geocodes
+
+    def getIntersectionGeocodes(self, oAddr):
+        """Geocode the intersection address represented by ``oAddr``.
+
+        ``oAddr`` -- An `IntersectionAddress` (e.g., 1st & Main, Portland)
+
+        return `list` -- A list of `IntersectionGeocode`s.
+
+        raise `AddressNotFoundError` -- Address doesn't match any edges in the
+        database.
+
+        """
+        layer_edges = self.dbh.tables.layer_edges
+        street_names = self.dbh.tables.street_names
+
+        def getNodeIDs(street_name, place):
+            node_ids = {}
+            # Get street name IDs
+            select_ = select([street_names.c.id])
+            self._appendWhereClausesToSelect(
+                select_,
+                self._getStreetNameWhereClause(street_name),
+            )
+            result = select_.execute()
+            if result.rowcount:
+                street_name_ids = [row.id for row in result]
+                # Get node IDs
+                select_ = select(
+                    [layer_edges.c.node_f_id, layer_edges.c.node_t_id],
+                    layer_edges.c.street_name_id.in_(*street_name_ids)
+                )
+                self._appendWhereClausesToSelect(
+                    select_,
+                    self._getPlaceWhereClause(place),
+                )
+                result = select_.execute()
+                for row in result:
+                    node_ids[row.node_f_id] = 1
+                    node_ids[row.node_t_id] = 1
+            return node_ids
+
+        ids_A = getNodeIDs(oAddr.street_name1, oAddr.place1)
+        if ids_A:
+            ids_B = getNodeIDs(oAddr.street_name2, oAddr.place2)
+
+        try:
+            node_ids = [id_ for id_ in ids_A if (id_ in ids_B)]
+        except (NameError, UnboundLocalError):
+            raise AddressNotFoundError(address=oAddr, region=self.region)
+
+        # Get node rows matching common node IDs and map to `Node` objects
+        layer_nodes = self.dbh.tables.layer_nodes
+        query = self.session.query(self.dbh.layer_nodes_mapper)
+        select_nodes = layer_nodes.select(layer_nodes.c.id.in_(*node_ids))
+        nodes = query.select(select_nodes)
+
+        if not nodes:
+            raise AddressNotFoundError(address=oAddr, region=self.region)
+
+        # Create and return `IntersectionGeocode`s
+        geocodes = []
+        for node in nodes:
+            # TODO: Pick edges that correspond to the input address's cross
+            # streets instead of the first two (which is basically choosing at 
+            # random).
+            edges = node.edges
+            edge1, edge2 = edges[0], edges[1]
+            addr = IntersectionAddress(
+                street_name1=edge1.street_name, place1=edge1.place_l,
+                street_name2=edge2.street_name, place2=edge2.place_l
+            )
+            _g = IntersectionGeocode(addr, node)
+            geocodes.append(_g)
+        return geocodes
+
+    def getPointGeocodes(self, oAddr):
+        """Geocode point or node address represented by ``oAddr``.
+
+        ``oAddr`` -- A `PointAddress` (e.g., POINT(x y)) OR a `NodeAddress`. A
+        node "address" contains just the ID of some node.
+
+        return `list` -- A list containing one `IntersectionGeocode` or one
+        `PostalGeocode`, depending on whether the point is at an intersection
+        with cross streets or a dead end.
+
+        raise `AddressNotFoundError` -- Point doesn't match any nodes in the
+        database.
+
+        """
+        SRID = self.region.SRID
+        units = self.region.units
+        earth_circumference = self.region.earth_circumference
+        layer_nodes = self.dbh.tables.layer_nodes
+        _c = layer_nodes.c
+        query = self.session.query(self.dbh.layer_nodes_mapper)
+        cols = [_c.id, _c.geom]
+
+        # Set up the SELECT clause according to whether ``oAddr`` is a
+        # `NodeAddress` or `PointAddress`
+        try:
+            # Special case of `Node` ID supplied directly
+            node_id = oAddr.network_id
+        except AttributeError:
+            # No network ID, so look up `Node` by distance
+            wkt = str(oAddr.point)
+            # Function to convert the input point to native geometry
+            _f = func.transform(func.GeomFromText(wkt, 4326), SRID)
+            # Function to get the distance between input point and table points
+            dist_func = func.distance(_f, _c.geom)
+            # This is what we're SELECTing--the distance from the input point
+            # to points in the nodes table (along with the node ID and geom).
+            cols += [dist_func.label('dist')]
+            # Limit the search to within `expand_dist` feet of the input point.
+            # Keep trying until we find a match or until `expand_dist` is
+            # larger than half the circumference of the earth.
+            if units == 'feet':
+                expand_dist = 250
+                # This is about the length of a Portland block. I suppose we
+                # should figure out what the typical user click accuracy is,
+                # and set this according to that.
+            elif units == 'meters':
+                expand_dist = 85
+            _aa = _c.geom.op('&&')  # geometry A overlaps geom B operator
+            _e = func.expand  # geometry bounds expanding function
+            while expand_dist < earth_circumference:
+                where = _aa(_e(_f, expand_dist))
+                select_ = select(cols, where, order_by=['dist'], limit=1)
+                try:
+                    node = self._selectOneNode(query, select_)
+                except AddressNotFoundError:
+                    expand_dist <<= 1
+                else:
+                    break
+            if expand_dist > earth_circumference:
+                # Not found on `Earth`!
+                raise AddressNotFoundError(address=oAddr, region=self.region)
+        else:
+            select_ = select(cols, _c.id == node_id)
+            node = self._selectOneNode(query, select_)
+
+        # TODO: Check the `Edge`'s street names and places for [No Name]s and
+        # choose the `Edge`(s) that have the least of them. Also, we should
+        # pick streets that have different names from each other when creating
+        # `IntersectionAddresses`s
+        edges = node.edges
+        if len(edges) > 1:
+            # `node` has multiple outgoing edges
+            edge1, edge2 = edges[0], edges[1]
+            addr = IntersectionAddress(
+                street_name1=edge1.street_name, place1=edge1.place_l,
+                street_name2=edge2.street_name, place2=edge2.place_l
+            )
+            _g = IntersectionGeocode(addr, node)
+        else:
+            # `node` is at a dead end
+            edge = edges[0]
+            # Set address number to number at `node` end of edge
+            if node.id == edge.node_f_id:
+                num = edge.addr_f
+            else:
+                num = edge.addr_t
+            addr = PostalAddress(num, edge.street_name, edge.place_l)
+            _g = PostalGeocode(addr, edge)
+            _g.node = node
+        return [_g]
+
+    ### Utilities
+
+    def _getStreetNameWhereClause(self, street_name):
+        """Get a WHERE clause for ``street_name``."""
+        street_names = self.dbh.tables.street_names
+        clause = []
         for attr in ('prefix', 'name', 'sttype', 'suffix'):
-            setattr(s_addr.street, attr, attrs[attr])
-        for attr in ('city_id', 'city', 'state_id', 'zip_code'):
-            setattr(s_addr.place, attr, attrs[attr])
-        xy = gis.getInterpolatedXY(s.linestring,
-                                   max(s.addr_f, s.addr_t) -
-                                   min(s.addr_f, s.addr_t),
-                                   num -
-                                   min(s.addr_f, s.addr_t))
-        code = geocode.PostalGeocode(s_addr, s, xy)
-        geocodes.append(code)
-    return geocodes
+            val = getattr(street_name, attr)
+            if val:
+                clause.append(street_names.c[attr] == val)
+        if clause:
+            return and_(*clause)
+        return None
 
-    
-def getIntersectionGeocodes(oRegion, oAddr):        
-    street1, street2 = oAddr.street1, oAddr.street2
-    place1, place2 = oAddr.place1, oAddr.place2
+    def _getPlaceWhereClause(self, place):
+        """Get a WHERE clause for ``place``."""
+        tables = self.dbh.tables
+        clause = []
+        if place.city_name:
+            clause.append(tables.cities.c.city == place.city_name)
+        if place.state_id:
+            clause.append(tables.states.c.id == place.state_id)
+        if place.zip_code:
+            _c = tables.layer_edges.c
+            clause.append(or_(
+                _c.zip_code_l == place.zip_code,
+                _c.zip_code_r == place.zip_code
+            ))
+        if clause:
+            return and_(*clause)
+        return None
 
-    try:
-        ids_a = oRegion.getStreetNameIds(street1)
-        ids_b = oRegion.getStreetNameIds(street2)
-    except ValueError:
-        raise AddressNotFoundError(oRegion, oAddr)
-    else:
-        streetname_ids_a = ','.join([str(i) for i in ids_a])
-        streetname_ids_b = ','.join([str(i) for i in ids_b])
+    def _appendWhereClausesToSelect(self, select_, *where_clauses):
+        for where_clause in where_clauses:
+            if where_clause is not None:
+                select_.append_whereclause(where_clause)
 
-    # Create the WHERE clause
-    Q = 'SELECT id, node_f_id, node_t_id FROM %s WHERE' % \
-        oRegion.tables['edges']
-    first = True
-    for place, ids in ((place1, streetname_ids_a),
-                       (place2, streetname_ids_b)):
-        where = _getPlaceWhere(place)
-        where.append('streetname_id IN (%s)' % ids)
-        where = ' AND '.join(where)
-        oRegion.executeDict('%s %s' % (Q, where))
-        rows = oRegion.fetchAllDict()
-        if not rows:
-            raise AddressNotFoundError(oRegion, oAddr)
-        if first:
-            first = False
-            rows_a = rows
-        else:
-            rows_b = rows
+    def _selectOneNode(self, query, select_):
+        """Attempt to get one, and only one, `Node`.
 
-    # Index all segments by their node_f/t_ids
-    ia, ib = {}, {}
-    for i, R in ((ia, rows_a), (ib, rows_b)):
-        for r in R:
-            id = r['id']
-            node_f_id, node_t_id = r['node_f_id'], r['node_t_id']
-            if node_f_id in i:
-                i[node_f_id].append(id)
-            else:
-                i[node_f_id] = [id]
-            if node_t_id in i:
-                i[node_t_id].append(id)
-            else:
-                i[node_t_id] = [id]
+        The main purpose of this method is to encapsulate the SQLAlchemly
+        InvalidRequestError and raise an AddressNotFoundError instead.
 
-    # Get IDs of segs with matching id
-    ids, pairs = {}, []
-    for id in ia:
-        if id in ib:
-            id_a, id_b = ia[id][0], ib[id][0]
-            ids[id_a], ids[id_b] = 1, 1
-            pairs.append((id_a, id_b))
-    if not pairs:
-        raise AddressNotFoundError(oRegion, oAddr)
+        ``query`` -- A SQLAlchemy query object.
+        ``select_`` -- A SELECT statement that can return *only* one row.
 
-    # Get all the segs and map them by their IDs
-    S = oRegion.getSegmentsById(ids.keys())
-    if not S:
-        raise AddressNotFoundError(oRegion, oAddr) 
-    s_dict = {}
-    for s in S: s_dict[s.id] = s
+        return `Node` -- A single `Node` object.
 
-    # Get the address and shared node ID of each cross street pair
-    addrs = []
-    node_ids = []
-    for p in pairs:
-        s, t = s_dict[p[0]], s_dict[p[1]]
-        i_addr = address.IntersectionAddress()
-        _setStreetAndPlaceFromSegment(i_addr.street1, i_addr.place1, s)
-        _setStreetAndPlaceFromSegment(i_addr.street2, i_addr.place2, t)
-        addrs.append(i_addr)
-        node_ids.append(s.getIDOfSharedIntersection(t))
+        raise `InvalidRequestError` -- If there is not exactly one row
+        returned by the SELECT, this will be raised. Note that this could
+        happend if there are 0 or more than 1 rows. That's why the SELECT
+        should only be able to return 1 one row maximum, either by using
+        LIMIT 1 or some other way.
 
-    # Get all the ints and map them by their Node IDs
-    I = oRegion.getIntersectionsById(node_ids)
-    if not I:
-        raise AddressNotFoundError(oRegion, oAddr)
-    i_dict = {}
-    for i in I:
-        i_dict[i.id] = i
+        TODO: Fix this so it detects 0 versus multiple matches.
 
-    # Make a list of all the matching addresses and return it
-    geocodes = []
-    for addr, node_id in zip(addrs, node_ids):
-        code = geocode.IntersectionGeocode(addr, i_dict[node_id])
-        geocodes.append(code)
-    return geocodes
-
-    
-def getPointGeocodes(oRegion, oAddr):
-    try:
-        # Special case of node ID supplied directly
-        min_id = oAddr.node_id
-    except AttributeError:
-        Q = 'SELECT id, ' \
-            'GLength(LineStringFromWKB(LineString(' \
-            'AsBinary(geom), AsBinary(geomfromtext("%s"))))) ' \
-            'AS distance ' \
-            'FROM %s ORDER BY distance ASC LIMIT 1'
-        oRegion.execute(Q % (oAddr.point, oRegion.tables['nodes']))
-        row = oRegion.fetchRow()
-        min_id = row[0]
-
-    # Get segment rows that have our min_id as their node_f_id/t
-    Q = 'SELECT id, streetname_id ' \
-        'FROM %s WHERE node_f_id=%s OR node_t_id=%s' % \
-        (oRegion.tables['edges'], min_id, min_id)
-    oRegion.executeDict(Q)
-    rows = oRegion.fetchAllDict()
-
-    if not rows:
-       raise AddressNotFoundError(oRegion, oAddr)         
-
-    # Index segment rows by their street name IDs
-    st_ids = {}
-    for row in rows:
-        streetname_id = row['streetname_id']
-        if streetname_id in st_ids:
-            st_ids[streetname_id].append(row['id'])
-        else:
-            st_ids[streetname_id] = [row['id']]
-
-    i = oRegion.getIntersectionById(min_id)
-
-    ids_a = st_ids.popitem()[1]
-    if st_ids:
-        # Found point at intersection
-        ids_b = st_ids.popitem()[1]
-        # Get segments
-        s, t = oRegion.getSegmentsById((ids_a[0], ids_b[0]))
-        # Set address attributes
-        _setStreetAndPlaceFromSegment(oAddr.street1, oAddr.place1, s)
-        _setStreetAndPlaceFromSegment(oAddr.street2, oAddr.place2, t)
-        # Make geocode
-        code = geocode.IntersectionGeocode(oAddr, i)
-    else:
-        # Found point at dead end
-        oAddr = address.PostalAddress()
-        s = oRegion.getSegmentById(ids_a[0])
-        # Set address number to num at min_nid end of segment
-        if min_id == s.node_f_id:
-            oAddr.number = s.addr_f
-            xy = s.linestring[0]
-        else:
-            oAddr.number = s.addr_t
-            xy = s.linestring[-1]
-        _setStreetAndPlaceFromSegment(oAddr.street, oAddr.place, s)
-        code = geocode.PostalGeocode(oAddr, s, xy)
-        code.intersection = i
-    return [code]
+        """
+        try:
+            return query.selectone(select_)
+        except InvalidRequestError:
+            raise AddressNotFoundError
 
 
-## Helper functions
-
-def _setStreetAndPlaceFromSegment(street, place, seg):
-    attrs = seg.getAttrsOnSide('left')
-    for attr in ('prefix', 'name', 'sttype', 'suffix'):
-        street.__dict__[attr] = attrs[attr]
-    for attr in ('city_id', 'city', 'state_id', 'zip_code'):
-        place.__dict__[attr] = attrs[attr]
-
-
-def _getPlaceWhere(place):
-    where = []
-    if place.city and place.city_id:
-        cid = place.city_id
-        where.append('(city_l_id=%s OR city_r_id=%s)' % (cid, cid))
-    if place.state_id:
-        st = place.state_id
-        where.append('(state_l_id="%s" OR state_r_id="%s")' % (st, st))
-    if place.zip_code:
-        z = place.zip_code
-        where.append('(zip_code_l=%s OR zip_code_r=%s)' % (z, z))
-    return where
+if __name__ == '__main__':
+    pass
+    #g = get('633 n alberta', region='portlandor')
+    #print g

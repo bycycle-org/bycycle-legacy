@@ -1,42 +1,44 @@
-"""$Id$
+###########################################################################
+# $Id$
+# Created 2005-11-07
+#
+# Portland, OR, region.
+#
+# Copyright (C) 2006 Wyatt Baldwin, byCycle.org <wyatt@bycycle.org>.
+# All rights reserved.
+# 
+# For terms of use and warranty details, please see the LICENSE file included
+# in the top level of this distribution. This software is provided AS IS with
+# NO WARRANTY OF ANY KIND.
 
-Portland, OR Data Mode (11/07/2005).
 
-Copyright (C) 2006 Wyatt Baldwin, byCycle.org <wyatt@bycycle.org>. All rights 
-reserved. Please see the LICENSE file included in the distribution. The license 
-is also available online at http://bycycle.org/tripplanner/license.txt or by 
-writing to license@bycycle.org.
-
-"""
-import sys
-sys.path.append('/home/bycycle/byCycle/evil')
-
-
+"""This module defines the Portland, OR, region."""
 import math
-from byCycle.model import mode
- 
+from byCycle.model import region
 
-class Mode(mode.Mode):
+
+SRID = 2913
+units = 'feet'
+earth_circumference = 131484672
+block_length = 1.0 / 20.0
+
+
+class Region(region.Region):
+    """A factory (?) for creating Portland, OR, `Region`s."""
+
     def __init__(self):
-        self.name = 'portlandor'
-        self.region = 'portlandor'
-        self.edge_attrs = ['bikemode', 'up_frac', 'abs_slp', 'node_f_id',
-                           'cpd']
-        mode.Mode.__init__(self)
-        #self.mode = mode.Mode(self)
+        name = 'Portland, OR'
+        edge_attrs = ['street_name_id', 'code', 'bikemode', 'up_frac', 
+                        'abs_slp', 'node_f_id', 'cpd']
+        region.Region.__init__(self, name, SRID, units, earth_circumference,
+                               edge_attrs=edge_attrs)
 
-    def _adjustRowForMatrix(self, row):
-        row['up_frac'] = int(math.floor(row['up_frac'] * self.int_encode))
-        row['abs_slp'] = int(math.floor(row['abs_slp'] * self.int_encode))
+    def _adjustRowForMatrix(self, dbh, row):
+        adjustments = {
+            'abs_slp': dbh.encodeFloat(row['abs_slp']),
+            'up_frac': dbh.encodeFloat(row['up_frac']),
+        }
+        return adjustments
+        
 
-
-if __name__ == '__main__':
-    import time
-    from byCycle.lib import meter
     
-    md = Mode();
-    
-    t = meter.Timer()
-    G1 = md.createAdjacencyMatrix()
-    print t.stop()
-
