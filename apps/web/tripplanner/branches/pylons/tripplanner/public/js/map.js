@@ -25,11 +25,12 @@ byCycle.Map = {
  * Base byCycle Map widget
  */
 byCycle.Map.Map = function (parent, container) {
-  if (typeof(parent) != 'undefined') {
-    this.parent = parent;
-    this.container = container;
-    this.createMap(container);
+  if (typeof(parent) == 'undefined') {
+    return;
   }
+  this.parent = parent;
+  this.container = container;
+  this.createMap(container);
 };
 
 
@@ -39,9 +40,12 @@ byCycle.Map.base.Map = byCycle.Map.Map;
 byCycle.Map.Map.prototype = {
 
   createMap: function(container) {
-    var map = DIV({'style': 'overflow: auto; padding: 5px;'});
-    replaceChildNodes(container, map);
-    map.innerHTML = 'Default byCycle Map Interface';
+    var map = document.createElement('div');
+    map.style.overflow = 'auto';
+    map.style.padding = '5px';
+    Element.update(container, '');
+    container.appendChild(map);
+    Element.update(map, 'Default byCycle Map Interface');
     this.map = map;
   },
 
@@ -75,7 +79,7 @@ byCycle.Map.Map.prototype = {
   },
 
   setCenter: function(center, zoom) {
-    this.map.innerHTML += ('<br/>' + center.y + ', ' + center.x);
+    this.map.innerHTML += ('<br/>Center: ' + center.y + ', ' + center.x + (zoom ? ' Zoom: ' + zoom : ''));
   },
 
   setZoom: function(zoom) {
@@ -99,7 +103,7 @@ byCycle.Map.Map.prototype = {
   drawPolyLine: function(points, color, weight, opacity) {},
 
   placeMarker: function(point, icon) {
-    this.map.innerHTML += ('<br/>' + point.y + ', ' + point.x);
+    this.map.innerHTML += ('<br/>Marker: ' + point.y + ', ' + point.x);
   },
 
   /**
@@ -114,7 +118,7 @@ byCycle.Map.Map.prototype = {
     for (var i = 0; i < len; ++i) {
       p = points[i];
       var marker = DIV();
-      marker.innerHTML = '&lt;Marker> x: ' + p.x + ', y: ' + p.y;
+      marker.innerHTML = 'Marker: ' + p.x + ', ' + p.y;
       markers.push(marker);
       this.addOverlay(marker);
     }

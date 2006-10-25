@@ -20,13 +20,15 @@ var byCycle = (function() {
   var config = _dev_config;
   var base_url = location.href.split('?')[0];
   var domain = base_url.split('/')[2];
+  var index = 0;
+  var colors = ['#fff', '#ccc'];
 
   var _public = {
     config: config,
     debug: config.debug,
     base_url: base_url,
     domain: domain,
-    query_pairs: parseQueryString(window.location.search.substr(1)),
+    query_pairs: (window.location.search.substr(1)).toQueryParams(),
     default_map_type: 'base',
 
     /**
@@ -53,19 +55,30 @@ var byCycle = (function() {
       }
       var msg = msgs.join('\n');
       if (msg) {
-        alert(msg);
+        Element.update('status', msg);
       }
     },
 
     logDebug: function() {
       // TODO: Send email to admin?
+      result = [];
+      for (var i = 0; i < arguments.length; ++i) {
+        result.push(arguments[i]);
+      }
+      var div = document.createElement('div');
+      div.innerHTML = result.join(' ');
+      div.style.padding = '2px';
+      div.style.backgroundColor = colors[index % 2];
+      index += 1;
+      Element.update(div, (result.join(' ') + '<br/>'));
+      $('debug').appendChild(div);
     }
   };
 
   if (config.debug) {
     //MochiKit.LoggingPane.createLoggingPane();
-    _public.logInfo = MochiKit.Logging.log;
-    _public.logDebug = MochiKit.Logging.logDebug;
+    //_public.logInfo = MochiKit.Logging.log;
+    //_public.logDebug = MochiKit.Logging.logDebug;
   }
 
   return _public;

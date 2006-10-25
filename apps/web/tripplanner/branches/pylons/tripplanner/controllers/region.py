@@ -12,8 +12,9 @@ class RegionController(ViewController):
         ------
         /
         /region
+        /region/service
 
-        """
+        """        
         # Region not given in URL path; see if it's given as a query param
         if region is None:
             region = request.params.get('region', None)
@@ -27,7 +28,7 @@ class RegionController(ViewController):
             # Bad/unknown region
             # TODO: Show an error instead of just showing all regions
             region_key = 'all'
-            c.error = 'Unknown region: %s' % region
+            c.errors = 'Unknown region: %s' % region
 
         service = service or 'query'
         service = ''.join(service.strip().split()).lower()
@@ -46,7 +47,7 @@ class RegionController(ViewController):
         c.region_key = region_key
         c.service_name = service
         c.region_options = self._makeRegionOptions(region_key)
-        return render_response('/region/%s.myt' % region_key)
+        return render_response('/region/show.myt', region=region_key)
 
     def _makeRegionOptions(self, region=''):
         """Make HTML options list with ``region`` selected, if ``region``.
