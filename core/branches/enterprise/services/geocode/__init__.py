@@ -40,7 +40,7 @@ from byCycle.model.domain import Point
 
 from byCycle import services
 from byCycle.services import normaddr
-from byCycle.services.exceptions import ByCycleError
+from byCycle.services.exceptions import ByCycleError, NotFoundError
 
 
 class GeocodeError(ByCycleError):
@@ -48,7 +48,7 @@ class GeocodeError(ByCycleError):
     def __init__(self, desc='Geocode Error'):
         ByCycleError.__init__(self, desc)
 
-class AddressNotFoundError(GeocodeError):
+class AddressNotFoundError(GeocodeError, NotFoundError):
     def __init__(self, desc='Address Not Found', address='', region=''):
         if region and address:
             desc = ('Unable to find address "%s" in region "%s"' %
@@ -158,7 +158,7 @@ class Service(services.Service):
 
         return geocodes[0]
 
-    ### Each get*Geocode function returns a list of possible geocodes for the 
+    ### Each get*Geocode function returns a list of possible geocodes for the
     ### input address or raises an error when no matches are found.
 
     def getPostalGeocodes(self, oAddr):
@@ -276,7 +276,7 @@ class Service(services.Service):
         geocodes = []
         for node in nodes:
             # TODO: Pick edges that correspond to the input address's cross
-            # streets instead of the first two (which is basically choosing at 
+            # streets instead of the first two (which is basically choosing at
             # random).
             edges = node.edges
             edge1, edge2 = edges[0], edges[1]
