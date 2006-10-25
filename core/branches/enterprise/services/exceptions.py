@@ -12,14 +12,22 @@
 # NO WARRANTY OF ANY KIND.
 
 
+###########################################################################
 class ByCycleError(Exception):
-    def __init__(self, desc='byCycle Error'): 
+    def __init__(self, desc='byCycle Error'):
         self.description = desc
+        Exception.__init__(self)
     def __str__(self):
         return str(self.description)
 
-        
+
+###########################################################################
 class InputError(ByCycleError):
     def __init__(self, errors=[]):
         desc = '\n'.join([str(e) for e in errors])
         ByCycleError.__init__(self, desc=desc)
+
+
+###########################################################################
+class NotFoundError(ByCycleError):
+    pass
