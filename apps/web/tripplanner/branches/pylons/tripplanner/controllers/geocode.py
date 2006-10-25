@@ -1,44 +1,27 @@
-import simplejson
-from byCycle.services.exceptions import *
 from byCycle.services.geocode import *
 from tripplanner.lib.base import *
 from tripplanner.controllers.service import ServiceController
 
 
+###########################################################################
 class GeocodeController(ServiceController):
     """Controller for handling geocode queries."""
 
     #----------------------------------------------------------------------
     def show(self, query, region):
-        query = query or request.params.get('q', None)
-        format = request.params.get('format', 'html')
-        service = Service(region=region)
-        json = None
         try:
-            geocode = service.query(query)
+            return super(GeocodeController, self).show(
+                query, region, service_class=Service
+            )
         except MultipleMatchingAddressesError, exc:
-            geocodes = exc.geocodes
             template = 'geocodes'
+            oResult = exc.geocodes
             http_status = 300
-            c.geocodes = geocodes
-            json = simplejson.dumps([eval(repr(g)) for g in geocodes])
-        except InputError, exc:
-            c.error_msg = exc.description
-            template = 'error'
-            http_status = 400
-        except AddressNotFoundError, exc:
-            c.error_msg = exc.description
-            template = 'not_found'
-            http_status = 404
-        except Exception, exc:
-            c.error_msg = str(exc)
-            template = 'error'
-            http_status = 500
-        else:
-            template = 'geocode'
-            http_status = 200
-            c.geocode = geocode
-            json = simplejson.dumps(eval(repr(geocode)))
-        return ServiceController._render(
-            self, service, template, http_status, format, json
+            to_json = [eval(repr(g)) for g in oResult]
+            c.title = 'Multiple Matches Found'
+            c.classes = 'errors'
+        # We'll get here only if there's an unhandled error in the superclass.
+        # Otherwise, the superclass will handle rendering directly.
+        return self._render(
+            self.service, template, http_status, self.format, oResult, to_json
         )

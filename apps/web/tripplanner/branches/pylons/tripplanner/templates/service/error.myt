@@ -1,7 +1,5 @@
-<h2>Error</h2>
+<%flags>
+    inherit = 'result.myt'
+</%flags>
 
 <% c.error_msg %>
-
-<script>
-//$('change_region_link').onclick();
-</script>

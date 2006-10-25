@@ -25,7 +25,7 @@ byCycle.Map.google = {
     if (api_key) {
       writeScript(api_url + api_key);
       byCycle.Map.google.api_loaded = true;
-      byCycle.logInfo('Google Maps API Loaded');
+      byCycle.logDebug('Google Maps API Loaded');
     } else {
       byCycle.logDebug('No API key found for ' + byCycle.domain);
     }
@@ -59,7 +59,7 @@ byCycle.Map.google.Map = function(parent, container) {
 /**
  * byCycle Google Map Methods
  */
-byCycle.Map.google.Map.prototype = update(new byCycle.Map.Map(), {
+byCycle.Map.google.Map.prototype = Object.extend(new byCycle.Map.Map(), {
 
   center_marker_html: '<div class="info_win"><p><a href="javascript:void(0);" onclick="byCycle.UI.findAddressAtCenter();">Find address of closest intersection</a></p><p>Set as <a href="javascript:void(0);" onclick="byCycle.UI.s_el = byCycle.UI.map.getCenterString();">From</a> or <a href="javascript:void(0);" onclick="byCycle.UI.s_el = byCycle.UI.map.getCenterString();">To</a> address for route</p></div>',
 
@@ -68,8 +68,6 @@ byCycle.Map.google.Map.prototype = update(new byCycle.Map.Map(), {
 
   createMap: function(container) {
     var map = new GMap2(container);
-    //map.addMapType(this.makeMercatorMapType(G_NORMAL_MAP, 'Bike/Map', 18));
-    //map.addMapType(this.makeMercatorMapType(G_SATELLITE_MAP, 'Bike/Sat', 20));
     map.setCenter(new GLatLng(0, 0), 7);
     map.addControl(new GLargeMapControl());
     map.addControl(new GMapTypeControl());
@@ -79,7 +77,6 @@ byCycle.Map.google.Map.prototype = update(new byCycle.Map.Map(), {
     var style = $('map_overview').firstChild.firstChild.style;
     style.top = '8px';
     style.left = '7px';
-    //style.borderTop = style.borderBottom;
     // Add keyboard navigation
     new GKeyboardHandler(map);
     this.map = map;

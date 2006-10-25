@@ -25,7 +25,7 @@ byCycle.UI = (function() {
   byCycle.logDebug('Map type:', map_type.description);
 
   /** public: **/
-  
+
   var _public = {
     ads_width: 120,
 
@@ -34,13 +34,14 @@ byCycle.UI = (function() {
     s_el: $('s'),
     e_el: $('e'),
     pref_el: $('pref'),
-    region_el: $('regions'),
     status_el: $('status'),
-    result_el: $('result'),
-    errors_el: $('errors'),
+    region_el: $('regions'),
     bookmark_el: $('bookmark'),
     display_el: $('display'),
-    google_ads_el: $('google_ads'),
+    info_el: $('info'),
+    help_el: $('help'),
+    results_el: $('results'),
+    errors_el: $('errors'),
 
     // The map object
     map: null,
@@ -75,7 +76,7 @@ byCycle.UI = (function() {
         map_msg.innerHTML = 'Loading map...';
         map_type.beforeLoad();
       }
-      MochiKit.Signal.connect(window, 'onload', byCycle.UI.onLoad);
+      Event.observe(window, 'load', byCycle.UI.onLoad);
     },
 
     onLoad: function() {
@@ -86,12 +87,15 @@ byCycle.UI = (function() {
         // Otherwise, below we'll use whatever self.map_type is set to.
         self.map_type = byCycle.Map.base;
       }
-      self.initTabPanes();
+      new self.TabPane('input', 'query_label');
       self.setEventHandlers();
       self.map = new self.map_type.Map(self, self.map_el);
-      hideElement('map_msg');
-      showElement('map');
-      showElement('google_ads');
+      Element.hide('map_msg');
+      Element.show(self.map_el);
+      Element.show('ads');
+      if (byCycle.debug) {
+        Element.show('debug_window')
+      }
       self.onResize();
       self.setRegionFromSelectBox();
       self.handleQuery();
@@ -111,301 +115,86 @@ byCycle.UI = (function() {
     },
 
     setEventHandlers: function() {
-      connect(window, 'onresize', self.onResize);
-      connect(document.body, 'onunload', self.unload);
-      //connect('query_form', 'onsubmit', self.doFind);
-      //connect('route_form', 'onsubmit', self.doFind);
-      connect('swap_s_and_e', 'onclick', self.swapStartAndEnd);
-      //connect('regions', 'onchange', self.setRegionFromSelectBox);
-      //connect('regions_form', 'onsubmit', self.setRegionFromSelectBox);
-      connect('hide_ads', 'onclick', self.hideAds);
+      Event.observe(window, 'resize', self.onResize);
+      Event.observe(document.body, 'unload', self.unload);
+      Event.observe('swap_s_and_e', 'click', self.swapStartAndEnd);
+      Event.observe('change_region_link', 'click', self.showRegionSelectBox);
+      Event.observe('hide_ads', 'click', self.hideAds);
       //connect('find_center_map', 'onclick', self.findAddressAtCenter)
       //connect('clear_map', 'onclick', self.clearMap);
     },
 
     onResize: function() {
-      var dims = getViewportDimensions();
-      byCycle.logDebug('Viewport dimensions:', dims.w, dims.h);
+      var dims = Element.getDimensions(document.body);
+      byCycle.logDebug('Viewport dimensions:', dims.width, dims.height);
 
       // Resize map
-      var pos = elementPosition(self.map_el);
-      var width = dims.w - pos.x - (self.ads_width ? self.ads_width : 0);
-      var height = dims.h - pos.y;
+      var pos = Position.cumulativeOffset(self.map_el);
+      var width = dims.width - pos[0] - (self.ads_width ? self.ads_width : 0);
+      var height = dims.height - pos[1];
       self.map.setSize({w: width, h: height});
 
       // Resize display (include padding)
-      pos = elementPosition(self.display_el);
-      height = dims.h - pos.y;
+      pos = Position.cumulativeOffset(self.display_el);
+      height = dims.height - pos[1];
       self.display_el.style.height =  (height - 8) + 'px';
 
       // Resize ads (if visible)
       if (self.ads_width) {
-        self.google_ads_el.style.height =  height + 'px';
-      }
-    },
-
-    /** Common Hooks, Callbacks, Helpers **/
-
-    beforeQuery: function(form, service, q, errors) {
-      byCycle.logDebug('Entered beforeQuery...');
-      byCycle.logDebug('Entering showErrors...');
-      if (self.showErrors(errors)) {
-        self.abort_request = true;
-        byCycle.logDebug('Errors encountered before query.');
-        return;
-      }
-      byCycle.logDebug('No errors; continuing...');
-      self.abort_request = false;
-      self.form = form;
-      self.start_ms = new Date().getTime();
-      map(hideElement, ['info', 'help', 'errors']);
-    },
-
-    onQueryLoading: function(request, msg) {
-      byCycle.logDebug('Entered onQueryLoading...');
-      if (self.abort_request) {
-        request.abort();
-        byCycle.logDebug('Aborted request');
-      } else {
-        self.setStatus(msg || 'Processing...');
-      }
-    },
-
-    onQueryLoaded: function(request) {
-      self.setStatus(self.getElapsedTimeMessage());
-    },
-
-    showErrors: function(errors) {
-      // Show the list of errors; return true if errors, false if not
-      var has_errors = (errors.length > 0);
-      if (has_errors) {
-        var content = ['<h2>Errors</h2><ul class="result_list"><li>',
-                       errors.join('</li><li>'), '</li></ul>'].join('');
-        self.setErrors(content);
-      }
-      return has_errors;
-    },
-
-    setBookmark: function(form) {
-      byCycle.logDebug('Entered setBookmark...');
-      var path_info = [];
-      var query_args = {};
-      path_info.push(self.region, self.service, ':q');
-      if (self.service == 'route') {
-        var pref = self.pref_el.value;
-        if (pref) {
-          query_args.pref = pref;
-        }
-      }
-      var url = ['http://', byCycle.domain, '/', path_info.join('/')].join('');
-      self.bookmark_el.href = [url, queryString(query_args)].join('?');
-
-      byCycle.logDebug('Bookmark:', self.bookmark_el.href);
-    },
-
-    getElapsedTimeMessage: function() {
-      if (self.start_ms) {
-        var elapsed_time = (new Date().getTime() - self.start_ms) / 1000.0;
-        elapsed_time = ['Done. Took ', elapsed_time, ' second',
-                        (elapsed_time == 1.00 ? '' : 's'), '.'].join('');
-      } else {
-        var elapsed_time = '';
-      }
-      return elapsed_time;
-    },
-
-    /** Search Hooks, Callbacks, Helpers **/
-
-    beforeSearchQuery: function(form) {
-      byCycle.logDebug('Entered beforeSearchQuery...');
-      var errors = [];
-      var q = self.q_el.value;
-      if (!q) {
-        errors.push('Please enter something to search for!');
-        self.q_el.focus();
-      } else {
-        // Is the query a route?
-        var i = q.toLowerCase().indexOf(' to ');
-        if (i != -1) {
-          // Query looks like a route
-          service = 'route';
-          var s = q.substring(0, i);
-          var e = q.substring(i + 4);
-          self.s_el.value = s;
-          self.e_el.value = e;
-          signal('route_label', 'onclick');
-          self.beforeRouteQuery(form, s, e);
-          return;
-        }
-      }
-      // Query doesn't look like a route
-      self.beforeQuery(form, 'query', q, errors);
-    },
-
-    onSearchSuccess: function(request) {
-      byCycle.logDebug('Query succeeded. Status: ' + request.status);
-    },
-
-    onSearchFailure: function(request) {
-      self.setStatus('Query failed. Status: ' + request.status +
-                     'Response Text:\n' + request.responseText);
-    },
-
-    onSearchComplete: function(request) {
-      // TODO: Check status; success refers to request only, not status
-      byCycle.logDebug('Entered onSearchComplete');
-      var status = request.status;
-      var response_text = request.responseText;
-      eval('var result = ' + $('oResult').value);
-      self.result = result;
-      self.map.placeMarker(result.point);
-      if (self.successfulQuery) {
-        self.map.setCenter(result.point);
-      } else {
-        self.successfulQuery = true;
-        self.map.setCenter(result.point, 14);
-      }
-      self.setBookmark();
-      byCycle.logDebug('Query complete.');
-    },
-
-    geocodeCallback: function(status, result_set) {
-      byCycle.logDebug('Entered geocodeCallback');
-      self.geocodes = result_set.result;
-      switch (status) {
-        case 200: // A-OK, one match
-          self.showGeocode(0, true);
-          break;
-        case 300:
-          break;
-      }
-    },
-
-    /** Route Hooks, Callbacks, Helpers **/
-
-    beforeRouteQuery: function(form, s, e) {
-      var errors = [];
-      var s = s || self.s_el.value;
-      var e = e || self.e_el.value;
-      if (s && e) {
-        q = ['["', s, '", "', e, '"]'].join('');
-      } else {
-        if (!s) {
-          errors.push('Please enter a start address');
-          self.s_el.focus();
-        }
-        if (!e) {
-          errors.push('Please enter an end address');
-          if (s) {
-            self.e_el.focus();
-          }
-        }
-      }
-      self.beforeQuery(form, 'route', q, errors);
-    },
-
-    routeCallback: function(status, result_set) {
-      byCycle.logDebug('In _routeCallback');
-      var route = result_set.result;
-      switch (status) {
-        case 200:
-          var map = self.map;
-          var ls = route.linestring;
-
-          // Zoom to linestring
-          map.centerAndZoomToBounds(map.getBoundsForPoints(ls));
-
-          // Place from and to markers
-          var s_e_markers = map.placeMarkers(
-            [ls[0], ls[ls.length - 1]], [map.start_icon, map.end_icon]
-          );
-
-          // Add listeners to from and to markers
-          var s_mkr = s_e_markers[0];
-          var e_mkr = s_e_markers[1];
-          map.addListener(s_mkr, 'click', function() {
-            map.showMapBlowup(ls[0]);
-          });
-          map.addListener(e_mkr, 'click', function() {
-            map.showMapBlowup(ls[ls.length - 1]);
-          });
-
-          // Draw linestring
-          map.drawPolyLine(ls, colors[color_index]);
-          color_index += 1;
-          if (color_index == colors_len) {
-            color_index = 0;
-          }
-          break;
-        case 300: // Multiple matches for start and/or end address
-          break;
-      }
-    },
-
-    /** Miscellaneous **/
-
-    getVal: function(id, mach_v, user_v) {
-      var el_v = cleanString(elV(id));
-      if (mach_v == undefined) {
-        var val = el_v;
-      } else if (el_v.toLowerCase() != user_v.toLowerCase()) {
-        var val = el_v;
-        eval(['mach_', id, ' = undefined'].join(''));
-        eval(['user_', id, ' = "', el_v, '"'].join(''));
-      } else {
-        var val = mach_v;
-      }
-      return val;
-    },
-
-    setVal: function(id, mach_v, user_v) {
-      if (mach_v != undefined) {
-        eval(['mach_', id, ' = "', mach_v, '"'].join(''));
-      }
-      if (user_v != undefined) {
-        eval(['user_', id, ' = "', cleanString(user_v), '"'].join(''));
-        setElV(id, user_v);
+        $('ads').style.height =  height + 'px';
       }
     },
 
     /** UI Manipulation ("DHTML") **/
 
-    initTabPanes: function() {
-      new self.TabPane('input', 'query_label');
+    setBookmark: function(form) {
+      byCycle.logDebug('Entered setBookmark...');
+      var path_info = [];
+      var query_args = $H();
+      path_info.push(self.region, self.service, $F(self.q_el));
+      if (self.service == 'route') {
+        var pref = $F(self.pref_el);
+        if (pref) {
+          query_args.pref = pref;
+        }
+      }
+      var url = ['http://', byCycle.domain, '/', path_info.join('/')].join('');
+      var query_string = query_args.toQueryString();
+      if (query_string) {
+        self.bookmark_el.href = [url, query_args.toQueryString()].join('?');
+      } else {
+        self.bookmark_el.href = url;
+      }
+      byCycle.logDebug('Bookmark:', self.bookmark_el.href);
     },
 
+    /**
+     * Select from multiple matching geocodes
+     */
+    selectGeocode: function(id, result) {
+      var chosen = $(id);
+      var r = self.results_el;
+      r.insertBefore(chosen, r.firstChild);
+      Element.update('title'+id, 'Geocode');
+      Element.remove('extra'+id);
+      Element.update(self.errors_el, '');
+      Element.hide(self.errors_el);
+      var gq = new byCycle.UI.GeocodeQuery({});
+      var request = {status: 200, responseText: ''};
+      gq.onSuccess(request);
+      gq.onComplete(request);
+      gq.after(request);
+      Element.update(self.status_el, 'Good choice!');
+    },
+  
     reverseDirections: function() {
       // TODO: Do this right--that is, use the from and to values from the
       // result, not just whatever happens to be in the input form
       $('route_form').submit();
     },
 
-    //setSelected: function(selected) {
-      //// Handle called-as-slot
-      //if (typeof(selected.src) == 'function') {
-        //byCycle.logDebug('setSelected called-as-slot');
-    //var event = selected;
-    //var link = event.src();
-    //selected = link.name;
-      //}
-      //byCycle.logDebug('selected:', selected);
-      //if (selected == self.selected) {
-    //return;
-      //}
-      //// Hide old section
-      //var section = self.input_sections[self.selected];
-      //section.link.className = '';
-      //map(hideElement, [section.input, section.label]);
-      //// Show new section
-      //self.selected = selected;
-      //section = self.input_sections[selected];
-      //section.link.className = 'selected';
-      //map(showElement, [section.input, section.label]);
-      //section.focus.focus();
-    //},
-
     hideAds: function() {
-      hideElement('google_ads');
+      Element.hide('ads');
       self.ads_width = 0;
       self.onResize();
     },
@@ -424,18 +213,18 @@ byCycle.UI = (function() {
     },
 
     setResult: function(content) {
-      self.result_el.innerHTML = content;
+      self.results_el.innerHTML = content;
     },
     clearResult: function() {
-      self.result_el.innerHTML = '';
+      self.results_el.innerHTML = '';
     },
 
     setErrors: function(content) {
-      showElement(self.errors_el);
+      Element.show(self.errors_el);
       self.errors_el.innerHTML = content;
     },
     clearErrors: function() {
-      self.errors_el.innerHTML = '';
+      self.errors_el.update('');
     },
 
     /** Map **/
@@ -470,24 +259,19 @@ byCycle.UI = (function() {
     /** Regions **/
 
     showRegionSelectBox: function() {
-      showElement($('regions_win'));
+      Element.show('regions_window');
     },
 
     setRegionFromSelectBox: function() {
       var opts = self.region_el.options;
       var region = opts[self.region_el.selectedIndex].value;
       self.setRegion(region);
-      //hideElement('regions_win');
-      //logDebug('Region set to', opts[self.region_el.selectedIndex].innerHTML || 'All Regions');
     },
 
     setRegion: function(region) {
       var regions = byCycle.regions;
-      self.region = region;
+      self.region = region || 'all';
       region = regions[region] || regions.all;
-      //document.title = 'byCycle - Bicycle Trip Planner - ' + region.heading;
-      //$('active_region').innerHTML = region.heading;
-      //self.setStatus('Changed region to ' + region.heading);
       self._initRegion(region);
       self.map.centerAndZoomToBounds(region.bounds, region.center);
       if (region.all) {
@@ -535,14 +319,265 @@ byCycle.UI = (function() {
 
 
 /**
+ * Query Base Class
+ */
+byCycle.UI.Query = function(form) {
+  if (typeof(form) == 'undefined') {
+    return;
+  }
+  this.form = form;
+  this.ui = byCycle.UI;
+  this.region = this.ui.region;
+  this.service = 'query';
+  this.updater_message = 'Processing...';
+}
+
+byCycle.UI.Query.prototype = {
+  run: function() {
+    try {
+      var q = this.before();
+      if (this.updater) {
+        this.updater();
+      }
+      this.after();
+    } catch (e) {
+      this.showErrors(e.message);
+    }
+  },
+
+  before: function() {
+    byCycle.logDebug('Entered beforeQuery...');
+    this.start_ms = new Date().getTime();
+    ['info', 'errors', 'help'].each( function (id) { Element.hide(id); } );
+    byCycle.logDebug('Hid elements');
+    byCycle.logDebug('Left beforeQuery.');
+  },
+
+  updater: function() {
+    byCycle.logDebug('Entered updater...');
+    var self = this;
+    var url = [['', this.region, this.service, this.q].join('/'),
+               'format=frag'].join('?')
+    var args = {
+      method:'get',
+      asynchronous: true,
+      evalScripts: true,
+      insertion: Insertion.Top,
+      onLoading:  function(request) {self.onLoading(request);},
+      onSuccess:  function(request) {self.onSuccess(request);},
+      onFailure:  function(request) {self.onFailure(request);},
+      onComplete: function(request) {self.onComplete(request);},
+      parameters: Form.serialize(this.form)
+    }
+    new Ajax.Updater({success: 'results', failure: 'errors'}, url, args);
+  },
+
+  onLoading: function(request) {
+    Element.update('status', this.updater_message);
+  },
+
+  onSuccess: function(request) {
+    byCycle.logDebug('Search succeeded. Status: ' + request.status);
+    Element.show('results');
+    this.successful = true;
+  },
+
+  onFailure: function(request) {
+    byCycle.logDebug('Search failed. Status: ' + request.status);
+    // For errors from the back end
+    Element.show('errors');
+    Element.update('errors', '');
+    this.successful = false;
+  },
+
+  onComplete: function(request) {
+    byCycle.logDebug('Entered onComplete...');
+    Element.update('status', this.getElapsedTimeMessage());
+    if (this.successful) {
+      eval('var result = ' + $F('json') + ';');
+      this.callback(result);
+    }
+    Element.remove('json');
+    byCycle.logDebug('Left onComplete.');
+  },
+
+  after: function() {
+    byCycle.logDebug('Base after().');
+  },
+
+  showErrors: function(errors) {
+    // Handle errors that happen *before* the updater would have run (the
+    // updater doesn't get run if there are errors).
+    Element.update('status', 'Oops!');
+    Element.show('errors');
+    if (!(errors instanceof Array)) {
+      errors = [errors];
+    }
+    var content = ['<ul class="result_list"><li>',
+                   errors.join('</li><li>'),
+                   '</li></ul>'].join('');
+    Element.update('errors', content);
+  },
+
+  getElapsedTimeMessage: function() {
+    var elapsed_time = (new Date().getTime() - this.start_ms) / 1000.0;
+    var msg = (this.successful ? 'Done' : 'Something unexpected happened');
+    elapsed_time = [msg, '. Took ', elapsed_time, ' second',
+                    (elapsed_time == 1.00 ? '' : 's'), '.'].join('');
+    return elapsed_time;
+  },
+};
+
+
+/**
+ * Search Query
+ */
+byCycle.UI.SearchQuery = function(form) {
+  byCycle.UI.Query.call(this, form);
+  this.updater_message = 'Searching...';
+};
+
+byCycle.UI.SearchQuery.prototype = Object.extend(new byCycle.UI.Query(), {
+  before: function() {
+    byCycle.UI.Query.prototype.before.call(this);
+    var q = $F('q');
+    if (!q) {
+      Field.focus('q');
+      throw new Error('Please enter something to search for!');
+    } else {
+      // Is the query a route?
+      var i = q.toLowerCase().indexOf(' to ');
+      if (i != -1) {
+        // Query looks like a route
+        var s = q.substring(0, i);
+        var e = q.substring(i + 4);
+        $F('s') = s;
+        $F('e') = e;
+        //Event.trigger('route_label', 'click');
+        new byCycle.UI.RouteQuery(this.form).run();
+      } else {
+        // Query doesn't look like a route
+        new byCycle.UI.GeocodeQuery(this.form).run();
+      }
+    }
+  },
+
+  updater: null
+});
+
+
+/**
+ * Geocode Query
+ */
+byCycle.UI.GeocodeQuery = function(form) {
+  byCycle.UI.Query.call(this, form);
+  this.service = 'geocode';
+  this.updater_message = 'Locating address...';
+};
+
+byCycle.UI.GeocodeQuery.prototype = Object.extend(new byCycle.UI.Query(), {
+  before: function() {
+    byCycle.UI.Query.prototype.before.call(this);
+    byCycle.logDebug('Entered beforeGeocodeQuery...');
+    var q = $F('q');
+    if (!q) {
+      Field.focus('q');
+      throw new Error('Please enter an address!');
+    }
+    this.q = q;
+  },
+
+  callback: function(result) {
+    byCycle.logDebug('Entered geocodeCallback...');
+    var map = this.ui.map;
+    map.placeMarker(result.point);
+    map.setCenter(result.point, 14);
+    byCycle.logDebug('Left geocodeCallback.');
+  }
+});
+
+
+/**
+ * Route Query
+ */
+byCycle.UI.RouteQuery = function() {
+  byCycle.UI.Query.call(this);
+  this.service = 'route';
+  this.updater_message = 'Finding route...';
+};
+
+byCycle.UI.RouteQuery.prototype = Object.extend(new byCycle.UI.Query(), {
+  before: function(form) {
+    byCycle.UI.Query.prototype.before.call(this);
+    var errors = [];
+    var s = s || self.s_el.value;
+    var e = e || self.e_el.value;
+    if (s && e) {
+      q = ['["', s, '", "', e, '"]'].join('');
+    } else {
+      if (!s) {
+        errors.push('Please enter a start address');
+        self.s_el.focus();
+      }
+      if (!e) {
+        errors.push('Please enter an end address');
+        if (s) {
+          self.e_el.focus();
+        }
+      }
+    }
+    self.beforeQuery(form, 'route', q, errors);
+  },
+
+  callback: function(status, result_set) {
+    byCycle.logDebug('In _routeCallback');
+    var route = result_set.result;
+    switch (status) {
+      case 200:
+        var map = self.map;
+        var ls = route.linestring;
+
+        // Zoom to linestring
+        map.centerAndZoomToBounds(map.getBoundsForPoints(ls));
+
+        // Place from and to markers
+        var s_e_markers = map.placeMarkers(
+          [ls[0], ls[ls.length - 1]], [map.start_icon, map.end_icon]
+        );
+
+        // Add listeners to from and to markers
+        var s_mkr = s_e_markers[0];
+        var e_mkr = s_e_markers[1];
+        map.addListener(s_mkr, 'click', function() {
+          map.showMapBlowup(ls[0]);
+        });
+        map.addListener(e_mkr, 'click', function() {
+          map.showMapBlowup(ls[ls.length - 1]);
+        });
+
+        // Draw linestring
+        map.drawPolyLine(ls, colors[color_index]);
+        color_index += 1;
+        if (color_index == colors_len) {
+          color_index = 0;
+        }
+        break;
+      case 300: // Multiple matches for start and/or end address
+        break;
+    }
+  }
+});
+
+
+/**
  * `TabPane` class; holds a bunch of `Tab`s.
  */
 byCycle.UI.TabPane = function(container, selected_id) {
-  this.tabs = new Object();
-  var labels_container = getElementsByTagAndClassName('div', 'tab_labels', container)[0];
-  var contents_container = getElementsByTagAndClassName('div', 'tab_contents', container)[0];
-  var labels = getElementsByTagAndClassName('li', 'tab_label', labels_container);
-  var contents = getElementsByTagAndClassName('div', 'tab_content', contents_container);
+  this.tabs = {};
+  var labels_container = document.body.getElementsByClassName('tab_labels', container)[0];
+  var contents_container = document.body.getElementsByClassName('tab_contents', container)[0];
+  var labels = document.body.getElementsByClassName('tab_label', labels_container);
+  var contents = document.body.getElementsByClassName('tab_content', contents_container);
   var container_id = container.id;
   for (var i = 0; i < contents.length; ++i) {
     var id = container_id + '_tab_pane_tab' + i;
@@ -559,24 +594,18 @@ byCycle.UI.TabPane = function(container, selected_id) {
  * Given a label.link DOM element, make the label "active" and show the
  * associated contents
  */
-byCycle.UI.TabPane.prototype.selectTab = function(link) {
-  // Handle called-as-slot
-  if (typeof(link.src) == 'function') {
-    var event = link;
-    link = event.src();
-  }
+byCycle.UI.TabPane.prototype.selectTab = function(event) {
+  var link = event.target;
   var self = link.tab_pane;
   // Hide the last selected tab
   var last_tab = self.tabs[self.selected_id];
-  removeElementClass(last_tab.label, 'selected');
-  hideElement(last_tab.content);
+  new Element.ClassNames(last_tab.label).remove('selected');
+  Element.hide(last_tab.content);
   // Activate the selected tab
   var tab = self.tabs[link.id];
-  addElementClass(tab.label, 'selected');
-  showElement(tab.content);
+  new Element.ClassNames(tab.label).add('selected');
+  Element.show(tab.content);
   self.selected_id = link.id;
-  byCycle.UI.service = link.name;
-  byCycle.logDebug('Service set to', byCycle.UI.service);
 };
 
 
@@ -586,10 +615,11 @@ byCycle.UI.TabPane.prototype.selectTab = function(link) {
 byCycle.UI.Tab = function(tab_pane, id, label, content) {
   this.label = label;
   this.content = content;
-  var link = getElementsByTagAndClassName('a', null, label)[0];
+  var link = label.getElementsByTagName('a')[0];
   link.tab_pane = tab_pane;
   if (!link.id)
     link.id = id;
-  connect(link, 'onclick', tab_pane.selectTab);
+  Event.observe(link, 'click', tab_pane.selectTab);
+  link.onclick = function() {return false;}
   this.link = link;
 };
