@@ -17,7 +17,7 @@ byCycle.UI = (function() {
 
   var map_state = byCycle.getParamVal('map_state', function(map_state) {
     // Anything but '', '0' or 'off' is on
-    return (!(map_state == '0' || map_state == 'off' || map_state == ''));
+    return (!(map_state == '0' || map_state == 'off' || map_state === ''));
   });
 
   var map_type_name = byCycle.getParamVal('map_type').toLowerCase();
@@ -87,14 +87,14 @@ byCycle.UI = (function() {
         // Otherwise, below we'll use whatever self.map_type is set to.
         self.map_type = byCycle.Map.base;
       }
-      new self.TabPane('input', 'query_label');
+      var _tmp = new self.TabPane('input', 'query_label');
       self.setEventHandlers();
       self.map = new self.map_type.Map(self, self.map_el);
       Element.hide('map_msg');
       Element.show(self.map_el);
       Element.show('ads');
       if (byCycle.debug) {
-        Element.show('debug_window')
+        Element.show('debug_window');
       }
       self.onResize();
       self.setRegionFromSelectBox();
@@ -312,7 +312,7 @@ byCycle.UI = (function() {
         self.map.addOverlay(region.line);
       }
     }
-  }
+  };
 
   return _public;
 })();
@@ -330,15 +330,13 @@ byCycle.UI.Query = function(form) {
   this.region = this.ui.region;
   this.service = 'query';
   this.updater_message = 'Processing...';
-}
+};
 
 byCycle.UI.Query.prototype = {
   run: function() {
     try {
-      var q = this.before();
-      if (this.updater) {
-        this.updater();
-      }
+      this.before();
+      this.updater();
       this.after();
     } catch (e) {
       this.showErrors(e.message);
@@ -357,7 +355,7 @@ byCycle.UI.Query.prototype = {
     byCycle.logDebug('Entered updater...');
     var self = this;
     var url = [['', this.region, this.service, this.q].join('/'),
-               'format=frag'].join('?')
+               'format=frag'].join('?');
     var args = {
       method:'get',
       asynchronous: true,
@@ -368,8 +366,10 @@ byCycle.UI.Query.prototype = {
       onFailure:  function(request) {self.onFailure(request);},
       onComplete: function(request) {self.onComplete(request);},
       parameters: Form.serialize(this.form)
-    }
-    new Ajax.Updater({success: 'results', failure: 'errors'}, url, args);
+    };
+    var _tmp = new Ajax.Updater({success: 'results', failure: 'errors'}, 
+                                url, 
+                                args);
   },
 
   onLoading: function(request) {
@@ -425,7 +425,7 @@ byCycle.UI.Query.prototype = {
     elapsed_time = [msg, '. Took ', elapsed_time, ' second',
                     (elapsed_time == 1.00 ? '' : 's'), '.'].join('');
     return elapsed_time;
-  },
+  }
 };
 
 
@@ -440,6 +440,7 @@ byCycle.UI.SearchQuery = function(form) {
 byCycle.UI.SearchQuery.prototype = Object.extend(new byCycle.UI.Query(), {
   before: function() {
     byCycle.UI.Query.prototype.before.call(this);
+    var query_class;
     var q = $F('q');
     if (!q) {
       Field.focus('q');
@@ -449,20 +450,19 @@ byCycle.UI.SearchQuery.prototype = Object.extend(new byCycle.UI.Query(), {
       var i = q.toLowerCase().indexOf(' to ');
       if (i != -1) {
         // Query looks like a route
-        var s = q.substring(0, i);
-        var e = q.substring(i + 4);
-        $F('s') = s;
-        $F('e') = e;
+        $('s').value = q.substring(0, i);
+        $('e').value = q.substring(i + 4);
         //Event.trigger('route_label', 'click');
-        new byCycle.UI.RouteQuery(this.form).run();
+        query_class = new byCycle.UI.RouteQuery(this.form);
       } else {
         // Query doesn't look like a route
-        new byCycle.UI.GeocodeQuery(this.form).run();
+        query_class = new byCycle.UI.GeocodeQuery(this.form);
       }
+      query_class.run();
     }
   },
 
-  updater: null
+  updater: function() {}
 });
 
 
@@ -541,9 +541,8 @@ byCycle.UI.RouteQuery.prototype = Object.extend(new byCycle.UI.Query(), {
         map.centerAndZoomToBounds(map.getBoundsForPoints(ls));
 
         // Place from and to markers
-        var s_e_markers = map.placeMarkers(
-          [ls[0], ls[ls.length - 1]], [map.start_icon, map.end_icon]
-        );
+        var s_e_markers = map.placeMarkers([ls[0], ls[ls.length - 1]], 
+                                           [map.start_icon, map.end_icon]);
 
         // Add listeners to from and to markers
         var s_mkr = s_e_markers[0];
@@ -584,10 +583,11 @@ byCycle.UI.TabPane = function(container, selected_id) {
     var tab = new byCycle.UI.Tab(this, id, labels[i], contents[i]);
     this.tabs[tab.link.id] = tab;
   }
-  if (!selected_id)
+  if (!selected_id) {
     this.selected_id = container_id + '_tab_pane_tab' + (selected_id || '0');
-  else
+  } else {
     this.selected_id = selected_id;
+  }
 };
 
 /**
@@ -595,15 +595,18 @@ byCycle.UI.TabPane = function(container, selected_id) {
  * associated contents
  */
 byCycle.UI.TabPane.prototype.selectTab = function(event) {
+  var class_names;
   var link = event.target;
   var self = link.tab_pane;
   // Hide the last selected tab
   var last_tab = self.tabs[self.selected_id];
-  new Element.ClassNames(last_tab.label).remove('selected');
+  class_names = new Element.ClassNames(last_tab.label);
+  class_names.remove('selected');
   Element.hide(last_tab.content);
   // Activate the selected tab
   var tab = self.tabs[link.id];
-  new Element.ClassNames(tab.label).add('selected');
+  class_names = new Element.ClassNames(tab.label);
+  class_names.add('selected');
   Element.show(tab.content);
   self.selected_id = link.id;
 };
@@ -617,9 +620,10 @@ byCycle.UI.Tab = function(tab_pane, id, label, content) {
   this.content = content;
   var link = label.getElementsByTagName('a')[0];
   link.tab_pane = tab_pane;
-  if (!link.id)
+  if (!link.id) {
     link.id = id;
+  }
   Event.observe(link, 'click', tab_pane.selectTab);
-  link.onclick = function() {return false;}
+  link.onclick = function() { return false; };
   this.link = link;
 };

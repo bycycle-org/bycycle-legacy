@@ -20,7 +20,7 @@ byCycle.Map.google = {
       'dev.bycycle.org': 'ABQIAAAAd_4WmZlgvQzchd_BQM0MPhQSskL_eAzZotWlegWekqLPLda0sxQZNf0_IshFell3z8qP8s0Car117A',
       'dev.bycycle.org:5000': 'ABQIAAAAd_4WmZlgvQzchd_BQM0MPhTkxokDJkt52pLJLqHCpDW3lL7iXBTREVLn9gCRhMUesO754WIidhTq2g',
       'www.bycycle.org': 'ABQIAAAAd_4WmZlgvQzchd_BQM0MPhQ9bMyOoze7XFWIje4XR3o1o-U-cBTwScNT8SYtwSl70gt4wHCO-23Y3g'
-    }
+    };
     var api_key = api_keys[byCycle.domain];
     if (api_key) {
       writeScript(api_url + api_key);
@@ -78,7 +78,7 @@ byCycle.Map.google.Map.prototype = Object.extend(new byCycle.Map.Map(), {
     style.top = '8px';
     style.left = '7px';
     // Add keyboard navigation
-    new GKeyboardHandler(map);
+    var _gk = new GKeyboardHandler(map);
     this.map = map;
   },
 
@@ -147,7 +147,7 @@ byCycle.Map.google.Map.prototype = Object.extend(new byCycle.Map.Map(), {
   },
 
   setHeight: function(height) {
-    this.setSize({w: undefined, h: height})
+    this.setSize({w: undefined, h: height});
   },
 
   getCenter: function() {
@@ -356,7 +356,7 @@ byCycle.Map.google.Map.prototype = Object.extend(new byCycle.Map.Map(), {
     };
 
     layer.getOpacity = function() {
-      return .625;
+      return 0.625;
     };
 
     var layers = [base_type.getTileLayers()[0], layer];
@@ -440,7 +440,7 @@ byCycle.Map.google.Map.prototype = Object.extend(new byCycle.Map.Map(), {
     };
 
     metro_layer.getOpacity = function() {
-      return .5;
+      return 0.5;
     };
 
     var layers = [G_NORMAL_MAP.getTileLayers()[0], metro_layer];
