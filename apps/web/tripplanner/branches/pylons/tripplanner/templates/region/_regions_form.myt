@@ -11,6 +11,7 @@
   </div>
   <div style="text-align: right;">
     <input type="submit" value="Go" />
-    <input type="button" value="Cancel" onclick="hideElement('regions_win'); return false;" />
+    <input type="button" value="Cancel" 
+           onclick="hideElement('regions_window'); return false;" />
   </div>
 </form>
