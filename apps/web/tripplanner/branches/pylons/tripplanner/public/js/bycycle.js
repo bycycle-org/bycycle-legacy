@@ -48,7 +48,7 @@ var byCycle = (function() {
     },
 
     logInfo: function() {
-      if (arguments.length < 1) return;
+      if (arguments.length < 1) { return; }
       var msgs = [];
       for (var i = 0; i < arguments.length; ++i) {
         msgs.push(arguments[i]);
@@ -60,7 +60,6 @@ var byCycle = (function() {
     },
 
     logDebug: function() {
-      // TODO: Send email to admin?
       result = [];
       for (var i = 0; i < arguments.length; ++i) {
         result.push(arguments[i]);

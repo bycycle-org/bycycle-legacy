@@ -1,7 +1,7 @@
 /** Script Functions **/
 
 function writeScript(src, type) {
-  var type = type || 'text/javascript';
+  type = type || 'text/javascript';
   document.write('<script src="' + src + '" type="' + type + '"></script>');
 }
 
@@ -24,23 +24,19 @@ function appendScript(src, type) {
  */
 function cleanString(the_string, keep_newlines)
 {
-  if (!the_string) 
-    return '';
+  if (!the_string) { return ''; }
   // Remove leading and trailing whitespace
   the_string = the_string.replace(/^\s+|\s+$/g, '');
   // Reduce internal whitespace
-  if (keep_newlines)
-    {
-      //the_string = the_string.replace(/[ \f\t\u00A0\u2028\u2029]+/, ' ');
-      the_string = the_string.replace(/[^\n^\r\s]+/, ' ');
-      the_string = the_string.replace(/\n+/g, '\n');
-      the_string = the_string.replace(/\r+/g, '\r');
-      the_string = the_string.replace(/(?:\r\n)+/g, '\r\n');
-    }
-  else
-    {
-      the_string = the_string.replace(/\s+/g, ' ');
-    }
+  if (keep_newlines) {
+    //the_string = the_string.replace(/[ \f\t\u00A0\u2028\u2029]+/, ' ');
+    the_string = the_string.replace(/[^\n^\r\s]+/, ' ');
+    the_string = the_string.replace(/\n+/g, '\n');
+    the_string = the_string.replace(/\r+/g, '\r');
+    the_string = the_string.replace(/(?:\r\n)+/g, '\r\n');
+  } else {
+    the_string = the_string.replace(/\s+/g, ' ');
+  }
   return the_string;
 }
 
@@ -50,8 +46,7 @@ function cleanString(the_string, keep_newlines)
  * @param the_string The string to trim
  * @return The trimmed string
  */
-function trim(the_string)
-{
+function trim(the_string) {
   return the_string.replace(/^\s+|\s+$/g, '');
 }
 
@@ -63,13 +58,12 @@ function trim(the_string)
  * @param the_string The string to insert between each string in the list (default: ' ')
  * @return The joined string
  */
-function _join(the_list, join_string)
-{
+function _join(the_list, join_string) {
   join_string = join_string || ' ';
   var new_list = [];
   for (var i = 0; i < the_list.length; ++i) {
     word = _trim(the_list[i]);
-    if (word) new_list.push(word);
+    if (word) { new_list.push(word); }
   }
   return new_list.join(join_string);
 }
