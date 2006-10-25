@@ -1,5 +1,5 @@
 <%flags>
-    inherit = 'layout.myt'
+    inherit = 'region.myt'
 </%flags>
 
 
