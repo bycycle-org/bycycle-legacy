@@ -1,10 +1,15 @@
-<html xmlns="http://www.w3.org/1999/xhtml" xmlns:v="urn:schemas-microsoft-com:vml">
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:v="urn:schemas-microsoft-com:vml">
 
 
   <head>
-    <meta http-equiv="Content-Type" content="application/xhtml+xml; charset=utf-8" />
+    <meta http-equiv="Content-Type"
+          content="application/xhtml+xml; charset=utf-8" />
     <meta name="keywords" content="bicycle, bike, bicycle trip planner, bicycle route finder, bike trip planner, bike route finder, bicycle route, bicycle trip, bike route, bike trip, bicycle routing, bike routing, maps, bicycle maps, bike maps, bicycle advocacy, community, sustainability, portland, oregon, milwaukee, wisconsin" />
-    <meta name="description" content="byCycle.org Bicycle Trip Planner -- A web-based, interactive, bicycle trip planner (route finder) for the Portland, Oregon, Milwaukee, Wisconsin, and, soon, other regions." />
+    <meta name="description"
+          content="byCycle.org Bicycle Trip Planner -- A web-based, interactive, bicycle trip planner (route finder) for the Portland, Oregon, Milwaukee, Wisconsin, and, soon, other regions." />
 
     <title>byCycle.org - Bicycle Trip Planner - <% region %></title>
 
@@ -12,17 +17,20 @@
     <!--[if IE]>
       <% h.stylesheet_link_tag('/css/base_ie.css') %>
     <![endif]-->
+    <% h.stylesheet_link_tag('/css/%s.css' % c.region_key) %>
 
     <!-- We want access to these JavaScripts during page load. Other JS imports
     at bottom of page. -->
-% for js in ('MyMochiKit/MochiKit', 'util', 'bycycle'):
-    <% h.javascript_include_tag('/js/%s.js' % js) %>
-% #for
     <% h.javascript_include_tag(builtins=True) %>
+    <% h.javascript_include_tag('/js/util.js') %>
+    <% h.javascript_include_tag('/js/bycycle.js') %>
   </head>
 
 
   <body>
+
+
+  <% c.my_env %>
 
 
     <div id="top" class="page_section">
@@ -31,9 +39,11 @@
           <tr>
 
 
-            <td style="width: 93px; border-right: 1px solid gray; padding: 10px; background: #fffa73; vertical-align: middle;">
+            <td id="logo_cell">
               <div id="logo">
-                <a href="/" title="byCycle Trip Planner"><img src="/images/logo.png" width="93" height="66" /></a>
+                <a href="/"
+                   title="byCycle Trip Planner"
+                   ><img src="/images/logo.png" width="93" height="66" /></a>
               </div>
             </td>
 
@@ -47,11 +57,14 @@
                   <div class="clear"></div>
                   <ul>
                     <li class="tab_label <% c.query_label_class %>">
-                      <a id="query_label" href="<% c.region_key %>/query/" name='query' onclick="return false;"
-                        title="Search the Map for an Address or Route">Search Map</a>
+                      <a id="query_label" href="/<% c.region_key %>/query/"
+                         name='query'
+                         title="Search the Map for an Address or Route"
+                         >Search Map</a>
                     </li>
                     <li class="tab_label <% c.route_label_class %>">
-                      <a id="route_label" href="<% c.region_key %>/route/" name='route' onclick="return false;"
+                      <a id="route_label" href="/<% c.region_key %>/route/"
+                         name='route'
                          title="Find a Route (Get Directions)">Find Route</a>
                     </li>
                   </ul>
@@ -64,30 +77,23 @@
 
                   <div class="tab_content" style="<% c.query_tab_style %>">
                     <!-- Query Form -->
-                    <%
-                      # This will call the `show` method of the query
-                      # controller with ``q`` and ``region`` as params.
-                      h.form_remote_tag(
-                        url='/%s/query/:q/?format=frag' % c.region_key,
-                        method='get',
-                        update='result',
-                        position='top',                        
-                        before='byCycle.UI.beforeSearchQuery(this)',
-                        loading='byCycle.UI.onQueryLoading(request, "Searching...");',
-                        loaded='byCycle.UI.onQueryLoaded(request);',
-                        success='byCycle.UI.onSearchSuccess(request);',
-                        failure='byCycle.UI.onSearchFailure(request);',
-                        complete='byCycle.UI.onSearchComplete(request);',
-                        html=dict(id='query_form', method='get', 
-                                  action='/%s/query' % c.region_key)
-                      )
-                    %>
+                    <form 
+                      id="query_form"
+                      action="/<% c.region_key %>/query"
+                      method="get"
+                      onsubmit="new byCycle.UI.SearchQuery(this).run();
+                                return false;">
                       <div>
-                        <input id="q" name="q" type="text" value="<% c.q %>" title="Enter an address or route" tabindex="1" />
-                        <input name="commit" type="submit" value="Search Map" title="Click to search the map" tabindex="2" />
+                        <input 
+                          id="q" name="q" type="text" value="<% c.q %>"
+                          title="Enter an address or route" tabindex="1" />
+                        <input 
+                          name="commit" type="submit" value="Search Map"
+                          title="Click to search the map" tabindex="2" />
                       </div>
                       <div class="input_label">
-                        Enter an address or intersection -OR- pick a location from the map.
+                        Enter an address or intersection -OR- pick a location
+                        from the map.
                       </div>
                     </form>
                   </div>
@@ -102,7 +108,7 @@
                         url='/%s/route/:q/' % c.region_key,
                         method='get',
                         before='byCycle.UI.beforeRouteQuery(this);',
-                        update='result',
+                        update={'success': 'results', 'failure': 'errors'},
                         position='top',
                         loading='byCycle.UI.onQueryLoading(request, "Finding route...");',
                         loaded='byCycle.UI.onQueryLoaded(request);',
@@ -113,7 +119,8 @@
                     %>
                       <div>
 
-                        <!-- This is laid out like this intentionally to control the display of these elements. -->
+                        <!-- This is laid out like this intentionally to
+                        control the display of these elements. -->
                         <input
                           id="s" name="s"
                           type="text"
@@ -140,10 +147,12 @@
                         />
 
                         <% route_pref %>
-                        <input name="commit" type="submit" value="Find Route" title="Click to find a route" tabindex="9" />
+                        <input name="commit" type="submit" value="Find Route"
+                               title="Click to find a route" tabindex="9" />
                       </div>
                       <div class="input_label">
-                        Enter your start and end addresses and, optionally, select a route type.
+                        Enter your start and end addresses and, optionally,
+                        select a route type.
                       </div>
                     </form>
                     <!-- End Route Form -->
@@ -185,15 +194,18 @@
                 <span id="regions_container">
                   <b>Region:</b>
                   <span id="active_region"><% region %></span>
-                  <a id="change_region_link" href="" onclick="byCycle.UI.showRegionSelectBox(); return false;">change</a>
-                  <div id="regions_win" class="window">
+                  <a id="change_region_link" href="" onclick="return false;">change</a>
+                  <div id="regions_window" class="window"
+                       style="display: none;">
                     <div class="title_bar">
                       <table>
                         <tbody>
                           <tr>
                             <td class="l">Change Region</td>
                             <td class="r">
-                              <a class="button" href="" onclick="hideElement('regions_win'); return false;">X</a>
+                              <a class="button" href=""
+                                 onclick="hideElement('regions_window');
+                                          return false;">X</a>
                             </td>
                           </tr>
                         </tbody>
@@ -201,20 +213,23 @@
                     </div>
                     <div class="content_pane">
                       <!-- Render a partial, so to speak. -->
-                      <& _regions_form.myt &>
+                      <& /region/_regions_form.myt &>
                     </div>
                   </div>
                 </span>
                 <!-- End Region -->
-                <b>&middot;</b>
+                |
                 <a id="bookmark" href="/"
-                   title="Link to the current result">Link to this page</a>
-                <b>&middot;</b>
+                   title="Link to the current result"
+                   >Link to this page</a>
+                |
                 <a href="" onclick="return false;"
-                   title="Show Trip Planner Help">Help</a>
-                <b>&middot;</b>
+                   title="Show Trip Planner Help"
+                   >Help</a>
+                |
                 <a href="" onclick="return false;"
-                   title="Send Us Your Comments, Questions, and Suggestions">Feedback</a>
+                   title="Send Us Your Comments, Questions, and Suggestions"
+                   >Feedback</a>
               </div>
             </td>
 
@@ -236,7 +251,7 @@
               <!-- Display Area -->
               <div id="display">
                 <div id="info">
-% if not c.result:
+% if not c.info:
                   <p style="margin-top: 0;">
                     The trip planner is under active development. Please <a href="http://bycycle.org/contact.html" title="Send us problem reports, comments, questions, and suggestions">contact us</a> with any problems, comments, questions, or suggestions.
                   </p>
@@ -248,13 +263,14 @@
                   </p>
 % #if
                 </div>
-                <div id="result">
+                <div id="errors">
+                  <% c.errors %>
+                </div>
+                <div id="results">
                   <% c.result %>
                 </div>
                 <div id="help">
-                </div>
-                <div id="errors">
-                  <% c.error %>
+                  <% c.help %>
                 </div>
               </div>
               <!-- End Display Area -->
@@ -277,15 +293,17 @@
                 </noscript>
               </div>
 
+              <div id="map_menu"><% map_menu %></div>
+
               <!-- Map -->
-              <div id="map"></div>
+              <div id="map" style="display: none;"></div>
               <!-- End Map -->
             </td>
 
 
             <td>
               <!-- Google Ads -->
-              <div id="google_ads" class="window">
+              <div id="ads" class="window" style="display: none;">
                 <div class="title_bar">
                   <table>
                     <tbody>
@@ -330,6 +348,25 @@
     <!-- End Content -->
 
 
+    <div id="debug_window" class="window" style="display: none; position: absolute; bottom: 0; right: 0; width: 300px; background: white;">
+      <div class="title_bar">
+        <table>
+          <tbody>
+            <tr>
+              <td class="l">Debug Log</td>
+              <td class="r">
+                <a class="button" href="" onclick="Element.toggle('debug'); return false;" title="Show/Hide">#</a>
+                <a class="button" href="" onclick="Element.hide('debug_window'); return false;" title="Close">X</a>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <div id="debug" class="content_pane" style="height: 300px; overflow: auto;">
+      </div>
+    </div>
+
+
 % for js in ('regions', 'map', 'gmap', 'ui'):
     <% h.javascript_include_tag('/js/%s.js' % js) %>
 % #for
@@ -348,8 +385,16 @@
 </html>
 
 
+<%doc>
+  This template automatically inherits from the autohandler as if we had this:
+  <%inherit>
+    inherit = 'autohandler'
+  </%inherit>
+</%doc>
+
 <%args>
-    region
+    region = 'All Regions'
     route_pref = None
     result = None
+    map_menu = None
 </%args>
