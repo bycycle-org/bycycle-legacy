@@ -1,43 +1,44 @@
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
-
-
 <%doc>
     autohandler
 </%doc>
 
 
 <%flags>
-    inherit = None  
+    inherit = None
 </%flags>
 
 
 <%python scope="request">
-    # each execution gets a context dictionary where
-    # we store stuff
-    context = {}
+    # Place to store args that will get passed (as keyword args) to the base 
+    # layout template.
+    args = {}
 </%python>
 
 
 <%method section>
     <%doc>
         Grab the content for a specified section. The section content will be
-        stuffed into the appropriate place (section) in layout.myt.
+        stuffed into the appropriate section in the base layout template.
     </%doc>
 
     <%args>
-        # Name of section to store
+        # Name of section to store content for.
         name
     </%args>
 
     <%python scope="init">
-        context[name] = m.content()
+        args[name] = m.content()
     </%python>
 </%method>
 
 
 <%python>
+    # Get layout component (region.myt)
     comp = m.fetch_next()
+    # Get region component (e.g., portlandor.myt)
     subcomp = m.fetch_next()
-    main = m.scomp(subcomp, **m.get_request_args())
-    m.comp(comp, **context)
+    # Fill args dict by processing region component
+    m.scomp(subcomp, **m.request_args)
+    # Execute layout component, passing args
+    m.comp(comp, **args)
 </%python>
