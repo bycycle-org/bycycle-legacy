@@ -81,8 +81,7 @@
                       id="query_form"
                       action="/<% c.region_key %>/query"
                       method="get"
-                      onsubmit="new byCycle.UI.SearchQuery(this).run();
-                                return false;">
+                      onsubmit="new byCycle.UI.SearchQuery(this).run(); return false;">
                       <div>
                         <input 
                           id="q" name="q" type="text" value="<% c.q %>"
@@ -101,22 +100,11 @@
 
                   <div class="tab_content" style="<% c.route_tab_style %>">
                     <!-- Route Form-->
-                    <%
-                      # This will call the `show` method of the route
-                      # controller with ``q`` and ``region`` as params.
-                      h.form_remote_tag(
-                        url='/%s/route/:q/' % c.region_key,
-                        method='get',
-                        before='byCycle.UI.beforeRouteQuery(this);',
-                        update={'success': 'results', 'failure': 'errors'},
-                        position='top',
-                        loading='byCycle.UI.onQueryLoading(request, "Finding route...");',
-                        loaded='byCycle.UI.onQueryLoaded(request);',
-                        success='byCycle.UI.onRouteSuccess(request);',
-                        failure='byCycle.UI.onRouteFailure(request);',
-                        html=dict(id='route_form', method='get')
-                      )
-                    %>
+                    <form 
+                      id="route_form"
+                      action="/<% c.region_key %>/route"
+                      method="get"
+                      onsubmit="new byCycle.UI.RouteQuery(this).run(); return false;">
                       <div>
 
                         <!-- This is laid out like this intentionally to
@@ -204,8 +192,8 @@
                             <td class="l">Change Region</td>
                             <td class="r">
                               <a class="button" href=""
-                                 onclick="hideElement('regions_window');
-                                          return false;">X</a>
+                                 onclick="Element.hide('regions_window'); return false;"
+                                 >X</a>
                             </td>
                           </tr>
                         </tbody>
