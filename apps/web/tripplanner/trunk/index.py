@@ -1,4 +1,4 @@
-#!/home/u6/bycycle/bin/python -OO
+#!/home/u2/bycycle/bin/python -OO
 """$Id: index.py 190 2006-08-16 02:29:29Z bycycle $
 
 Description goes here.
@@ -34,7 +34,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 try:
     if __name__ == '__main__':
         import os
-        os.environ['PYTHON_EGG_CACHE'] = '/home/u6/bycycle/.python-eggs'
+        os.environ['PYTHON_EGG_CACHE'] = '/home/u2/bycycle/.python-eggs'
         import tripplanner
         tripplanner.TripPlanner().run()
 except:
