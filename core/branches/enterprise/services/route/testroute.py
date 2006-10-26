@@ -24,19 +24,37 @@ timer = meter.Timer()
 class TestPortlandOR(unittest.TestCase):
     
     def _query(self, q, region=None):
+        print '=========='
+        timer.start()
         service = Service(region=region)
         routes = service.query(q, region=region)
         route = routes[0]
         self.assert_(isinstance(route, Route))
         print route
+        print 'Took %.2f seconds' % timer.stop()
+        print '=========='
         return route
 
     def _queryRaises(self, q, exc):
         self.assertRaises(exc, self._query, q)
 
-    def test_Route(self):
+    def test_no_place_on_first_address(self):
+        q = ('4807 se kelly', '633 n alberta, portland, or')
+        route = self._query(q)
+
+    def test_no_place_on_second_address(self):
+        q = ('4807 se kelly, portland, or', '633 n alberta')
+        route = self._query(q)
+
+    def test_route(self):
         q = ('4807 se kelly, portland, or', 'ne 6th & irving, portland, or')
         route = self._query(q)
+
+    def test_three_addresses(self):
+        q = ('4807 se kelly, portland, or', '633 n alberta', '1500 ne alberta')
+        route = self._query(q)
+        
+        
 
 if __name__ == '__main__':
     unittest.main()
@@ -45,9 +63,7 @@ if __name__ == '__main__':
 """
 if __name__ == '__main__':
     import sys
-    from byCycle.lib import meter
 
-    timer = meter.Timer()
 
     def print_key(key):
         for k in key:
