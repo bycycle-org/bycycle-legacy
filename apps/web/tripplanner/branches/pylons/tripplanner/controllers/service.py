@@ -74,6 +74,8 @@ class ServiceController(RestController):
         ``format`` `str` -- Format for the response: HTML (full template),
         fragment (partial), or JSON.
 
+        ``oResult`` `object` -- The result returned from the back end service.
+
         ``to_json`` `str` -- A Python object that can be JSONififed.
 
         return `WSGIResponse`
@@ -88,7 +90,7 @@ class ServiceController(RestController):
         c.json = json
         if format == 'json':
             resp = Response(
-                content=json, mimetype='text/plain', code=http_status
+                content=json, mimetype='text/javascript', code=http_status
             )
         else:
             content = render(result_template, oResult=oResult)

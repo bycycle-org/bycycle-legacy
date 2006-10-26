@@ -9,7 +9,7 @@ class GeocodeController(ServiceController):
 
     #----------------------------------------------------------------------
     def show(self, query, region):
-        try:
+        try:          
             return super(GeocodeController, self).show(
                 query, region, service_class=Service
             )
