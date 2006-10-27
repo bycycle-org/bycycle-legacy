@@ -119,7 +119,7 @@ bikemodes = {
 ### May need to be changed depending on the local environment
 
 # Path to shp-importing executable
-shp2sql_exe = '/usr/lib/postgresql/8.1/bin/shp2pgsql'
+shp2sql_exe = '/usr/bin/shp2pgsql'
 
 # args template for shp-importing executable
 shp2sql_args = '-c -i -I -s %s %s %s > %s' \
@@ -219,7 +219,8 @@ cities = None
 
 def createConnection():
     """Set up and return DB connection."""
-    return psycopg2.connect(database=db_name,
+    return psycopg2.connect(host='localhost',
+                            database=db_name,
                             user=db_user,
                             password=db_pass
                             )
@@ -345,11 +346,15 @@ def turnSQLEchoOn(md):
     md.engine.echo = True
 
 
-def vacuum(table=''):
+def vacuum(*tables):
     """Vacuum all tables."""
     print 'Vacuuming all tables...'
     connection.set_isolation_level(0)
-    cursor.execute('VACUUM FULL ANALYZE %s' % table)
+    if not tables:
+        cursor.execute('VACUUM FULL ANALYZE')
+    else:
+        for table in tables:
+            cursor.execute('VACUUM FULL ANALYZE %s' % table)            
     connection.set_isolation_level(2)
 
 
@@ -377,7 +382,7 @@ def getTimeWithUnits(seconds):
     else:
         time = seconds
         units = 'second'
-    if time == 1.0:
+    if time != 1.0:
         units +=  's'
     return '%.2f %s' % (time, units)
 
@@ -393,7 +398,7 @@ def shp2db():
     """Read shapefile into database table."""
     raw_table.drop(checkfirst=True)
     system(sql2db_cmd)
-    vacuum()
+    vacuum('raw.%s' % region)
 
 
 def dropTables():
@@ -403,19 +408,28 @@ def dropTables():
 
 def createTables():
     """Create all tables. (Ignores existing tables.)"""
+    Q = 'CREATE SCHEMA %s' % region
+    try:
+        cursor.execute(Q)
+    except psycopg2.ProgrammingError:
+        connection.rollback()  # important!
+    else:
+        connection.commit()
     metadata.create_all()
-    # Add geometry columns after tables are created
-    Q = "SELECT AddGeometryColumn('%s', '%s', 'geom', %s, '%s', 2)"
+    # Add geometry columns after tables are created and add gist INDEXes them
+    add_geom_col = """
+    SELECT AddGeometryColumn('%s', '%s', 'geom', %s, '%s', 2)
+    """
+    create_gist_index = """
+    CREATE INDEX "%s_the_geom_gist" 
+    ON "%s"."%s" 
+    USING GIST ("geom" gist_geometry_ops)
+    """
     table_names = ('layer_edges', 'layer_nodes')
-    types = ('MULTILINESTRING', 'POINT')
-    for name, type_ in zip(table_names, types):
-        cursor.execute(Q % (db_schema, name, SRID, type_) )
-    # Add gist INDEXes to geometry columns
-    Q = ('CREATE INDEX "%s_the_geom_gist" ON "%s"."%s" '
-         'using gist ("geom" gist_geometry_ops)')
-    for name in table_names:
-        cursor.execute(Q % (name, db_schema, name))
-    # Save all that
+    geom_types = ('MULTILINESTRING', 'POINT')
+    for table, geom_type in zip(table_names, geom_types):
+        cursor.execute(add_geom_col % (db_schema, table, SRID, geom_type))
+        cursor.execute(create_gist_index % (table, db_schema, table))
     connection.commit()
     # The above added cols to the DB; this adds them to SQLAlchemy table defs
     tables._appendGeometryColumns()
@@ -536,16 +550,15 @@ def transferNodeIDs(modify=True):
         for row in result:
             nodes[row.node_id] = 1
         result.close()
-    # Transfer node IDs
     l = []
     for node_id in nodes:
         # Collect all the row data so all the rows can be inserted at once
         d = {}
         d['id'] = node_id
-        d['geom'] = None
+        #d['geom'] = None
         l.append(d)
     if modify:
-        # Drop existing node rows and add all new nodes at once
+        # Drop existing nodes and add all new nodes at once
         deleteAllFromTable(table)
         turnSQLEchoOff(metadata)
         table.insert().execute(l)
@@ -595,12 +608,12 @@ def transferEdges(modify=True):
         # Unify "from" addresses
         if addr_f_l is not None or addr_f_r is not None:
             addr_f = int(round((addr_f_l or addr_f_r) / 10.0) * 10) + 1
-        else: 
+        else:
             addr_f = None
         # Unify "to" addresses
         if addr_t_l is not None or addr_t_r is not None:
             addr_t = int(round((addr_t_l or addr_t_r) / 10.0) * 10)
-        else: 
+        else:
             addr_t = None
         # Street name: prefix, name, type, suffix
         street_name_parts = (
@@ -640,7 +653,7 @@ def transferEdges(modify=True):
         turnSQLEchoOff(metadata)
         table.insert().execute(l)
         turnSQLEchoOn(metadata)
-        vacuum()
+        vacuum('%s.layer_edges' % region)
 
 
 def convertEdgeGeometryToLINESTRING():
@@ -679,22 +692,20 @@ def convertEdgeGeometryToLINESTRING():
 
 
 def transferNodeGeometry(modify=True):
-    """Copy node geometry from edge table to node table."""    
+    """Copy node geometry from edge table to node table."""
     tables._appendGeometryColumns()
     table = tables.layer_nodes
     layer_edges = tables.layer_edges
     c = layer_edges.c
     nodes = {}
     # Get distinct node IDs from raw table
-    node_ids = (c.node_f_id, c.node_t_id)
-    funcs = (func.startpoint, func.endpoint)
-    for node_id, f in zip(node_ids, funcs):
-        cols = [node_id.label('node_id'), f(c.geom).label('point')]
-        result = select(cols, distinct=True).execute()
-        for row in result:
-            nodes[row.node_id] = row.point
-        result.close()
-    # Transfer node IDs
+    cols = [c.node_f_id, c.node_t_id, c.geom]
+    result = select(cols).execute()
+    for row in result:
+        line = row.geom
+        nodes[row.node_f_id] = line.startPoint()
+        nodes[row.node_t_id] = line.endPoint()
+    result.close()
     l = []
     for node_id in nodes:
         # Collect all the row data so all the rows can be updated at once
@@ -703,6 +714,7 @@ def transferNodeGeometry(modify=True):
         d['geom'] = nodes[node_id]
         l.append(d)
     if modify:
+        # Transfer node geometries
         turnSQLEchoOff(metadata)
         table.update(table.c.id==bindparam('id')).execute(l)
         turnSQLEchoOn(metadata)
@@ -820,6 +832,7 @@ def doActions(actions, start, end, no_prompt):
                 # No, don't do this action
                 print 'Skipped'
         print
+    vacuum()
     print 'Total time: %s' % getTimeWithUnits(overall_timer.stop())
 
 ### Event loop (so to speak)
@@ -847,7 +860,6 @@ def main(argv):
     # Enter event loop
     sys.stderr = open('shp2pgsql.error.log', 'w')
     run(**args_dict)
-    vacuum()
 
 
 def getOpts(argv):

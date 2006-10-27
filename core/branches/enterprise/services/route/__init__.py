@@ -43,7 +43,7 @@ Here's what the route service does:
   and other information about the route found.
 
 """
-from cartography.spatial.geometry import LineString
+from cartography.geometry import LineString
 
 from byCycle.lib import gis
 
