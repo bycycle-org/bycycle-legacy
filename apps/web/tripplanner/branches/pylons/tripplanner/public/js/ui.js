@@ -171,7 +171,7 @@ byCycle.UI = (function() {
     /**
      * Select from multiple matching geocodes
      */
-    selectGeocode: function(id, result) {
+    selectGeocode: function(id) {
       var chosen = $(id);
       var r = self.results_el;
       r.insertBefore(chosen, r.firstChild);
