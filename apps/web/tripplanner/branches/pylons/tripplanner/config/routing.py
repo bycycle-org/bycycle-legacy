@@ -33,6 +33,8 @@ def make_map():
 
     # Other ---------------------------------------------------------------
 
+    m.connect('error/:action/:id', controller='error')
+
     # Catch-all for anything else
     # Shows an error page
     m.connect('*url', controller='view')
