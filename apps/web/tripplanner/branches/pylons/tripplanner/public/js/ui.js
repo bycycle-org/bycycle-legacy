@@ -54,7 +54,7 @@ byCycle.UI = (function() {
     service: 'query',
     query: null,
     result: null,
-    results: [],
+    results: [],  // Evaled JSON results
     http_status: null,
     response_text: null,
 
@@ -87,7 +87,9 @@ byCycle.UI = (function() {
         // Otherwise, below we'll use whatever self.map_type is set to.
         self.map_type = byCycle.Map.base;
       }
-      var _tmp = new self.TabPane('input', 'query_label');
+      var s = self.service;
+      s = (s == 'route' ? s : 'query');
+      var _tmp = new self.TabPane('input', s + '_label');
       self.setEventHandlers();
       self.map = new self.map_type.Map(self, self.map_el);
       Element.hide('map_msg');
@@ -98,14 +100,6 @@ byCycle.UI = (function() {
       }
       self.onResize();
       self.setRegionFromSelectBox();
-      self.handleQuery();
-    },
-
-    handleQuery: function() {
-      if (self.http_status && self.response_text) {
-        var request = {status: self.status, responseText: self.response_text};
-        //self.callback(request);
-      }
     },
 
     /** Events **/
@@ -120,8 +114,8 @@ byCycle.UI = (function() {
       Event.observe('swap_s_and_e', 'click', self.swapStartAndEnd);
       Event.observe('change_region_link', 'click', self.showRegionSelectBox);
       Event.observe('hide_ads', 'click', self.hideAds);
-      //connect('find_center_map', 'onclick', self.findAddressAtCenter)
-      //connect('clear_map', 'onclick', self.clearMap);
+      //Event.observe('map_find_at_center', 'click', self.findAddressAtCenter)
+      //Event.observe('map_clear', 'click', self.clearMap);
     },
 
     onResize: function() {
@@ -171,20 +165,43 @@ byCycle.UI = (function() {
     /**
      * Select from multiple matching geocodes
      */
-    selectGeocode: function(id) {
-      var chosen = $(id);
+    selectGeocode: function(select_link) {
       var r = self.results_el;
-      r.insertBefore(chosen, r.firstChild);
-      Element.update('title'+id, 'Geocode');
-      Element.remove('extra'+id);
+
+      // Get a handle to the selected geocode's "window"
+      var selected = select_link.parentNode.parentNode.parentNode;
+
+      // Change the title of the selected geocode's window to "Geocode"
+      var el = document.getElementsByClassName('title', selected)[0];
+      Element.update(el, 'Geocode');
+
+      // Remove the selected geocode's "Select" link
+      Element.remove(select_link.parentNode);
+
+      // Insert the selected geocode at the top of the results div
+      r.insertBefore(selected, r.firstChild);
+
+      // Clear and hide the errors div
       Element.update(self.errors_el, '');
       Element.hide(self.errors_el);
-      var gq = new byCycle.UI.GeocodeQuery({});
+      
+      var json = document.getElementsByClassName('json', selected)[0];
+      json.id = 'json';
+      
+      // Simultate a successful Geocode request
+      var gq = new byCycle.UI.GeocodeQuery(null);
+      alert('gq');
       var request = {status: 200, responseText: ''};
+      alert('req');
       gq.onSuccess(request);
+      alert('ons');
       gq.onComplete(request);
+      alert('onc');
       gq.after(request);
+      alert('aft');
       Element.update(self.status_el, 'Good choice!');
+      alert('upd');
+      return false;
     },
   
     reverseDirections: function() {
@@ -203,28 +220,6 @@ byCycle.UI = (function() {
       var s = self.s_el.value;
       self.s_el.value = self.e_el.value;
       self.e_el.value = s;
-      s = self.s;
-      self.s = e;
-      self.e = s;
-    },
-
-    setStatus: function(content) {
-      self.status_el.innerHTML = content.toString();
-    },
-
-    setResult: function(content) {
-      self.results_el.innerHTML = content;
-    },
-    clearResult: function() {
-      self.results_el.innerHTML = '';
-    },
-
-    setErrors: function(content) {
-      Element.show(self.errors_el);
-      self.errors_el.innerHTML = content;
-    },
-    clearErrors: function() {
-      self.errors_el.update('');
     },
 
     /** Map **/
@@ -247,13 +242,6 @@ byCycle.UI = (function() {
       }
       // Just shows the red dot???
       //self.map.setCenter(self.map.getCenter());
-    },
-
-    showGeocode: function(index, open_info_win) {
-      var geocode = self.geocodes[index];
-      geocode.html = unescape(geocode.html);
-      self.setResult(geocode.html);
-      self.map.showGeocode(geocode);
     },
 
     /** Regions **/
@@ -365,7 +353,7 @@ byCycle.UI.Query.prototype = {
       onSuccess:  function(request) {self.onSuccess(request);},
       onFailure:  function(request) {self.onFailure(request);},
       onComplete: function(request) {self.onComplete(request);},
-      parameters: Form.serialize(this.form)
+      parameters: (this.form ? Form.serialize(this.form) : null)
     };
     var _tmp = new Ajax.Updater({success: 'results', failure: 'errors'}, 
                                 url, 
@@ -393,8 +381,13 @@ byCycle.UI.Query.prototype = {
   onComplete: function(request) {
     byCycle.logDebug('Entered onComplete...');
     Element.update('status', this.getElapsedTimeMessage());
+      alert('updated status');
     if (this.successful) {
+      alert('get json from result');
       eval('var result = ' + $F('json') + ';');
+      alert('evaled json');
+      this.ui.results.push(result);
+      alert('');
       this.callback(result);
     }
     Element.remove('json');
@@ -500,8 +493,8 @@ byCycle.UI.GeocodeQuery.prototype = Object.extend(new byCycle.UI.Query(), {
 /**
  * Route Query
  */
-byCycle.UI.RouteQuery = function() {
-  byCycle.UI.Query.call(this);
+byCycle.UI.RouteQuery = function(form) {
+  byCycle.UI.Query.call(this, form);
   this.service = 'route';
   this.updater_message = 'Finding route...';
 };
@@ -509,9 +502,10 @@ byCycle.UI.RouteQuery = function() {
 byCycle.UI.RouteQuery.prototype = Object.extend(new byCycle.UI.Query(), {
   before: function(form) {
     byCycle.UI.Query.prototype.before.call(this);
+    byCycle.logDebug('Entered beforeRouteQuery...');
     var errors = [];
-    var s = s || self.s_el.value;
-    var e = e || self.e_el.value;
+    var s = $F('s');
+    var e = $F('e');
     if (s && e) {
       q = ['["', s, '", "', e, '"]'].join('');
     } else {
@@ -525,12 +519,18 @@ byCycle.UI.RouteQuery.prototype = Object.extend(new byCycle.UI.Query(), {
           self.e_el.focus();
         }
       }
+      throw new Error(errors);
     }
-    self.beforeQuery(form, 'route', q, errors);
+    this.q = q;
   },
 
-  callback: function(status, result_set) {
-    byCycle.logDebug('In _routeCallback');
+  callback: function(result) {
+    byCycle.logDebug('Entered routeCallback...');
+    //var map = this.ui.map;
+    //map.placeMarker(result.point);
+    //map.setCenter(result.point, 14);
+    byCycle.logDebug('Left routeCallback.');
+
     var route = result_set.result;
     switch (status) {
       case 200:
@@ -573,10 +573,11 @@ byCycle.UI.RouteQuery.prototype = Object.extend(new byCycle.UI.Query(), {
  */
 byCycle.UI.TabPane = function(container, selected_id) {
   this.tabs = {};
-  var labels_container = document.body.getElementsByClassName('tab_labels', container)[0];
-  var contents_container = document.body.getElementsByClassName('tab_contents', container)[0];
-  var labels = document.body.getElementsByClassName('tab_label', labels_container);
-  var contents = document.body.getElementsByClassName('tab_content', contents_container);
+  var f = document.getElementsByClassName;
+  var labels_container = f('tab_labels', container)[0];
+  var contents_container = f('tab_contents', container)[0];
+  var labels = f('tab_label', labels_container);
+  var contents = f('tab_content', contents_container);
   var container_id = container.id;
   for (var i = 0; i < contents.length; ++i) {
     var id = container_id + '_tab_pane_tab' + i;

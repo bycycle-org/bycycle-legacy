@@ -1,5 +1,3 @@
-import simplejson
-from byCycle.services.exceptions import *
 from byCycle.services.route import *
 from tripplanner.lib.base import *
 from tripplanner.controllers.service import ServiceController
@@ -9,42 +7,23 @@ class RouteController(ServiceController):
     """Controller for handling route queries."""
 
     #----------------------------------------------------------------------
-    def show(self, query, region=None):
-        query = query or request.params.get('q', None)
-        if query is None:
-            query = ('["' + request.params.get('s', '') + '", "' +
-                     request.params.get('e', '') + '"]')
-        region = request.params.get('region', None)
-        format = request.params.get('format', 'html')
-        service = Service(region=region)
+    def show(self, query, region):
         try:
-            route = service.query(eval(query))
+            query = self._makeRouteList(query)
+            c.s, c.e = query[0], query[1]
+            c.q = '%s to %s' % (c.s, c.e)
+            return super(RouteController, self).show(
+                query, region, service_class=Service
+            )
         except MultipleMatchingAddressesError, exc:
-            geocodes = exc.geocodes
             template = 'geocodes'
-            code = 300
-            c.geocodes = geocodes
-            c.json = simplejson.dumps([eval(repr(g)) for g in geocodes])
-        except InputError, exc:
-            c.error_msg = exc.description
-            template = 'error'
-            code = 400
-        except NoRouteError, exc:
-            c.error_msg = exc.description
-            template = 'not_found'
-            code = 404
-        except Exception, exc:
-            c.error_msg = str(exc)
-            template = 'error'
-            code = 500
-        else:
-            template = 'route'
-            code = 200
-            c.route = route
-            c.json = simplejson.dumps(eval(repr(route)))
-        c.service = service
-        # TODO: Branch according to `format` here and return the appropriate
-        # response. The options are: 1) An HTML fragment that will replace the
-        # result area of the currently displayed page, 2) A JSON object, or 3)
-        # A complete HTML template with the result filled in.
-        return render_response('/service/%s.myt' % template, code=code)
+            oResult = exc.geocodes
+            http_status = 300
+            to_json = [eval(repr(g)) for g in oResult]
+            c.title = 'Multiple Matches Found'
+            c.classes = 'errors'
+        # We'll get here only if there's an unhandled error in the superclass.
+        # Otherwise, the superclass will handle rendering directly.
+        return self._render(
+            self.service, template, http_status, self.format, oResult, to_json
+        )

@@ -112,7 +112,7 @@
                         <input
                           id="s" name="s"
                           type="text"
-                          value="<% c.start %>"
+                          value="<% c.s %>"
                           title="Enter start address"
                           tabindex="4"
                         /><a
@@ -129,7 +129,7 @@
                             /></a><input
                           id="e" name="e"
                           type="text"
-                          value="<% c.end %>"
+                          value="<% c.e %>"
                           title="Enter end address"
                           tabindex="6"
                         />
@@ -182,7 +182,8 @@
                 <span id="regions_container">
                   <b>Region:</b>
                   <span id="active_region"><% region %></span>
-                  <a id="change_region_link" href="" onclick="return false;">change</a>
+                  <a id="change_region_link" href="" 
+                    onclick="return false;">change</a>
                   <div id="regions_window" class="window"
                        style="display: none;">
                     <div class="title_bar">
@@ -241,13 +242,22 @@
                 <div id="info">
 % if not c.info:
                   <p style="margin-top: 0;">
-                    The trip planner is under active development. Please <a href="http://bycycle.org/contact.html" title="Send us problem reports, comments, questions, and suggestions">contact us</a> with any problems, comments, questions, or suggestions.
+                    The trip planner is under active development. Please 
+                    <a href="http://bycycle.org/contact.html" 
+                       title="Send us problem reports, comments, questions, and suggestions"
+                       >contact us</a> with any problems, comments, questions, 
+                       or suggestions.
                   </p>
                   <p>
-                    If you find this application useful or would like to contribute to its improvement, please consider <a href="http://bycycle.org/support.html#donate" target="_new">donating</a>. Any amount helps.
+                    If you find this application useful or would like to 
+                    contribute to its improvement, please consider 
+                    <a href="http://bycycle.org/support.html#donate" 
+                       target="_new">donating</a>. Any amount helps.
                   </p>
                   <p>
-                    Users should independently verify all information presented here. This service is provided <b>AS IS</b> with <b>NO WARRANTY</b> of any kind.
+                    Users should independently verify all information presented
+                    here. This service is provided <b>AS IS</b> with <b>NO 
+                    WARRANTY</b> of any kind.
                   </p>
 % #if
                 </div>
@@ -270,13 +280,28 @@
                 <noscript>
                   <!-- TODO: Put a default static map here -->
                   <p>
-                    To display a map here, JavaScript must be enabled in your browser. If you would like to view the map, please enable JavaScript and<a href="">try again</a>.
+                    To display a map here, JavaScript must be enabled in your
+                    browser. If you would like to view the map, please enable
+                    JavaScript and <a href="">try again</a>.
                   </p>
                   <p>
-                    Note that you must have a relatively recent browser for the map to display. We test in Mozilla Firefox 1.5 on Linux, Mac OS X, and Windows; Safari on Mac OS X; and Internet Explorer 6 on Windows. Although we try our best to make the Trip Planner work the same in all of these browsers, we do the most testing with Firefox, and as a result it is the best choice for running the Trip Planner. Firefox is a great browser and we recommned trying it if you haven't already.
+                    Note that you must have a relatively recent browser for 
+                    the map to display. We test in Mozilla Firefox 1.5 on 
+                    Linux, Mac OS X, and Windows; Safari on Mac OS X; and 
+                    Internet Explorer 6 on Windows. Although we try our 
+                    best to make the Trip Planner work the same in all of 
+                    these browsers, we do the most testing with Firefox, and 
+                    as a result it is the best choice for running the Trip
+                    Planner. Firefox is a great browser and we recommned 
+                    trying it if you haven't already.
                   </p>
                   <p>
-                    If you don't have one of the above browsers, you may want to leave JavaScript turned off. On the other hand, if you feel like experimenting, you can<a href="http://bycycle.org/contact.html">let us know</a> if the trip planner does or does not work in other browsers.
+                    If you don't have one of the above browsers, you may want 
+                    to leave JavaScript turned off. On the other hand, if you 
+                    feel like experimenting, you can
+                    <a href="http://bycycle.org/contact.html">let us know</a> 
+                    if the trip planner does or does not work in other 
+                    browsers.
                   </p>
                 </noscript>
               </div>
@@ -298,7 +323,9 @@
                       <tr>
                         <td class="l"></td>
                         <td class="r">
-                          <a id="hide_ads" class="button" href="" onclick="return false;" title="Close Ad Window">X</a>
+                          <a id="hide_ads" class="button" href="" 
+                            onclick="return false;" title="Close Ad Window"
+                            >X</a>
                         </td>
                       </tr>
                     </tbody>
@@ -343,14 +370,19 @@
             <tr>
               <td class="l">Debug Log</td>
               <td class="r">
-                <a class="button" href="" onclick="Element.toggle('debug'); return false;" title="Show/Hide">#</a>
-                <a class="button" href="" onclick="Element.hide('debug_window'); return false;" title="Close">X</a>
+                <a class="button" href="" 
+                   onclick="Element.toggle('debug'); return false;" 
+                   title="Show/Hide">#</a>
+                <a class="button" href="" 
+                   onclick="Element.hide('debug_window'); return false;" 
+                   title="Close">X</a>
               </td>
             </tr>
           </tbody>
         </table>
       </div>
-      <div id="debug" class="content_pane" style="height: 300px; overflow: auto;">
+      <div id="debug" class="content_pane" 
+           style="height: 300px; overflow: auto;">
       </div>
     </div>
 
@@ -365,8 +397,6 @@
       // Values calculated in the controller
       byCycle.UI.region = '<% c.region_key or 'all' %>';
       byCycle.UI.service = '<% c.service_name or 'query' %>';
-      byCycle.UI.http_status = <% c.http_status or 'null' %>;
-      byCycle.UI.response_text = <% [('"' + c.response_text + '"'), 'null'][not c.response_text] %>;
       //]]>
     </script>
   </body>

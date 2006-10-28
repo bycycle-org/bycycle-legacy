@@ -1,4 +1,5 @@
 import time
+import re
 import simplejson
 from byCycle.services.exceptions import *
 from tripplanner.lib.base import *
@@ -11,7 +12,6 @@ class ServiceController(RestController):
     #----------------------------------------------------------------------
     def show(self, query, region, service_class=None):
         query = query or request.params.get('q', None)
-        c.q = query
         format = request.params.get('format', 'html')
         service = service_class(region=region)
         result = None
@@ -111,3 +111,31 @@ class ServiceController(RestController):
                 resp = controller.show(service.region.key, service.name)
                 resp.status_code = http_status
         return resp
+
+    #----------------------------------------------------------------------
+    def _makeRouteList(self, q):
+        """Try to parse a route list from the given query.
+
+        The query can be either a string with waypoints separated by ' to ' or
+        a string that will eval as a list. A ValueError is raised if query
+        can't be parsed as a list of at least two strings.
+
+        ``q`` `string` -- User's input query
+
+        return [`str`] -- A list of route waypoints
+
+        raise `ValueError` -- Query can't be parsed as a list of two or more
+        items
+
+        """
+        try:
+            route_list = eval(q)
+        except:
+            sRe = '\s+to\s+'
+            oRe = re.compile(sRe, re.I)
+            route_list = re.split(oRe, q)
+        if not (isinstance(route_list, list) and len(route_list) > 1):
+            raise ValueError(
+                '%s cannot be parsed as a list of two or more items.' % q
+            )
+        return route_list
