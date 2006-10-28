@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 ###########################################################################
 # $Id: shp2pgsql.py 187 2006-08-16 01:26:11Z bycycle $
 # Created 2006-09-07
@@ -119,14 +119,14 @@ bikemodes = {
 ### May need to be changed depending on the local environment
 
 # Path to shp-importing executable
-shp2sql_exe = '/usr/bin/shp2pgsql'
+shp2sql_exe = 'shp2pgsql'
 
 # args template for shp-importing executable
 shp2sql_args = '-c -i -I -s %s %s %s > %s' \
                # % (SRID, layer, schema, SQL file)
 
 # Path to database executable
-sql_exe = '/usr/bin/psql'
+sql_exe = 'psql'
 
 # args template for importing SQL into database
 sql_args = '--quiet -d %s -f %s'  # % (database, SQL file)
@@ -219,10 +219,10 @@ cities = None
 
 def createConnection():
     """Set up and return DB connection."""
-    return psycopg2.connect(host='localhost',
+    return psycopg2.connect(#host='localhost',
                             database=db_name,
                             user=db_user,
-                            password=db_pass
+                            #password=db_pass
                             )
 
 
@@ -600,6 +600,9 @@ def transferEdges(modify=True):
         c.up_frac, c.abs_slp, c.sscode, c.cpd
     ]
     result = select(cols).execute()
+    if modify: 
+        deleteAllFromTable(table)
+    turnSQLEchoOff(metadata)
     # Transfer streets
     l = []
     for i, row in enumerate(result):
@@ -647,13 +650,15 @@ def transferEdges(modify=True):
         d['cpd'] = row.cpd
         d['sscode'] = row.sscode
         l.append(d)
-    result.close()
-    if modify:
-        deleteAllFromTable(table)
-        turnSQLEchoOff(metadata)
+        if modify and len(l) >= 1000:
+            table.insert().execute(l)
+            l = []
+    if modify and l:
         table.insert().execute(l)
-        turnSQLEchoOn(metadata)
-        vacuum('%s.layer_edges' % region)
+        l = []
+    turnSQLEchoOn(metadata)
+    vacuum('%s.layer_edges' % region)
+    result.close()
 
 
 def convertEdgeGeometryToLINESTRING():
