@@ -20,7 +20,8 @@ from byCycle.model import region
 SRID = 2913
 units = 'feet'
 earth_circumference = 131484672
-block_length = 1.0 / 20.0
+block_length = 5280.0 / 20.0
+jog_length = block_length / 2.0
 
 
 class Region(region.Region):
@@ -28,6 +29,8 @@ class Region(region.Region):
 
     def __init__(self):
         name = 'Portland, OR'
+        self.block_length = block_length
+        self.jog_length = jog_length
         edge_attrs = ['street_name_id', 'code', 'bikemode', 'up_frac', 
                         'abs_slp', 'node_f_id', 'cpd']
         region.Region.__init__(self, name, SRID, units, earth_circumference,

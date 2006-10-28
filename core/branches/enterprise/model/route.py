@@ -20,14 +20,13 @@ class Route(object):
 
     #----------------------------------------------------------------------
     def __init__(self,
-                 start_original, end_original,
-                 start_geocode, end_geocode,
+                 region,
+                 start, end,
                  nodes, edges,
                  directions, linestring, distance):
-        self.start_original = start_original
-        self.end_original = end_original
-        self.start_geocode = start_geocode
-        self.end_geocode = end_geocode
+        self.region = region
+        self.start = start
+        self.end = end
         self.nodes = nodes
         self.edges = edges
         self.directions = directions
@@ -37,14 +36,8 @@ class Route(object):
     #----------------------------------------------------------------------
     def __repr__(self):
         route = {
-            'start': {
-                'geocode': self.start_geocode,
-                'original': self.start_original,
-                },
-            'end': {
-                'geocode': self.end_geocode,
-                'original': self.end_original,
-                },
+            'start': self.start,
+            'end': self.end,
             'linestring': repr(self.linestring),
             'directions': self.directions,
             'distance': self.distance
@@ -57,23 +50,23 @@ class Route(object):
         for d in self.directions:
             dbm = d['bikemode']
             bm = [', '.join([[b, '-'][b is 'n'] for b in dbm]), ''][not dbm]
-            directions.append('%s on %s toward %s -- %s mi [%s]' % (
+            directions.append('%s on %s toward %s -- %s %s [%s]' % (
                 d['turn'],
                 d['street'],
                 d['toward'],
-                '%.2f' % (d['distance']['mi'] / 5280.0),
+                '%.2f' % (d['distance'][self.region.units]),
+                self.region.units,
                 bm,
             ))
         directions = '\n'.join([
-            '%s%s. %s' % (['', ' '][i<10], i, d) 
-            for i, d 
+            '%s%s. %s' % (['', ' '][i<10], i, d)
+            for i, d
             in enumerate(directions)
         ])
         s = [
-            self.start_geocode,
-            self.end_geocode,
-            'Distance: %.2f' % (self.distance['mi'] / 5280.0),
+            self.start['geocode'],
+            self.end['geocode'],
+            'Distance: %.2f' % (self.distance[self.region.units]),
             directions,
         ]
         return '\n'.join([str(a) for a in s])
-        

@@ -22,7 +22,7 @@ timer = meter.Timer()
 
 
 class TestPortlandOR(unittest.TestCase):
-    
+
     def _query(self, q, region=None):
         print '=========='
         timer.start()
@@ -38,23 +38,24 @@ class TestPortlandOR(unittest.TestCase):
     def _queryRaises(self, q, exc):
         self.assertRaises(exc, self._query, q)
 
-    def test_no_place_on_first_address(self):
+    def _test_no_place_on_first_address(self):
         q = ('4807 se kelly', '633 n alberta, portland, or')
         route = self._query(q)
 
-    def test_no_place_on_second_address(self):
+    def _test_no_place_on_second_address(self):
         q = ('4807 se kelly, portland, or', '633 n alberta')
         route = self._query(q)
 
     def test_route(self):
         q = ('4807 se kelly, portland, or', 'ne 6th & irving, portland, or')
+        #route = self._query(q)
+        q = ('250 ne going, portland, or', '350 n going, portland, or')
         route = self._query(q)
 
-    def test_three_addresses(self):
+    def _test_three_addresses(self):
         q = ('4807 se kelly, portland, or', '633 n alberta', '1500 ne alberta')
         route = self._query(q)
-        
-        
+
 
 if __name__ == '__main__':
     unittest.main()

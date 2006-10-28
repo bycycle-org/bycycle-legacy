@@ -28,6 +28,9 @@ classes) and exceptions.
 """
 from sqlalchemy.sql import func, select
 
+from cartography import geometry
+from cartography.proj import SpatialReference
+
 from byCycle.lib.util import joinAttrs
 from byCycle.model.region import Region
 from byCycle.model import regions
@@ -35,7 +38,7 @@ from byCycle.model import regions
 
 class Node(object):
     """Represents point features."""
-    
+
     def __init__(self, id_, geom, edges=[]):
         self.id = id_
         self.geom = geom
@@ -100,25 +103,22 @@ class Edge(object):
         try:
             self._length
         except AttributeError:
-            _c = self.c
-            _f = func.length(_c.geom)
-            select_ = select([_f.label('length')], _c.id == self.id)
-            result = select_.execute()
-            self._length = result.fetchone().length           
+            self._length = self.geom.length()
         return self._length
 
     def getPointAndLocationOfNumber(self, num):
         """
-        
+
         ``num`` `int` -- A building number that should be in [addr_f, addr_t]
-        
-        return `Point`, `float` -- The coordinate that num is at within this
-        `Edge`; the location, in range [0, 1], of ``num`` within this edge.
-        
+
+        return `Point`, `float` -- The coordinate that ``num`` is at within
+        this `Edge`; the location, in range [0, 1], of ``num`` within this
+        edge.
+
         """
         # Sanity check; num should always be an `int`
         num = int(num)
-        
+
         # Determine location in [0, 1] of num along edge
         # Note: addr_f/t might be NULL
         if (not num) or (None in (self.addr_f, self.addr_t)):
@@ -137,27 +137,25 @@ class Edge(object):
 
         # Function to get interpolated point
         _f = func.line_interpolate_point(_c.geom, location)
-        # Function to transform point to lat/long
-        _f = func.transform(_f, 4326)
-        # Function to get WKT version of lat/long point
-        _f = func.astext(_f)
-        
-        # Query DB and get WKT POINT
-        select_ = select([_f.label('wkt_point')], _c.id == self.id)
+        # Function to get WKB version of lat/long point
+        _f = func.asbinary(_f)
+
+        # Query DB and get WKB POINT
+        select_ = select([_f.label('wkb_point')], _c.id == self.id)
         result = select_.execute()
-        wkt_point = result.fetchone().wkt_point
+        wkb_point = result.fetchone().wkb_point
         
-        point = Point(point=wkt_point)
+        point = geometry.Geometry.fromWKB(wkb_point)
         return point, location
-    
+
     def splitAtGeocode(self, geocode, node_id=-1, edge_f_id=-1, edge_t_id=-2):
         """Split this edge at ``geocode`` and return two new edges.
 
         ``geocode`` `Geocode` -- The geocode to split the edge at.
-        
+
         See `splitAtLocation` for further details
-        
-        """        
+
+        """
         edge_f, edge_t = self.splitAtLocation(
             geocode.location, node_id, edge_f_id, edge_t_id
         )
@@ -166,14 +164,14 @@ class Edge(object):
         edge_f.addr_t = num
         edge_t.addr_f = num
         return edge_f, edge_t
-        
+
     def splitAtNumber(self, num, node_id=-1, edge_f_id=-1, edge_t_id=-2):
         """Split this edge at ``num`` and return two new edges.
 
         ``num`` `int` -- The address number to split the edge at.
-        
+
         See `splitAtLocation` for further details
-        
+
         """
         point, location = self.getPointAndLocationOfNumber(num)
         return self.splitAtLocation(
@@ -216,7 +214,7 @@ class Edge(object):
         # fake node ID
         edge_f.node_t_id, edge_t.node_f_id = node_id, node_id
         return edge_f, edge_t
-    
+
     def clone(self):
         from copy import deepcopy
         return deepcopy(self)
@@ -304,15 +302,31 @@ class StreetName(object):
         """A `StreetName` must have at least a `name`."""
         return bool(self.name)
 
+    def __eq__(self, other):
+        self_attrs = (self.prefix, self.name, self.sttype, self.suffix)
+        try:
+            other_attrs = (other.prefix, other.name, other.sttype, other.suffix)
+        except AttributeError:
+            return False
+        return (self_attrs == other_attrs)
+
+    def almostEqual(self, other):
+        self_attrs = (self.name, self.sttype)
+        try:
+            other_attrs = (other.name, other.sttype)
+        except AttributeError:
+            return False
+        return (self_attrs == other_attrs)
+
 
 class City(object):
     """City.
 
     ``id`` `int` -- Unique ID
     ``city`` `string` -- City name
-    
+
     """
-    
+
     def __init__(self, id_=None, city=None):
         """See attributes list for description parameters."""
         self.id = id_
@@ -329,7 +343,7 @@ class City(object):
             'id': self.id,
             'city': str(self)
         })
-    
+
     def __nonzero__(self):
         """A `City` must have at least a `city` (i.e., a city name)."""
         return bool(self.city)
@@ -340,9 +354,9 @@ class State(object):
 
     ``id`` `int` -- Unique ID
     ``state`` `string` -- State name
-    
+
     """
-   
+
     def __init__(self, id_=None, state=None):
         """See attributes list for description parameters."""
         self.id = id_
@@ -366,19 +380,19 @@ class State(object):
 
 
 class Place(object):
-    """City, state, and zip code.   
-    
+    """City, state, and zip code.
+
     ``city`` `City` -- City ID and city name
     ``state`` `State` -- State ID (two letter abbreviation) and state name
     ``zip_code`` `int`
-    
+
     """
-    
+
     def __init__(self, city=None, state=None, zip_code=None):
         """See attributes list for description parameters.
-        
+
         Any or all of the parameters can be None.
-        
+
         """
         if city is None:
             city = City()
@@ -422,7 +436,7 @@ class Place(object):
             'state': self.state,
             'zip_code': str(self.zip_code or '')
         })
-    
+
     def __nonzero__(self):
         return bool(self.city or self.state or self.zip_code)
 
@@ -459,27 +473,27 @@ class Point(object):
         return `tuple` -- floats X and Y
 
         TODO: Support Z coordinate
-        
+
         """
         self.x, self.y, self.z = self._initCoordinates(point, x, y, z)
 
     #----------------------------------------------------------------------
     def _initCoordinates(self, point, x, y, z):
         """Get x, y, and z coordinates.
-        
+
         See __init__ for parameter details.
-        
+
         ``point``
         ``x``
         ``y``
         ``z``
-        
+
         return `tuple` -- X, Y, and Z coordinates. For now, Z is always None.
-        
+
         raise ValueError
             - Coordinates cannot be parsed
             - Neither ``point`` nor both of ``x`` and ``y`` are given
-        
+
         """
         if x is not None and y is not None:
             # ``x`` and ``y`` were passed; prefer them over ``point``.
@@ -489,7 +503,7 @@ class Point(object):
                 err = 'X and Y values must be floats. X: "%s", Y: "%s".'
                 raise ValueError(err % (x, y))
             else:
-                return x, y, None                
+                return x, y, None
         elif point is not None:
             # ``point`` was passed and at least one of ``x`` and ``y`` wasn't
             # Try a bunch of different methods of parsing coordinates from
@@ -511,7 +525,7 @@ class Point(object):
                     # this.
                     pass
                 else:
-                    try: 
+                    try:
                         x, y = [float(v) for v in (x, y)]
                     except (ValueError, TypeError):
                         pass
@@ -525,7 +539,7 @@ class Point(object):
                 'No arguments passed to initialize coordinates from. Pass '
                 'either point OR x and y.'
             )
-        
+
     #----------------------------------------------------------------------
     def _initCoordinatesFromSequence(self, s):
         try:
@@ -538,7 +552,7 @@ class Point(object):
                 raise InitCoordinatesException(
                     'Missing y value (x: "%s").' % s[0]
                 )
-                        
+
     #----------------------------------------------------------------------
     def _initCoordinatesFromEval(self, s):
         try:
@@ -574,7 +588,7 @@ class Point(object):
             raise InitCoordinatesException(
                 '"%s" does not have both x and y attributes.' % str(obj)
             )
-        
+
     #----------------------------------------------------------------------
     def _initCoordinatesFromDict(self, d):
         try:
@@ -586,8 +600,8 @@ class Point(object):
         except TypeError:
             raise InitCoordinatesException(
                 '"%s" is not a dict.' % str(d)
-            )            
-    
+            )
+
     #----------------------------------------------------------------------
     def _initCoordinatesFromKwargsString(self, point):
         """A kwargs point is a str with x & y specified like keyword args.
@@ -654,7 +668,7 @@ class Point(object):
         try:
             return x, y
         except NameError:
-            raise InitCoordinatesException(err)           
+            raise InitCoordinatesException(err)
 
     #----------------------------------------------------------------------
     def __str__(self):
@@ -664,7 +678,6 @@ class Point(object):
     #----------------------------------------------------------------------
     def __repr__(self):
         return (
-            "{'x': %.6f, 'y': %.6f, 'z': %.6f}" % 
+            "{'x': %.6f, 'y': %.6f, 'z': %.6f}" %
             (self.x, self.y, self.z or 0.0)
         )
-
