@@ -190,17 +190,11 @@ byCycle.UI = (function() {
       
       // Simultate a successful Geocode request
       var gq = new byCycle.UI.GeocodeQuery(null);
-      alert('gq');
       var request = {status: 200, responseText: ''};
-      alert('req');
       gq.onSuccess(request);
-      alert('ons');
       gq.onComplete(request);
-      alert('onc');
       gq.after(request);
-      alert('aft');
       Element.update(self.status_el, 'Good choice!');
-      alert('upd');
       return false;
     },
   
@@ -381,13 +375,9 @@ byCycle.UI.Query.prototype = {
   onComplete: function(request) {
     byCycle.logDebug('Entered onComplete...');
     Element.update('status', this.getElapsedTimeMessage());
-      alert('updated status');
     if (this.successful) {
-      alert('get json from result');
       eval('var result = ' + $F('json') + ';');
-      alert('evaled json');
       this.ui.results.push(result);
-      alert('');
       this.callback(result);
     }
     Element.remove('json');
