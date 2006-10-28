@@ -17,9 +17,10 @@ import time
 import simplejson
 region_key = c.service.region.key
 multi_id = c.result_id
-href_template = '/%s/geocode/%%s' % region_key
-onclick_template = "byCycle.UI.selectGeocode('%s'); return false;"
-link_template = '<a href="%s" onclick="%s">%%s</a>'
+json = c.json
+href_template = '/%s/geocode/%s' % (region_key, '%s')
+onclick = "byCycle.UI.selectGeocode(this); return false;"
+link_template = '<a href="%s" onclick="%s">%s</a>' % ('%s', onclick, '%s')
 </%python>
 
 <div class="multi">
@@ -40,19 +41,18 @@ link_template = '<a href="%s" onclick="%s">%%s</a>'
         result_id = ('%.6f' % time.time()).replace('.', '')
 
         href = href_template % url_addr
-        onclick = onclick_template % result_id
-        link = link_template % (href, onclick)
-
-        s = (result_id, link % ('Geocode #%s' % (i + 1)))
-        c.title = '<span id="title%s">%s</span>' % s
-        # Needed to override inherited c.classes == 'error'
-        c.classes = ['', 'first_multi'][i == 0]
+        link = link_template % (href, '%s')
+        
+        c.title = link % ('Geocode #%s' % (i + 1))
+        c.classes = ''  # Needed to override inherited c.classes == 'error'
         c.result_id = result_id
+        c.json_id = '%s' % i
         c.json = simplejson.dumps(eval(repr(geocode)))
 
-        s = (result_id, link % 'Select')
-        extra = '<span id="extra%s"> | %s</span>' % s
+        extra = '<span> | %s</span>' % (link % 'Select')
 
         m.write(m.subexec('geocode.myt', oResult=geocode, extra_content=extra))
+    c.result_id = multi_id
+    c.json = json
     </%python>
 </div>

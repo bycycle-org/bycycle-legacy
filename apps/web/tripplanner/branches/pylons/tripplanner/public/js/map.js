@@ -91,7 +91,7 @@ byCycle.Map.Map.prototype = {
   closeInfoWindow: function() {},
 
   showMapBlowup: function(point) {
-    alert(point);
+    alert('Map blowup: ' + point);
   },
 
   addOverlay: function(overlay) {
