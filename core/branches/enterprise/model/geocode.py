@@ -93,7 +93,7 @@ class PostalGeocode(Geocode):
             'street_name': self.address.street_name,
             'place': self.address.place,
             'address': str(self.address),
-            'point': self.xy,
+            'point': {'x': self.xy.x, 'y': self.xy.y},
             'network_id': self.network_id
         }
         return repr(result)
