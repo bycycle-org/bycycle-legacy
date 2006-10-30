@@ -85,6 +85,7 @@ class ServiceController(RestController):
         json = simplejson.dumps(to_json)
         # Used by frag and html
         result_template = '/service/%s.myt' % template
+        c.http_status = http_status
         c.service = service
         c.result_id = ('%.6f' % time.time()).replace('.', '')
         c.json = json

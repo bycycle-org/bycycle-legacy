@@ -49,6 +49,10 @@ byCycle.Map.Map.prototype = {
     this.map = map;
   },
 
+  put: function(content) {
+    this.map.appendChild(Builder.node('div', content));
+  },
+  
   clear: function() {
     this.map.innerHTML = '';
   },
@@ -79,7 +83,8 @@ byCycle.Map.Map.prototype = {
   },
 
   setCenter: function(center, zoom) {
-    this.map.innerHTML += ('<br/>Center: ' + center.y + ', ' + center.x + (zoom ? ' Zoom: ' + zoom : ''));
+    this.put(['Set Center: ', center.y, ', ', center.x, 
+              (zoom ? ' Zoom: ' + zoom : '')].join(''));
   },
 
   setZoom: function(zoom) {
@@ -95,15 +100,37 @@ byCycle.Map.Map.prototype = {
   },
 
   addOverlay: function(overlay) {
-    this.map.appendChild(overlay);
+    var content = 'Added Overlay: ' + overlay.toString();
+    this.put(content);
   },
 
-  removeOverlay: function(overlay) {},
+  removeOverlay: function(overlay) {
+    var content = 'Removed Overlay: ' + overlay.toString();
+    this.put(content);
+  },
 
-  drawPolyLine: function(points, color, weight, opacity) {},
+  drawPolyLine: function(points, color, weight, opacity) {
+    var line = {
+      type: 'PolyLine', 
+      toString: function() {
+        return this.type;
+      }
+    };
+    this.addOverlay(line);
+    return line;  
+  },
 
   placeMarker: function(point, icon) {
-    this.map.innerHTML += ('<br/>Marker: ' + point.y + ', ' + point.x);
+    var marker = {
+      type: 'Marker', 
+      x: point.x, 
+      y: point.y, 
+      toString: function() {
+        return [this.type, ' at ', this.x, ', ', this.y].join('');
+      }
+    };
+    this.addOverlay(marker);
+    return marker;
   },
 
   /**

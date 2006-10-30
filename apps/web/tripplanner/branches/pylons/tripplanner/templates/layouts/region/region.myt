@@ -395,6 +395,7 @@
       //<![CDATA[
       byCycle.UI.beforeLoad();
       // Values calculated in the controller
+      byCycle.UI.http_status = <% c.http_status or 200 %>;
       byCycle.UI.region = '<% c.region_key or 'all' %>';
       byCycle.UI.service = '<% c.service_name or 'query' %>';
       //]]>
