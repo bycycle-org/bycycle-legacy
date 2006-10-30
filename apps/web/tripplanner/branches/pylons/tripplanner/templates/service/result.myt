@@ -1,5 +1,5 @@
 % top_level = 'parentNode.parentNode.parentNode.parentNode.parentNode.parentNode'
-<div id="<% c.result_id %>" class="window result <% c.classes %>">
+<div id="result_<% c.result_id %>" class="window result <% c.classes %>">
   <div class="title_bar">
     <table>
       <tbody>
@@ -9,7 +9,7 @@
             <a class="button"
                href=""
                title="Close"
-               onclick="Element.remove(this.<% top_level %>); return false;"
+               onclick="byCycle.UI.removeResult(this.<% top_level %>); return false;"
                >X</a>
           </td>
         </tr>

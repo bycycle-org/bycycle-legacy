@@ -54,7 +54,7 @@ byCycle.UI = (function() {
     service: 'query',
     query: null,
     result: null,
-    results: [],  // Evaled JSON results
+    results: {},
     http_status: null,
     response_text: null,
 
@@ -100,6 +100,13 @@ byCycle.UI = (function() {
       }
       self.onResize();
       self.setRegionFromSelectBox();
+      self.handleResult();  // For non-AJAX queries, bookmarks, etc
+    },
+
+    handleResult: function() {
+      if (self.http_status == 200) {
+        self['simulate_'+self.service+'_query']();
+      }
     },
 
     /** Events **/
@@ -184,20 +191,39 @@ byCycle.UI = (function() {
       // Clear and hide the errors div
       Element.update(self.errors_el, '');
       Element.hide(self.errors_el);
-      
+
       var json = document.getElementsByClassName('json', selected)[0];
       json.id = 'json';
-      
-      // Simultate a successful Geocode request
-      var gq = new byCycle.UI.GeocodeQuery(null);
-      var request = {status: 200, responseText: ''};
-      gq.onSuccess(request);
-      gq.onComplete(request);
-      gq.after(request);
+
+      self.simulate_geocode_query();
       Element.update(self.status_el, 'Good choice!');
-      return false;
     },
-  
+    
+    simulate_geocode_query: function() {
+      self._simulate_query(new byCycle.UI.GeocodeQuery(null));
+    },
+    
+    _simulate_query: function(query_obj) {
+      var request = {status: 200, responseText: ''};
+      query_obj.onSuccess(request);
+      query_obj.onComplete(request);
+      query_obj.after(request);    
+    },
+
+    removeResult: function(result_el) {
+      try {
+        self.results[result_el.id].remove();
+      } catch (e) {
+        if (e instanceof TypeError) {
+          // result_el wasn't registered as a Result (hopefully intentionally)
+          Element.remove(result_el);
+        } else {
+          byCycle.logDebug('Unhandle Exception in byCycle.UI.removeResult: ', 
+                           e.name, e.message);
+        }
+      }
+    },
+
     reverseDirections: function() {
       // TODO: Do this right--that is, use the from and to values from the
       // result, not just whatever happens to be in the input form
@@ -301,6 +327,29 @@ byCycle.UI = (function() {
 
 
 /**
+ * Result Base Class
+ * `id` -- Unique ID for this result
+ * `data` -- Evaled JSON object
+ */
+byCycle.UI.Result = function(id, data) {
+  this.id = id;
+  this.data = data;
+  this.map = byCycle.UI.map;
+  this.overlays = [];
+};
+
+byCycle.UI.Result.prototype = {
+  remove: function() {
+    Element.remove(this.id);
+    for (var i = 0; i < this.overlays.length; ++i) {
+       this.map.removeOverlay(this.overlays[i]);
+    }
+    delete byCycle.UI.results[this.id];
+  }
+}
+
+
+/**
  * Query Base Class
  */
 byCycle.UI.Query = function(form) {
@@ -347,10 +396,10 @@ byCycle.UI.Query.prototype = {
       onSuccess:  function(request) {self.onSuccess(request);},
       onFailure:  function(request) {self.onFailure(request);},
       onComplete: function(request) {self.onComplete(request);},
-      parameters: (this.form ? Form.serialize(this.form) : null)
+      parameters: (self.form ? Form.serialize(self.form) : null)
     };
-    var _tmp = new Ajax.Updater({success: 'results', failure: 'errors'}, 
-                                url, 
+    var _tmp = new Ajax.Updater({success: 'results', failure: 'errors'},
+                                url,
                                 args);
   },
 
@@ -376,12 +425,23 @@ byCycle.UI.Query.prototype = {
     byCycle.logDebug('Entered onComplete...');
     Element.update('status', this.getElapsedTimeMessage());
     if (this.successful) {
-      eval('var result = ' + $F('json') + ';');
-      this.ui.results.push(result);
+      var result = this.makeResult();
       this.callback(result);
     }
     Element.remove('json');
     byCycle.logDebug('Left onComplete.');
+  },
+
+  makeResult: function() {
+    byCycle.logDebug('Entered makeResult...');
+    eval('var data = ' + $F('json') + ';');
+    var id = 'result_' + new Date().getTime();
+    var first_result = document.getElementsByClassName('result', 'results')[0];
+    first_result.id = id;
+    var result = new byCycle.UI.Result(id, data);
+    this.ui.results[id] = result;
+    byCycle.logDebug('Left makeResult...');
+    return result;
   },
 
   after: function() {
@@ -473,8 +533,9 @@ byCycle.UI.GeocodeQuery.prototype = Object.extend(new byCycle.UI.Query(), {
   callback: function(result) {
     byCycle.logDebug('Entered geocodeCallback...');
     var map = this.ui.map;
-    map.placeMarker(result.point);
-    map.setCenter(result.point, 14);
+    var marker = map.placeMarker(result.data.point);
+    result.overlays.push(marker);
+    map.setCenter(result.data.point, 14);
     byCycle.logDebug('Left geocodeCallback.');
   }
 });
@@ -531,7 +592,7 @@ byCycle.UI.RouteQuery.prototype = Object.extend(new byCycle.UI.Query(), {
         map.centerAndZoomToBounds(map.getBoundsForPoints(ls));
 
         // Place from and to markers
-        var s_e_markers = map.placeMarkers([ls[0], ls[ls.length - 1]], 
+        var s_e_markers = map.placeMarkers([ls[0], ls[ls.length - 1]],
                                            [map.start_icon, map.end_icon]);
 
         // Add listeners to from and to markers
