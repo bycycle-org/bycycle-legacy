@@ -94,19 +94,19 @@ var regions = {
     
     bounds: {sw: {lat: 40.362070, lng: -80.088957},
 	     ne: {lat: 40.500887, lng: -79.866439}}
-  },
-  
-  
-  seattlewa:
-  {
-    id: 'seattlewa',
-    
-    heading: 'Seattle, WA',
-    
-    subheading: 'Developed in cooperation with Daniel Carleton.',
-        
-    bounds: {sw: {lat: 47.453598, lng: -122.419091},
-	     ne: {lat: 47.734137, lng: -122.217088}}
   }
+  
+  
+//  seattlewa:
+ // {
+ //   id: 'seattlewa',
+ //   
+ //   heading: 'Seattle, WA',
+ //   
+ //   subheading: 'Developed in cooperation with Daniel Carleton.',
+ //       
+ //   bounds: {sw: {lat: 47.453598, lng: -122.419091},
+//	     ne: {lat: 47.734137, lng: -122.217088}}
+  //}
 
 };

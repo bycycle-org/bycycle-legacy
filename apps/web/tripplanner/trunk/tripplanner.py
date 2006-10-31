@@ -415,7 +415,7 @@ class TripPlanner(object):
         regions = {'or': ['portland',],
                    'wi': ['milwaukee',],
                    'pa': ['pittsburgh',],
-                   'wa': ['seattle',]
+                   #'wa': ['seattle',]
                    }
 
         states = regions.keys()
