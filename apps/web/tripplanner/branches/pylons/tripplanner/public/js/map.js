@@ -9,15 +9,8 @@ byCycle.Map = {
     isLoadable: function() {
       return true;
     }
-  },
-
-  beforeLoad: function() {
-    // pass
-  },
-
-  isLoadable: function() {
-    return false;
   }
+  // Other map types will be registered on load
 };
 
 

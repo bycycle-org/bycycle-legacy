@@ -19,7 +19,7 @@ class ServiceController(RestController):
         try:
             result = service.query(query)
         except InputError, exc:
-            c.title = 'Bad Input'
+            c.title = 'Error%s' % (['', 's'][len(exc.errors) != 1])
             http_status = 400
         except NotFoundError, exc:
             c.title = 'Not Found'
