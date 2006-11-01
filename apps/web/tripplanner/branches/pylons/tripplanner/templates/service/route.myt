@@ -32,18 +32,20 @@
     e_addr = str(e_addr).replace('\n', '<br/>')
     last_street = e_addr.split('<br/>', 1)[0]
     tab = '&nbsp;&nbsp;&nbsp;&nbsp;'
+    map_blowup_href = "javascript:void('Show map blowup')"
+    map_blowup_onclick = "byCycle.UI.map.showMapBlowup({x: %s, y: %s}); return false;"
 </%python>
 
 
 <div class="summary">
     <div class="start">
-        <a href="javascript:void('Show map blowup')" class="start"
-           onclick="byCycle.UI.map.showMapBlowup(0); return false;"
+        <a href="<% map_blowup_href %>" class="start"
+           onclick="<% map_blowup_onclick % (s.xy.x, s.xy.y) %>"
            ><% s_addr %></a></h2>
     </div>
     <div class="end">
-        <a href="javascript:void('Show map blowup');" class="end"
-           onclick="byCycle.UI.map.showMapBlowup(<% linestring.numPoints() - 1 %>);"
+        <a href="<% map_blowup_href %>" class="end"
+           onclick="<% map_blowup_onclick % (e.xy.x, e.xy.y) %>;"
            ><% e_addr %></a>
     </div>
     <div class="total_distance" style="border-bottom: none;">
@@ -54,7 +56,7 @@
 
 <div id="reverse_div">
     <a href="/%s/route/%s to %s"
-       onclick="reverseDirections('%s', '%s');"
+       onclick="reverseDirections('<% s.urlStr() %>', '<% e.urlStr() %>');"
        >Reverse Directions</a>
 </div>
 
@@ -65,6 +67,7 @@
 % for i, d in enumerate(directions):
 %     turn = d['turn']
 %     street = d['street']
+%     point = linestring.pointN(d['linestring_index'])
 %     if turn == 'straight':
 %         prev = street[0]
 %         curr = street[1]
@@ -100,8 +103,8 @@
 %     bikemodes = ['', ' [%s]' % ', '.join([b for b in bikemodes])][bool(bikemodes)]
     <div class="<% row_class %>">
         <b><% i + 1 %>.</b>
-        <a href="javascript:void('Show map blowup')"
-           onclick="byCycle.UI.map.showMapBlowup()"
+        <a href="<% map_blowup_href %>"
+           onclick="<% map_blowup_onclick % (point.x, point.y) %>"
            ><% cmd_on %></a>
            <% toward %>
            -- <% mi %>mi (<% km %> km)
@@ -111,8 +114,8 @@
 %     row_class = ['a', 'b'][row_class == 'a']
 % #for
     <div class="<% row_class %>">
-        <a href="javascript:void('Show map blowup')"
-           onclick="byCycle.UI.map.showMapBlowup()"
+        <a href="<% map_blowup_href %>"
+           onclick="<% map_blowup_onclick % (e.xy.x, e.xy.y) %>"
            ><b>End</b> at <b><% last_street %></b></a>    
     </div>
 </div>

@@ -43,7 +43,9 @@ byCycle.Map.Map.prototype = {
   },
 
   put: function(content) {
-    this.map.appendChild(Builder.node('div', content));
+    var div = Builder.node('div', content);
+    this.map.appendChild(div);
+    return div;
   },
   
   clear: function() {
@@ -89,12 +91,13 @@ byCycle.Map.Map.prototype = {
   closeInfoWindow: function() {},
 
   showMapBlowup: function(point) {
-    alert('Map blowup: ' + point);
+    var content = 'Map blowup: ' + point.x + ', ' + point.y;
+    this.put(content);
   },
 
   addOverlay: function(overlay) {
     var content = 'Added Overlay: ' + overlay.toString();
-    this.put(content);
+    return this.put(content);
   },
 
   removeOverlay: function(overlay) {
@@ -109,8 +112,7 @@ byCycle.Map.Map.prototype = {
         return this.type;
       }
     };
-    this.addOverlay(line);
-    return line;  
+    return this.addOverlay(line);
   },
 
   placeMarker: function(point, icon) {
@@ -122,8 +124,7 @@ byCycle.Map.Map.prototype = {
         return [this.type, ' at ', this.x, ', ', this.y].join('');
       }
     };
-    this.addOverlay(marker);
-    return marker;
+    return this.addOverlay(marker);
   },
 
   /**
@@ -137,10 +138,8 @@ byCycle.Map.Map.prototype = {
     var len = points.length;
     for (var i = 0; i < len; ++i) {
       p = points[i];
-      var marker = DIV();
-      marker.innerHTML = 'Marker: ' + p.x + ', ' + p.y;
+      var marker = this.placeMarker(p);
       markers.push(marker);
-      this.addOverlay(marker);
     }
     return markers;
   },
@@ -194,7 +193,7 @@ byCycle.Map.Map.prototype = {
   },
 
   addListener: function(obj, signal, func) {
-    connect(obj, signal, func);
+    Event.observe(obj, signal, func);
   }
 };
 
