@@ -250,10 +250,11 @@ byCycle.UI = (function() {
       }
     },
 
-    reverseDirections: function() {
-      // TODO: Do this right--that is, use the from and to values from the
-      // result, not just whatever happens to be in the input form
-      $('route_form').submit();
+    reverseDirections: function(s, e) {
+      self.s_el.value = s;
+      self.e_el.value = e;
+      var _tmp = new self.RouteQuery($('route_form'));
+      _tmp.run();
     },
 
     /** Misc **/
@@ -655,7 +656,6 @@ byCycle.UI.RouteQuery.prototype = Object.extend(new byCycle.UI.Query(), {
   callback: function(result) {
     byCycle.logDebug('Entered routeCallback...');
     var route = result.data[0];
-    for (k in route) {byCycle.logDebug(k);}
     var map = this.ui.map;
     var ls = route.linestring;
 
