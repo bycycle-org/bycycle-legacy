@@ -173,8 +173,8 @@ class Tables(object):
 
                 # To edge table (core)
                 Column('the_geom', LINESTRING(SRID)),
-                Column('fnode', Integer),
-                Column('tnode', Integer),
+                Column('n0', Integer),
+                Column('n1', Integer),
                 Column('zipcolef', Integer),
                 Column('zipcorgt', Integer),
 
@@ -188,8 +188,8 @@ class Tables(object):
                 Column('localid', Float),
                 Column('type', Integer),
                 Column('bikemode', String(2)),
-                Column('up_frac', Float),
-                Column('abs_slp', Float),
+                Column('upfrc', Float),
+                Column('abslp', Float),
                 Column('one_way', String(2)),
                 Column('sscode', Integer),
                 Column('cpd', Integer),

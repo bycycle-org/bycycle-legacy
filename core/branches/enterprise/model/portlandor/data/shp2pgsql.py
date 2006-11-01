@@ -78,7 +78,7 @@ srid = 2913
 # Target format: /base/path/to/regional_data/specific_region/datasource/layer
 # Ex: /home/bycycle/byCycle/data/portlandor/pirate/str04aug
 datasource = 'pirate'  # datasource within region
-layer = 'str04aug'     # layer within datasource
+layer = 'str06oct'     # layer within datasource
 
 cities_atof[None] = None
 
@@ -544,7 +544,7 @@ def transferNodeIDs(modify=True):
     c = raw_table.c
     nodes = {}
     # Get distinct node IDs from raw table
-    for node_id in (c.fnode, c.tnode):
+    for node_id in (c.n0, c.n1):
         cols = [node_id.label('node_id')]
         result = select(cols, distinct=True).execute()
         for row in result:
@@ -581,7 +581,7 @@ def transferEdges(modify=True):
     cols = [
         # Core attributes
         c.gid,
-        c.the_geom, c.fnode, c.tnode,
+        c.the_geom, c.n0, c.n1,
 
         # Core address attributes
         c.leftadd1, c.leftadd2, c.rgtadd1, c.rgtadd2,
@@ -597,7 +597,7 @@ def transferEdges(modify=True):
         func_lower(c.one_way).label('one_way'),
         c.localid, c.type,
         func_lower(c.bikemode).label('bikemode'),
-        c.up_frac, c.abs_slp, c.sscode, c.cpd
+        c.upfrc, c.abslp, c.sscode, c.cpd
     ]
     result = select(cols).execute()
     if modify: 
@@ -629,8 +629,8 @@ def transferEdges(modify=True):
         d = {}
         d['id'] = row.gid
         d['geom'] = row.the_geom
-        d['node_f_id'] = row.fnode
-        d['node_t_id'] = row.tnode
+        d['node_f_id'] = row.n0
+        d['node_t_id'] = row.n1
         d['addr_f'] = addr_f
         d['addr_t'] = addr_t
         d['even_side'] = getEvenSide(addr_f_l, addr_f_r, addr_t_l, addr_t_r)
@@ -645,8 +645,8 @@ def transferEdges(modify=True):
         d['one_way'] = one_ways[one_way]
         d['bikemode'] = bikemodes[bikemode]
         d['code'] = row.type
-        d['up_frac'] = row.up_frac
-        d['abs_slp'] = row.abs_slp
+        d['up_frac'] = row.upfrc
+        d['abs_slp'] = row.abslp
         d['cpd'] = row.cpd
         d['sscode'] = row.sscode
         l.append(d)
