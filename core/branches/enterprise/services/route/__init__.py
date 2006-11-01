@@ -514,7 +514,7 @@ class Service(services.Service):
                 next_street_name = next_e.street_name
             edge_length = edge_lengths[i]
             []
-            if street_name.almostEqual(prev_street_name):
+            if street_name and street_name.almostEqual(prev_street_name):
                 edge_lengths[stretch_start_i] += edge_lengths[i]
                 edge_lengths[i] = None
                 prev_street_name = street_name

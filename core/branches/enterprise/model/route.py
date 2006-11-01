@@ -35,10 +35,13 @@ class Route(object):
 
     #----------------------------------------------------------------------
     def __repr__(self):
+        points = []
+        for i in range(self.linestring.numPoints()):
+            points.append(self.linestring.pointN(i))
         route = {
             'start': self.start,
             'end': self.end,
-            'linestring': repr(self.linestring),
+            'linestring': [{'x': p.x, 'y': p.y} for p in points],
             'directions': self.directions,
             'distance': self.distance
         }
