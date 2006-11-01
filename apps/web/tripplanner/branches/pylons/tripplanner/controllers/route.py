@@ -1,4 +1,5 @@
-from byCycle.services.route import *
+from byCycle.services.route import Service, MultipleMatchingAddressesError
+from byCycle.model.geocode import Geocode
 from tripplanner.lib.base import *
 from tripplanner.controllers.service import ServiceController
 
@@ -16,10 +17,17 @@ class RouteController(ServiceController):
                 query, region, service_class=Service
             )
         except MultipleMatchingAddressesError, exc:
-            template = 'geocodes'
-            oResult = exc.geocodes
+            template = 'route_geocodes'
+            oResult = exc.choices
             http_status = 300
-            to_json = [eval(repr(g)) for g in oResult]
+            # Make a list of lists of "URL" addresses. URL addresses look like
+            # "123 Main St;123 45345"
+            to_json = []
+            for g in oResult:
+                if isinstance(g, list):
+                    to_json.append(None)
+                elif isinstance(g, Geocode):
+                    to_json.append(g.urlStr())
             c.title = 'Multiple Matches Found'
             c.classes = 'errors'
         # We'll get here only if there's an unhandled error in the superclass.

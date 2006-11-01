@@ -55,14 +55,17 @@ byCycle.UI = (function() {
     query: null,
     result: null,
     results: {},
+    route_choices: null,
     http_status: null,
     response_text: null,
 
-    // Pairs of human & machine readable values
-    // TODO: Use these (or implement a better version)
-    q: {u: null, m: null},
-    s: {u: null, m: null},
-    e: {u: null, m: null},
+    status_messages: {
+      200: 'Done',
+      300: 'Please choose carefully',
+      400: 'Oops',
+      404: 'Sorry, that wasn\'t found',
+      500: 'Something unexpected happened'
+    },
 
     /** Initialization **/
 
@@ -82,7 +85,7 @@ byCycle.UI = (function() {
     onLoad: function() {
       self = byCycle.UI;
       // Figure out which map to use
-      if (!self.map_state) {
+      if (!(self.map_state && self.map_type.isLoadable())) {
         // Either the map is off or the map is not loadable.
         // Otherwise, below we'll use whatever self.map_type is set to.
         self.map_type = byCycle.Map.base;
@@ -101,12 +104,6 @@ byCycle.UI = (function() {
       self.onResize();
       self.setRegionFromSelectBox();
       self.handleResult();  // For non-AJAX queries, bookmarks, etc
-    },
-
-    handleResult: function() {
-      if (self.http_status == 200) {
-        self['simulate_'+self.service+'_query']();
-      }
     },
 
     /** Events **/
@@ -146,27 +143,33 @@ byCycle.UI = (function() {
       }
     },
 
-    /** UI Manipulation ("DHTML") **/
+    /** Query-related **/
 
-    setBookmark: function(form) {
-      byCycle.logDebug('Entered setBookmark...');
-      var path_info = [];
-      var query_args = $H();
-      path_info.push(self.region, self.service, $F(self.q_el));
-      if (self.service == 'route') {
-        var pref = $F(self.pref_el);
-        if (pref) {
-          query_args.pref = pref;
-        }
+    handleResult: function() {
+      if (!self.http_status) {
+        return;
       }
-      var url = ['http://', byCycle.domain, '/', path_info.join('/')].join('');
-      var query_string = query_args.toQueryString();
-      if (query_string) {
-        self.bookmark_el.href = [url, query_args.toQueryString()].join('?');
+      var s = self.service;
+      var query_class = [s.charAt(0).toUpperCase(), s.substr(1), 'Query'];
+      self.simulateQuery(query_class.join(''), self.http_status);
+    },
+
+    simulateQuery: function(query_class, http_status, response_text) {
+      query_class = self[query_class];
+      if (!query_class) {
+        return;
+      }
+      http_status = http_status || 200;
+      response_text = response_text || '';
+      var query_obj = new query_class(null);
+      var request = {status: http_status, responseText: response_text};
+      if (http_status == 200) {
+        query_obj.onSuccess(request);
       } else {
-        self.bookmark_el.href = url;
+        query_obj.onFailure(request);
       }
-      byCycle.logDebug('Bookmark:', self.bookmark_el.href);
+      query_obj.onComplete(request);
+      query_obj.after(request);
     },
 
     /**
@@ -195,19 +198,40 @@ byCycle.UI = (function() {
       var json = document.getElementsByClassName('json', selected)[0];
       json.id = 'json';
 
-      self.simulate_geocode_query();
+      self.simulateQuery('GeocodeQuery');
       Element.update(self.status_el, 'Good choice!');
     },
-    
-    simulate_geocode_query: function() {
-      self._simulate_query(new byCycle.UI.GeocodeQuery(null));
-    },
-    
-    _simulate_query: function(query_obj) {
-      var request = {status: 200, responseText: ''};
-      query_obj.onSuccess(request);
-      query_obj.onComplete(request);
-      query_obj.after(request);    
+
+    /**
+     * Select from multiple matching geocodes for a route
+     */
+    selectRouteGeocode: function(select_link, i) {
+      byCycle.logDebug('Entered selectRouteGeocode...');
+
+      var geocodes = select_link.parentNode.parentNode.parentNode.parentNode;
+
+      var multi = geocodes.parentNode;
+      Element.remove(geocodes);
+      
+      var parts = select_link.href.split('/');
+      var last_i = parts.length - 1;
+      if (parts[last_i] == '') {
+        last_i -= 1;
+      }
+      var addr = parts[last_i];
+      self.route_choices[i] = addr;
+
+      var next_multi = document.getElementsByClassName('geocodes', multi)[0];
+
+      if (next_multi) {
+        Element.show(next_multi);
+        Element.update(self.status_el, 'Way to go!');
+      } else {
+        Element.update(self.errors_el, '');
+        Element.hide(self.errors_el);
+        var _tmp = new self.RouteQuery(null, self.route_choices);
+        _tmp.run();
+      }
     },
 
     removeResult: function(result_el) {
@@ -218,7 +242,7 @@ byCycle.UI = (function() {
           // result_el wasn't registered as a Result (hopefully intentionally)
           Element.remove(result_el);
         } else {
-          byCycle.logDebug('Unhandle Exception in byCycle.UI.removeResult: ', 
+          byCycle.logDebug('Unhandle Exception in byCycle.UI.removeResult: ',
                            e.name, e.message);
         }
       }
@@ -228,6 +252,29 @@ byCycle.UI = (function() {
       // TODO: Do this right--that is, use the from and to values from the
       // result, not just whatever happens to be in the input form
       $('route_form').submit();
+    },
+
+    /** Misc **/
+
+    setBookmark: function(form) {
+      byCycle.logDebug('Entered setBookmark...');
+      var path_info = [];
+      var query_args = $H();
+      path_info.push(self.region, self.service, $F(self.q_el));
+      if (self.service == 'route') {
+        var pref = $F(self.pref_el);
+        if (pref) {
+          query_args.pref = pref;
+        }
+      }
+      var url = ['http://', byCycle.domain, '/', path_info.join('/')].join('');
+      var query_string = query_args.toQueryString();
+      if (query_string) {
+        self.bookmark_el.href = [url, query_args.toQueryString()].join('?');
+      } else {
+        self.bookmark_el.href = url;
+      }
+      byCycle.logDebug('Bookmark:', self.bookmark_el.href);
     },
 
     hideAds: function() {
@@ -352,11 +399,12 @@ byCycle.UI.Result.prototype = {
 /**
  * Query Base Class
  */
-byCycle.UI.Query = function(form) {
+byCycle.UI.Query = function(form, input) {
   if (typeof(form) == 'undefined') {
     return;
   }
   this.form = form;
+  this.input = input;
   this.ui = byCycle.UI;
   this.region = this.ui.region;
   this.service = 'query';
@@ -370,6 +418,7 @@ byCycle.UI.Query.prototype = {
       this.updater();
       this.after();
     } catch (e) {
+      throw e;
       this.showErrors(e.message);
     }
   },
@@ -417,28 +466,25 @@ byCycle.UI.Query.prototype = {
     byCycle.logDebug('Search failed. Status: ' + request.status);
     // For errors from the back end
     Element.show('errors');
-    Element.update('errors', '');
     this.successful = false;
   },
 
   onComplete: function(request) {
     byCycle.logDebug('Entered onComplete...');
-    Element.update('status', this.getElapsedTimeMessage());
     if (this.successful) {
       var result = this.makeResult();
       this.callback(result);
     }
-    Element.remove('json');
+    Element.update('status', this.getElapsedTimeMessage(request.status));
     byCycle.logDebug('Left onComplete.');
   },
 
   makeResult: function() {
     byCycle.logDebug('Entered makeResult...');
-    eval('var data = ' + $F('json') + ';');
     var id = 'result_' + new Date().getTime();
     var first_result = document.getElementsByClassName('result', 'results')[0];
     first_result.id = id;
-    var result = new byCycle.UI.Result(id, data);
+    var result = new byCycle.UI.Result(id, this.getAndRemoveJSON());
     this.ui.results[id] = result;
     byCycle.logDebug('Left makeResult...');
     return result;
@@ -450,24 +496,36 @@ byCycle.UI.Query.prototype = {
 
   showErrors: function(errors) {
     // Handle errors that happen *before* the updater would have run (the
-    // updater doesn't get run if there are errors).
+    // updater doesn't get run if there are errors in preprocessing a query).
     Element.update('status', 'Oops!');
     Element.show('errors');
-    if (!(errors instanceof Array)) {
-      errors = [errors];
-    }
-    var content = ['<ul class="result_list"><li>',
-                   errors.join('</li><li>'),
-                   '</li></ul>'].join('');
+    errors = errors.split('\n');
+    var content = ['<b>Error', (errors.length == 1 ? '' : 's'), '</b>',
+                   '<div class="errors">',
+                     '<div class="error">',
+                        errors.join('</div><div class="error">'),
+                   '</div>'].join('');
     Element.update('errors', content);
   },
 
-  getElapsedTimeMessage: function() {
-    var elapsed_time = (new Date().getTime() - this.start_ms) / 1000.0;
-    var msg = (this.successful ? 'Done' : 'Something unexpected happened');
-    elapsed_time = [msg, '. Took ', elapsed_time, ' second',
-                    (elapsed_time == 1.00 ? '' : 's'), '.'].join('');
-    return elapsed_time;
+  getAndRemoveJSON: function() {
+    eval('var json = ' + $F('json') + ';');  
+    Element.remove('json');
+    return json;
+  },
+  
+  getElapsedTimeMessage: function(status) {
+    var elapsed_time_msg;
+    if (this.start_ms) {
+      elapsed_time = (new Date().getTime() - this.start_ms) / 1000.0;
+      elapsed_time_msg = ['Took ', elapsed_time, ' second',
+                          (elapsed_time == 1.00 ? '' : 's'), '.'].join('');
+    } else {
+      elapsed_time_msg = '';
+    }
+    elapsed_time_msg = [this.ui.status_messages[status], '. ',
+                        elapsed_time_msg].join('');
+    return elapsed_time_msg;
   }
 };
 
@@ -495,7 +553,7 @@ byCycle.UI.SearchQuery.prototype = Object.extend(new byCycle.UI.Query(), {
         // Query looks like a route
         $('s').value = q.substring(0, i);
         $('e').value = q.substring(i + 4);
-        //Event.trigger('route_label', 'click');
+        // TODO: Switch to route view
         query_class = new byCycle.UI.RouteQuery(this.form);
       } else {
         // Query doesn't look like a route
@@ -505,7 +563,9 @@ byCycle.UI.SearchQuery.prototype = Object.extend(new byCycle.UI.Query(), {
     }
   },
 
-  updater: function() {}
+  updater: function() {},
+
+  after: function() {}
 });
 
 
@@ -544,8 +604,8 @@ byCycle.UI.GeocodeQuery.prototype = Object.extend(new byCycle.UI.Query(), {
 /**
  * Route Query
  */
-byCycle.UI.RouteQuery = function(form) {
-  byCycle.UI.Query.call(this, form);
+byCycle.UI.RouteQuery = function(form, input) {
+  byCycle.UI.Query.call(this, form, input);
   this.service = 'route';
   this.updater_message = 'Finding route...';
 };
@@ -555,24 +615,38 @@ byCycle.UI.RouteQuery.prototype = Object.extend(new byCycle.UI.Query(), {
     byCycle.UI.Query.prototype.before.call(this);
     byCycle.logDebug('Entered beforeRouteQuery...');
     var errors = [];
-    var s = $F('s');
-    var e = $F('e');
-    if (s && e) {
-      q = ['["', s, '", "', e, '"]'].join('');
-    } else {
-      if (!s) {
-        errors.push('Please enter a start address');
-        self.s_el.focus();
-      }
-      if (!e) {
-        errors.push('Please enter an end address');
-        if (s) {
-          self.e_el.focus();
+    if (!this.input) {
+      var s = $F('s');
+      var e = $F('e');
+      if (s && e) {
+        this.q = ['["', s, '", "', e, '"]'].join('');
+      } else {
+        if (!s) {
+          errors.push('Please enter a start address');
+          $('s').focus();
         }
+        if (!e) {
+          errors.push('Please enter an end address');
+          if (s) {
+            $('e').focus();
+          }
+        }
+        throw new Error(errors.join('\n'));
       }
-      throw new Error(errors);
+    } else {
+      if (this.input.length > 1) {
+        this.q = ['["', this.input.join('", "'), '"]'].join('');
+      } else {
+        throw new Error('Not enough addresses for Route Query.');
+      }
     }
-    this.q = q;
+  },
+
+  onComplete: function(request) {
+    byCycle.UI.Query.prototype.onComplete.call(this, request);
+    if (request.status == 300) {
+      this.ui.route_choices = this.getAndRemoveJSON();
+    }
   },
 
   callback: function(result) {

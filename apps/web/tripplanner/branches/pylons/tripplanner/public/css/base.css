@@ -238,9 +238,21 @@ hr
   background: #99b3cc;
   }
 
+.route_multi
+{
+  
+  }
+
 .errors .title_bar, .errors .title_bar td
 {
   background: #fd766a;
+  }
+  
+.errors div.error
+{
+  margin-bottom: 2px; 
+  padding: 2px;
+  border: 1px solid #fd766a;
   }
 
 #reverse_div
