@@ -12,8 +12,6 @@ byCycle.UI = (function() {
       '#00ffff', '#ff00ff', '#ff8800',
       '#000000'
   ];
-  var color_index = 0;
-  var colors_len = colors.length;
 
   var map_state = byCycle.getParamVal('map_state', function(map_state) {
     // Anything but '', '0' or 'off' is on
@@ -66,6 +64,10 @@ byCycle.UI = (function() {
       404: 'Sorry, that wasn\'t found',
       500: 'Something unexpected happened'
     },
+
+    colors: colors,
+    color_index: 0,
+    colors_len: colors.length,
 
     /** Initialization **/
 
@@ -426,6 +428,7 @@ byCycle.UI.Query.prototype = {
   before: function() {
     byCycle.logDebug('Entered beforeQuery...');
     this.start_ms = new Date().getTime();
+    Element.update('errors', '');
     ['info', 'errors', 'help'].each( function (id) { Element.hide(id); } );
     byCycle.logDebug('Hid elements');
     byCycle.logDebug('Left beforeQuery.');
@@ -651,44 +654,37 @@ byCycle.UI.RouteQuery.prototype = Object.extend(new byCycle.UI.Query(), {
 
   callback: function(result) {
     byCycle.logDebug('Entered routeCallback...');
-    //var map = this.ui.map;
-    //map.placeMarker(result.point);
-    //map.setCenter(result.point, 14);
-    byCycle.logDebug('Left routeCallback.');
+    var route = result.data[0];
+    for (k in route) {byCycle.logDebug(k);}
+    var map = this.ui.map;
+    var ls = route.linestring;
 
-    var route = result_set.result;
-    switch (status) {
-      case 200:
-        var map = self.map;
-        var ls = route.linestring;
+    // Zoom to linestring
+    map.centerAndZoomToBounds(map.getBoundsForPoints(ls));
 
-        // Zoom to linestring
-        map.centerAndZoomToBounds(map.getBoundsForPoints(ls));
+    // Place from and to markers
+    var s_e_markers = map.placeMarkers([ls[0], ls[ls.length - 1]],
+                                       [map.start_icon, map.end_icon]);
 
-        // Place from and to markers
-        var s_e_markers = map.placeMarkers([ls[0], ls[ls.length - 1]],
-                                           [map.start_icon, map.end_icon]);
+    // Add listeners to from and to markers
+    var s_mkr = s_e_markers[0];
+    var e_mkr = s_e_markers[1];
+    map.addListener(s_mkr, 'click', function() {
+      map.showMapBlowup(ls[0]);
+    });
+    map.addListener(e_mkr, 'click', function() {
+      map.showMapBlowup(ls[ls.length - 1]);
+    });
 
-        // Add listeners to from and to markers
-        var s_mkr = s_e_markers[0];
-        var e_mkr = s_e_markers[1];
-        map.addListener(s_mkr, 'click', function() {
-          map.showMapBlowup(ls[0]);
-        });
-        map.addListener(e_mkr, 'click', function() {
-          map.showMapBlowup(ls[ls.length - 1]);
-        });
-
-        // Draw linestring
-        map.drawPolyLine(ls, colors[color_index]);
-        color_index += 1;
-        if (color_index == colors_len) {
-          color_index = 0;
-        }
-        break;
-      case 300: // Multiple matches for start and/or end address
-        break;
+    // Draw linestring
+    var color_index = this.ui.color_index;
+    map.drawPolyLine(ls, this.ui.colors[color_index]);
+    color_index += 1;
+    if (color_index == this.ui.colors_len) {
+      color_index = 0;
     }
+    this.ui.color_index = color_index;
+    byCycle.logDebug('Left routeCallback.');    
   }
 });
 
