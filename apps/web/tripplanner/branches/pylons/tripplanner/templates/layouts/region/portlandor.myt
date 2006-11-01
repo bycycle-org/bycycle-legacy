@@ -11,8 +11,8 @@
 <!-- Route preference form control -->
 <&|SELF:section, name='route_pref' &>
   <select id="pref" name="pref" tabindex="8">
-    <option value="">- Route Type -</option>
-    <option value="">Normal</option>
+    <option value="default">- Route Type -</option>
+    <option value="default">Normal</option>
     <option value="safer">Safer</option>
   </select>
 </&>

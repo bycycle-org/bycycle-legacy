@@ -9,12 +9,16 @@ class RouteController(ServiceController):
 
     #----------------------------------------------------------------------
     def show(self, query, region):
+        query = self._makeRouteList(query)
+        c.s, c.e = query[0], query[1]
+        c.q = '%s to %s' % (c.s, c.e)
+        params = {}
+        for p in ('pref', 'tmode'):
+            if p in request.params:
+                params[p] = request.params[p]
         try:
-            query = self._makeRouteList(query)
-            c.s, c.e = query[0], query[1]
-            c.q = '%s to %s' % (c.s, c.e)
             return super(RouteController, self).show(
-                query, region, service_class=Service
+                query, region, service_class=Service, **params
             )
         except MultipleMatchingAddressesError, exc:
             template = 'route_geocodes'

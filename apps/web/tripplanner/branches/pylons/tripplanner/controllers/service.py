@@ -10,14 +10,14 @@ class ServiceController(RestController):
     """Base class for controllers that interact with back end services."""
 
     #----------------------------------------------------------------------
-    def show(self, query, region, service_class=None):
+    def show(self, query, region, service_class=None, **params):
         query = query or request.params.get('q', None)
         format = request.params.get('format', 'html')
         service = service_class(region=region)
         result = None
         to_json = None
         try:
-            result = service.query(query)
+            result = service.query(query, **params)
         except InputError, exc:
             c.title = 'Error%s' % (['', 's'][len(exc.errors) != 1])
             http_status = 400

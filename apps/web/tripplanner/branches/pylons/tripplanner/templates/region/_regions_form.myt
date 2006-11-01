@@ -5,7 +5,7 @@
 <form id="<% form_id or 'regions_form' %>" method="get" action="/">
   <div style="margin-bottom: 2px;">
     <select id="regions" name="region">
-      <option value="">All Regions</option>
+      <option value="all">All Regions</option>
       <% c.region_options %>
     </select>
   </div>
