@@ -31,6 +31,8 @@
     s_addr = str(s_addr).replace('\n', '<br/>')
     e_addr = str(e_addr).replace('\n', '<br/>')
     last_street = e_addr.split('<br/>', 1)[0]
+    s_url_str = s.urlStr()
+    e_url_str = e.urlStr()
     tab = '&nbsp;&nbsp;&nbsp;&nbsp;'
     map_blowup_href = "javascript:void('Show map blowup')"
     map_blowup_onclick = "byCycle.UI.map.showMapBlowup({x: %s, y: %s}); return false;"
@@ -55,8 +57,8 @@
 
 
 <div id="reverse_div">
-    <a href="/%s/route/%s to %s"
-       onclick="reverseDirections('<% s.urlStr() %>', '<% e.urlStr() %>');"
+    <a href="/<% c.service.region.key %>/route/['<% e_url_str%>', '<% s_url_str %>']"
+       onclick="byCycle.UI.reverseDirections('<% e_url_str.replace('+', ' ') %>', '<% s_url_str.replace('+', ' ') %>'); return false;"
        >Reverse Directions</a>
 </div>
 
@@ -116,6 +118,6 @@
     <div class="<% row_class %>">
         <a href="<% map_blowup_href %>"
            onclick="<% map_blowup_onclick % (e.xy.x, e.xy.y) %>"
-           ><b>End</b> at <b><% last_street %></b></a>    
+           ><b>End</b> at <b><% last_street %></b></a>
     </div>
 </div>
