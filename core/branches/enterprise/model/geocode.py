@@ -46,6 +46,13 @@ class Geocode(object):
         return '\n'.join((str(self.address), str(self.xy)))
 
     #----------------------------------------------------------------------
+    def urlStr(self):
+        s_addr = str(self.address).replace('\n', ', ')
+        num = getattr(self.address, 'number', '')
+        id_addr = ('%s %s' % (num, self.network_id)).lstrip()
+        return ';'.join((s_addr, id_addr)).replace(' ', '+')
+
+    #----------------------------------------------------------------------
     def __repr__(self):
         result = {
             'type': 'geocode',

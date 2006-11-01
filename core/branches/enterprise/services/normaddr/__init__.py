@@ -94,6 +94,13 @@ class Service(services.Service):
         q = q.strip().lower()
         if not q:
             raise InputError([no_address_msg])
+        
+        parts = q.split(';')
+        trying_id = False
+        if len(parts) > 1:
+            trying_id = True
+            q = parts[-1]
+        
 
         # Node?
         try:
@@ -162,6 +169,9 @@ class Service(services.Service):
             else:
                 return point_addr
 
+        if trying_id:
+            self.query(' '.join(parts))
+            
         # Raise an exception if we get here: address is unnormalizeable
         raise ValueError(
             'We could not understand the address you entered, "%s".' %

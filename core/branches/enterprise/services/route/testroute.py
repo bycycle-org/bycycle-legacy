@@ -49,8 +49,12 @@ class TestPortlandOR(unittest.TestCase):
     def test_route(self):
         q = ('4807 se kelly, portland, or', 'ne 6th & irving, portland, or')
         #route = self._query(q)
-        q = ('250 ne going, portland, or', '350 n going, portland, or')
-        route = self._query(q)
+        #q = ('250 ne going, portland, or', '350 n going, portland, or')
+        q = ('634 beech portland or','633 n alberta, portland or')
+        try:
+            route = self._query(q)
+        except MultipleMatchingAddressesError, exc:
+            print exc.choices
 
     def _test_three_addresses(self):
         q = ('4807 se kelly, portland, or', '633 n alberta', '1500 ne alberta')

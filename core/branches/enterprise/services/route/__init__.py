@@ -70,9 +70,7 @@ class NoRouteError(RouteError, NotFoundError):
 
 class MultipleMatchingAddressesError(RouteError):
     def __init__(self, desc='Multiple Matches Found', choices=None):
-        if choices is not None:
-            self.start_choices = choices[0]
-            self.end_choices = choices[1]
+        self.choices = choices
         RouteError.__init__(self, desc=desc)
 
 
@@ -216,10 +214,10 @@ class Service(services.Service):
                 input_errors.append(e.description)
             except geocode.MultipleMatchingAddressesError, e:
                 multiple_match_found = True
-                choices.append({'choices': e.geocodes, 'original': w})
+                choices.append(e.geocodes)
             else:
                 geocodes.append(geocode_)
-                choices.append(None)
+                choices.append(geocode_)
                 if not self.region and geocode_service.region:
                     self.region = geocode_service.region
         if input_errors:
