@@ -568,8 +568,8 @@ byCycle.UI.SearchQuery.prototype = Object.extend(new byCycle.UI.Query(), {
   },
 
   updater: function() {},
-
-  after: function() {}
+  after: function() {},
+  callback: function() {}
 });
 
 

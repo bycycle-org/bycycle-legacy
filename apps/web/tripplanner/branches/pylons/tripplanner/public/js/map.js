@@ -76,8 +76,8 @@ byCycle.Map.Map.prototype = {
   },
 
   setCenter: function(center, zoom) {
-    this.put(['Set Center: ', center.y, ', ', center.x, 
-              (zoom ? ' Zoom: ' + zoom : '')].join(''));
+    this.put(['Set Center: ', center.x, ', ', center.y, 
+              (zoom ? '; Zoom: ' + zoom : '')].join(''));
   },
 
   setZoom: function(zoom) {
