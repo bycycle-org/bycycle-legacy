@@ -348,12 +348,13 @@ def turnSQLEchoOn(md):
 
 def vacuum(*tables):
     """Vacuum all tables."""
-    print 'Vacuuming all tables...'
     connection.set_isolation_level(0)
     if not tables:
+        print 'Vacuuming all tables...'
         cursor.execute('VACUUM FULL ANALYZE')
     else:
         for table in tables:
+            print 'Vacuuming %s...' % table            
             cursor.execute('VACUUM FULL ANALYZE %s' % table)            
     connection.set_isolation_level(2)
 
