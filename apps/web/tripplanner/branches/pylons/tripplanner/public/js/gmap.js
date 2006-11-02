@@ -17,6 +17,7 @@ byCycle.Map.google = {
     var api_url = 'http://maps.google.com/maps?file=api&amp;v=2&amp;key=';
     var api_keys = {
       'tripplanner.bycycle.org': 'ABQIAAAAd_4WmZlgvQzchd_BQM0MPhQ8y5tnWrQRsyOlME1eHkOS3wQveBSeFCpOUAfP10H6ec-HcFWPgiJOCA',
+      'prototype.bycycle.org': 'ABQIAAAAd_4WmZlgvQzchd_BQM0MPhTPU6PNPDk7LC31EIff_k4JZWpNmBQshai4v8RM5FaT-4FRWeyJA4VHaQ',
       'dev.bycycle.org': 'ABQIAAAAd_4WmZlgvQzchd_BQM0MPhQSskL_eAzZotWlegWekqLPLda0sxQZNf0_IshFell3z8qP8s0Car117A',
       'dev.bycycle.org:5000': 'ABQIAAAAd_4WmZlgvQzchd_BQM0MPhTkxokDJkt52pLJLqHCpDW3lL7iXBTREVLn9gCRhMUesO754WIidhTq2g',
       'www.bycycle.org': 'ABQIAAAAd_4WmZlgvQzchd_BQM0MPhQ9bMyOoze7XFWIje4XR3o1o-U-cBTwScNT8SYtwSl70gt4wHCO-23Y3g'
@@ -90,12 +91,12 @@ byCycle.Map.google.Map.prototype = Object.extend(new byCycle.Map.Map(), {
   createIcons: function() {
     // Center icon
     var center_icon = new GIcon();
-    center_icon.image = '/images/reddot15.png';
+    center_icon.image = 'images/reddot15.png';
     center_icon.iconSize = new GSize(15, 15);
     center_icon.iconAnchor = new GPoint(7, 7);
     // Base icon for start and end of route icons
     var base_icon = new GIcon();
-    base_icon.shadow = '/images/shadow50.png';
+    base_icon.shadow = 'images/shadow50.png';
     base_icon.iconSize = new GSize(20, 34);
     base_icon.shadowSize = new GSize(37, 34);
     base_icon.iconAnchor = new GPoint(9, 34);
@@ -103,10 +104,10 @@ byCycle.Map.google.Map.prototype = Object.extend(new byCycle.Map.Map(), {
     base_icon.infoShadowAnchor = new GPoint(18, 25);
     // Start icon
     var start_icon = new GIcon(base_icon);
-    start_icon.image = '/images/dd-start.png';
+    start_icon.image = 'images/dd-start.png';
     // End icon
     var end_icon = new GIcon(base_icon);
-    end_icon.image = '/images/dd-end.png';
+    end_icon.image = 'images/dd-end.png';
     // Assign icons to self
     this.center_icon = center_icon;
     this.start_icon = start_icon;
@@ -227,7 +228,7 @@ byCycle.Map.google.Map.prototype = Object.extend(new byCycle.Map.Map(), {
 
   makeRegionMarker: function(region) {
     var icon = new GIcon();
-    icon.image = '/images/x.png';
+    icon.image = 'images/x.png';
     icon.iconSize = new GSize(17, 19);
     icon.iconAnchor = new GPoint(9, 10);
     icon.infoWindowAnchor = new GPoint(9, 10);
