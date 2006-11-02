@@ -27,7 +27,7 @@
     e = route.end['geocode']
     e_addr = e.address
     directions = route.directions
-    linestring = route.linestring
+    linestring = route.linestring_ll
     s_addr = str(s_addr).replace('\n', '<br/>')
     e_addr = str(e_addr).replace('\n', '<br/>')
     last_street = e_addr.split('<br/>', 1)[0]

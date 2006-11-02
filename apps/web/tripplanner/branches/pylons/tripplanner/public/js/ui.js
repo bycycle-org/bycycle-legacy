@@ -214,7 +214,7 @@ byCycle.UI = (function() {
 
       var multi = geocodes.parentNode;
       Element.remove(geocodes);
-      
+
       var parts = select_link.href.split('/');
       var last_i = parts.length - 1;
       if (parts[last_i] == '') {
@@ -513,11 +513,11 @@ byCycle.UI.Query.prototype = {
   },
 
   getAndRemoveJSON: function() {
-    eval('var json = ' + $F('json') + ';');  
+    eval('var json = ' + $F('json') + ';');
     Element.remove('json');
     return json;
   },
-  
+
   getElapsedTimeMessage: function(status) {
     var elapsed_time_msg;
     if (this.start_ms) {
@@ -667,24 +667,25 @@ byCycle.UI.RouteQuery.prototype = Object.extend(new byCycle.UI.Query(), {
                                        [map.start_icon, map.end_icon]);
 
     // Add listeners to from and to markers
-    var s_mkr = s_e_markers[0];
-    var e_mkr = s_e_markers[1];
-    map.addListener(s_mkr, 'click', function() {
+    var s_marker = s_e_markers[0];
+    var e_marker = s_e_markers[1];
+    map.addListener(s_marker, 'click', function() {
       map.showMapBlowup(ls[0]);
     });
-    map.addListener(e_mkr, 'click', function() {
+    map.addListener(e_marker, 'click', function() {
       map.showMapBlowup(ls[ls.length - 1]);
     });
 
     // Draw linestring
     var color_index = this.ui.color_index;
-    map.drawPolyLine(ls, this.ui.colors[color_index]);
+    var line = map.drawPolyLine(ls, this.ui.colors[color_index]);
     color_index += 1;
     if (color_index == this.ui.colors_len) {
       color_index = 0;
     }
     this.ui.color_index = color_index;
-    byCycle.logDebug('Left routeCallback.');    
+    result.overlays.push(s_marker, e_marker, line);
+    byCycle.logDebug('Left routeCallback.');
   }
 });
 
