@@ -10,7 +10,7 @@
 <% str(oResult.address).replace('\n', '<br />') %><br />
 <a href=""
    onclick="byCycle.UI.map.setCenter({
-              x: <% oResult.xy.x %>, y: <% oResult.xy.y %>
+              x: <% oResult.xy_ll.x %>, y: <% oResult.xy_ll.y %>
             });
             return false;"
    >Show on Map</a>

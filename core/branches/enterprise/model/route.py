@@ -10,8 +10,11 @@
 # For terms of use and warranty details, please see the LICENSE file included
 # in the top level of this distribution. This software is provided AS IS with
 # NO WARRANTY OF ANY KIND.
-################################################################################
-"""Route classes."""
+"""
+Route class.
+
+"""
+from cartography.proj import SpatialReference
 
 
 ###########################################################################
@@ -30,14 +33,22 @@ class Route(object):
         self.nodes = nodes
         self.edges = edges
         self.directions = directions
-        self.linestring = linestring
         self.distance = distance
+
+        linestring.srs = SpatialReference(epsg=region.SRID)
+        self.linestring = linestring
+
+        linestring_ll = linestring.copy()
+        ll_srs = SpatialReference(epsg=4326)
+        linestring_ll.transform(src_proj=str(self.linestring.srs),
+                                dst_proj=str(ll_srs))
+        self.linestring_ll = linestring_ll
 
     #----------------------------------------------------------------------
     def __repr__(self):
         points = []
-        for i in range(self.linestring.numPoints()):
-            points.append(self.linestring.pointN(i))
+        for i in range(self.linestring_ll.numPoints()):
+            points.append(self.linestring_ll.pointN(i))
         route = {
             'start': self.start,
             'end': self.end,

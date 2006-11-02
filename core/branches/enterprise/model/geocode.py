@@ -13,6 +13,7 @@
 
 
 """Geocode classes."""
+from cartography.proj import SpatialReference
 
 
 ###########################################################################
@@ -21,7 +22,7 @@ class Geocode(object):
 
     Attributes
     ----------
-    
+
     ``address`` `Address` -- The associated address
     ``network_id`` `int` -- Either a node or edge ID
     ``xy`` `Point` -- Geographic location
@@ -29,7 +30,7 @@ class Geocode(object):
     """
 
     #----------------------------------------------------------------------
-    def __init__(self, address, network_id, xy):
+    def __init__(self, region, address, network_id, xy):
         """
 
         ``address`` -- `Address`
@@ -37,9 +38,15 @@ class Geocode(object):
         ``xy`` -- A point with x and y attributes
 
         """
+        self.region = region
         self.address = address
         self.network_id = network_id
+        xy.srs = SpatialReference(epsg=region.SRID)
         self.xy = xy
+        xy_ll = xy.copy()
+        ll_srs = SpatialReference(epsg=4326)
+        xy_ll.transform(src_proj=str(self.xy.srs), dst_proj=str(ll_srs))
+        self.xy_ll = xy_ll
 
     #----------------------------------------------------------------------
     def __str__(self):
@@ -59,28 +66,28 @@ class Geocode(object):
             'street_name': self.address.street_name,
             'place': self.address.place,
             'address': str(self.address),
-            'point': self.xy,
+            'point': self.xy_ll,
             'network_id': self.network_id
         }
         return repr(result)
-    
-    
+
+
 ###########################################################################
 class PostalGeocode(Geocode):
     """Represents a geocode that is associated with a postal address.
-    
+
     Attributes
     ----------
-    
+
     ``address`` `PostalAddress`
     ``edge`` `Edge`
     ``xy`` `Point` -- Geographic location
-    ``location`` `float` -- Location in [0, 1] of point in ``edge``    
-    
+    ``location`` `float` -- Location in [0, 1] of point in ``edge``
+
     """
 
     #----------------------------------------------------------------------
-    def __init__(self, address, edge):
+    def __init__(self, region, address, edge):
         """
 
         ``address`` `PostalAddress`
@@ -88,7 +95,7 @@ class PostalGeocode(Geocode):
 
         """
         xy, location = edge.getPointAndLocationOfNumber(address.number)
-        Geocode.__init__(self, address, edge.id, xy)
+        Geocode.__init__(self, region, address, edge.id, xy)
         self.location = location
         self.edge = edge
 
@@ -100,7 +107,7 @@ class PostalGeocode(Geocode):
             'street_name': self.address.street_name,
             'place': self.address.place,
             'address': str(self.address),
-            'point': {'x': self.xy.x, 'y': self.xy.y},
+            'point': {'x': self.xy_ll.x, 'y': self.xy_ll.y},
             'network_id': self.network_id
         }
         return repr(result)
@@ -117,17 +124,17 @@ class PostalGeocode(Geocode):
 ###########################################################################
 class IntersectionGeocode(Geocode):
     """Represents a geocode that is associated with an intersection.
-    
+
     Attributes
     ----------
-    
+
     ``address`` `IntersectionAddress`
     ``node`` `Node`
-    
+
     """
 
     #----------------------------------------------------------------------
-    def __init__(self, address, node):
+    def __init__(self, region, address, node):
         """
 
         ``address`` -- `IntersectionAddress`
@@ -135,7 +142,7 @@ class IntersectionGeocode(Geocode):
 
         """
         xy = node.geom
-        Geocode.__init__(self, address, node.id, xy)
+        Geocode.__init__(self, region, address, node.id, xy)
         self.node = node
 
     #----------------------------------------------------------------------
@@ -147,7 +154,7 @@ class IntersectionGeocode(Geocode):
             'place1': self.address.place1,
             'place2': self.address.place2,
             'address': str(self.address),
-            'point': {'x': self.xy.x, 'y': self.xy.y},
+            'point': {'x': self.xy_ll.x, 'y': self.xy_ll.y},
             'network_id': self.network_id
         }
         return repr(result)
@@ -156,8 +163,3 @@ class IntersectionGeocode(Geocode):
     def __eq__(self, other):
         """Compare two `IntersectionGeocode`s for equality """
         return (self.network_id == other.network_id)
-
-
-            
-        
-        

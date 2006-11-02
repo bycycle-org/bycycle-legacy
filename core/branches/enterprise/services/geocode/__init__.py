@@ -211,7 +211,7 @@ class Service(services.Service):
         for e in edges:
             place = e.getPlaceOnSideNumberIsOn(num)
             e_addr = PostalAddress(num, e.street_name, place)
-            geocodes.append(PostalGeocode(e_addr, e))
+            geocodes.append(PostalGeocode(self.region, e_addr, e))
         return geocodes
 
     def getIntersectionGeocodes(self, oAddr):
@@ -284,7 +284,7 @@ class Service(services.Service):
                 street_name1=edge1.street_name, place1=edge1.place_l,
                 street_name2=edge2.street_name, place2=edge2.place_l
             )
-            _g = IntersectionGeocode(addr, node)
+            _g = IntersectionGeocode(self.region, addr, node)
             geocodes.append(_g)
         return geocodes
 
@@ -365,7 +365,7 @@ class Service(services.Service):
                 street_name1=edge1.street_name, place1=edge1.place_l,
                 street_name2=edge2.street_name, place2=edge2.place_l
             )
-            _g = IntersectionGeocode(addr, node)
+            _g = IntersectionGeocode(self.region, addr, node)
         else:
             # `node` is at a dead end
             edge = edges[0]
@@ -375,7 +375,7 @@ class Service(services.Service):
             else:
                 num = edge.addr_t
             addr = PostalAddress(num, edge.street_name, edge.place_l)
-            _g = PostalGeocode(addr, edge)
+            _g = PostalGeocode(self.region, addr, edge)
             _g.node = node
         return [_g]
 

@@ -42,12 +42,12 @@
 <div class="summary">
     <div class="start">
         <a href="<% map_blowup_href %>" class="start"
-           onclick="<% map_blowup_onclick % (s.xy.x, s.xy.y) %>"
+           onclick="<% map_blowup_onclick % (s.xy_ll.x, s.xy_ll.y) %>"
            ><% s_addr %></a></h2>
     </div>
     <div class="end">
         <a href="<% map_blowup_href %>" class="end"
-           onclick="<% map_blowup_onclick % (e.xy.x, e.xy.y) %>;"
+           onclick="<% map_blowup_onclick % (e.xy_ll.x, e.xy_ll.y) %>;"
            ><% e_addr %></a>
     </div>
     <div class="total_distance" style="border-bottom: none;">
@@ -117,7 +117,7 @@
 % #for
     <div class="<% row_class %>">
         <a href="<% map_blowup_href %>"
-           onclick="<% map_blowup_onclick % (e.xy.x, e.xy.y) %>"
+           onclick="<% map_blowup_onclick % (e.xy_ll.x, e.xy_ll.y) %>"
            ><b>End</b> at <b><% last_street %></b></a>
     </div>
 </div>
