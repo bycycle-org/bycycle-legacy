@@ -1,12 +1,10 @@
 var _prod_config = {
-  debug: 0,
   local: 0,
   map_type: 'google',
   map_state: 1
 };
 
 var _dev_config = {
-  debug: 1,
   local: 1,
   map_type: 'base',
   map_state: 1
@@ -17,15 +15,13 @@ var _dev_config = {
  * byCycle namespace
  */
 var byCycle = (function() {
-  var config = _dev_config;
   var base_url = location.href.split('?')[0];
   var domain = base_url.split('/')[2];
   var index = 0;
   var colors = ['#fff', '#ccc'];
 
   var _public = {
-    config: config,
-    debug: config.debug,
+    config: debug ? _dev_config : _prod_config,
     base_url: base_url,
     domain: domain,
     query_pairs: (window.location.search.substr(1)).toQueryParams(),
@@ -74,10 +70,9 @@ var byCycle = (function() {
     }
   };
 
-  if (config.debug) {
-    //MochiKit.LoggingPane.createLoggingPane();
-    //_public.logInfo = MochiKit.Logging.log;
-    //_public.logDebug = MochiKit.Logging.logDebug;
+  if (!debug) {
+    _public.logInfo = function() {}; 
+    _public.logDebug = function() {};
   }
 
   return _public;

@@ -19,6 +19,10 @@
     <![endif]-->
     <% h.stylesheet_link_tag('/css/%s.css' % c.region_key) %>
 
+    <script>
+      var debug = <% ['false', 'true'][c.debug] %>;
+    </script>
+
     <!-- We want access to these JavaScripts during page load. Other JS imports
     at bottom of page. -->
     <% h.javascript_include_tag(builtins=True) %>
@@ -41,9 +45,9 @@
 
             <td id="logo_cell">
               <div id="logo">
-                <a href="/"
+                <a href=""
                    title="byCycle Trip Planner"
-                   ><img src="/images/logo.png" width="93" height="66" /></a>
+                   ><img src="images/logo.png" width="93" height="66" /></a>
               </div>
             </td>
 
@@ -57,13 +61,13 @@
                   <div class="clear"></div>
                   <ul>
                     <li class="tab_label <% c.query_label_class %>">
-                      <a id="query_label" href="/<% c.region_key %>/query/"
+                      <a id="query_label" href="<% c.region_key %>/query/'"
                          name='query'
                          title="Search the Map for an Address or Route"
                          >Search Map</a>
                     </li>
                     <li class="tab_label <% c.route_label_class %>">
-                      <a id="route_label" href="/<% c.region_key %>/route/"
+                      <a id="route_label" href="<% c.region_key %>/route/"
                          name='route'
                          title="Find a Route (Get Directions)">Find Route</a>
                     </li>
@@ -122,7 +126,7 @@
                             title="Swap start and end addresses"
                             tabindex="5"
                           ><img
-                              src="/images/swapfrto.png"
+                              src="images/swapfrto.png"
                               alt="<>"
                               width="24"
                               height="14"
@@ -346,7 +350,7 @@
                     google_color_url = '4466DD';
                   </script>
                   <script type="text/javascript">
-                    if (!byCycle.debug) {
+                    if (!debug) {
                       writeScript('http://pagead2.googlesyndication.com/pagead/show_ads.js');
                     }
                   </script>
@@ -363,6 +367,7 @@
     <!-- End Content -->
 
 
+% if c.debug:
     <div id="debug_window" class="window" style="display: none; position: absolute; bottom: 0; right: 0; width: 300px; background: white;">
       <div class="title_bar">
         <table>
@@ -385,6 +390,7 @@
            style="height: 300px; overflow: auto;">
       </div>
     </div>
+% #if
 
 
 % for js in ('regions', 'map', 'gmap', 'ui'):
