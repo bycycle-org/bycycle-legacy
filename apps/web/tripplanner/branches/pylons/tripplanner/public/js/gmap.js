@@ -33,10 +33,16 @@ byCycle.Map.google = {
 
   isLoadable: function() {
     var is_loadable = false;
-    if (byCycle.Map.google.api_loaded && GBrowserIsCompatible()) {
-      is_loadable = true;
+    if (byCycle.Map.google.api_loaded && GBrowserIsCompatible()) {   
+        is_loadable = true;
     } else {
-      byCycle.logInfo('<p style="margin:10px;">Your browser doesn\'t seem to meet the requirements for using this application. The following browsers are currently supported and are all free to download (<a href="http://www.mozilla.com/">Firefox</a> is an excellent choice):</p><ul><li><a href="http://www.microsoft.com/windows/ie/downloads/default.asp">IE</a> 5.5+ (Windows)</li><li><a href="http://www.mozilla.com/">Firefox</a> 0.8+ (Windows, Mac, Linux)</li><li><a href="http://www.apple.com/safari/download/">Safari</a> 1.2.4+ (Mac)</li><li><a href="http://channels.netscape.com/ns/browsers/download.jsp">Netscape</a> 7.1+ (Windows, Mac, Linux)</li><li><a href="http://www.mozilla.org/products/mozilla1.x/">Mozilla</a> 1.4+ (Windows, Mac, Linux)</li><li><a href="http://www.opera.com/download/">Opera</a> 7.5+ (Windows, Mac, Linux)</li></ul>');
+      var content = '<div style="padding: 5px;">';
+      if (byCycle.Map.google.api_loaded) {
+        content += 'Your browser doesn\'t seem to meet the requirements for using this application. The following browsers are currently supported and are all free to download (<a href="http://www.mozilla.com/">Firefox</a> is an excellent choice):    <ul><li><a href="http://www.microsoft.com/windows/ie/downloads/default.asp">IE</a> 5.5+ (Windows)</li><li><a href="http://www.mozilla.com/">Firefox</a> 0.8+ (Windows, Mac, Linux)</li><li><a href="http://www.apple.com/safari/download/">Safari</a> 1.2.4+ (Mac)</li><li><a href="http://channels.netscape.com/ns/browsers/download.jsp">Netscape</a> 7.1+ (Windows, Mac, Linux)</li><li><a href="http://www.mozilla.org/products/mozilla1.x/">Mozilla</a> 1.4+ (Windows, Mac, Linux)</li><li><a href="http://www.opera.com/download/">Opera</a> 7.5+ (Windows, Mac, Linux)</li></ul>';
+      } else {
+        content += ('No Google Maps API key found for ' + byCycle.domain);
+      }
+      Element.update('map', content + '</div>');
     }
     return is_loadable;
   }
@@ -60,7 +66,6 @@ byCycle.Map.google.Map = function(parent, container) {
  * byCycle Google Map Methods
  */
 byCycle.Map.google.Map.prototype = Object.extend(new byCycle.Map.Map(), {
-
   center_marker_html: '<div class="info_win"><p><a href="javascript:void(0);" onclick="byCycle.UI.findAddressAtCenter();">Find address of closest intersection</a></p><p>Set as <a href="javascript:void(0);" onclick="byCycle.UI.s_el = byCycle.UI.map.getCenterString();">From</a> or <a href="javascript:void(0);" onclick="byCycle.UI.s_el = byCycle.UI.map.getCenterString();">To</a> address for route</p></div>',
 
 
