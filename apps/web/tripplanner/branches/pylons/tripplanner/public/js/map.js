@@ -31,15 +31,13 @@ byCycle.Map.base.Map = byCycle.Map.Map;
 
 
 byCycle.Map.Map.prototype = {
-
   createMap: function(container) {
     var map = document.createElement('div');
     map.style.overflow = 'auto';
     map.style.padding = '5px';
-    Element.update(container, '');
     container.appendChild(map);
-    Element.update(map, 'Default byCycle Map Interface');
     this.map = map;
+    this.put('Default byCycle Map Interface');
   },
 
   put: function(content) {
