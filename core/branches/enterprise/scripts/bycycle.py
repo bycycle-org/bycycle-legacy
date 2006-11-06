@@ -1,36 +1,6 @@
 #!/usr/bin/env python
-"""$Id$
-
-Command-line interface to the byCycle library.
-
-Copyright (C) 2006 Wyatt Baldwin, byCycle.org <wyatt@bycycle.org>
-
-All rights reserved.
-
-TERMS AND CONDITIONS FOR USE, MODIFICATION, DISTRIBUTION
-
-1. The software may be used and modified by individuals for noncommercial, 
-private use.
-
-2. The software may not be used for any commercial purpose.
-
-3. The software may not be made available as a service to the public or within 
-any organization.
-
-4. The software may not be redistributed.
-
-THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND 
-ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED 
-WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE 
-DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR 
-ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES 
-(INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; 
-LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON 
-ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT 
-(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS 
-SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-
-"""
+#$Id$
+"""Command-line interface to the byCycle library."""
 import os
 def __getbyCycleImportPath(level):
     """Get path to dir containing the byCycle package this module is part of.
@@ -48,6 +18,8 @@ def __getbyCycleImportPath(level):
 import sys
 sys.path.insert(0, __getbyCycleImportPath(3))
 from byCycle.model import regions
+from byCycle.lib import meter
+
 
 import_path = 'byCycle.services.%s'
 
@@ -58,7 +30,10 @@ services = {
     }
 
 errors = []
-    
+ 
+timer = meter.Timer()
+
+   
 def main(argv):
     checkForErrors()
 
@@ -97,8 +72,11 @@ def main(argv):
         region = ''
 
     region = regions.getRegionKey(region)
-    response = service_module.get(q=q, region=region)
+    timer.start()
+    service = service_module.Service()
+    response = service.query(q, region=region)
     print response
+    print '%.2f seconds' % timer.stop()
 
 
 def addError(e):
@@ -122,3 +100,4 @@ def usage(msgs=[]):
 
 if __name__ == '__main__':
     main(sys.argv)
+
