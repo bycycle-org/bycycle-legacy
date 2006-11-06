@@ -23,7 +23,8 @@ class Globals(object):
             your global variables.
 
         """
-        self.debug = global_conf.get('debug', False)
+        debug = global_conf.get('debug', False)  # "true" or "false"
+        self.debug = (debug.lower() in ('true', 'yes', 'on', '1'))
 
     def __del__(self):
         """
