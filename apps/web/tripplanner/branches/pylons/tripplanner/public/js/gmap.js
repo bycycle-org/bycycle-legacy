@@ -67,11 +67,6 @@ byCycle.Map.google.Map = function(parent, container) {
  * byCycle Google Map Methods
  */
 byCycle.Map.google.Map.prototype = Object.extend(new byCycle.Map.Map(), {
-  center_marker_html: '<div class="info_win"><p><a href="javascript:void(0);" onclick="byCycle.UI.findAddressAtCenter();">Find address of closest intersection</a></p><p>Set as <a href="javascript:void(0);" onclick="byCycle.UI.s_el = byCycle.UI.map.getCenterString();">From</a> or <a href="javascript:void(0);" onclick="byCycle.UI.s_el = byCycle.UI.map.getCenterString();">To</a> address for route</p></div>',
-
-
-  /* Initialization */
-
   createMap: function(container) {
     var map = new GMap2(container);
     map.setCenter(new GLatLng(0, 0), 7);
@@ -122,7 +117,7 @@ byCycle.Map.google.Map.prototype = Object.extend(new byCycle.Map.Map(), {
         self.center_marker = new GMarker(self.center, self.center_icon);
         self.map.addOverlay(self.center_marker);
         GEvent.addListener(self.center_marker, 'click', function() {
-          self.map.openInfoWindowHtml(self.center, self.center_marker_html);
+          self.map.openInfoWindow(self.center, 'center_marker');
         });
       }
       self.center_marker.setPoint(self.center);
@@ -131,7 +126,6 @@ byCycle.Map.google.Map.prototype = Object.extend(new byCycle.Map.Map(), {
       self.map.closeInfoWindow();
     });
   },
-
 
   /* Events */
 
@@ -142,7 +136,6 @@ byCycle.Map.google.Map.prototype = Object.extend(new byCycle.Map.Map(), {
   unload: function() {
     GUnload();
   },
-
 
   /* Size/Dimensions */
 
@@ -247,7 +240,6 @@ byCycle.Map.google.Map.prototype = Object.extend(new byCycle.Map.Map(), {
     this.initListeners();
   },
 
-
   /* Bounds */
 
   centerAndZoomToBounds: function(bounds, center) {
@@ -259,7 +251,6 @@ byCycle.Map.google.Map.prototype = Object.extend(new byCycle.Map.Map(), {
                     new GLatLng(ne.y, ne.x));
     this.map.setCenter(center, this.map.getBoundsZoomLevel(gbounds));
   },
-
 
   /* Info Window */
 
@@ -290,8 +281,6 @@ byCycle.Map.google.Map.prototype = Object.extend(new byCycle.Map.Map(), {
     self.map.openInfoWindowHtml(point, html);
   },
 
-
-
   /**
    * Factory for creating Mercator map types (or at least it will be; right
    * now it's Metro-specific).
@@ -311,23 +300,23 @@ byCycle.Map.google.Map.prototype = Object.extend(new byCycle.Map.Map(), {
     var se, nw;
     var min_zoom = 9;
     var url = [wms_url,
-           "SERVICE=WMS",
-           "&VERSION=1.1.1",
-           "&REQUEST=GetMap",
-           "&LAYERS=", layers,
-           "&STYLES=",
-           "&FORMAT=", img_format,
-           "&BGCOLOR=0xFFFFFF",
-           "&TRANSPARENT=TRUE",
-           "&SRS=", srs,
-           "&WIDTH=", tile_size,
-           "&HEIGHT=", tile_size].join('');
+               "SERVICE=WMS",
+               "&VERSION=1.1.1",
+               "&REQUEST=GetMap",
+               "&LAYERS=", layers,
+               "&STYLES=",
+               "&FORMAT=", img_format,
+               "&BGCOLOR=0xFFFFFF",
+               "&TRANSPARENT=TRUE",
+               "&SRS=", srs,
+               "&WIDTH=", tile_size,
+               "&HEIGHT=", tile_size].join('');
 
     var pdx_bounds = byCycle.regions.portlandor.bounds;
     var pdx_sw = pdx_bounds.sw;
     var pdx_ne = pdx_bounds.ne;
     var bounds = new GLatLngBounds(new GLatLng(pdx_sw.y, pdx_sw.x),
-                   new GLatLng(pdx_ne.y, pdx_ne.x));
+                                   new GLatLng(pdx_ne.y, pdx_ne.x));
 
     var projection = new GMercatorProjection(zoom_levels);
     projection.XXXtileCheckRange = function(tile, zoom, tile_size) {
@@ -371,111 +360,14 @@ byCycle.Map.google.Map.prototype = Object.extend(new byCycle.Map.Map(), {
 
     map_type.onChangeTo = function() {
       if (map.getZoom() < min_zoom) {
-    map.setZoom(min_zoom);
+        map.setZoom(min_zoom);
       }
       if (!bounds.intersects(map.getBounds())) {
-    selectRegion('portlandor');
+        selectRegion('portlandor');
       }
     };
     return map_type;
-  },
-
-
-  /**
-   * Factory for creating the Mercator map types (or at least it will be; right
-   * now it's Metro-specific).
-   */
-  makeMercatorMapTypeOLD: function() {
-    var domain = 'mica.metro-region.org';
-    var transparent_png = 'http://' + domain +
-    '/bycycle/images/transparent.png';
-    var copyrights = new GCopyrightCollection("&copy; Metro");
-    var wms_url = 'http://' + domain +
-    '/cgi-bin/mapserv-postgis?map=/var/www/html/bycycle/bycycle.map&';
-    var layers = 'bike';
-    var tile_size = 256;
-    var tile_size_less_one = tile_size - 1;
-    var img_format = 'image/gif';
-    var srs = "EPSG:4326";
-    var url = [wms_url,
-           "SERVICE=WMS",
-           "&VERSION=1.1.1",
-           "&REQUEST=GetMap",
-           "&LAYERS=", layers,
-           "&STYLES=",
-           "&FORMAT=", img_format,
-           "&BGCOLOR=0xFFFFFF",
-           "&TRANSPARENT=TRUE",
-           "&SRS=", srs,
-           "&WIDTH=", tile_size,
-           "&HEIGHT=", tile_size].join('');
-
-    var projection = new GMercatorProjection(18);
-    var pdx_bounds = byCycle.regions.portlandor.bounds;
-    var sw = pdx_bounds.sw;
-    var ne = pdx_bounds.ne;
-    var bounds = new GLatLngBounds(new GLatLng(sw.y, sw.x),
-                   new GLatLng(ne.y, ne.x));
-
-    var metro_layer = new GTileLayer(copyrights, 0, 17);
-    metro_layer.getTileUrl = function(tile, zoom) {
-      var tile_url;
-      if (zoom < 6) {
-        tile_url = transparent_png;
-      } else {
-    var x = tile.x * tile_size;
-    var y = tile.y * tile_size;
-    var sw_point = new GPoint(x, y + tile_size_less_one);
-    var ne_point = new GPoint(x + tile_size_less_one, y);
-    var sw = projection.fromPixelToLatLng(sw_point, zoom);
-    var ne = projection.fromPixelToLatLng(ne_point, zoom );
-    var tile_bounds = new GLatLngBounds(sw, ne);
-    if (tile_bounds.intersects(bounds)) {
-      var bbox = [sw.x, sw.y, ne.x, ne.y].join(',');
-      tile_url = [url, "&BBOX=", bbox].join('');
-    } else {
-      tile_url = transparent_png;
-    }
-      }
-      byCycle.logDebug(tile_url);
-      return tile_url;
-    };
-
-    metro_layer.isPng = function() {
-      return true;
-    };
-
-    metro_layer.getOpacity = function() {
-      return 0.5;
-    };
-
-    var layers = [G_NORMAL_MAP.getTileLayers()[0], metro_layer];
-    var name = 'Bike Map';
-    var opts = {errorMessage: 'Here Be Dragons'};
-    var metro_map = new GMapType(layers, projection, name, opts);
-    return metro_map;
   }
 });
 
 
-var x = function() {
-  // was nb
-  fromPixelToLatLng = function(pixel, zoom, unbounded) {
-    // if zoom = 0; then e = (128, 128)
-    // bd is just a list of points with x = y = 128, 256, 512, 1024, 2^n/2
-    // Or... it's half the size of a tile for the given zoom level
-    // Take what will fit into a tile of size n and then shrink the tile down
-    // to 256x256
-    var e = this.bd[zoom];
-
-    // Move right half tile; divide the result by px/deg at this zoom level
-    // Result is longitude
-    var lng = (pixel.x - e.x) / this.dd[zoom];
-
-    // Move up a half tile; div result by px/radian
-    // Result is ???
-    var g = (pixel.y - e.y) / -this.ed[zoom];
-    var h = rad2deg(2*Math.atan(Math.exp(g))-Math.PI/2);
-    return new B(h, lng, c);
-  };
-};
