@@ -458,6 +458,7 @@ byCycle.UI.Query.prototype = {
 
   onLoading: function(request) {
     Element.update('status', this.updater_message);
+    Element.show('spinner');
   },
 
   onSuccess: function(request) {
@@ -480,6 +481,7 @@ byCycle.UI.Query.prototype = {
       this.callback(result);
     }
     Element.update('status', this.getElapsedTimeMessage(request.status));
+    Element.hide('spinner');
     byCycle.logDebug('Left onComplete.');
   },
 

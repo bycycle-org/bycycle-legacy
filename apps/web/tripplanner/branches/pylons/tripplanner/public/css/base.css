@@ -112,13 +112,13 @@ hr
 
 #logo_cell
 {
-  width: 93px; 
-  border-right: 1px solid gray; 
-  padding: 10px; 
-  background: #fffa73; 
+  width: 93px;
+  border-right: 1px solid gray;
+  padding: 10px;
+  background: #fffa73;
   vertical-align: middle;
   }
- 
+
 #logo
 {
   font-weight: bold;
@@ -218,9 +218,21 @@ hr
 
 #display
 {
+  position: relative;
   width: 300px;
   padding: 4px;
   overflow: auto;
+  }
+
+#spinner
+{
+  position: absolute;
+  top: 0;
+  left: 0;
+  background: white;
+  padding: 2px;
+  border-right: 1px solid gray;
+  border-bottom: 1px solid gray;
   }
 
 .result
@@ -232,7 +244,7 @@ hr
 {
   margin-bottom: 5px;
   }
-  
+
 .multi .window .title_bar, .multi .window .title_bar td
 {
   background: #99b3cc;
@@ -240,17 +252,17 @@ hr
 
 .route_multi
 {
-  
+
   }
 
 .errors .title_bar, .errors .title_bar td
 {
   background: #fd766a;
   }
-  
+
 .errors div.error
 {
-  margin-bottom: 2px; 
+  margin-bottom: 2px;
   padding: 2px;
   border: 1px solid #fd766a;
   }
@@ -338,7 +350,7 @@ hr
 {
   padding: 2px;
   }
-  
+
 .directions a
 {
   text-decoration: none;
@@ -385,7 +397,7 @@ hr
   color: white;
   text-decoration: none;
   }
-  
+
 .title_bar a:hover
 {
   color: orange;

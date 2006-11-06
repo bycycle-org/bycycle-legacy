@@ -245,6 +245,10 @@
             <td>
               <!-- Display Area -->
               <div id="display">
+                <div id="spinner" style="display: none;">
+                  <img src="/images/spinner.gif" width="16" height="16"/>
+                </div>
+              
                 <div id="info">
 % if not c.info:
                   <p style="margin-top: 0;">
