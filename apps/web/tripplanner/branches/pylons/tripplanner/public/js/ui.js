@@ -438,7 +438,7 @@ byCycle.UI.Query.prototype = {
   updater: function() {
     byCycle.logDebug('Entered updater...');
     var self = this;
-    var url = [[this.region, this.service, this.q].join('/'),
+    var url = [['', this.region, this.service, this.q].join('/'),
                'format=frag'].join('?');
     var args = {
       method:'get',
