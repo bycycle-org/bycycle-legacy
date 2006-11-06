@@ -29,7 +29,7 @@ link_template = '<a href="%s" onclick="%s">%s</a>' % ('%s', onclick, '%s')
         result_id = ('%.6f' % time.time()).replace('.', '')
         href = href_template % geocode.urlStr()
         link = link_template % (href, '%s')
-        c.title = link % ('#%s' % (i + 1))
+        c.title = '#%s' % (i + 1)
         c.classes = ''  # Needed to override inherited c.classes == 'error'
         c.result_id = result_id
         c.json_id = '%s' % i

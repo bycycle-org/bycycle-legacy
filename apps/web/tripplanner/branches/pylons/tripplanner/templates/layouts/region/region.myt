@@ -319,26 +319,26 @@
               <div id="map" style="display: none;"></div>
               <!-- End Map -->
 
-<div style="display: none;" width="0" height="0">
-              <div id="center_marker" class="info_win">
-                <p>
-                  <a href="javascript:void('Find address closest to center of map');" 
-                     onclick="byCycle.UI.findAddressAtCenter();"
-                     >Find address of closest intersection</a>
-                </p>
-                
-                <p>
-                  Set as 
-                  <a href="javascript:void('Set this point as the start location');" 
-                     onclick="byCycle.UI.s_el.value = byCycle.UI.map.getCenterString();"
-                     ><i>start</i></a> or 
-                  <a href="javascript:void('Set this point as the end location');" 
-                     onclick="byCycle.UI.e_el.value = byCycle.UI.map.getCenterString();"
-                     ><i>end</i></a> 
-                  address for route
-                </p>
+              <div id="center_marker" style="display: none;" width="0" height="0">
+                <div class="info_win">
+                  <p>
+                    <a href="javascript:void('Find address closest to center of map');" 
+                       onclick="byCycle.UI.findAddressAtCenter();"
+                       >Find address of closest intersection</a>
+                  </p>
+                  
+                  <p>
+                    Set as 
+                    <a href="javascript:void('Set this point as the start location');" 
+                       onclick="byCycle.UI.s_el.value = byCycle.UI.map.getCenterString();"
+                       ><i>start</i></a> or 
+                    <a href="javascript:void('Set this point as the end location');" 
+                       onclick="byCycle.UI.e_el.value = byCycle.UI.map.getCenterString();"
+                       ><i>end</i></a> 
+                    address for route
+                  </p>
+                </div>
               </div>
-</div>
             </td>
 
 

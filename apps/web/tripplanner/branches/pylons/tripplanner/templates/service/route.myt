@@ -121,3 +121,12 @@
            ><b>End</b> at <b><% last_street %></b></a>
     </div>
 </div>
+
+<p><b>Disclaimer</b>: As you are riding, please keep in mind that you don't
+<i>have</i> to follow the suggested route. <i>It may not be safe at any given
+point.</i> If you see what looks like an unsafe or undesirable stretch in the
+suggested route, you can decide to walk, ride on the sidewalk, or go a
+different way.</p>
+
+<p>Users should independently verify all information presented here. This
+service is provided <b>AS IS</b> with <b>NO WARRANTY</b> of any kind.</p>
