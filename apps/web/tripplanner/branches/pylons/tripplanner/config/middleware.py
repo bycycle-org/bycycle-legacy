@@ -5,11 +5,13 @@ from paste.registry import RegistryManager
 from paste.deploy.config import ConfigMiddleware
 
 from pylons.error import error_template
-from pylons.middleware import (ErrorHandler, ErrorDocuments, StaticJavascripts,
-                               error_mapper)
+from pylons.middleware import ErrorHandler, ErrorDocuments, StaticJavascripts
+from pylons.middleware import error_mapper
 import pylons.wsgiapp
 
 from tripplanner.config.environment import load_environment
+import tripplanner.lib.app_globals as app_globals
+import tripplanner.lib.helpers
 
 
 def make_app(global_conf, **app_conf):
@@ -25,8 +27,13 @@ def make_app(global_conf, **app_conf):
     config.init_app(global_conf, app_conf, package='tripplanner')
         
     # Load our default Pylons WSGI app and make g available
-    app = pylons.wsgiapp.PylonsApp(config)
+    app = pylons.wsgiapp.PylonsApp(
+        config,
+        helpers=tripplanner.lib.helpers,
+        g=app_globals.Globals
+    )
     g = app.globals
+    
     app = ConfigMiddleware(app, 
                            {'app_conf': app_conf, 'global_conf': global_conf})
     
