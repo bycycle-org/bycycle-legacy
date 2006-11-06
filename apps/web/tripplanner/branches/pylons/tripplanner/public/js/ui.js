@@ -297,7 +297,7 @@ byCycle.UI = (function() {
     findAddressAtCenter: function() {
       var center = self.map.getCenterString();
       self.q_el.value = center;
-      self.doFind('query', center);
+      new byCycle.UI.GeocodeQuery(null).run();
     },
 
     clearMap: function() {
@@ -619,7 +619,8 @@ byCycle.UI.RouteQuery.prototype = Object.extend(new byCycle.UI.Query(), {
     byCycle.UI.Query.prototype.before.call(this);
     byCycle.logDebug('Entered beforeRouteQuery...');
     var errors = [];
-    if (!this.input) {
+    if (typeof(this.input) == 'undefined') {
+      // Use form fields for input
       var s = $F('s');
       var e = $F('e');
       if (s && e) {
@@ -638,6 +639,7 @@ byCycle.UI.RouteQuery.prototype = Object.extend(new byCycle.UI.Query(), {
         throw new Error(errors.join('\n'));
       }
     } else {
+      // Use passed-in input
       if (this.input.length > 1) {
         this.q = ['["', this.input.join('", "'), '"]'].join('');
       } else {

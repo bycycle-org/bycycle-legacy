@@ -75,6 +75,13 @@ byCycle.Map.Map.prototype = {
     return {x: 0, y: 0};
   },
 
+  getCenterString: function() {
+    var c = this.getCenter();
+    var x = Math.round(c.x * 1000000) / 1000000;
+    var y = Math.round(c.y * 1000000) / 1000000;
+    return ["longitude=", x, ", ", "latitude=", y].join('');
+  },
+
   setCenter: function(center, zoom) {
     this.put(['Set Center: ', center.x, ', ', center.y, 
               (zoom ? '; Zoom: ' + zoom : '')].join(''));

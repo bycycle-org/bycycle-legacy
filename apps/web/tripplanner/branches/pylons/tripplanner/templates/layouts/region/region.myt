@@ -34,7 +34,9 @@
   <body>
 
 
-  <% c.my_env %>
+    <div style="position: abosolute; top: 0; left: 0;">
+      <% c.my_env %>
+    </div>
 
 
     <div id="top" class="page_section">
@@ -81,16 +83,16 @@
 
                   <div class="tab_content" style="<% c.query_tab_style %>">
                     <!-- Query Form -->
-                    <form 
+                    <form
                       id="query_form"
                       action="/<% c.region_key %>/query"
                       method="get"
                       onsubmit="new byCycle.UI.SearchQuery(this).run(); return false;">
                       <div>
-                        <input 
+                        <input
                           id="q" name="q" type="text" value="<% c.q %>"
                           title="Enter an address or route" tabindex="1" />
-                        <input 
+                        <input
                           name="commit" type="submit" value="Search Map"
                           title="Click to search the map" tabindex="2" />
                       </div>
@@ -104,7 +106,7 @@
 
                   <div class="tab_content" style="<% c.route_tab_style %>">
                     <!-- Route Form-->
-                    <form 
+                    <form
                       id="route_form"
                       action="/<% c.region_key %>/route"
                       method="get"
@@ -186,7 +188,7 @@
                 <span id="regions_container">
                   <b>Region:</b>
                   <span id="active_region"><% region %></span>
-                  <a id="change_region_link" href="" 
+                  <a id="change_region_link" href=""
                     onclick="return false;">change</a>
                   <div id="regions_window" class="window"
                        style="display: none;">
@@ -246,21 +248,21 @@
                 <div id="info">
 % if not c.info:
                   <p style="margin-top: 0;">
-                    The trip planner is under active development. Please 
-                    <a href="http://bycycle.org/contact.html" 
+                    The trip planner is under active development. Please
+                    <a href="http://bycycle.org/contact.html"
                        title="Send us problem reports, comments, questions, and suggestions"
-                       >contact us</a> with any problems, comments, questions, 
+                       >contact us</a> with any problems, comments, questions,
                        or suggestions.
                   </p>
                   <p>
-                    If you find this application useful or would like to 
-                    contribute to its improvement, please consider 
-                    <a href="http://bycycle.org/support.html#donate" 
+                    If you find this application useful or would like to
+                    contribute to its improvement, please consider
+                    <a href="http://bycycle.org/support.html#donate"
                        target="_new">donating</a>. Any amount helps.
                   </p>
                   <p>
                     Users should independently verify all information presented
-                    here. This service is provided <b>AS IS</b> with <b>NO 
+                    here. This service is provided <b>AS IS</b> with <b>NO
                     WARRANTY</b> of any kind.
                   </p>
 % #if
@@ -289,22 +291,23 @@
                     JavaScript and <a href="">try again</a>.
                   </p>
                   <p>
-                    Note that you must have a relatively recent browser for 
-                    the map to display. We test in Mozilla Firefox 1.5 on 
-                    Linux, Mac OS X, and Windows; Safari on Mac OS X; and 
-                    Internet Explorer 6 on Windows. Although we try our 
-                    best to make the Trip Planner work the same in all of 
-                    these browsers, we do the most testing with Firefox, and 
+                    Note that you must have a relatively recent browser for
+                    the map to display. We test in Mozilla Firefox 1.5 on
+                    Linux, Mac OS X, and Windows; Safari on Mac OS X; and
+                    Internet Explorer 6 on Windows. Although we try our
+                    best to make the Trip Planner work the same in all of
+                    these browsers, we do the most testing with Firefox, and
                     as a result it is the best choice for running the Trip
-                    Planner. Firefox is a great browser and we recommned 
-                    trying it if you haven't already.
+                    Planner. Firefox is a great browser and we recommned
+                    <a href="http://www.mozilla.com/">trying it</a> if you 
+                    haven't already.
                   </p>
                   <p>
-                    If you don't have one of the above browsers, you may want 
-                    to leave JavaScript turned off. On the other hand, if you 
+                    If you don't have one of the above browsers, you may want
+                    to leave JavaScript turned off. On the other hand, if you
                     feel like experimenting, you can
-                    <a href="http://bycycle.org/contact.html">let us know</a> 
-                    if the trip planner does or does not work in other 
+                    <a href="http://bycycle.org/contact.html">let us know</a>
+                    if the trip planner does or does not work in other
                     browsers.
                   </p>
                 </noscript>
@@ -315,6 +318,25 @@
               <!-- Map -->
               <div id="map" style="display: none;"></div>
               <!-- End Map -->
+
+              <div id="center_marker" class="info_win" style="display: none;" width="0" height="0">
+                <p>
+                  <a href="javascript:void('Find address closest to center of map');" 
+                     onclick="byCycle.UI.findAddressAtCenter();"
+                     >Find address of closest intersection</a>
+                </p>
+                
+                <p>
+                  Set as 
+                  <a href="javascript:void('Set this point as the start location');" 
+                     onclick="byCycle.UI.s_el = byCycle.UI.map.getCenterString();"
+                     ><i>start</i></a> or 
+                  <a href="javascript:void('Set this point as the end location');" 
+                     onclick="byCycle.UI.s_el = byCycle.UI.map.getCenterString();"
+                     ><i>end</i></a> 
+                  address for route
+                </p>
+              </div>
             </td>
 
 
@@ -327,7 +349,7 @@
                       <tr>
                         <td class="l"></td>
                         <td class="r">
-                          <a id="hide_ads" class="button" href="" 
+                          <a id="hide_ads" class="button" href=""
                             onclick="return false;" title="Close Ad Window"
                             >X</a>
                         </td>
@@ -375,18 +397,18 @@
             <tr>
               <td class="l">Debug Log</td>
               <td class="r">
-                <a class="button" href="" 
-                   onclick="Element.toggle('debug'); return false;" 
+                <a class="button" href=""
+                   onclick="Element.toggle('debug'); return false;"
                    title="Show/Hide">#</a>
-                <a class="button" href="" 
-                   onclick="Element.hide('debug_window'); return false;" 
+                <a class="button" href=""
+                   onclick="Element.hide('debug_window'); return false;"
                    title="Close">X</a>
               </td>
             </tr>
           </tbody>
         </table>
       </div>
-      <div id="debug" class="content_pane" 
+      <div id="debug" class="content_pane"
            style="height: 300px; overflow: auto;">
       </div>
     </div>
