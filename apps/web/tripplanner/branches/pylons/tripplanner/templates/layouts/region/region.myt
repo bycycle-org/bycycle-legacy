@@ -20,7 +20,7 @@
     <% h.stylesheet_link_tag('/css/%s.css' % c.region_key) %>
 
     <script>
-      var debug = <% ['false', 'true'][c.debug] %>;
+      var debug = <% ['false', 'true'][bool(g.debug)] %>;
     </script>
 
     <!-- We want access to these JavaScripts during page load. Other JS imports
@@ -367,7 +367,7 @@
     <!-- End Content -->
 
 
-% if c.debug:
+% if g.debug:
     <div id="debug_window" class="window" style="display: none; position: absolute; bottom: 0; right: 0; width: 300px; background: white;">
       <div class="title_bar">
         <table>
