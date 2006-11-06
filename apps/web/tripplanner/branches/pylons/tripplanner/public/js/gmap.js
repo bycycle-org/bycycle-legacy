@@ -117,7 +117,7 @@ byCycle.Map.google.Map.prototype = Object.extend(new byCycle.Map.Map(), {
         self.center_marker = new GMarker(self.center, self.center_icon);
         self.map.addOverlay(self.center_marker);
         GEvent.addListener(self.center_marker, 'click', function() {
-          self.map.openInfoWindow(self.center, 'center_marker');
+          self.map.openInfoWindowHtml(self.center, $('center_marker').innerHTML);
         });
       }
       self.center_marker.setPoint(self.center);

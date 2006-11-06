@@ -319,7 +319,8 @@
               <div id="map" style="display: none;"></div>
               <!-- End Map -->
 
-              <div id="center_marker" class="info_win" style="display: none;" width="0" height="0">
+<div style="display: none;" width="0" height="0">
+              <div id="center_marker" class="info_win">
                 <p>
                   <a href="javascript:void('Find address closest to center of map');" 
                      onclick="byCycle.UI.findAddressAtCenter();"
@@ -329,14 +330,15 @@
                 <p>
                   Set as 
                   <a href="javascript:void('Set this point as the start location');" 
-                     onclick="byCycle.UI.s_el = byCycle.UI.map.getCenterString();"
+                     onclick="byCycle.UI.s_el.value = byCycle.UI.map.getCenterString();"
                      ><i>start</i></a> or 
                   <a href="javascript:void('Set this point as the end location');" 
-                     onclick="byCycle.UI.s_el = byCycle.UI.map.getCenterString();"
+                     onclick="byCycle.UI.e_el.value = byCycle.UI.map.getCenterString();"
                      ><i>end</i></a> 
                   address for route
                 </p>
               </div>
+</div>
             </td>
 
 
