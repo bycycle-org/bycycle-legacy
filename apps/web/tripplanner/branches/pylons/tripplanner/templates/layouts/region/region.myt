@@ -34,7 +34,7 @@
   <body>
 
 
-    <div style="position: abosolute; top: 0; left: 0;">
+    <div style="position: abosolute; top: 0; left: 0; background: white; border: 1px solid gray;">
       <% c.my_env %>
     </div>
 
