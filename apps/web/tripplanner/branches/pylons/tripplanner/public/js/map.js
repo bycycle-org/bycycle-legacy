@@ -41,8 +41,11 @@ byCycle.Map.Map.prototype = {
   },
 
   put: function(content) {
-    var div = Builder.node('div', content);
-    this.map.appendChild(div);
+    var div = Builder.node('div', 
+                           '#' + (this.put_count = (this.put_count || 1)) + 
+                           ' ' + content);
+    this.put_count += 1;                 
+    this.map.insertBefore(div, this.map.firstChild);
     return div;
   },
   
