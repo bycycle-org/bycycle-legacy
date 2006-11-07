@@ -19,7 +19,7 @@
     <![endif]-->
     <% h.stylesheet_link_tag('/css/%s.css' % c.region_key) %>
 
-    <script>
+    <script type="text/javascript">
       var debug = <% ['false', 'true'][bool(g.debug)] %>;
     </script>
 
@@ -34,10 +34,11 @@
   <body>
 
 
+% if g.debug:
     <div style="position: abosolute; top: 0; left: 0; background: white; border: 1px solid gray;">
       <% c.my_env %>
     </div>
-
+% #if
 
     <div id="top" class="page_section">
       <table>
@@ -49,7 +50,7 @@
               <div id="logo">
                 <a href=""
                    title="byCycle Trip Planner"
-                   ><img src="images/logo.png" width="93" height="66" /></a>
+                   ><img src="<% h.url_for('/images/logo.png') %>" width="93" height="66" /></a>
               </div>
             </td>
 
@@ -63,13 +64,13 @@
                   <div class="clear"></div>
                   <ul>
                     <li class="tab_label <% c.query_label_class %>">
-                      <a id="query_label" href="<% c.region_key %>/query/'"
+                      <a id="query_label" href="<% h.url_for('/%s/query/' % c.region_key) %>"
                          name='query'
                          title="Search the Map for an Address or Route"
                          >Search Map</a>
                     </li>
                     <li class="tab_label <% c.route_label_class %>">
-                      <a id="route_label" href="<% c.region_key %>/route/"
+                      <a id="route_label" href="<% h.url_for('/%s/route/' % c.region_key) %>"
                          name='route'
                          title="Find a Route (Get Directions)">Find Route</a>
                     </li>
@@ -85,7 +86,7 @@
                     <!-- Query Form -->
                     <form
                       id="query_form"
-                      action="/<% c.region_key %>/query"
+                      action="<% h.url_for('/%s/query/' % c.region_key) %>"
                       method="get"
                       onsubmit="new byCycle.UI.SearchQuery(this).run(); return false;">
                       <div>
@@ -108,7 +109,7 @@
                     <!-- Route Form-->
                     <form
                       id="route_form"
-                      action="/<% c.region_key %>/route"
+                      action="<% h.url_for('/%s/route/' % c.region_key) %>"
                       method="get"
                       onsubmit="new byCycle.UI.RouteQuery(this).run(); return false;">
                       <div>
@@ -128,7 +129,7 @@
                             title="Swap start and end addresses"
                             tabindex="5"
                           ><img
-                              src="images/swapfrto.png"
+                              src="<% h.url_for('/images/swapfrto.png') %>"
                               alt="<>"
                               width="24"
                               height="14"
@@ -188,8 +189,8 @@
                 <span id="regions_container">
                   <b>Region:</b>
                   <span id="active_region"><% region %></span>
-                  <a id="change_region_link" href=""
-                    onclick="return false;">change</a>
+                  <a id="change_region_link" href="#change-region"
+                     onclick="return false;">change</a>
                   <div id="regions_window" class="window"
                        style="display: none;">
                     <div class="title_bar">
@@ -198,7 +199,7 @@
                           <tr>
                             <td class="l">Change Region</td>
                             <td class="r">
-                              <a class="button" href=""
+                              <a class="button" href="#cancel-change-region"
                                  onclick="Element.hide('regions_window'); return false;"
                                  >X</a>
                             </td>
@@ -214,16 +215,19 @@
                 </span>
                 <!-- End Region -->
                 |
-                <a id="bookmark" href="/"
-                   title="Link to the current result"
+                <a id="bookmark" href="<% h.url_for('/') %>"
+                   onclick="return false;"
+                   title="Link to the current result &amp; view"
                    >Link to this page</a>
                 |
-                <a href="" onclick="return false;"
-                   title="Show Trip Planner Help"
+                <a href="http://byCycle.org/tripplanner/help.html"
+                   onclick=""
+                   title="Go to Trip Planner help page"
                    >Help</a>
                 |
-                <a href="" onclick="return false;"
-                   title="Send Us Your Comments, Questions, and Suggestions"
+                <a href="http://byCycle.org/contact.html"
+                   onclick=""
+                   title="Send us your comments, questions, suggestions, etc"
                    >Feedback</a>
               </div>
             </td>
@@ -246,9 +250,10 @@
               <!-- Display Area -->
               <div id="display">
                 <div id="spinner" style="display: none;">
-                  <img src="/images/spinner.gif" width="16" height="16"/>
+                  <img src="<% h.url_for('/images/spinner.gif') %>"
+                       width="16" height="16"/>
                 </div>
-              
+
                 <div id="info">
 % if not c.info:
                   <p style="margin-top: 0;">
@@ -303,7 +308,7 @@
                     these browsers, we do the most testing with Firefox, and
                     as a result it is the best choice for running the Trip
                     Planner. Firefox is a great browser and we recommned
-                    <a href="http://www.mozilla.com/">trying it</a> if you 
+                    <a href="http://www.mozilla.com/">trying it</a> if you
                     haven't already.
                   </p>
                   <p>
@@ -326,19 +331,19 @@
               <div id="center_marker" style="display: none;" width="0" height="0">
                 <div class="info_win">
                   <p>
-                    <a href="javascript:void('Find address closest to center of map');" 
-                       onclick="byCycle.UI.findAddressAtCenter();"
+                    <a href="#find-address-at-center"
+                       onclick="byCycle.UI.findAddressAtCenter(); return false;"
                        >Find address of closest intersection</a>
                   </p>
-                  
+
                   <p>
-                    Set as 
-                    <a href="javascript:void('Set this point as the start location');" 
-                       onclick="byCycle.UI.s_el.value = byCycle.UI.map.getCenterString();"
-                       ><i>start</i></a> or 
-                    <a href="javascript:void('Set this point as the end location');" 
-                       onclick="byCycle.UI.e_el.value = byCycle.UI.map.getCenterString();"
-                       ><i>end</i></a> 
+                    Set as
+                    <a href="#set-as-start"
+                       onclick="byCycle.UI.s_el.value = byCycle.UI.map.getCenterString(); return false;"
+                       ><i>start</i></a> or
+                    <a href="#set-as-end"
+                       onclick="byCycle.UI.e_el.value = byCycle.UI.map.getCenterString(); return false;"
+                       ><i>end</i></a>
                     address for route
                   </p>
                 </div>
@@ -355,9 +360,10 @@
                       <tr>
                         <td class="l"></td>
                         <td class="r">
-                          <a id="hide_ads" class="button" href=""
-                            onclick="return false;" title="Close Ad Window"
-                            >X</a>
+                          <a id="hide_ads" class="button"
+                             href="#hide-ads"
+                             onclick="return false;" title="Hide ads"
+                             >X</a>
                         </td>
                       </tr>
                     </tbody>
@@ -396,7 +402,7 @@
 
 
 % if g.debug:
-    <div id="debug_window" class="window" style="display: none; position: absolute; bottom: 0; right: 0; width: 300px; background: white;">
+    <div id="debug_window" class="window" style="display: none;">
       <div class="title_bar">
         <table>
           <tbody>
@@ -405,7 +411,7 @@
               <td class="r">
                 <a class="button" href=""
                    onclick="Element.toggle('debug'); return false;"
-                   title="Show/Hide">#</a>
+                   title="Show/Hide">+/-</a>
                 <a class="button" href=""
                    onclick="Element.hide('debug_window'); return false;"
                    title="Close">X</a>
@@ -420,6 +426,12 @@
     </div>
 % #if
 
+
+    <script type="text/javascript">
+      //<![CDATA[
+      byCycle.prefix = '<% h.url_for('/') %>';
+      //]]>
+    </script>
 
 % for js in ('regions', 'map', 'gmap', 'ui'):
     <% h.javascript_include_tag('/js/%s.js' % js) %>

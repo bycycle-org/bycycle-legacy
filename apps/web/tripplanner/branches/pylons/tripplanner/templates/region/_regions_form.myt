@@ -2,7 +2,7 @@
   form_id = None
 </%args>
 
-<form id="<% form_id or 'regions_form' %>" method="get" action="/">
+<form id="<% form_id or 'regions_form' %>" method="get" action="<% h.url_for('/') %>">
   <div style="margin-bottom: 2px;">
     <select id="regions" name="region">
       <option value="all">All Regions</option>

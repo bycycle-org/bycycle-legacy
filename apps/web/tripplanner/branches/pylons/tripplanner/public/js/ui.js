@@ -100,7 +100,7 @@ byCycle.UI = (function() {
       Element.hide('map_msg');
       Element.show(self.map_el);
       Element.show('ads');
-      if (byCycle.debug) {
+      if (debug) {
         Element.show('debug_window');
       }
       self.onResize();

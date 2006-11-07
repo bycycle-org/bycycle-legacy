@@ -313,6 +313,18 @@ hr
   }
 
 
+/* Debug */
+
+#debug_window
+{
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  width: 300px;
+  background: white;
+  }
+
+
 /* Route Summary & Directions */
 
 .start
