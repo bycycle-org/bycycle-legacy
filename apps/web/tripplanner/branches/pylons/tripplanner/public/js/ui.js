@@ -261,7 +261,7 @@ byCycle.UI = (function() {
 
     setBookmark: function(form) {
       byCycle.logDebug('Entered setBookmark...');
-      var path_info = [byCycle.prefix];
+      var path_info = [];
       var query_args = $H();
       path_info.push(self.region, self.service, $F(self.q_el));
       if (self.service == 'route') {
@@ -270,7 +270,8 @@ byCycle.UI = (function() {
           query_args.pref = pref;
         }
       }
-      var url = ['http://', byCycle.domain, path_info.join('/')].join('');
+      var url = ['http://', byCycle.domain, byCycle.prefix, 
+                 path_info.join('/')].join('');
       var query_string = query_args.toQueryString();
       if (query_string) {
         self.bookmark_el.href = [url, query_args.toQueryString()].join('?');
@@ -437,8 +438,8 @@ byCycle.UI.Query.prototype = {
   updater: function() {
     byCycle.logDebug('Entered updater...');
     var self = this;
-    var url = [[byCycle.prefix, this.region, this.ui.service, this.q].join('/'),
-               'format=frag'].join('?');
+    var path = [this.region, this.ui.service, this.q].join('/')
+    var url = [[byCycle.prefix, path].join(''), 'format=frag'].join('?');
     var args = {
       method:'get',
       asynchronous: true,
