@@ -1,3 +1,6 @@
+from paste.deploy.converters import asbool  
+
+
 class Globals(object):
 
     def __init__(self, global_conf, app_conf, **extra):
@@ -23,8 +26,7 @@ class Globals(object):
             your global variables.
 
         """
-        debug = global_conf.get('debug', False)  # "true" or "false"
-        self.debug = (debug.lower() in ('true', 'yes', 'on', '1'))
+        self.debug = asbool(global_conf.get('debug'))
 
     def __del__(self):
         """
