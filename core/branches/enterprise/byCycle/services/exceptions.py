@@ -24,6 +24,8 @@ class ByCycleError(Exception):
 ###########################################################################
 class InputError(ByCycleError):
     def __init__(self, errors=[]):
+        if isinstance(errors, basestring):
+            errors = [errors]
         self.errors = errors
         desc = '\n'.join([str(e) for e in errors])
         ByCycleError.__init__(self, desc=desc)
