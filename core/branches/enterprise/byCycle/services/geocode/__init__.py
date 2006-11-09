@@ -112,15 +112,10 @@ class Service(services.Service):
         na_service = normaddr.Service(region=self.region, dbh=self.dbh)
         oAddr = na_service.query(q)
         self.region = na_service.region
-
-        if isinstance(oAddr, PostalAddress):
-            geocodes = self.getPostalGeocodes(oAddr)
-        elif isinstance(oAddr, EdgeAddress):
-            geocodes = self.getPostalGeocodes(oAddr)
-        elif isinstance(oAddr, PointAddress):
+        if isinstance(oAddr, (NodeAddress, PointAddress)):
             geocodes = self.getPointGeocodes(oAddr)
-        elif isinstance(oAddr, NodeAddress):
-            geocodes = self.getPointGeocodes(oAddr)
+        elif isinstance(oAddr, (EdgeAddress, PostalAddress)):
+            geocodes = self.getPostalGeocodes(oAddr)
         elif isinstance(oAddr, IntersectionAddress):
             try:
                 geocodes = self.getIntersectionGeocodes(oAddr)

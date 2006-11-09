@@ -124,10 +124,22 @@ class PostalAddress(Address):
 
 class EdgeAddress(PostalAddress):
 
-    def __init__(self, number=None, network_id=None):
+    def __init__(self, number=None, network_id=None, region_key=None):
         PostalAddress.__init__(self, number, place=Place())
         self.network_id = network_id
+        self.region_key = region_key
 
+    def __str__(self):
+        s = PostalAddress.__str__(self)
+        if s == str(PostalAddress()):
+            s = str(
+                '-'.join(
+                    [str(a) for a in 
+                     (self.number, self.network_id, self.region_key)]
+                )
+            )
+        return s
+    
 
 class IntersectionAddress(Address):
 
@@ -255,9 +267,10 @@ class IntersectionAddress(Address):
 class PointAddress(IntersectionAddress):
     """Address constructed from a point object or a string repr of a point."""
 
-    def __init__(self, point=None, x=None, y=None, z=None):
+    def __init__(self, point=None, x=None, y=None, z=None, region_key=None):
         IntersectionAddress.__init__(self)
         self.point = Point(point=point, x=x, y=y, z=z)
+        self.region_key = region_key
         
     def _get_x(self):
         return self.point.x
@@ -280,12 +293,15 @@ class PointAddress(IntersectionAddress):
 
 class NodeAddress(IntersectionAddress):
 
-    def __init__(self, network_id=None):
+    def __init__(self, network_id=None, region_key=None):
         IntersectionAddress.__init__(self)
         self.network_id = network_id
+        self.region_key = region_key
 
     def __str__(self):
         s = IntersectionAddress.__str__(self)
         if s == str(IntersectionAddress()):
-            s = str(self.network_id)
+            s = str(
+                '-'.join([str(a) for a in (self.network_id, self.region_key)])
+            )
         return s

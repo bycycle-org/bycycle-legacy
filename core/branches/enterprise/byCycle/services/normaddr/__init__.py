@@ -47,7 +47,7 @@ states_ftoa = states.states_ftoa
 states_atof = states.states_atof
 
 no_address_msg = 'Please enter an address'
-no_region_msg = 'Please set your region'
+no_region_msg = 'Please select a region'
 
 
 class Service(services.Service):
@@ -76,54 +76,72 @@ class Service(services.Service):
         ``region`` `Region` | `string`
         ``dbh`` `DB`
             See Service base class for details.
-            
+
         return `Address` -- `Address` object with normalized attributes
 
         raise `InputError`
             - ``q`` is empty
             - No region supplied for edge or node type address
             - Region not supplied & can't be determined for other address types
-
-        raise `ValueError` -- ``q`` cannot be parsed
+            - ``q`` cannot be parsed
 
         """
         # Do query initialization
         self._beforeQuery(q, region=region, dbh=dbh)
-        
+
         original_q = q
         q = q.strip().lower()
         if not q:
-            raise InputError([no_address_msg])
-        
-        parts = q.split(';')
-        trying_id = False
-        if len(parts) > 1:
-            trying_id = True
-            q = parts[-1]
-        
+            raise InputError(no_address_msg)
 
-        # Node?
-        try:
-            node_id = int(q)
+        try: 
+            q, addr = q.split(';')
         except ValueError:
-            pass
+            addr = q
+            trying_id = False
         else:
-            if not self.region:
-                raise InputError([no_region_msg])
-            return address.NodeAddress(node_id)
+            trying_id = True
+
+        lAddr = addr.split('-')
 
         # Edge?
         try:
-            lAddr = q.split()
-            number = int(lAddr[0])
-            edge_id = int(lAddr[1])
+            num = int(lAddr[0])
+            network_id = int(lAddr[1])
         except (IndexError, ValueError):
             pass
         else:
             if not self.region:
-                raise InputError([no_region_msg])
-            return address.EdgeAddress(number, edge_id)
+                try:
+                    self.region = lAddr[2]
+                except IndexError:
+                    raise InputError(no_region_msg)
+            return address.EdgeAddress(num, network_id, self.region.key)
 
+        # Node?
+        try:
+            network_id = int(lAddr[0])
+        except (IndexError, ValueError):
+            pass
+        else:
+            if not self.region:
+                try:
+                    self.region = lAddr[1]
+                except IndexError:
+                    raise InputError(no_region_msg)
+            return address.NodeAddress(network_id, self.region.key)
+        
+        # Point?
+        try:
+            point_addr = address.PointAddress(q)
+        except ValueError:
+            pass
+        else:
+            if not self.region:
+                # TODO: Determine which region point is within or closest to
+                raise InputError(no_region_msg)
+            return point_addr
+            
         # Intersection?
         try:
             street_name1, street_name2 = self._getCrossStreets(q)
@@ -134,11 +152,11 @@ class Service(services.Service):
             parse_info1 = self._parse(street_name1)
             stname1, sttype1, place1, city_region1, zip_region1 = parse_info1
             parse_info2 = self._parse(street_name2)
-            stname2, sttype2, place2, city_region2, zip_region2 = parse_info2            
+            stname2, sttype2, place2, city_region2, zip_region2 = parse_info2
             try:
-                self._checkAndMaybeSetRegion(city_region1, zip_region1)
+                self._checkAndMaybeSetRegion(original_q, city_region1, zip_region1)
             except InputError:
-                self._checkAndMaybeSetRegion(city_region2, zip_region2)
+                self._checkAndMaybeSetRegion(original_q, city_region2, zip_region2)
             self._adjustName(stname1, sttype1)
             self._adjustName(stname2, sttype2)
             return address.IntersectionAddress(
@@ -154,26 +172,15 @@ class Service(services.Service):
             # parse street and return PostalAddress
             parse_info = self._parse(street_name)
             stname, sttype, place, city_region, zip_region = parse_info
-            self._checkAndMaybeSetRegion(city_region, zip_region)
+            self._checkAndMaybeSetRegion(original_q, city_region, zip_region)
             self._adjustName(stname, sttype)
             return address.PostalAddress(number, stname, place)
 
-        # Point?
-        try:
-            point_addr = address.PointAddress(q)
-        except ValueError, e:
-            pass
-        else:
-            if not self.region:
-                raise InputError([no_region_msg])
-            else:
-                return point_addr
-
         if trying_id:
-            self.query(' '.join(parts))
-            
+            return self.query(q)
+        
         # Raise an exception if we get here: address is unnormalizeable
-        raise ValueError(
+        raise InputError(
             'We could not understand the address you entered, "%s".' %
             str(original_q)
         )
@@ -205,7 +212,7 @@ class Service(services.Service):
         tokens = addr.lower().split()
         name = []
         street_name = StreetName()
-        full_sttype = None                    
+        full_sttype = None
         place = Place()
         city_region_key, zip_region_key = None, None
 
@@ -309,7 +316,7 @@ class Service(services.Service):
         street_name.name = ' '.join(name + tokens)
         return street_name, full_sttype, place, city_region_key, zip_region_key
 
-    def _checkAndMaybeSetRegion(self, city_region_key, zip_region_key):
+    def _checkAndMaybeSetRegion(self, q, city_region_key, zip_region_key):
         if not self.region:
             if city_region_key:
                 # Prefer city/state region
@@ -319,43 +326,43 @@ class Service(services.Service):
                 self.region = zip_region_key
             else:
                 # By here, we should have figured out the region; if not, fail.
-                errors = ['Please enter a city and state -OR- a zip code ' 
-                          '-OR- set your region']
+                errors = ['Please enter a city and state -OR- a zip code '
+                          '-OR- set your region for address "%s"' % q]
                 raise InputError(errors)
 
     def _adjustName(self, street_name, sttype):
         """Adjust ``street_name``'s name.
-        
+
         ``street_name`` `StreetName`
         ``sttype`` `string` -- Original street type found by `_parse`
-        
+
         First, if the name is a number, add a suffix: 1 => 1st, 11 => 11th,
         etc. Then, if the name can't be found in the DB and the street type
         entered was not abbreviated, then see if we can find the name+type in
         the DB. If so, use the name+type as the name and unset the street
         type.
-        
+
         Note: self.region & self.dbh must be set before calling this.
-        
+
         """
         name = street_name.name
         num_name = self._appendSuffixToNumberStreetName(name)
-        if sttype in sttypes_ftoa:            
+        if sttype in sttypes_ftoa:
             # If a full street type was entered...
-            # E.g., street name is 'johnson' and street type is 'creek'            
+            # E.g., street name is 'johnson' and street type is 'creek'
             t = self.dbh.tables.street_names
-            c = t.c                        
+            c = t.c
             q = t.count((c.name == num_name) & (c.sttype == sttype))
             count1 = q.execute().fetchone()[0]
             if not count1:
                 # ...and there is no street in the DB with the name & type...
                 # i.e., there's no street named 'johnson' with type 'creek'
-                name_type = '%s %s' % (name, sttype)                            
+                name_type = '%s %s' % (name, sttype)
                 q = t.count(c.name == name_type)
                 count2 = q.execute().fetchone()[0]
                 if count2:
                     # ...but there is one with that looks like 'name type'...
-                    # i.e., there's a street named 'johnson creek' with type x                    
+                    # i.e., there's a street named 'johnson creek' with type x
                     # ...use the name with type appended as the street's name...
                     # i.e., use 'johnson creek' as the name
                     name = name_type
@@ -364,7 +371,7 @@ class Service(services.Service):
         else:
             name = num_name
         street_name.name = name
-         
+
     def _appendSuffixToNumberStreetName(self, name):
         """Add suffix to number street ``name`` if needed (e.g. 10 => 10th).
 
@@ -427,7 +434,7 @@ class Service(services.Service):
                 # No.
                 pass
             else:
-                # num is an int; is street name a string with at least one 
+                # num is an int; is street name a string with at least one
                 # word char?
                 street_name = ' '.join(tokens[1:])
                 if re.match(re_word_plus, street_name):
