@@ -20,7 +20,9 @@
     <% h.stylesheet_link_tag('/css/%s.css' % c.region_key) %>
 
     <script type="text/javascript">
+      //<![CDATA[
       var debug = <% ['false', 'true'][bool(g.debug)] %>;
+      //]]>
     </script>
 
     <!-- We want access to these JavaScripts during page load. Other JS imports
@@ -124,7 +126,7 @@
                           tabindex="4"
                         /><a
                             id="swap_s_and_e"
-                            href=""
+                            href="#swap-start-and-end"
                             onclick="return false;"
                             title="Swap start and end addresses"
                             tabindex="5"
@@ -176,45 +178,19 @@
 
             <td>
               <div id="status">
-                <% c.status or
-                  'Welcome to the <a href="http://byCycle.org/">byCycle</a> bicycle trip planner.'
-                %>
+% if c.status:
+                <% c.status %>
+% else:
+                Welcome to the
+                <a href="http://byCycle.org/" title="byCycle Home Page"
+                   >byCycle</a> bicycle trip planner.
+% #if
               </div>
             </td>
 
 
             <td>
               <div id="links">
-                <!-- Region -->
-                <span id="regions_container">
-                  <b>Region:</b>
-                  <span id="active_region"><% region %></span>
-                  <a id="change_region_link" href="#change-region"
-                     onclick="return false;">change</a>
-                  <div id="regions_window" class="window"
-                       style="display: none;">
-                    <div class="title_bar">
-                      <table>
-                        <tbody>
-                          <tr>
-                            <td class="l">Change Region</td>
-                            <td class="r">
-                              <a class="button" href="#cancel-change-region"
-                                 onclick="Element.hide('regions_window'); return false;"
-                                 >X</a>
-                            </td>
-                          </tr>
-                        </tbody>
-                      </table>
-                    </div>
-                    <div class="content_pane">
-                      <!-- Render a partial, so to speak. -->
-                      <& /region/_regions_form.myt &>
-                    </div>
-                  </div>
-                </span>
-                <!-- End Region -->
-                |
                 <a id="bookmark" href="<% h.url_for('/') %>"
                    onclick="return false;"
                    title="Link to the current result &amp; view"
@@ -247,7 +223,7 @@
 
 
             <td>
-              <!-- Display Area -->
+              <!-- Display Panel -->
               <div id="display">
                 <div id="spinner" style="display: none;">
                   <img src="<% h.url_for('/images/spinner.gif') %>"
@@ -267,7 +243,10 @@
                     If you find this application useful or would like to
                     contribute to its improvement, please consider
                     <a href="http://bycycle.org/support.html#donate"
-                       target="_new">donating</a>. Any amount helps.
+                       title="Donate"
+                       target="_new"
+                       >donating</a>.
+                    Any amount helps.
                   </p>
                   <p>
                     Users should independently verify all information presented
@@ -286,66 +265,96 @@
                   <% c.help %>
                 </div>
               </div>
-              <!-- End Display Area -->
+              <!-- End Display Panel -->
             </td>
 
 
             <td>
-              <div id="map_msg">
-                <noscript>
-                  <!-- TODO: Put a default static map here -->
-                  <p>
-                    To display a map here, JavaScript must be enabled in your
-                    browser. If you would like to view the map, please enable
-                    JavaScript and <a href="">try again</a>.
-                  </p>
-                  <p>
-                    Note that you must have a relatively recent browser for
-                    the map to display. We test in Mozilla Firefox 1.5 on
-                    Linux, Mac OS X, and Windows; Safari on Mac OS X; and
-                    Internet Explorer 6 on Windows. Although we try our
-                    best to make the Trip Planner work the same in all of
-                    these browsers, we do the most testing with Firefox, and
-                    as a result it is the best choice for running the Trip
-                    Planner. Firefox is a great browser and we recommned
-                    <a href="http://www.mozilla.com/">trying it</a> if you
-                    haven't already.
-                  </p>
-                  <p>
-                    If you don't have one of the above browsers, you may want
-                    to leave JavaScript turned off. On the other hand, if you
-                    feel like experimenting, you can
-                    <a href="http://bycycle.org/contact.html">let us know</a>
-                    if the trip planner does or does not work in other
-                    browsers.
-                  </p>
-                </noscript>
-              </div>
+              <div id="map_container">
+                <div id="map_msg">
+                  <noscript>
+                    <!-- TODO: Put a non-JS map here (Yahoo?) -->
+                    <p>
+                      To display a map here, JavaScript must be enabled in your
+                      browser. If you would like to view the map, please enable
+                      JavaScript and <a href="">try again</a>.
+                    </p>
+                    <p>
+                      Note that you must have a relatively recent browser for
+                      the map to display. We test in Mozilla Firefox 1.5 on
+                      Linux, Mac OS X, and Windows; Safari on Mac OS X; and
+                      Internet Explorer 6 on Windows. Although we try our
+                      best to make the Trip Planner work the same in all of
+                      these browsers, we do the most testing with Firefox, and
+                      as a result it is the best choice for running the Trip
+                      Planner. Firefox is a great browser and we recommned
+                      <a href="http://www.mozilla.com/">trying it</a> if you
+                      haven't already.
+                    </p>
+                    <p>
+                      If you don't have one of the above browsers, you may want
+                      to leave JavaScript turned off. On the other hand, if you
+                      feel like experimenting, you can
+                      <a href="http://bycycle.org/contact.html">let us know</a>
+                      if the trip planner does or does not work in other
+                      browsers.
+                    </p>
+                  </noscript>
+                </div>
 
-              <div id="map_menu"><% map_menu %></div>
+                <div id="map_menu">
+                  <!-- Region -->
+                  <span id="regions_container">
+                    <a id="change_region_link"
+                       href="#change-region"
+                       title="Change region"
+                       onclick="Element.show('regions_window'); return false;"
+                       >Region</a>:
 
-              <!-- Map -->
-              <div id="map" style="display: none;"></div>
-              <!-- End Map -->
+                    <span id="active_region"><% region %></span>
 
-              <div id="center_marker" style="display: none;" width="0" height="0">
-                <div class="info_win">
-                  <p>
-                    <a href="#find-address-at-center"
-                       onclick="byCycle.UI.findAddressAtCenter(); return false;"
-                       >Find address of closest intersection</a>
-                  </p>
+                    <& /widgets/window.myt, id='regions_window',
+                                            title='Change Region',
+                                            display='none', toggleable=True,
+                                            content=m.scomp('/region/_regions_form.myt') &>
+                  </span>
+                  <!-- End Region -->
+                   |
+                  <a href="#find-address-at-center"
+                     title="Find address at center of map (red dot)"
+                     onclick="byCycle.UI.findAddressAtCenter(); return false;"
+                     >Find Address at Center</a>
+                   |
+                  <a href="#clear-map-and-results"
+                     title="Clear all results and map"
+                     onclick="byCycle.UI.clearResults(); return false;"
+                     >Clear All...</a>
+                </div>
 
-                  <p>
-                    Set as
-                    <a href="#set-as-start"
-                       onclick="byCycle.UI.s_el.value = byCycle.UI.map.getCenterString(); return false;"
-                       ><i>start</i></a> or
-                    <a href="#set-as-end"
-                       onclick="byCycle.UI.e_el.value = byCycle.UI.map.getCenterString(); return false;"
-                       ><i>end</i></a>
-                    address for route
-                  </p>
+                <!-- Map -->
+                <div id="map" style="display: none;"></div>
+                <!-- End Map -->
+
+                <div id="center_marker" style="display: none;" width="0" height="0">
+                  <div class="info_win">
+                    <p>
+                      <a href="#find-address-at-center"
+                         title="Find address at center of map (red dot)"
+                         onclick="byCycle.UI.findAddressAtCenter(); return false;"
+                         >Find address of closest intersection</a>
+                    </p>
+
+                    <p>
+                      Set as
+                      <a href="#set-as-start"
+                         onclick="byCycle.UI.s_el.value = byCycle.UI.map.getCenterString(); return false;"
+                         ><i>start</i></a> or
+                      <a href="#set-as-end"
+                         onclick="byCycle.UI.e_el.value = byCycle.UI.map.getCenterString(); return false;"
+                         ><i>end</i></a>
+                      address for route
+                    </p>
+                  </div>
                 </div>
               </div>
             </td>
@@ -353,44 +362,10 @@
 
             <td>
               <!-- Google Ads -->
-              <div id="ads" class="window" style="display: none;">
-                <div class="title_bar">
-                  <table>
-                    <tbody>
-                      <tr>
-                        <td class="l"></td>
-                        <td class="r">
-                          <a id="hide_ads" class="button"
-                             href="#hide-ads"
-                             onclick="return false;" title="Hide ads"
-                             >X</a>
-                        </td>
-                      </tr>
-                    </tbody>
-                  </table>
-                </div>
-                <div class="content_pane">
-                  <script type="text/javascript">
-                    google_ad_client = 'pub-6971619329897557';
-                    google_ad_width = 120;
-                    google_ad_height = 600;
-                    google_ad_format = '120x600_as';
-                    google_ad_type = 'text_image';
-                    google_ad_channel = '';
-                    google_color_border = 'FFFFFF'; //99b3cc'; //A7CC95';
-                    google_color_bg = 'FFFFFF';
-                    google_color_link = '000000';
-                    google_color_text = '000000';
-                    google_color_url = '4466DD';
-                  </script>
-                  <script type="text/javascript">
-                    if (!debug) {
-                      writeScript('http://pagead2.googlesyndication.com/pagead/show_ads.js');
-                    }
-                  </script>
-                </div>
-              </div>
-              <!-- End Google Ads -->
+              <%python> _window_content = h.javascript_include_tag('/js/ads.js') </%python>
+              <& /widgets/window.myt, id='ads', title='', display='none',
+                                      close_handler='byCycle.UI.hideAds()',
+                                      content=_window_content &>
             </td>
 
 
@@ -402,28 +377,10 @@
 
 
 % if g.debug:
-    <div id="debug_window" class="window" style="display: none;">
-      <div class="title_bar">
-        <table>
-          <tbody>
-            <tr>
-              <td class="l">Debug Log</td>
-              <td class="r">
-                <a class="button" href=""
-                   onclick="Element.toggle('debug'); return false;"
-                   title="Show/Hide">+/-</a>
-                <a class="button" href=""
-                   onclick="Element.hide('debug_window'); return false;"
-                   title="Close">X</a>
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-      <div id="debug" class="content_pane"
-           style="height: 300px; overflow: auto;">
-      </div>
-    </div>
+    <& /widgets/window.myt, id='debug_window', toggleable=True,
+                            closeable=False,
+                            title='Debug Log', display='none',
+                            content_style='height: 300px; overflow: auto;' &>
 % #if
 
 

@@ -34,11 +34,11 @@
 
 <%python>
     # Get layout component (region.myt)
-    comp = m.fetch_next()
+    base_comp = m.fetch_next()
     # Get region component (e.g., portlandor.myt)
-    subcomp = m.fetch_next()
+    region_comp = m.fetch_next()
     # Fill args dict by processing region component
-    m.scomp(subcomp, **m.request_args)
+    m.scomp(region_comp, **m.request_args)
     # Execute layout component, passing args
-    m.comp(comp, **args)
+    m.comp(base_comp, **args)
 </%python>

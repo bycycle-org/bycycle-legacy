@@ -34,7 +34,7 @@
     s_url_str = s.urlStr()
     e_url_str = e.urlStr()
     tab = '&nbsp;&nbsp;&nbsp;&nbsp;'
-    map_blowup_href = "javascript:void('Show map blowup')"
+    map_blowup_href = "#show-map-blowup"
     map_blowup_onclick = "byCycle.UI.map.showMapBlowup({x: %s, y: %s}); return false;"
 </%python>
 

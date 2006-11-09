@@ -108,8 +108,12 @@ class ServiceController(RestController):
                     c.errors = content
                 c.info = '\n'
                 c.help = None
-                controller = RegionController()
-                resp = controller.show(service.region.key, service.name)
+                region_controller = RegionController()
+                if service and service.region:
+                    region_key = service.region.key
+                else:
+                    region_key = 'all'
+                resp = region_controller.show(region_key, service.name)
                 resp.status_code = http_status
         return resp
 

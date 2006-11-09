@@ -9,9 +9,9 @@
       <% c.region_options %>
     </select>
   </div>
-  <div style="text-align: right;">
+  <div>
     <input type="submit" value="Go" />
     <input type="button" value="Cancel" 
-           onclick="hideElement('regions_window'); return false;" />
+           onclick="Element.hide('regions_window'); return false;" />
   </div>
 </form>
