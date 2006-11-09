@@ -24,7 +24,7 @@ byCycle.Map.google = {
     };
     var api_key = api_keys[byCycle.domain];
     if (api_key) {
-      writeScript(api_url + api_key);
+      byCycle.util.writeScript(api_url + api_key);
       byCycle.Map.google.api_loaded = true;
       byCycle.logDebug('Google Maps API Loaded');
     } else {
@@ -197,12 +197,14 @@ byCycle.Map.google.Map.prototype = Object.extend(new byCycle.Map.Map(), {
   },
 
   placeGeocodeMarker: function(point, node, icon) {
-	var marker = this.placeMarker(point, icon);
-	GEvent.addListener(marker, "click", function() {
-	  this.map.openInfoWindow(point, node);
-	});
+    var marker = this.placeMarker(point, icon);
+    var self = this;
+    var g_lat_lng = new GLatLng(point.y, point.x);
+    GEvent.addListener(marker, "click", function() {
+      self.map.openInfoWindow(g_lat_lng, node);
+    });
     this.setCenter(point, 14);
-	return marker;
+    return marker;
   },
   
   placeMarkers: function(points, icons) {
