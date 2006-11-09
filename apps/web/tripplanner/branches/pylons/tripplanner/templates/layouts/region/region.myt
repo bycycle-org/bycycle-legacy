@@ -28,8 +28,8 @@
     <!-- We want access to these JavaScripts during page load. Other JS imports
     at bottom of page. -->
     <% h.javascript_include_tag(builtins=True) %>
-    <% h.javascript_include_tag('/js/util.js') %>
     <% h.javascript_include_tag('/js/bycycle.js') %>
+    <% h.javascript_include_tag('/js/util.js') %>
   </head>
 
 
