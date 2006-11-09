@@ -295,7 +295,6 @@ class DB(object):
         t = meter.Timer()
         layer_edges = self.tables.layer_edges
         layer_nodes = self.tables.layer_nodes
-        self.turnSQLEchoOn()
 
         # Get the number of nodes
         print 'Fetching node count...'
