@@ -14,6 +14,7 @@
 
 """Geocode classes."""
 from cartography.proj import SpatialReference
+from urllib import quote_plus
 
 
 ###########################################################################
@@ -54,10 +55,14 @@ class Geocode(object):
 
     #----------------------------------------------------------------------
     def urlStr(self):
+        # TODO: should do s_addr = self.address.urlStr()
         s_addr = str(self.address).replace('\n', ', ')
+        # Build the "ID address" => num?, network ID, region key
         num = getattr(self.address, 'number', '')
-        id_addr = ('%s %s' % (num, self.network_id)).lstrip()
-        return ';'.join((s_addr, id_addr)).replace(' ', '+')
+        id_addr = ('%s-%s-%s' % (num, self.network_id, self.region.key))
+        id_addr = id_addr.lstrip('-')  # in case it's not postal
+        s = ';'.join((s_addr, id_addr))
+        return quote_plus(s)
 
     #----------------------------------------------------------------------
     def __repr__(self):

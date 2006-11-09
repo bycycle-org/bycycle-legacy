@@ -18,7 +18,6 @@ from byCycle.services.geocode import *
 from byCycle.model.geocode import Geocode, PostalGeocode, IntersectionGeocode
 
 
-service = Service(region='portlandor')
 quiet = 1
 if not quiet:
     timer = meter.Timer()
@@ -26,11 +25,13 @@ if not quiet:
 
 class TestPortlandOR(unittest.TestCase):
 
+    service = Service(region='portlandor')
+
     def _query(self, q):
         if not quiet:
             print '\n*****', q
             timer.start()
-        _geocode = service.query(q)
+        _geocode = self.service.query(q)
         self.assert_(isinstance(_geocode, Geocode))
         if not quiet:
             print timer.stop(), 'seconds\n'
@@ -41,12 +42,12 @@ class TestPortlandOR(unittest.TestCase):
 
     ### Edge
 
-    def test_EdgeAddress_(self):
-        q = '633 1651'
+    def test_EdgeAddress(self):
+        q = '633-11994'
         geocode = self._query(q)
 
     def test_EdgeAddress_BadID(self):
-        q = '633 16510'
+        q = '633-1651035434'
         self.assertRaises(AddressNotFoundError, self._query, q)
 
     ### Intersection

@@ -129,7 +129,7 @@ class TestPortlandOR(unittest.TestCase):
         result = select.execute()
         network_id = result.fetchone().id
 
-        q = '633 %s' % network_id
+        q = '633-%s' % network_id
         oAddr = self._query(q, region='portlandor')
         self.assert_(isinstance(oAddr, address.EdgeAddress))
         self.assert_(isinstance(oAddr, address.PostalAddress))
