@@ -282,6 +282,13 @@ hr
 
 /* Map */
 
+#map_menu
+{
+  border: 1px solid gray;
+  border-top: none;
+  padding: 4px;
+  }
+
 #map
 {
   background: #99b3cc;

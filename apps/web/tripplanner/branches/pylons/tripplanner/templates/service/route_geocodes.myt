@@ -17,6 +17,8 @@ import simplejson
 region_key = c.service.region.key
 multi_id = c.result_id
 json = c.json
+title = c.title
+classes = c.classes
 last_i = (len(oResult) - 1)
 order = {0: 'Start', last_i: 'End'}
 href_template = '/%s/route/%s' % (region_key, '%s')
@@ -35,20 +37,14 @@ first = True  # First in oResult having multiple matches
             <b>Choose %s Address</b>
         """ % (['none', 'block'][first], order.get(i, (i + 1))))
         for j, geocode in enumerate(geocodes):
-            oAddr = geocode.address
-            result_id = ('%.6f' % time.time()).replace('.', '')
-
             href = href_template % geocode.urlStr()
-            link = link_template % (href, i, '%s')
-
-            c.title = link % ('#%s' % (j + 1))
+            link = (link_template % (href.replace('%', '%%'), i, '%s'))
+            c.title = '#%s' % (j + 1)
             c.classes = ''  # Needed to override inherited c.classes == 'error'
-            c.result_id = result_id
+            c.result_id = ('%.6f' % time.time()).replace('.', '')
             c.json_id = '%s' % j
             c.json = simplejson.dumps(eval(repr(geocode)))
-
             extra = '<span> | %s</span>' % (link % 'Select')
-
             m.write(m.subexec('geocode.myt', oResult=geocode, extra_content=extra))
         m.write("""
         </div>
@@ -56,6 +52,9 @@ first = True  # First in oResult having multiple matches
         if first:
             first = False
     c.result_id = multi_id
+    c.toggleable = False
+    c.title = title
+    c.classes = classes
     c.json_id = ''
     c.json = json
     </%python>

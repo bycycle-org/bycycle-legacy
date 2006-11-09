@@ -1,23 +1,15 @@
-% top_level = 'parentNode.parentNode.parentNode.parentNode.parentNode.parentNode'
-<div id="result_<% c.result_id %>" class="window result <% c.classes %>">
-  <div class="title_bar">
-    <table>
-      <tbody>
-        <tr>
-          <td class="l title"><b><% c.title %></b></td>
-          <td class="r">
-            <a class="button"
-               href=""
-               title="Close"
-               onclick="byCycle.UI.removeResult(this.<% top_level %>); return false;"
-               >X</a>
-          </td>
-        </tr>
-      </tbody>
-    </table>
-  </div>
-  <div class="content_pane">
-    <% m.call_next() %>
-    <input class="json" id='json<% c.json_id %>' type="hidden" value='<% c.json %>' />
-  </div>
-</div>
+% window = 'parentNode.parentNode.parentNode.parentNode.parentNode.parentNode'
+% json = """<input class="json" id="json%s" type="hidden" value='%s' />""" % (c.json_id, c.json)
+% result_comp = m.fetch_next()
+% content = '%s\n%s' % (m.scomp(result_comp, **ARGS), json)
+% toggle_handler = """Element.toggle(document.getElementsByClassName('content_pane', %s)[0])""" % window
+% close_handler = """byCycle.UI.removeResult(this.%s)""" % window
+% toggleable = (c.toggleable == '' or c.toggleable)
+
+<& /widgets/window.myt, id=c.result_id,
+                        window_classes='result %s' % c.classes,
+                        toggleable=toggleable,
+                        title=c.title,
+                        toggle_handler=toggle_handler,
+                        close_handler=close_handler,
+                        content=content &>

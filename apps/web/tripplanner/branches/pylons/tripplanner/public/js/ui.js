@@ -95,6 +95,7 @@ byCycle.UI = (function() {
       var s = self.service;
       s = (s == 'route' ? s : 'query');
       var _tmp = new self.TabPane('input', s + '_label');
+      self.focusServiceElement(s);
       self.setEventHandlers();
       self.map = new self.map_type.Map(self, self.map_el);
       Element.hide('map_msg');
@@ -118,8 +119,7 @@ byCycle.UI = (function() {
       Event.observe(window, 'resize', self.onResize);
       Event.observe(document.body, 'unload', self.unload);
       Event.observe('swap_s_and_e', 'click', self.swapStartAndEnd);
-      Event.observe('change_region_link', 'click', self.showRegionSelectBox);
-      Event.observe('hide_ads', 'click', self.hideAds);
+      //Event.observe('hide_ads', 'click', self.hideAds);
       //Event.observe('map_find_at_center', 'click', self.findAddressAtCenter)
       //Event.observe('map_clear', 'click', self.clearMap);
     },
@@ -184,7 +184,7 @@ byCycle.UI = (function() {
       var selected = select_link.parentNode.parentNode.parentNode;
 
       // Change the title of the selected geocode's window to "Geocode"
-      var el = document.getElementsByClassName('title', selected)[0];
+      var el = document.getElementsByClassName('window_title', selected)[0];
       Element.update(el, 'Geocode');
 
       // Remove the selected geocode's "Select" link
@@ -241,12 +241,22 @@ byCycle.UI = (function() {
         self.results[result_el.id].remove();
       } catch (e) {
         if (e instanceof TypeError) {
-          // result_el wasn't registered as a Result (hopefully intentionally)
+          // result_el wasn't registered as a `Result` (hopefully intentionally)
           Element.remove(result_el);
         } else {
           byCycle.logDebug('Unhandle Exception in byCycle.UI.removeResult: ',
                            e.name, e.message);
         }
+      }
+    },
+
+    clearResults: function() {
+      if (!confirm('Remove all of your results and clear the map?')) {
+        return;
+      }
+      self.map.clear();
+      for (var result_id in self.results) {
+        self.results[result_id].remove();
       }
     },
 
@@ -270,7 +280,7 @@ byCycle.UI = (function() {
           query_args.pref = pref;
         }
       }
-      var url = ['http://', byCycle.domain, byCycle.prefix, 
+      var url = ['http://', byCycle.domain, byCycle.prefix,
                  path_info.join('/')].join('');
       var query_string = query_args.toQueryString();
       if (query_string) {
@@ -293,6 +303,10 @@ byCycle.UI = (function() {
       self.e_el.value = s;
     },
 
+    focusServiceElement: function(service) {
+      service == 'route' ? self.s_el.focus() : self.q_el.focus();
+    },
+
     /** Map **/
 
     findAddressAtCenter: function() {
@@ -301,25 +315,7 @@ byCycle.UI = (function() {
       new byCycle.UI.GeocodeQuery(null).run();
     },
 
-    clearMap: function() {
-      self.map.clear();
-      var regions = byCycle.regions;
-      for (var reg_key in regions) {
-        reg = regions[reg_key];
-        if (!reg.all) {
-          self._initRegion(reg);
-          self._showRegionOverlays(reg);
-        }
-      }
-      // Just shows the red dot???
-      //self.map.setCenter(self.map.getCenter());
-    },
-
     /** Regions **/
-
-    showRegionSelectBox: function() {
-      Element.show('regions_window');
-    },
 
     setRegionFromSelectBox: function() {
       var opts = self.region_el.options;
@@ -421,7 +417,6 @@ byCycle.UI.Query.prototype = {
       this.updater();
       this.after();
     } catch (e) {
-      throw e;
       this.showErrors(e.message);
     }
   },
@@ -598,10 +593,17 @@ byCycle.UI.GeocodeQuery.prototype = Object.extend(new byCycle.UI.Query(), {
 
   callback: function(result) {
     byCycle.logDebug('Entered geocodeCallback...');
-    var map = this.ui.map;
-    var marker = map.placeMarker(result.data.point);
-    result.overlays.push(marker);
-    map.setCenter(result.data.point, 14);
+	// Get result content pane and create a new node from it
+	var cp = document.getElementsByClassName('content_pane', result.id)[0];
+	var cp_copy = cp.cloneNode(true);
+	cp_copy.id = cp_copy.id + '_marker';
+	var node = Builder.node('div', [cp_copy]);
+	// Remove the "show on map" link
+	var show_on_map = document.getElementsByClassName('show_on_map', node)[0];
+	Element.remove(show_on_map);
+	// Put marker on map, using the new node as the info window content
+	var marker = this.ui.map.placeGeocodeMarker(result.data.point, node);
+	result.overlays.push(marker);
     byCycle.logDebug('Left geocodeCallback.');
   }
 });
@@ -614,6 +616,7 @@ byCycle.UI.RouteQuery = function(form, input) {
   byCycle.UI.Query.call(this, form, input);
   this.ui.service = 'route';
   this.updater_message = 'Finding route...';
+  byCycle.UI.TabPane.prototype.selectTab({target: $('route_label')});
 };
 
 byCycle.UI.RouteQuery.prototype = Object.extend(new byCycle.UI.Query(), {
@@ -736,6 +739,8 @@ byCycle.UI.TabPane.prototype.selectTab = function(event) {
   class_names.add('selected');
   Element.show(tab.content);
   self.selected_id = link.id;
+  // Focus
+  byCycle.UI.focusServiceElement(link.name);
 };
 
 

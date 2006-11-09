@@ -196,6 +196,15 @@ byCycle.Map.google.Map.prototype = Object.extend(new byCycle.Map.Map(), {
     return marker;
   },
 
+  placeGeocodeMarker: function(point, node, icon) {
+	var marker = this.placeMarker(point, icon);
+	GEvent.addListener(marker, "click", function() {
+	  this.map.openInfoWindow(point, node);
+	});
+    this.setCenter(point, 14);
+	return marker;
+  },
+  
   placeMarkers: function(points, icons) {
     var markers = [];
     var len = points.length;

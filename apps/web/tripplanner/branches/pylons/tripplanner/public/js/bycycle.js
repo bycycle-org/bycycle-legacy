@@ -66,8 +66,7 @@ var byCycle = (function() {
       div.style.backgroundColor = colors[index % 2];
       index += 1;
       Element.update(div, (result.join(' ') + '<br/>'));
-      var d = $('debug');
-      d.appendChild(div);
+      $('debug_window_content').appendChild(div);
     }
   };
 

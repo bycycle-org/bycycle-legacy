@@ -45,7 +45,7 @@ byCycle.Map.Map.prototype = {
                            '#' + (this.put_count = (this.put_count || 1)) + 
                            ' ' + content);
     this.put_count += 1;                 
-    this.map.insertBefore(div, this.map.firstChild);
+    this.map.appendChild(div);
     return div;
   },
   
@@ -135,6 +135,24 @@ byCycle.Map.Map.prototype = {
     return this.addOverlay(marker);
   },
 
+  placeGeocodeMarker: function(point, node, icon) {
+    var marker = {
+      type: 'Geocode Marker', 
+      x: point.x, 
+      y: point.y, 
+      toString: function() {
+        return [this.type, ' at ', this.x, ', ', this.y, ' [', node.innerHTML, ']'].join('');
+      }
+    };
+    this.setCenter(point, 14);
+    return this.addOverlay(marker);
+	
+	
+	GEvent.addListener(geocode.marker, "click", function() {
+	  map.openInfoWindowHtml(point, html);
+	});
+  },
+		  
   /**
    * Put some markers on the map
    * @param points An array of points
