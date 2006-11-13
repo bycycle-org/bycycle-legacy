@@ -19,51 +19,6 @@ from byCycle.model import tmode
 # Preferences
 FASTER, SHORTER, FLATTER, SAFER, DEFAULT = range(5)
 
-# bikemode "x" means avoid street
-# bikemode "n" means normal street (i.e., no bikemode)
-mu = None
-mm = None
-lt = None
-mt = None
-ht = None
-ca = None    # bikemode "ca" OR primary road (1300)
-cca = None   # state highway
-ccca = None  # freeway
-xxx = 1000   # avoid
-# bike lane
-blt = None
-bmt = None
-bht = None
-bca = None
-bcca = None
-bccca = None 
-# no bike mode
-no_bm_lt = None
-no_bm_mt = None
-no_bm_ht = None
-no_bm_ca = None
-no_bm_cca = None
-no_bm_ccca = None
-
-# Edge attribute indexes
-edge_attrs_index = None
-length_index = None
-code_index = None
-bikemode_index = None
-abs_slp_index = None
-up_frac_index = None
-node_f_id_index = None
-street_name_id_index = None
-
-# Constant to decode floats that were encoded as ints. For example, start with
-# 0.123, encode to 123000, use float_decode to get back 0.123
-float_decode = None
-
-# Bike Power! Has to do with some fancy pants equations.
-pct_slopes = None
-mph_up = None
-mph_down = None
-
 
 class TravelMode(tmode.TravelMode):
     """Bicycle travel mode for the Portland, OR, region."""
@@ -72,14 +27,7 @@ class TravelMode(tmode.TravelMode):
         """
 
         ``pref`` `string` -- User's simple preference option. Can be empty or
-        one of default, flatter, safer, shorter, or faster.
-
-        TODO
-        ----
-
-        - This is kind of ugly. The current defense for all these globals is
-        that getEdgeWeight is potentially called for each edge and we want to
-        avoid object accesses.
+        one of "default", "flatter", "safer", "shorter", or "faster".
 
         """
         tmode.TravelMode.__init__(self)
@@ -106,33 +54,29 @@ class TravelMode(tmode.TravelMode):
         street_name_id_index = edge_attrs_index['street_name_id']
 
         pref = (not bool(pref)) or eval(pref.upper())
-        global mu, mm, lt, mt, ht, ca, cca, ccca, xxx
+        global mu, mm, lt, mt, ht, ca, cca, ccca
         global blt, bmt, bht, bca, bcca, bccca
         global no_bm_lt, no_bm_mt, no_bm_ht, no_bm_ca, no_bm_cca, no_bm_ccca
+        global xxx
+	xxx = 1000
         if pref == SAFER:
             mu = .85
             mm = .9
             lt = 1
             mt = 2
             ht = 4
-            ca = xxx
-            cca = xxx
-            ccca = xxx
+            ca = cca = ccca = xxx
             # bike lane
             blt = .75
             bmt = 1
             bht = 2
-            bca = xxx
-            bcca = xxx
-            bccca = xxx
+            bca = bcca = bccca = xxx
             # no bike mode
             mult = 3
             no_bm_lt = blt * mult
             no_bm_mt = bmt * mult
             no_bm_ht = bht * mult
-            no_bm_ca = xxx
-            no_bm_cca = xxx
-            no_bm_ccca = xxx
+            no_bm_ca = no_bm_cca = no_bm_ccca = xxx
         else:
             mult = 2
             mu = .85
