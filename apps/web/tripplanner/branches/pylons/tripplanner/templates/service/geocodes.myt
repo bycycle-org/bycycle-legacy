@@ -14,7 +14,7 @@
 <%python>
 import time
 import simplejson
-region_key = c.service.region.key
+region_key = c.region_key
 multi_id = c.result_id
 json = c.json
 title = c.title
@@ -35,7 +35,7 @@ link_template = '<a href="%s" onclick="%s">%s</a>' % ('%s', onclick, '%s')
         c.json_id = '%s' % i
         c.json = simplejson.dumps(eval(repr(geocode)))
         extra = '<span> | %s</span>' % (link % 'Select')
-        m.write(m.subexec('geocode.myt', oResult=geocode, extra_content=extra))
+        m.write(m.subexec('geocode.myt', oResult=geocode, extra_content=extra, set_as_s_or_e_display='none'))
     c.result_id = multi_id
     c.title = title
     c.toggleable = False
