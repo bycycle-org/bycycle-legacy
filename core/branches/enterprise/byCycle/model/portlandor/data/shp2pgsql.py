@@ -396,7 +396,14 @@ def shp2sql():
 
 
 def shp2db():
-    """Read shapefile into database table."""
+    """Read shapefile into database table (raw.region)."""
+    Q = 'CREATE SCHEMA raw'
+    try:
+        cursor.execute(Q)
+    except psycopg2.ProgrammingError:
+        connection.rollback()  # important!
+    else:
+        connection.commit()    
     raw_table.drop(checkfirst=True)
     system(sql2db_cmd)
     vacuum('raw.%s' % region)
