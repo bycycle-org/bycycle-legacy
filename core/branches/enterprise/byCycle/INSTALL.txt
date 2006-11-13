@@ -16,33 +16,45 @@ Changes
 
 - Migrated from MySQL to PostgreSQL
 - Using SQLAlchemy to interact with the database instead of using raw SQL
-- Using PostGIS to handle spatial stuff
+- Using PostGIS for storing and operating on spatial data
+- Using the PCL to manipulate geometries in Python
 - Moved services into classes that have a common base
 - Switched to a reStructuredText style of docstrings
 - Cleaned up the route service quite a bit
 - Added a unittest test suite for the route service
-- Created a route class
-- Removed support for WKT point address input (too complicated and not that
-useful)
+- Created a Route class
 
 
-Software Prerequisites
-======================
+Dependencies
+============
 
 There are few pieces of additional software necessary to run the byCycle
 system. All of these are free and available for just about any platform.
 
 Core Dependencies
 -----------------
-- Python 2.4.latest <http://www.python.org/>
-- PostgreSQL 8.1.latest <http://www.postgresql.org/>
-- PostGIS 1.1.latest <http://postgis.refractions.net/>
-- SQLAlchemy 0.2.8 <http://www.sqlalchemy.org/>
+- Python 2.4.x <http://www.python.org/>
+- PostgreSQL 8.1.x <http://www.postgresql.org/>
+- PostGIS 1.1.x <http://postgis.refractions.net/>
+
 - psycopg2 DBAPI module <http://initd.org/tracker/psycopg/wiki/PsycopgTwo>
+  easy_install -U psycopg2
+
+- SQLAlchemy (latest) <http://www.sqlalchemy.org/>
+  easy_install -U SQLAlchemy
+  
+- Python Cartographic Library - Core
+  - Depends on zope.interface 
+    (TODO: Find out how to install just zope.interface without all of zope)
+  svn co http://svn.gispython.org/gispy/PCL/trunk PCL
+  cd PCL/PCL-Core
+  python setup.py install
+
 
 Web Interface
 -------------
-- Pylons 0.9.latest <http://pylonshq.com/>
+- Pylons (latest) <http://pylonshq.com/>
+  easy_install -U Pylons
 
 Google Map
 ----------
@@ -55,9 +67,9 @@ Deployment
 - Apache 2.2.latest <http://httpd.apache.org/>
 - mod_python
 
-Other versions of the above software may work, but other combinations have not 
-been tested. In general, we are going to keep up with the latest stable 
-releases of all supporting software.
+Other combinations of the above software may work but have not been tested. In
+general, we are going to keep up with the latest stable releases of all
+supporting software.
 
 
 Installation
@@ -66,49 +78,6 @@ Installation
 
 Testing
 =======
-
-
-
-
-Placement of Files
-==================
-
-Unpack the byCycle package somewhere that's in your PYTHONPATH.
-
-Maybe the easiest way to do this is to unpack it under
-/path_to_python2.4_lib/site-packages. For example, we installed python2.4
-under /usr/local/ so our site-packages directory is
-/usr/local/lib/python2.4/site-packages. The other likely location is
-/usr/lib/python2.4/site-packages.
-
-For Windows, this will probably be C:\Python24\Lib\site-packages
-
-If you really wanted to, you could also unpack to some abitrary directory and
-then add that directory to your PYTHONPATH.
-
-Whatever you do, make sure that if you have multiple version of Python you are
-installing any and all related Python packages under the same version of
-Python. At the current time, what that means is, make sure PySQLite is
-installed under the same Python as the byCycle package.
-
-For the Web interface you can do one of two things:
-
-1) Leave the web files in the byCycle package and create a symbolic link from
-somewhere under your web tree to the web interface directory, like so:
-'ln -s /usr/local/lib/python2.4/site-packages/byCycle/tripplanner/ui/web/ /var/www/html/tripplanner'
-
-2) The other option is to copy the the web files into your web tree:
-'mkdir /var/www/html/tripplanner'
-'cp -R tripplanner/ui/web/* /var/www/html/tripplanner'
-'cp -R webservices /var/www/html/tripplanner'
-
-Personally, I would avoid option 2 if possible. On Windows, I have no idea how
-to make symbolic links or something equivalent, so option 2 is what I use if I
-happen to be working on Windows.
-
-At this point, you should be able to navigate to the appropriate URL in your
-web browser and view the interface, but you may not be able to find addresses
-or routes just yet...
 
 
 Data
