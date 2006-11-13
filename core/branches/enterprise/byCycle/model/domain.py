@@ -131,7 +131,7 @@ class Edge(object):
             else:
                 edge_len = max_addr - min_addr
                 dist_from_min_addr = num - min_addr
-                location = dist_from_min_addr / edge_len
+                location = float(dist_from_min_addr) / edge_len
 
         _c = self.c
 
@@ -144,7 +144,7 @@ class Edge(object):
         select_ = select([_f.label('wkb_point')], _c.id == self.id)
         result = select_.execute()
         wkb_point = result.fetchone().wkb_point
-        
+
         point = geometry.Geometry.fromWKB(wkb_point)
         return point, location
 
@@ -157,7 +157,7 @@ class Edge(object):
 
         """
         edge_f, edge_t = self.splitAtLocation(
-            geocode.location, node_id, edge_f_id, edge_t_id
+            geocode.xy, geocode.location, node_id, edge_f_id, edge_t_id
         )
         # address range
         num = geocode.address.number
@@ -175,10 +175,11 @@ class Edge(object):
         """
         point, location = self.getPointAndLocationOfNumber(num)
         return self.splitAtLocation(
-            location, node_id, edge_f_id, edge_t_id
+            point, location, node_id, edge_f_id, edge_t_id
         )
 
-    def splitAtLocation(self, location, node_id=-1, edge_f_id=-1, edge_t_id=-2):
+    def splitAtLocation(self, point, location, 
+                        node_id=-1, edge_f_id=-1, edge_t_id=-2):
         """Split this edge at ``location`` and return two new edges.
 
         The first edge is `node_f`=>``num``; the second is
@@ -199,20 +200,35 @@ class Edge(object):
         - Transfer geometry and attributes to two new edges
         - Return the  two new edges
 
+        TODO: Distribute ``geom`` attributes proportionately
+
         """
-        edge_f, edge_t = self.clone(), self.clone()
+        num_points = self.geom.numPoints()
+        points = [self.geom.pointN(i) for i in range(num_points)]
+        N = int(num_points * location) or 1
+        if N == num_points:
+            N -= 1
+        edge_f_points = points[:N] + [point]
+        edge_t_points = [point] + points[N:]
+        srs = self.geom.srs
+        edge_f_geom = geometry.LineString(points=edge_f_points, srs=srs)
+        edge_t_geom = geometry.LineString(points=edge_t_points, srs=srs)
 
-        # TODO: Distribute other attributes proportionately
-        #   - Geometry
+        edge_f = Edge(id=edge_f_id,
+                      node_f_id=self.node_f_id, node_t_id=node_id,
+                      street_name=self.street_name,
+                      geom=edge_f_geom)
+        edge_t = Edge(id=edge_t_id,
+                      node_f_id=node_id, node_t_id=self.node_t_id,
+                      street_name=self.street_name,
+                      geom=edge_t_geom)
 
-        length = len(self)
-        edge_f._length = length * location
-        edge_t._length = length - len(edge_f)
+        shared_node = Node(node_id, self.geom.pointN(N))
+        edge_f.node_f = Node(self.node_f_id, self.geom.startPoint())
+        edge_f.node_t = shared_node
+        edge_t.node_f = shared_node
+        edge_t.node_t = Node(self.node_t_id, self.geom.endPoint())
 
-        # fake segment IDs
-        edge_f.id, edge_t.id = edge_f_id, edge_t_id
-        # fake node ID
-        edge_f.node_t_id, edge_t.node_f_id = node_id, node_id
         return edge_f, edge_t
 
     def clone(self):

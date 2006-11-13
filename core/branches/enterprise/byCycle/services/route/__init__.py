@@ -440,26 +440,23 @@ class Service(services.Service):
         units = self.region.units
         distance = {units: None, 'blocks': None}
 
-        # Get intersections and edges along path
-        nodes = self.dbh.getNodesById(node_ids)
-        edges = self.dbh.getEdgesById(edge_ids)
+        # Get edges along path
+        edges = self.dbh.getEdgesById(*edge_ids)
 
         # Check if start and end are in edges
         edge_f_id = edge_ids[0]
         if edge_f_id in split_edges:
             # Start is in an edge
-            nodes = [start_node] + nodes
             edges = [split_edges[edge_f_id]] + edges
         edge_t_id = edge_ids[-1]
         if edge_t_id in split_edges:
             # End is in an edge
-            nodes.append(end_node)
             edges.append(split_edges[edge_t_id])
 
         # Get the actual edge lengths since modified weights might have been
         # used to find the path
         edge_lengths = [len(e) for e in edges]
-        total_length = reduce(lambda x, y: x + y, edge_lengths)
+        total_length = sum(edge_lengths)
         blocks = int(round(total_length / self.region.block_length))
         distance.update({units: total_length, 'blocks': blocks})
 
@@ -471,11 +468,11 @@ class Service(services.Service):
         bearings = []
         end_bearings = []
         linestring_points = []
-        for node_t, e in zip(nodes[1:], edges):
+        for node_t_id, e in zip(node_ids[1:], edges):
             geom = e.geom  # Current edge's linestring
             num_points = geom.numPoints()
             points = [geom.pointN(i) for i in range(num_points)]
-            if e.node_f_id == node_t.id:
+            if e.node_f_id == node_t_id:
                 # Moving to => from on arc; reverse geometry
                 points.reverse()
 
@@ -540,7 +537,9 @@ class Service(services.Service):
         directions_count = 0
         linestring_index = 0
         first = True
-        for node_t, e, length in zip(nodes[1:], edges, edge_lengths):
+        for node_t_id, e, length in zip(node_ids[1:], edges, edge_lengths):
+            node_t = [e.node_f, e.node_t][node_t_id == e.node_t.id]
+            
             street_name = street_names[edge_count]
             str_street_name = str(street_name)
 
@@ -600,7 +599,7 @@ class Service(services.Service):
             edge_count += 1
             linestring_index += e.geom.numPoints() - 1
 
-        return nodes, edges, directions, linestring, distance
+        return directions, linestring, distance
 
     #----------------------------------------------------------------------
     def _getNameAndType(self, street_name):
