@@ -11,8 +11,8 @@
 # in the top level of this distribution. This software is provided AS IS with
 # NO WARRANTY OF ANY KIND.
 
-
-"""Provides address normalization via the `query` method of the `Service` class.
+"""
+Provides address normalization via the `query` method of the `Service` class.
 
 Address normalization is the process of parsing a free form string supplied by
 a user and determining the parts of the address, such as the street direction
@@ -58,7 +58,8 @@ class Service(services.Service):
     def __init__(self, region=None, dbh=None):
         """
 
-        ``region`` `Region` | `string` -- `Region` or region key
+        ``region`` `Region` | `string`
+            `Region` or region key
 
         """
         services.Service.__init__(self, region=region)
@@ -77,7 +78,8 @@ class Service(services.Service):
         ``dbh`` `DB`
             See Service base class for details.
 
-        return `Address` -- `Address` object with normalized attributes
+        return `Address`
+            `Address` object with normalized attributes
 
         raise `InputError`
             - ``q`` is empty
@@ -94,7 +96,7 @@ class Service(services.Service):
         if not q:
             raise InputError(no_address_msg)
 
-        try: 
+        try:
             q, addr = q.split(';')
         except ValueError:
             addr = q
@@ -130,18 +132,7 @@ class Service(services.Service):
                 except IndexError:
                     raise InputError(no_region_msg)
             return address.NodeAddress(network_id, self.region.key)
-        
-        # Point?
-        try:
-            point_addr = address.PointAddress(q)
-        except ValueError:
-            pass
-        else:
-            if not self.region:
-                # TODO: Determine which region point is within or closest to
-                raise InputError(no_region_msg)
-            return point_addr
-            
+
         # Intersection?
         try:
             street_name1, street_name2 = self._getCrossStreets(q)
@@ -154,9 +145,11 @@ class Service(services.Service):
             parse_info2 = self._parse(street_name2)
             stname2, sttype2, place2, city_region2, zip_region2 = parse_info2
             try:
-                self._checkAndMaybeSetRegion(original_q, city_region1, zip_region1)
+                self._checkAndMaybeSetRegion(original_q, city_region1,
+                                             zip_region1)
             except InputError:
-                self._checkAndMaybeSetRegion(original_q, city_region2, zip_region2)
+                self._checkAndMaybeSetRegion(original_q, city_region2,
+                                             zip_region2)
             self._adjustName(stname1, sttype1)
             self._adjustName(stname2, sttype2)
             return address.IntersectionAddress(
@@ -176,9 +169,20 @@ class Service(services.Service):
             self._adjustName(stname, sttype)
             return address.PostalAddress(number, stname, place)
 
+        # Point?
+        try:
+            point_addr = address.PointAddress(q)
+        except ValueError:
+            pass
+        else:
+            if not self.region:
+                # TODO: Determine which region point is within or closest to
+                raise InputError(no_region_msg)
+            return point_addr
+
         if trying_id:
             return self.query(q)
-        
+
         # Raise an exception if we get here: address is unnormalizeable
         raise InputError(
             'We could not understand the address you entered, "%s".' %
@@ -194,12 +198,13 @@ class Service(services.Service):
         city & state OR zip code OR both.
 
         return
-            - `StreetName` -- Prefix, name, type, and suffix
-            - `string` -- Full street type, iff found, or None
-            - `Place` -- City name (but not city ID!), state ID (two letter
-            state abbreviation), state name, and zip code
-            - `string` -- Region key determined from city and state
-            - `string` -- region key determined from zip code
+            `StreetName` -- Prefix, name, type, and suffix
+            `string` -- Full street type (i.e., the unabbreviated version of
+                        the street type), iff found, or None
+            `Place` -- City name (but not city ID!), state ID (two letter
+                       state abbreviation), state name, and zip code
+            `string` -- Region key determined from city and state
+            `string` -- Region key determined from zip code
 
         TODO: For some cases, we could actually fill in more info. For
         example, if a zip code is given, we can fill in at least the state and
@@ -412,7 +417,7 @@ class Service(services.Service):
         cross streets separated by one of the symbols listed above.
 
         """
-        sRe = r'\s+and\s+|\s+at\s+|\s*[&@\+/\\]\s*'
+        sRe = r'\s+and\s+|\s+at\s+|\s*[&@\+/\\\|]\s*'
         oRe = re.compile(sRe, re.I)
         streets = re.split(oRe, sAddr)
         if (len(streets) > 1 and

@@ -11,8 +11,8 @@
 # in the top level of this distribution. This software is provided AS IS with
 # NO WARRANTY OF ANY KIND.
 
-
-"""Database initialization and handling.
+"""
+Database initialization and handling.
 
 TODO:
   - Use fancy-pants ORM (SQLAlchemy, for example) to create proper model/domain
@@ -33,7 +33,7 @@ import psycopg2.extensions
 from sqlalchemy.engine import create_engine
 from sqlalchemy.schema import BoundMetaData
 from sqlalchemy.sql import select
-from sqlalchemy.orm import create_session, mapper, relation
+from sqlalchemy.orm import create_session, mapper, relation, eagerload
 
 from byCycle import install_path
 from byCycle.lib import util
@@ -146,7 +146,7 @@ class DB(object):
                         primaryjoin=(
                             (nodes_c.id == edges_c.node_f_id) | 
                             (nodes_c.id == edges_c.node_t_id)
-                        )
+                        ),
                     )
                 }
             )
@@ -173,29 +173,36 @@ class DB(object):
                     'node_f': relation(
                         Node,
                         primaryjoin=edges_c.node_f_id == nodes_c.id,
+                        lazy=False,
                         ),
                     'node_t': relation(
                         Node,
                         primaryjoin=edges_c.node_t_id == nodes_c.id,
+                        lazy=False,
                         ),
                     'street_name': relation(
                         StreetName,
+                        lazy=False,
                         ),
                     'city_l': relation(
                         City,
                         primaryjoin=edges_c.city_l_id == cities.c.id,
+                        lazy=False,
                         ),
                     'city_r': relation(
                         City,
                         primaryjoin=edges_c.city_r_id == cities.c.id,
+                        lazy=False,
                         ),
                     'state_l': relation(
                         State,
                         primaryjoin=edges_c.state_l_id == states.c.id,
+                        lazy=False,
                         ),
                     'state_r': relation(
                         State,
                         primaryjoin=edges_c.state_r_id == states.c.id,
+                        lazy=False,
                         ),
                 }
             )
@@ -207,42 +214,25 @@ class DB(object):
                 getattr(self, mapper_name)
             except AttributeError:
                 setattr(self, mapper_name, _ms[name])
-
-    ### Utility Methods
-
-    def turnSQLEchoOff(self):
-        """Turn off echoing of SQL statements."""
-        engine.echo = False
-
-    def turnSQLEchoOn(self):
-        """Turn on echoing of SQL statements."""
-        engine.echo = True
-
-    def vacuum():
-        """Vacuum all tables."""
-        self.connection.set_isolation_level(0)
-        self.cursor.execute('VACUUM FULL ANALYZE')
-        self.connection.set_isolation_level(2)
-
+    
     ### Node Methods
 
-    def getNodesById(self, ids):
+    def getNodesById(self, *ids):
         """Get nodes with specified IDs.
 
-        ``id`` `list` | `int` -- A `list` of node IDs or a single ID
+        ``ids`` One or more node IDs
 
-        return `Session`, `list`
-            The `Session` we're fetching the nodes within and a `list` of
-            `Node`s
+        return (`Session`, `list`) The `Session` we're fetching the nodes
+        within and a `list` of `Node`s
 
         """
         return self.getById(
-            ids, self.layer_nodes_mapper, self.tables.layer_nodes
+            self.layer_nodes_mapper, self.tables.layer_nodes, *ids
         )
         
     ### Edge Methods
 
-    def getEdgesById(self, ids, session=None):
+    def getEdgesById(self, *ids):
         """Get edges with specified IDs.
 
         ``id`` `list` | `int` -- A `list` of edges IDs or a single ID
@@ -253,7 +243,7 @@ class DB(object):
 
         """
         return self.getById(
-            ids, self.layer_edges_mapper, self.tables.layer_edges
+            self.layer_edges_mapper, self.tables.layer_edges, *ids
         )
     
     ### Adjacency Matrix Methods
@@ -309,6 +299,11 @@ class DB(object):
         if len(self.region.edge_attrs) > 1:
             cols += self.region.edge_attrs[1:]
         select_ = select(cols, engine=self.engine, from_obj=[layer_edges])
+        code = layer_edges.c.code
+        select_.append_whereclause(
+            ((code >= 1200) & (code < 1600)) |
+            ((code >= 3200) & (code < 3300))            
+        )
         result = select_.execute()
         num_edges = result.rowcount
         print 'Took %s' % t.stop()
@@ -369,21 +364,15 @@ class DB(object):
         dumpfile.close()
 
     ### Utility Methods
-
-    def getById(self, ids, mapper, table):
-        """Get objects from ``table`` using mapper and order them by ``ids``.
+    
+    def getById(self, mapper, table, *ids):
+        """Get objects from ``table`` using ``mapper`` and order by ``ids``.
         
-        ``ids`` `list` | `int` -- A list of row IDs or a single ID
-        ``mapper`` -- DB to object mapper
-        ``table`` -- Table to fetch from
+        ``ids`` One or more row IDs
+        ``mapper`` DB to object mapper
+        ``table`` Table to fetch from
         
         """
-        try: 
-            i = int(ids)
-        except: 
-            pass
-        else: 
-            ids = [i]
         query = self.session.query(mapper)
         objects = query.select(table.c.id.in_(*ids))
         objects_by_id = dict(zip([object.id for object in objects], objects))
@@ -394,7 +383,25 @@ class DB(object):
             except KeyError:
                 # TODO: Should we insert None instead???
                 pass
-        return ordered_objects    
+        return ordered_objects   
+    
+    def turnSQLEchoOff(self):
+        """Turn off echoing of SQL statements."""
+        engine.echo = False
+
+    def turnSQLEchoOn(self):
+        """Turn on echoing of SQL statements."""
+        engine.echo = True
+
+    def vacuum(self, *tables):
+        """Vacuum ``tables`` or all tables if ``tables`` not given."""
+        connection.set_isolation_level(0)
+        if not tables:
+            cursor.execute('VACUUM FULL ANALYZE')
+        else:
+            for table in tables:
+                cursor.execute('VACUUM FULL ANALYZE %s' % table)            
+        connection.set_isolation_level(2)
     
     def encodeFloat(self, f):
         """Encode the float ``f`` as an integer."""
@@ -404,137 +411,8 @@ class DB(object):
         """Decode the int ``i`` back to its original float value."""
         return i * float_decode
 
-
-if __name__ == "__main______________________":
-    from byCycle.model import portlandor
-    r = portlandor.Region()
-    db = DB(r)
-    ids = [1, 6, 245, 1002, 2050, 10004, 10000000]
-    session, objects = db.getEdgesById(*[ids])
-    for s in objects:
-        print s
-        print s.node_f, s.node_t
-        print
-    session.close()
-    # Nodes
-    ids = [1, 6, 245, 1002, 2050, 10004, 10000000]
-    session, objects = db.getNodesById(*[ids])
-    for o in objects:
-        print o
-        print
-    session.close()
-
-if __name__ == '__main__':
-    from byCycle.lib import meter
-    from byCycle.model import portlandor
-    r = portlandor.Region()
-    db = DB(r)
-    t = meter.Timer()
-    G = db.getAdjacencyMatrix(force_new=1)
-    print 'Time to get G: ', t.stop()
-    print 'Number of streets in G:', len(G['edges'])
-    print 'Number of nodes in G:', len(G['nodes'])
-    print r.edge_attrs
-    item = G['edges'].popitem()
-    print item
-    while item[1][1] is None:
-        item = G['edges'].popitem()
-    print item
-
-
-'''
-    ### Experimental
-
-    def createAdjacencyMatrixListType(self):
-        """Create this region's adjacency matrix, serialize it, and return it.
-
-        Build a matrix suitable for use with the route service. The structure
-        of the matrix is defined by/in the sssp module of the route service.
-
-        Return `list`
-            Adjacency matrix for a given region. Instead of explicit IDs, list
-            indices are used as the node and edge IDs.
-            Matrix: [[Nodes], [streets]]
-            Nodes: [[v, e], [v, e], ...], [[], [], ...], ...
-            streets: [[attrs], [attrs], ...]
-
-        """
-        from byCycle.lib import gis, meter
-
-        timer = meter.Timer()
-        tables = self.tables
-
-        # Get the number of nodes
-        Q = 'SELECT COUNT(*) FROM %s' % tables.layer_nodes
-        self.execute(Q)
-        num_nodes = self.fetchRow()[0]
-
-        # Get the street attributes
-        timer.start()
-        print 'Fetching edge attributes...'
-        Q = 'SELECT id, node_f_id, node_t_id, one_way, ' \
-            '%s, ' \
-            'AsText(geom) AS wkt_geometry ' \
-            'FROM %s ' \
-            'ORDER BY id' % \
-            (', '.join(self.edge_attrs[1:]), tables.layer_edges)
-        print Q
-        self.executeDict(Q)
-        rows = self.fetchAllDict()
-        num_edges = len(rows)
-        print 'Took %s' % timer.stop()
-
-        print 'Number of streets: %s' % num_edges
-        print 'Number of nodes: %s' % num_nodes
-
-        G = ([[] for i in range(num_nodes+1)],
-             [[] for i in range(num_edges+1)])
-        nodes = G[0]
-        streets = G[1]
-
-        print 'Creating adjacency matrix...'
-        meter = meter.Meter(num_items=num_edges, start_now=True)
-        for i, row in enumerate(rows):
-            self._adjustRowForMatrix(self, row)
-
-            ix = int(row.id)
-            node_f_id = int(row.node_f_id)
-            node_t_id = int(row.node_t_id)
-
-            # 0 => no travel in either direction
-            # 1 => travel FT only
-            # 2 => travel TF only
-            # 3 => travel in both directions
-            one_way = row.one_way
-            ft = one_way & 1
-            tf = one_way & 2
-
-            linestring = importWktGeometry(row.wkt_geometry)
-            length = getLengthOfLineString(linestring)
-            length = int(math.floor(length * self.int_encode))
-            row.length = length
-
-            attrs = [row[a] for a in self.edge_attrs]
-            for i, a in enumerate(attrs):
-                if isinstance(a, long):
-                    attrs[i] = int(attrs[i])
-            streets[ix] = tuple(attrs)
-
-            if ft:
-                nodes[node_f_id].append((node_t_id, ix))
-            if tf:
-                nodes[node_t_id].append((node_f_id, ix))
-
-            meter.update(i+1)
-
-        nodes = [tuple(v_list) or None for v_list in nodes]
-        streets = [attrs or None for attrs in streets]
-        G = tuple(G)
-
-        timer.start()
-        print '\nSaving adjacency matrix...'
-        self._saveMatrix(G)
-        self.region.G = G
-        print 'Took %s' % timer.stop()
-        return G
-'''
+    def __del__(self):
+        try:
+            self.session.close()
+        except:
+            pass

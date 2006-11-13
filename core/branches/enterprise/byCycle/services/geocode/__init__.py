@@ -11,8 +11,8 @@
 # in the top level of this distribution. This software is provided AS IS with
 # NO WARRANTY OF ANY KIND.
 
-
-"""Provides geocoding via the `query` method of the `Service` class.
+"""
+Provides geocoding via the `query` method of the `Service` class.
 
 Geocoding is the process of determining a location on earth associated with a
 an address (or other feature). This service also determines which network
@@ -247,6 +247,7 @@ class Service(services.Service):
                 for row in result:
                     node_ids[row.node_f_id] = 1
                     node_ids[row.node_t_id] = 1
+            result.close()
             return node_ids
 
         ids_A = getNodeIDs(oAddr.street_name1, oAddr.place1)
@@ -422,7 +423,7 @@ class Service(services.Service):
 
         return `Node` -- A single `Node` object.
 
-        raise `InvalidRequestError` -- If there is not exactly one row
+        raise `AddressNotFoundError` -- If there is not exactly one row
         returned by the SELECT, this will be raised. Note that this could
         happend if there are 0 or more than 1 rows. That's why the SELECT
         should only be able to return 1 one row maximum, either by using
@@ -435,9 +436,3 @@ class Service(services.Service):
             return query.selectone(select_)
         except InvalidRequestError:
             raise AddressNotFoundError
-
-
-if __name__ == '__main__':
-    pass
-    #g = get('633 n alberta', region='portlandor')
-    #print g

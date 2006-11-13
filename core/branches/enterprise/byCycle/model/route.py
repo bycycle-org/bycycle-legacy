@@ -25,13 +25,10 @@ class Route(object):
     def __init__(self,
                  region,
                  start, end,
-                 nodes, edges,
                  directions, linestring, distance):
         self.region = region
         self.start = start
         self.end = end
-        self.nodes = nodes
-        self.edges = edges
         self.directions = directions
         self.distance = distance
 

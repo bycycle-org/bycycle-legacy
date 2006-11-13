@@ -1,12 +1,21 @@
 #!/usr/bin/env python
-#$Id$
-"""Command-line interface to the byCycle library."""
+# $Id$
+# Created: 2006-09-26
+
+"""
+Command-line interface to the byCycle library.
+
+"""
 import os
 def __getbyCycleImportPath(level):
     """Get path to dir containing the byCycle package this module is part of.
     
     ``level`` `int`
         How many levels up the dir containing the package is.
+        
+    TODO: In Python 2.5 I think this just becomes 
+          "from ...byCycle.model import <stuff>" or maybe
+          "from ..model import <stuff>"
     
     """
     path = os.path.abspath(__file__)
