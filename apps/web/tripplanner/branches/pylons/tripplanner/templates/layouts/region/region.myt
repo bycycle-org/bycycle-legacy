@@ -271,6 +271,35 @@
 
             <td>
               <div id="map_container">
+                <div id="map_menu">
+                  <!-- Region -->
+                  <span id="regions_container">
+                    <a id="change_region_link"
+                       href="#change-region"
+                       title="Change region"
+                       onclick="Element.show('regions_window'); return false;"
+                       >Region</a>:
+
+                    <span id="active_region"><% region %></span>
+
+                    <& /widgets/window.myt, id='regions_window',
+                                            title='Change Region',
+                                            display='none', toggleable=True,
+                                            content=m.scomp('/region/_regions_form.myt') &>
+                  </span>
+                  <!-- End Region -->
+                   |
+                  <a href="#find-address-at-center"
+                     title="Find address at center of map (red dot)"
+                     onclick="byCycle.UI.findAddressAtCenter(); return false;"
+                     >Find Address at Center</a>
+                   |
+                  <a href="#clear-map-and-results"
+                     title="Clear all results and map"
+                     onclick="byCycle.UI.clearResults(); return false;"
+                     >Clear All...</a>
+                </div>
+
                 <div id="map_msg">
                   <noscript>
                     <!-- TODO: Put a non-JS map here (Yahoo?) -->
@@ -301,36 +330,7 @@
                     </p>
                   </noscript>
                 </div>
-
-                <div id="map_menu">
-                  <!-- Region -->
-                  <span id="regions_container">
-                    <a id="change_region_link"
-                       href="#change-region"
-                       title="Change region"
-                       onclick="Element.show('regions_window'); return false;"
-                       >Region</a>:
-
-                    <span id="active_region"><% region %></span>
-
-                    <& /widgets/window.myt, id='regions_window',
-                                            title='Change Region',
-                                            display='none', toggleable=True,
-                                            content=m.scomp('/region/_regions_form.myt') &>
-                  </span>
-                  <!-- End Region -->
-                   |
-                  <a href="#find-address-at-center"
-                     title="Find address at center of map (red dot)"
-                     onclick="byCycle.UI.findAddressAtCenter(); return false;"
-                     >Find Address at Center</a>
-                   |
-                  <a href="#clear-map-and-results"
-                     title="Clear all results and map"
-                     onclick="byCycle.UI.clearResults(); return false;"
-                     >Clear All...</a>
-                </div>
-
+                
                 <!-- Map -->
                 <div id="map" style="display: none;"></div>
                 <!-- End Map -->

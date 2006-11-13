@@ -94,7 +94,7 @@ byCycle.UI = (function() {
       }
       var s = self.service;
       s = (s == 'route' ? s : 'query');
-      var _tmp = new self.TabPane('input', s + '_label');
+      self.input_tab_pane = new self.TabPane('input', s + '_label');
       self.focusServiceElement(s);
       self.setEventHandlers();
       self.map = new self.map_type.Map(self, self.map_el);
@@ -181,7 +181,7 @@ byCycle.UI = (function() {
       var r = self.results_el;
 
       // Get a handle to the selected geocode's "window"
-      var selected = select_link.parentNode.parentNode.parentNode;
+      var selected = select_link.parentNode.parentNode.parentNode.parentNode;
 
       // Change the title of the selected geocode's window to "Geocode"
       var el = document.getElementsByClassName('window_title', selected)[0];
@@ -189,6 +189,10 @@ byCycle.UI = (function() {
 
       // Remove the selected geocode's "Select" link
       Element.remove(select_link.parentNode);
+
+      // Show the "set as start or end" links
+      var el = document.getElementsByClassName('set_as_s_or_e', selected)[0];
+      el.style.display = 'block';
 
       // Insert the selected geocode at the top of the results div
       r.insertBefore(selected, r.firstChild);
@@ -210,7 +214,7 @@ byCycle.UI = (function() {
     selectRouteGeocode: function(select_link, i) {
       byCycle.logDebug('Entered selectRouteGeocode...');
 
-      var geocodes = select_link.parentNode.parentNode.parentNode.parentNode;
+      var geocodes = select_link.parentNode.parentNode.parentNode.parentNode.parentNode;
 
       var multi = geocodes.parentNode;
       Element.remove(geocodes);
@@ -231,8 +235,7 @@ byCycle.UI = (function() {
       } else {
         Element.update(self.errors_el, '');
         Element.hide(self.errors_el);
-        var _tmp = new self.RouteQuery(null, self.route_choices);
-        _tmp.run();
+        new self.RouteQuery(null, self.route_choices).run();
       }
     },
 
@@ -254,7 +257,6 @@ byCycle.UI = (function() {
       if (!confirm('Remove all of your results and clear the map?')) {
         return;
       }
-      self.map.clear();
       for (var result_id in self.results) {
         self.results[result_id].remove();
       }
@@ -263,8 +265,7 @@ byCycle.UI = (function() {
     reverseDirections: function(s, e) {
       self.s_el.value = s;
       self.e_el.value = e;
-      var _tmp = new self.RouteQuery($('route_form'));
-      _tmp.run();
+      new self.RouteQuery($('route_form')).run();
     },
 
     /** Misc **/
@@ -303,10 +304,26 @@ byCycle.UI = (function() {
       self.e_el.value = s;
     },
 
+    selectTab: function(service) {
+      self.TabPane.prototype.selectTab({target: $(service + '_label')});
+    },
+
     focusServiceElement: function(service) {
       service == 'route' ? self.s_el.focus() : self.q_el.focus();
     },
 
+    setAsStart: function(addr) {
+      self.s_el.value = addr; 
+      self.selectTab('route'); 
+      self.s_el.focus();
+    },
+
+    setAsEnd: function(addr) {
+      self.e_el.value = addr; 
+      self.selectTab('route'); 
+      self.e_el.focus();
+    },
+    
     /** Map **/
 
     findAddressAtCenter: function() {
@@ -356,7 +373,7 @@ byCycle.UI = (function() {
     },
 
     _showRegionOverlays: function(region, use_cached) {
-      if (!region.marker) {
+      if (self.region == 'all' && !region.marker) {
         region.marker = self.map.makeRegionMarker(region);
       } else if (use_cached) {
         self.map.addOverlay(region.marker);
@@ -446,9 +463,7 @@ byCycle.UI.Query.prototype = {
       onComplete: function(request) {self.onComplete(request);},
       parameters: (self.form ? Form.serialize(self.form) : null)
     };
-    var _tmp = new Ajax.Updater({success: 'results', failure: 'errors'},
-                                url,
-                                args);
+    new Ajax.Updater({success: 'results', failure: 'errors'}, url, args);
   },
 
   onLoading: function(request) {
@@ -593,17 +608,17 @@ byCycle.UI.GeocodeQuery.prototype = Object.extend(new byCycle.UI.Query(), {
 
   callback: function(result) {
     byCycle.logDebug('Entered geocodeCallback...');
-	// Get result content pane and create a new node from it
-	var cp = document.getElementsByClassName('content_pane', result.id)[0];
-	var cp_copy = cp.cloneNode(true);
-	cp_copy.id = cp_copy.id + '_marker';
-	var node = Builder.node('div', [cp_copy]);
-	// Remove the "show on map" link
-	var show_on_map = document.getElementsByClassName('show_on_map', node)[0];
-	Element.remove(show_on_map);
-	// Put marker on map, using the new node as the info window content
-	var marker = this.ui.map.placeGeocodeMarker(result.data.point, node);
-	result.overlays.push(marker);
+    // Get result content pane and create a new node from it
+    var cp = document.getElementsByClassName('content_pane', result.id)[0];
+    var cp_copy = cp.cloneNode(true);
+    cp_copy.id = cp_copy.id + '_marker';
+    var node = Builder.node('div', [cp_copy]);
+    // Remove the "show on map" link
+    var show_on_map = document.getElementsByClassName('show_on_map', node)[0];
+    Element.remove(show_on_map);
+    // Put marker on map, using the new node as the info window content
+    var marker = this.ui.map.placeGeocodeMarker(result.data.point, node);
+    result.overlays.push(marker);
     byCycle.logDebug('Left geocodeCallback.');
   }
 });
@@ -614,9 +629,10 @@ byCycle.UI.GeocodeQuery.prototype = Object.extend(new byCycle.UI.Query(), {
  */
 byCycle.UI.RouteQuery = function(form, input) {
   byCycle.UI.Query.call(this, form, input);
-  this.ui.service = 'route';
+  service = 'route';
+  this.ui.service = service;
   this.updater_message = 'Finding route...';
-  byCycle.UI.TabPane.prototype.selectTab({target: $('route_label')});
+  this.ui.selectTab(service);
 };
 
 byCycle.UI.RouteQuery.prototype = Object.extend(new byCycle.UI.Query(), {

@@ -81,12 +81,17 @@ class ServiceController(RestController):
         return `WSGIResponse`
 
         """
+        if service and service.region:
+            region_key = service.region.key
+        else:
+            region_key = 'all'        
         # Used by all formats
         json = simplejson.dumps(to_json)
         # Used by frag and html
         result_template = '/service/%s.myt' % template
         c.http_status = http_status
         c.service = service
+        c.region_key = region_key
         c.result_id = ('%.6f' % time.time()).replace('.', '')
         c.json = json
         if format == 'json':
@@ -109,10 +114,6 @@ class ServiceController(RestController):
                 c.info = '\n'
                 c.help = None
                 region_controller = RegionController()
-                if service and service.region:
-                    region_key = service.region.key
-                else:
-                    region_key = 'all'
                 resp = region_controller.show(region_key, service.name)
                 resp.status_code = http_status
         return resp

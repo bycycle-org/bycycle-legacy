@@ -10,7 +10,7 @@
     </select>
   </div>
   <div>
-    <input type="submit" value="Go" />
+    <input type="submit" value="Go" onclick="Element.hide('regions_window');" />
     <input type="button" value="Cancel" 
            onclick="Element.hide('regions_window'); return false;" />
   </div>

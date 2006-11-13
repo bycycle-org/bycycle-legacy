@@ -9,6 +9,7 @@
 
 
 <%python>
+    from urllib import unquote_plus
     # route = {
     #    'start': {'geocode': Geocode, 'original': string},
     #    'end': {'geocode': Geocode, 'original': string},
@@ -57,8 +58,8 @@
 
 
 <div id="reverse_div">
-    <a href="/<% c.service.region.key %>/route/['<% e_url_str%>', '<% s_url_str %>']"
-       onclick="byCycle.UI.reverseDirections('<% e_url_str.replace('+', ' ') %>', '<% s_url_str.replace('+', ' ') %>'); return false;"
+    <a href="/<% c.region_key %>/route/['<% e_url_str %>', '<% s_url_str %>']"
+       onclick="byCycle.UI.reverseDirections('<% unquote_plus(e_url_str) %>', '<% unquote_plus(s_url_str) %>'); return false;"
        >Reverse Directions</a>
 </div>
 
