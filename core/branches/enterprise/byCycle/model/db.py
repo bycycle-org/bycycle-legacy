@@ -104,7 +104,7 @@ class DB(object):
         # Set up path to data files
         self.data_path = os_path_join(path, self.schema, 'data')
         self.matrix_path = os_path_join(self.data_path, 'matrix.pyc')
-        
+
         self.float_encode = float_encode
         self.float_decode = float_decode
 
@@ -133,10 +133,10 @@ class DB(object):
             cities = tables.cities
             states = tables.states
             layer_edges = tables.layer_edges
-            
+
             edges_c = layer_edges.c
             nodes_c = layer_nodes.c
-            
+
             _ms['layer_nodes'] = mapper(
                 Node,
                 layer_nodes,
@@ -144,9 +144,10 @@ class DB(object):
                     'edges': relation(
                         Edge,
                         primaryjoin=(
-                            (nodes_c.id == edges_c.node_f_id) | 
+                            (nodes_c.id == edges_c.node_f_id) |
                             (nodes_c.id == edges_c.node_t_id)
                         ),
+                        lazy=False,
                     )
                 }
             )
@@ -214,7 +215,7 @@ class DB(object):
                 getattr(self, mapper_name)
             except AttributeError:
                 setattr(self, mapper_name, _ms[name])
-    
+
     ### Node Methods
 
     def getNodesById(self, *ids):
@@ -229,7 +230,7 @@ class DB(object):
         return self.getById(
             self.layer_nodes_mapper, self.tables.layer_nodes, *ids
         )
-        
+
     ### Edge Methods
 
     def getEdgesById(self, *ids):
@@ -245,7 +246,7 @@ class DB(object):
         return self.getById(
             self.layer_edges_mapper, self.tables.layer_edges, *ids
         )
-    
+
     ### Adjacency Matrix Methods
 
     def getAdjacencyMatrix(self, force_new=False):
@@ -302,7 +303,7 @@ class DB(object):
         code = layer_edges.c.code
         select_.append_whereclause(
             ((code >= 1200) & (code < 1600)) |
-            ((code >= 3200) & (code < 3300))            
+            ((code >= 3200) & (code < 3300))
         )
         result = select_.execute()
         num_edges = result.rowcount
@@ -330,7 +331,7 @@ class DB(object):
             # 3 => travel in both directions
             ft = one_way & 1
             tf = one_way & 2
-            
+
             entry = [self.encodeFloat(row.length)]
             entry += [row[a] for a in self.region.edge_attrs[1:]]
             for k in adjustments:
@@ -364,14 +365,14 @@ class DB(object):
         dumpfile.close()
 
     ### Utility Methods
-    
+
     def getById(self, mapper, table, *ids):
         """Get objects from ``table`` using ``mapper`` and order by ``ids``.
-        
+
         ``ids`` One or more row IDs
         ``mapper`` DB to object mapper
         ``table`` Table to fetch from
-        
+
         """
         query = self.session.query(mapper)
         objects = query.select(table.c.id.in_(*ids))
@@ -383,8 +384,8 @@ class DB(object):
             except KeyError:
                 # TODO: Should we insert None instead???
                 pass
-        return ordered_objects   
-    
+        return ordered_objects
+
     def turnSQLEchoOff(self):
         """Turn off echoing of SQL statements."""
         engine.echo = False
@@ -400,9 +401,9 @@ class DB(object):
             cursor.execute('VACUUM FULL ANALYZE')
         else:
             for table in tables:
-                cursor.execute('VACUUM FULL ANALYZE %s' % table)            
+                cursor.execute('VACUUM FULL ANALYZE %s' % table)
         connection.set_isolation_level(2)
-    
+
     def encodeFloat(self, f):
         """Encode the float ``f`` as an integer."""
         return int(math.floor(f * float_encode))
