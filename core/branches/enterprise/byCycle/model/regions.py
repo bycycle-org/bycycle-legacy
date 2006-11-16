@@ -1,4 +1,4 @@
-###########################################################################
+################################################################################
 # $Id$
 # Created 2006-08-??.
 #
@@ -10,7 +10,6 @@
 # For terms of use and warranty details, please see the LICENSE file included
 # in the top level of this distribution. This software is provided AS IS with
 # NO WARRANTY OF ANY KIND.
-
 
 from byCycle.model.region import Region
 
@@ -100,11 +99,14 @@ region_aliases.update(dict([(a, pittsburghpa) for a in _aliases]))
 def getRegionKey(region):
     """Find the proper region key for ``region``.
 
-    ``region`` `string` -- A region proper name, alias, or key.
+    ``region`` `string`
+        A region proper name, alias, or key.
 
-    return `string` -- Lowercase region key.
+    return `string`
+        Lowercase region key.
         
-    raise ValueError -- ``region`` is not a known region, alias, or key.
+    raise ValueError
+        ``region`` is not a known region name, alias, or key.
 
     """
     region = (region or '').strip()
@@ -130,6 +132,9 @@ def getRegion(region):
         Either a `Region` object or a region key. 
     
     return `Region` | None
+
+    raise ValueError
+        Region key cannot be determined for ``region``
 
     """
     if region:

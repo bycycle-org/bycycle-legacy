@@ -1,4 +1,4 @@
-###########################################################################
+################################################################################
 # $Id$
 # Created 2006-??-??.
 #
@@ -10,8 +10,7 @@
 # For terms of use and warranty details, please see the LICENSE file included
 # in the top level of this distribution. This software is provided AS IS with
 # NO WARRANTY OF ANY KIND.
-
-
+################################################################################
 import unittest
 from byCycle.services.normaddr import *
 from byCycle.model import address, db, portlandor
@@ -100,17 +99,16 @@ class TestPortlandOR(unittest.TestCase):
 
     def _query(self, q, region=None):
         service = Service(region=region)
-        oAddr = service.query(q, region=region)
+        oAddr = service.query(q)
         return oAddr
 
     ### Edge
 
     def test_PortlandOR_EdgeAddress(self):
         r = portlandor.Region()
-        dbh = db.DB(r)
 
         # Get street name ID for n alberta st
-        t = dbh.tables.street_names
+        t = r.tables.street_names
         select = t.select(and_(
             t.c.prefix == 'n',
             t.c.name == 'alberta',
@@ -120,7 +118,7 @@ class TestPortlandOR(unittest.TestCase):
         street_name_id = result.fetchone().id
 
         # Get edge matching 633 n alberta st
-        t = dbh.tables.layer_edges
+        t = r.tables.layer_edges
         select = t.select(and_(
             t.c.addr_f <= 633,
             t.c.addr_t >= 633,
@@ -136,8 +134,8 @@ class TestPortlandOR(unittest.TestCase):
         self.assertEqual(oAddr.number, 633)
         self.assertEqual(oAddr.network_id, network_id)
 
-        session = create_session(bind_to=dbh.engine)
-        query = session.query(dbh.layer_edges_mapper)
+        session = create_session(bind_to=r.dbh.engine)
+        query = session.query(r.mappers.layer_edges)
         edge = query.get(network_id)
         self.assertEqual(str(edge.street_name), 'N Alberta St')
         session.close()

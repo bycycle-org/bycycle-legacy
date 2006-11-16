@@ -1,4 +1,4 @@
-###########################################################################
+################################################################################
 # $Id$
 # Created 2006-09-14.
 #
@@ -10,9 +10,9 @@
 # For terms of use and warranty details, please see the LICENSE file included
 # in the top level of this distribution. This software is provided AS IS with
 # NO WARRANTY OF ANY KIND.
-
-
-"""A collection of domain object definitions (AKA classes).
+################################################################################
+"""
+A collection of domain object definitions (AKA classes).
 
 Some domain classes have been split out into other modules. This is usually
 done when there are a set of related classes (such as the various address
@@ -27,13 +27,9 @@ classes) and exceptions.
 
 """
 from sqlalchemy.sql import func, select
-
 from cartography import geometry
 from cartography.proj import SpatialReference
-
 from byCycle.lib.util import joinAttrs
-from byCycle.model.region import Region
-from byCycle.model import regions
 
 
 class Node(object):

@@ -82,8 +82,8 @@ def main(argv):
 
     region = regions.getRegionKey(region)
     timer.start()
-    service = service_module.Service()
-    response = service.query(q, region=region)
+    service = service_module.Service(region=region)
+    response = service.query(q)
     print response
     print '%.2f seconds' % timer.stop()
 
