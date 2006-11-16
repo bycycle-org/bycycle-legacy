@@ -28,12 +28,14 @@ class SingleSourceShortestPathsError(Exception): pass
 class SingleSourceShortestPathsNoPathError(SingleSourceShortestPathsError): pass
 
 
-def singleSourceShortestPaths(G, s, d=None,
+def singleSourceShortestPaths(G, H, s, d=None,
                               weightFunction=None,
                               heuristicFunction=None):
     """Dijkstra with a few twists
 
-    ``G`` -- Graph of sorts
+    ``G``
+        Graph of sorts
+        
         (# Adjacency list
             (((v, e), (v, e), (v, e)),
              ((v, e), (v, e)),
@@ -53,19 +55,25 @@ def singleSourceShortestPaths(G, s, d=None,
         Edge attibute list _must_ contain the weight entry first; they may
         also contain other attributes of the edge. These other attributes can
         be used to determine a different weight for the edge.
-         
-    ``s`` -- Start node ID
-    
-    ``d`` -- Destination node ID. If d is None (default) the algorithm is run
-    normally. If d has a value, the algorithm is stopped when a path to d has
-    been found.
 
-    ``weightFunction`` -- Function to apply to each edge to modify its base
-    weight.
+    ``H``
+        "Annex" to G
 
-    ``heuristicFunction`` -- A function to apply at each iteration to help the
-    poor dumb machine try to move toward the destination instead of just any
-    and every which way.
+    ``s``
+        Start node ID
+
+    ``d``
+        Destination node ID. If d is None (default) the algorithm is run
+        normally. If d has a value, the algorithm is stopped when a path to d
+        has been found.
+
+    ``weightFunction``
+        Function to apply to each edge to modify its base weight.
+
+    ``heuristicFunction``
+        A function to apply at each iteration to help the poor dumb machine
+        try to move toward the destination instead of just any and every which
+        way.
 
     return
         `list` -- Predecessor list {v => (u, e), ...}
@@ -78,12 +86,11 @@ def singleSourceShortestPaths(G, s, d=None,
     open = [(0, s)]
     # predecessor of each node that has shortest path from s
     P = {}
-    
-    nodes, edges = G['nodes'], G['edges']
 
-    count = 0
+    nodes, edges = G['nodes'], G['edges']
+    h_nodes, h_edges = H['nodes'], H['edges']
+
     while open:
-        count += 1
         # In the nodes remaining in G that have a known weight from s,
         # find the node, u, that currently has the shortest path from s
         w_of_s_to_u, u = heapq.heappop(open)
@@ -93,13 +100,16 @@ def singleSourceShortestPaths(G, s, d=None,
             prev_e_attrs = P[u][2]
         except KeyError:
             prev_e_attrs = None
-            
+
         # Get nodes adjacent to u...
-        try:
-            A = nodes[u]
-        except KeyError:
-            # We'll get here upon reaching a node with no outgoing edges
-            continue
+        if u in h_nodes:
+            A = h_nodes[u]
+        else:
+            try:
+                A = nodes[u]
+            except KeyError:
+                # We'll get here upon reaching a node with no outgoing edges
+                continue
 
         # ...and explore the edges that connect u to those nodes, updating
         # the weight of the shortest paths to any or all of those nodes as
@@ -107,12 +117,10 @@ def singleSourceShortestPaths(G, s, d=None,
         for v in A:
             e = A[v]
 
-            # e is set to None in G to indicate we don't want to use a segment
-            # in one or the other or both directions
-            try:
+            if e in h_edges:
+                e_attrs = h_edges[e]
+            else:
                 e_attrs = edges[e]
-            except KeyError:
-                continue
 
             # Get the weight of the edge running from u to v
             try:
@@ -134,13 +142,13 @@ def singleSourceShortestPaths(G, s, d=None,
             #    w_of_s_to_u_plus_w_of_e += heuristicFunction(e)
             #except TypeError:
             #    pass
-                
+
             # Get the weight of the path from s to v, if known
             try:
                 w_of_s_to_v = W[v]
             except KeyError:
-                # If no path to v had been found previously, v's path-weight 
-                # from s will have been previously unknown (infinity); 
+                # If no path to v had been found previously, v's path-weight
+                # from s will have been previously unknown (infinity);
                 # since we have just found a path from s to v, we need to add
                 # v's path-weight from s to the list of nodes with known
                 # weights from s
@@ -174,7 +182,7 @@ def extractShortestPathFromPredecessorList(P, d):
     """Extract ordered lists of nodes, edges, weights from predecessor list.
 
     ``P`` -- Predecessor list {u: (v, e), ...} u's predecessor is v via e
-    
+
     ``d`` -- Destination node ID
 
     return
@@ -202,7 +210,7 @@ def extractShortestPathFromPredecessorList(P, d):
     return V, E, W, w
 
 
-def findPath(G, s, d, weightFunction=None, heuristicFunction=None):
+def findPath(G, H, s, d, weightFunction=None, heuristicFunction=None):
     """Find the shortest path from s to d in G.
 
     This function just combines finding the predecessor list with extracting
@@ -214,10 +222,10 @@ def findPath(G, s, d, weightFunction=None, heuristicFunction=None):
         `list` -- The edge IDs on the lightest path from start to d
         `list` -- The weights of the edges on the shortest path from s to d
         `int` -- The total weight of the segments with IDs in E
-    
+
     """
     P, W = singleSourceShortestPaths(
-        G, s, d,
+        G, H, s, d,
         weightFunction=weightFunction,
         heuristicFunction=heuristicFunction
     )
