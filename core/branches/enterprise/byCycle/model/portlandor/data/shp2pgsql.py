@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-###########################################################################
+################################################################################
 # $Id: shp2pgsql.py 187 2006-08-16 01:26:11Z bycycle $
 # Created 2006-09-07
 #
@@ -11,8 +11,7 @@
 # For terms of use and warranty details, please see the LICENSE file included
 # in the top level of this distribution. This software is provided AS IS with
 # NO WARRANTY OF ANY KIND.
-
-
+################################################################################
 """
 Usage: shp2pgsql.py [various options]
 
