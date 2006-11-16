@@ -1,4 +1,4 @@
-###########################################################################
+################################################################################
 # $Id: testgeocode.py 208 2006-09-11 03:41:35Z bycycle $
 # Created 2006-09-25.
 #
@@ -10,8 +10,7 @@
 # For terms of use and warranty details, please see the LICENSE file included
 # in the top level of this distribution. This software is provided AS IS with
 # NO WARRANTY OF ANY KIND.
-
-
+################################################################################
 import unittest
 from byCycle.lib import meter
 from byCycle.services.route import *
@@ -27,7 +26,7 @@ class TestPortlandOR(unittest.TestCase):
         print '=========='
         timer.start()
         service = Service(region=region)
-        routes = service.query(q, region=region)
+        routes = service.query(q)
         route = routes[0]
         self.assert_(isinstance(route, Route))
         print route
@@ -47,7 +46,7 @@ class TestPortlandOR(unittest.TestCase):
         route = self._query(q)
 
     def test_route(self):
-        q = ('4807 se kelly, portland, or', 'ne 6th & irving, portland, or')
+        q = ('4807 se kelly, portland, or', '45th and division, portland, or')
         #route = self._query(q)
         #q = ('250 ne going, portland, or', '350 n going, portland, or')
         #q = ('634 beech portland or','633 n alberta, portland or')

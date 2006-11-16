@@ -1,4 +1,4 @@
-###########################################################################
+################################################################################
 # $Id: tables.py 187 2006-08-16 01:26:11Z bycycle $
 # Created 2006-09-07
 #
@@ -10,21 +10,16 @@
 # For terms of use and warranty details, please see the LICENSE file included
 # in the top level of this distribution. This software is provided AS IS with
 # NO WARRANTY OF ANY KIND.
-
-
+################################################################################
 from sqlalchemy.schema import Table, Column, ForeignKey
 from sqlalchemy.types import String, CHAR, Integer, Numeric, Float
-from byCycle.model import portlandor
 from byCycle.model.data.sqltypes import *
-
-
-SRID = portlandor.SRID
 
 
 class Tables(object):
     """Tables for the Portland, OR, region."""
 
-    def __init__(self, schema, metadata, raw_metadata, add_geometry=True):
+    def __init__(self, schema, SRID, metadata, raw_metadata, add_geometry=True):
         """Initialize tables for ``schema``, associating them with ``metadata``.
 
         ``metadata`` `object` -- SQLAlchemy `MetaData`
@@ -35,9 +30,10 @@ class Tables(object):
         Normally, we want to add the geometry columns, but not always.
         
         """
+        self.schema = schema
+        self.SRID = SRID
         self.metadata = metadata
         self.raw_metadata = raw_metadata
-        self.schema = schema
         self.__initTables(add_geometry=add_geometry)
 
     def __getitem__(self, key):
@@ -151,7 +147,7 @@ class Tables(object):
         types = (LINESTRING, POINT)        
         for table, type_ in zip(tables, types):
             table.append_column(
-                Column('geom', type_(SRID), nullable=False)
+                Column('geom', type_(self.SRID), nullable=False)
             )
 
     def _get_raw_table(self):
@@ -172,7 +168,7 @@ class Tables(object):
                 Column('gid', Integer, primary_key=True),
 
                 # To edge table (core)
-                Column('the_geom', LINESTRING(SRID)),
+                Column('the_geom', LINESTRING(self.SRID)),
                 Column('n0', Integer),
                 Column('n1', Integer),
                 Column('zipcolef', Integer),

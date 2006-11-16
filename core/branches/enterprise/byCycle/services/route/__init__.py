@@ -1,4 +1,4 @@
-###########################################################################
+################################################################################
 # $Id$
 # Created 2004-12-28.
 #
@@ -10,8 +10,7 @@
 # For terms of use and warranty details, please see the LICENSE file included
 # in the top level of this distribution. This software is provided AS IS with
 # NO WARRANTY OF ANY KIND.
-
-
+################################################################################
 """Provides route finding via the `query` method of the `Service` class.
 
 Currently routing can only be done between two points. Some things have been
@@ -44,16 +43,12 @@ Here's what the route service does:
 
 """
 from cartography.geometry import LineString
-
 from byCycle.lib import gis
-
 from byCycle.services.exceptions import ByCycleError, InputError, NotFoundError
-
 from byCycle.model.address import *
 from byCycle.model.geocode import *
 from byCycle.model.route import *
 from byCycle.model.domain import Node
-
 from byCycle import services
 from byCycle.services import geocode
 from byCycle.services.route import sssp
@@ -77,66 +72,60 @@ class MultipleMatchingAddressesError(RouteError):
 ###########################################################################
 class Service(services.Service):
     """Route-finding Service."""
-
     name = 'route'
 
     #----------------------------------------------------------------------
-    def __init__(self, region=None, dbh=None):
+    def __init__(self, region=None):
         """
 
         ``region`` `Region` | `string` -- Region key
 
         """
-        services.Service.__init__(self, region=region, dbh=dbh)
+        services.Service.__init__(self, region=region)
 
     #----------------------------------------------------------------------
-    def query(self, q, region=None, dbh=None, tmode='bicycle', pref=''):
+    def query(self, q, tmode='bicycle', pref=''):
         """Get a route for all the addresses in ``q`` [0 ==> 1 ==> 2 ...].
 
-        ``q`` `list` -- A list of addresses to be normalized, geocoded, and
-        routed between in the given ``region``.
+        ``q`` `list`        
+            A list of addresses to be normalized, geocoded, and routed
+            between.
 
-        ``region`` `Region` | `string`
-        ``dbh`` `DB`
-            See Service base class for details.
+        return `Route`
+            A `Route` between all the addresses in ``q``.
 
-        return `Route` -- A `Route` between all the addresses in ``q``.
+        raise `InputError`
+            Less than 2 addresses given or an address is blank.
 
-        raise `InputError` -- Less than 2 addresses given or an address is
-        blank.
+        raise `InputError`, `ValueError`
+            Raised in the normaddr and geocode queryS. Look there for details.
 
-        raise `InputError`, `ValueError` -- Some are raised in the normaddr
-        and geocode queries. Look there for details.
+        raise `AddressNotFoundError`
+            Any of the addresses in ``q`` can't be geocoded.
 
-        raise `AddressNotFoundError` -- Any of the addresses in ``q`` can't be
-        geocoded.
+        raise `MultipleMatchingAddressesError`
+            Multiple address found that match any of the addresses in ``q``
 
-        raise `MultipleMatchingAddressesError` -- Multiple address found that
-        match any of the addresses in ``q``
-
-        raise `NoRouteError` -- No route found between start and end
-        addresses.
+        raise `NoRouteError`
+            No route found between start and end addresses.
 
         """
-        # Do common query initialization
-        self._beforeQuery(q, region=region, dbh=dbh)
-
         # Process input waypoints (basic error checking)
         waypoints = self._getWaypoints(q)
 
         # Get geocodes matching waypoints
-        # NOTE: This may also create self.region and self.dbh
+        # NOTE: This may also initialize self.region
         geocodes = self._getGeocodes(waypoints)
 
         # Get weight function for specified travel mode
         path = 'byCycle.model.%s.%s' % (self.region.key, tmode)
         module = __import__(path, globals(), locals(), [''])
-        mode = module.TravelMode(self.dbh, pref=pref)
+        mode = module.TravelMode(self.region, pref=pref)
         getEdgeWeight = mode.getEdgeWeight
         getHeuristicWeight = mode.getHeuristicWeight
 
         # Fetch the adjacency matrix
-        G = self.dbh.getAdjacencyMatrix()
+        G = self.region.getAdjacencyMatrix()
         if not G:
             raise NoRouteError('Graph is empty')
         nodes, edges = G['nodes'], G['edges']
@@ -202,7 +191,7 @@ class Service(services.Service):
     #----------------------------------------------------------------------
     def _getGeocodes(self, waypoints):
         """Return a `list` of `Geocode`s associated with each ``waypoint``."""
-        geocode_service = geocode.Service(region=self.region, dbh=self.dbh)
+        geocode_service = geocode.Service(region=self.region)
         geocodes = []
         input_errors = []
         multiple_match_found = False
@@ -326,7 +315,7 @@ class Service(services.Service):
             node = geocode_.node
         else:
             # Geocode is on an edge--hard case
-            # We have to generate a node in the middle of the edge and update G
+            # We have to generate a node in the middle of the edge and update G.
             # Split the geocode's edge
             edge_f, edge_t = geocode_.edge.splitAtGeocode(
                 geocode_, node_id, edge_f_id, edge_t_id
@@ -441,7 +430,7 @@ class Service(services.Service):
         distance = {units: None, 'blocks': None}
 
         # Get edges along path
-        edges = self.dbh.getEdgesById(*edge_ids)
+        edges = self.region.getEdgesById(*edge_ids)
 
         # Check if start and end are in edges
         edge_f_id = edge_ids[0]

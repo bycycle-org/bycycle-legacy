@@ -1,5 +1,4 @@
-###########################################################################
-# $Id$
+################################################################################# $Id$
 # Created 2005-11-07.
 #
 # Portland, OR Bicycle Travel Mode.
@@ -10,8 +9,7 @@
 # For terms of use and warranty details, please see the LICENSE file included
 # in the top level of this distribution. This software is provided AS IS with
 # NO WARRANTY OF ANY KIND.
-
-
+################################################################################
 """Bicycle travel mode for Portland, OR, region."""
 from byCycle.model import tmode
 
@@ -23,17 +21,18 @@ FASTER, SHORTER, FLATTER, SAFER, DEFAULT = range(5)
 class TravelMode(tmode.TravelMode):
     """Bicycle travel mode for the Portland, OR, region."""
 
-    def __init__(self, dbh, pref=''):
+    def __init__(self, region, pref=''):
         """
 
-        ``pref`` `string` -- User's simple preference option. Can be empty or
-        one of "default", "flatter", "safer", "shorter", or "faster".
+        ``pref`` `string`        
+            User's simple preference option. Can be empty or one of "default",
+            "flatter", "safer", "shorter", or "faster".
 
         """
         tmode.TravelMode.__init__(self)
 
         global float_decode
-        float_decode = dbh.float_decode
+        float_decode = region.float_decode
 
         global pct_slopes, mph_up, mph_down
         pct_slopes = [p*.01 for p in
@@ -44,7 +43,7 @@ class TravelMode(tmode.TravelMode):
         global edge_attrs_index, length_index, code_index, bikemode_index
         global abs_slp_index, up_frac_index, node_f_id_index
         global street_name_id_index
-        edge_attrs_index = dbh.region.edge_attrs_index        
+        edge_attrs_index = region.edge_attrs_index        
         length_index = edge_attrs_index['length']
         code_index = edge_attrs_index['code']
         bikemode_index = edge_attrs_index['bikemode']
@@ -58,7 +57,7 @@ class TravelMode(tmode.TravelMode):
         global blt, bmt, bht, bca, bcca, bccca
         global no_bm_lt, no_bm_mt, no_bm_ht, no_bm_ca, no_bm_cca, no_bm_ccca
         global xxx
-	xxx = 1000
+        xxx = 1000
         if pref == SAFER:
             mu = .85
             mm = .9

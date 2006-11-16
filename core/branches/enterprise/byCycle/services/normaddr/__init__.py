@@ -1,4 +1,4 @@
-###########################################################################
+################################################################################
 # $Id$
 # Created ???.
 #
@@ -10,7 +10,7 @@
 # For terms of use and warranty details, please see the LICENSE file included
 # in the top level of this distribution. This software is provided AS IS with
 # NO WARRANTY OF ANY KIND.
-
+################################################################################
 """
 Provides address normalization via the `query` method of the `Service` class.
 
@@ -55,7 +55,7 @@ class Service(services.Service):
 
     name = 'address'
 
-    def __init__(self, region=None, dbh=None):
+    def __init__(self, region=None):
         """
 
         ``region`` `Region` | `string`
@@ -64,7 +64,7 @@ class Service(services.Service):
         """
         services.Service.__init__(self, region=region)
 
-    def query(self, q, region=None, dbh=None):
+    def query(self, q):
         """Get a normalized address for the input address.
 
         Try to parse the parts of the address in ``q``. Return an `Address` of
@@ -73,10 +73,6 @@ class Service(services.Service):
 
         ``q`` `string`
             An address to be normalized in the given ``region``.
-
-        ``region`` `Region` | `string`
-        ``dbh`` `DB`
-            See Service base class for details.
 
         return `Address`
             `Address` object with normalized attributes
@@ -88,9 +84,6 @@ class Service(services.Service):
             - ``q`` cannot be parsed
 
         """
-        # Do query initialization
-        self._beforeQuery(q, region=region, dbh=dbh)
-
         original_q = q
         q = q.strip().lower()
         if not q:
@@ -343,11 +336,11 @@ class Service(services.Service):
 
         First, if the name is a number, add a suffix: 1 => 1st, 11 => 11th,
         etc. Then, if the name can't be found in the DB and the street type
-        entered was not abbreviated, then see if we can find the name+type in
-        the DB. If so, use the name+type as the name and unset the street
-        type.
+        entered was not abbreviated, see if we can find the name+type in the
+        in the name column of the street names table. If so, use the name+type
+        as the name and unset the street type.
 
-        Note: self.region & self.dbh must be set before calling this.
+        Note: self.region must be set before calling this.
 
         """
         name = street_name.name
@@ -355,7 +348,7 @@ class Service(services.Service):
         if sttype in sttypes_ftoa:
             # If a full street type was entered...
             # E.g., street name is 'johnson' and street type is 'creek'
-            t = self.dbh.tables.street_names
+            t = self.region.tables.street_names
             c = t.c
             q = t.count((c.name == num_name) & (c.sttype == sttype))
             count1 = q.execute().fetchone()[0]

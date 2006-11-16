@@ -1,4 +1,4 @@
-###########################################################################
+################################################################################
 # $Id$
 # Created ???.
 #
@@ -10,7 +10,7 @@
 # For terms of use and warranty details, please see the LICENSE file included
 # in the top level of this distribution. This software is provided AS IS with
 # NO WARRANTY OF ANY KIND.
-
+################################################################################
 """
 Provides geocoding via the `query` method of the `Service` class.
 
@@ -52,7 +52,7 @@ class AddressNotFoundError(GeocodeError, NotFoundError):
     def __init__(self, desc='Address Not Found', address='', region=''):
         if region and address:
             desc = ('Unable to find address "%s" in region "%s"' %
-                    (address, region.name))
+                    (address, region.title))
         GeocodeError.__init__(self, desc=desc)
 
 class MultipleMatchingAddressesError(GeocodeError):
@@ -66,15 +66,15 @@ class Service(services.Service):
 
     name = 'geocode'
 
-    def __init__(self, region=None, dbh=None):
+    def __init__(self, region=None):
         """
 
-        ``region`` `Region` | `string` -- Region key
+        ``region`` `Region` | `string` | None
 
         """
-        services.Service.__init__(self, region=region, dbh=dbh)
+        services.Service.__init__(self, region=region)
 
-    def query(self, q, region=None, dbh=None):
+    def query(self, q):
         """Find and return `Geocodes` in ``region`` matching the address ``q``.
 
         Choose the appropriate geocoding method based on the type of the input
@@ -84,10 +84,6 @@ class Service(services.Service):
 
         ``q`` `string`
             An address to be normalized & geocoded in the given ``region``.
-
-        ``region`` `Region` | `string`
-        ``dbh`` `DB`
-            See Service base class for details.
 
         return `Geocode` -- A `Geocode` object corresponding to the input
         address, ``q``.
@@ -103,13 +99,10 @@ class Service(services.Service):
         match the input address, ``q``
 
         """
-        # Do common query initialization
-        self._beforeQuery(q, region=region, dbh=dbh)
-
         # First, normalize the address, getting back an `Address` object.
         # The NA service may find a region, iff `region` isn't already set. If
         # so, we want to use that region as the region for this query.
-        na_service = normaddr.Service(region=self.region, dbh=self.dbh)
+        na_service = normaddr.Service(region=self.region)
         oAddr = na_service.query(q)
         self.region = na_service.region
         if isinstance(oAddr, (NodeAddress, PointAddress)):
@@ -170,10 +163,10 @@ class Service(services.Service):
         """
         geocodes = []
         num = oAddr.number
-        tables = self.dbh.tables
+        tables = self.region.tables
         layer_edges = tables.layer_edges
         _c = layer_edges.c
-        query = self.session.query(self.dbh.layer_edges_mapper)
+        query = self.region.dbh.session.query(self.region.mappers.layer_edges)
 
         try:
             # Try to look up edge by network ID first
@@ -220,8 +213,8 @@ class Service(services.Service):
         database.
 
         """
-        layer_edges = self.dbh.tables.layer_edges
-        street_names = self.dbh.tables.street_names
+        layer_edges = self.region.tables.layer_edges
+        street_names = self.region.tables.street_names
 
         def getNodeIDs(street_name, place):
             node_ids = {}
@@ -260,8 +253,8 @@ class Service(services.Service):
             raise AddressNotFoundError(address=oAddr, region=self.region)
 
         # Get node rows matching common node IDs and map to `Node` objects
-        layer_nodes = self.dbh.tables.layer_nodes
-        query = self.session.query(self.dbh.layer_nodes_mapper)
+        layer_nodes = self.region.tables.layer_nodes
+        query = self.region.dbh.session.query(self.region.mappers.layer_nodes)
         select_nodes = layer_nodes.select(layer_nodes.c.id.in_(*node_ids))
         nodes = query.select(select_nodes)
 
@@ -301,9 +294,9 @@ class Service(services.Service):
         SRID = self.region.SRID
         units = self.region.units
         earth_circumference = self.region.earth_circumference
-        layer_nodes = self.dbh.tables.layer_nodes
+        layer_nodes = self.region.tables.layer_nodes
         _c = layer_nodes.c
-        query = self.session.query(self.dbh.layer_nodes_mapper)
+        query = self.region.dbh.session.query(self.region.mappers.layer_nodes)
         cols = [_c.id, _c.geom]
 
         # Set up the SELECT clause according to whether ``oAddr`` is a
@@ -379,7 +372,7 @@ class Service(services.Service):
 
     def _getStreetNameWhereClause(self, street_name):
         """Get a WHERE clause for ``street_name``."""
-        street_names = self.dbh.tables.street_names
+        street_names = self.region.tables.street_names
         clause = []
         for attr in ('prefix', 'name', 'sttype', 'suffix'):
             val = getattr(street_name, attr)
@@ -391,7 +384,7 @@ class Service(services.Service):
 
     def _getPlaceWhereClause(self, place):
         """Get a WHERE clause for ``place``."""
-        tables = self.dbh.tables
+        tables = self.region.tables
         clause = []
         if place.city_name:
             clause.append(tables.cities.c.city == place.city_name)
