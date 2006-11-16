@@ -87,7 +87,7 @@ class Service(services.Service):
     def query(self, q, tmode='bicycle', pref=''):
         """Get a route for all the addresses in ``q`` [0 ==> 1 ==> 2 ...].
 
-        ``q`` `list`        
+        ``q`` `list`
             A list of addresses to be normalized, geocoded, and routed
             between.
 
@@ -133,7 +133,7 @@ class Service(services.Service):
         # Get paths between adjacent waypoints
         paths_info = []
         for s, e in zip(geocodes[:-1], geocodes[1:]):
-            # path_info := node_ids, edge_ids, start_node, end_node, split_edges
+            # path_info: node_ids, edge_ids, start_node, end_node, split_edges
             path_info = self._getPathBetweenGeocodes(
                 s, e, G, nodes, edges, getEdgeWeight, getHeuristicWeight
             )
@@ -152,7 +152,6 @@ class Service(services.Service):
             route_data = self._makeDirectionsForPath(*path_info)
             route = Route(self.region, start, end, *route_data)
             routes.append(route)
-
         return routes
 
     #----------------------------------------------------------------------
@@ -256,6 +255,7 @@ class Service(services.Service):
         # geocode is within an edge. This saving happens as a side effect in
         # _getNodeForGeocode.
         split_edges = {}
+        self.H = {'nodes': {}, 'edges': {}}
 
         # Get start node
         node_id, edge_f_id, edge_t_id = -1, -1, -2
@@ -269,10 +269,9 @@ class Service(services.Service):
                                            split_edges)
 
         ### All set up--try to find a path in G between the start and end nodes
-
         try:
             node_ids, edge_ids, weights, total_weight = sssp.findPath(
-                G,
+                G, self.H,
                 start_node.id, end_node.id,
                 weightFunction=getEdgeWeight,
                 heuristicFunction=getHeuristicWeight
@@ -285,6 +284,7 @@ class Service(services.Service):
                     self.region
                 )
             )
+
         return node_ids, edge_ids, start_node, end_node, split_edges
 
     #----------------------------------------------------------------------
@@ -340,10 +340,12 @@ class Service(services.Service):
         self._updateNodesAfterSplit(nodes, node_at_split, edge_f, edge_t)
         # Insert attributes for edges created by split
         # TODO: Distribute attributes proportionally on either side of split.
-        # This could be done by more-sophisticated edge-splitting.
+        # This could be done by more-sophisticated edge-splitting. Loop over
+        # edge_attrs/index and at the attrs from the split edges to the
+        # adj. mat. edge attrs list
         edge_id = edge_that_was_split.id
-        edges[edge_f.id] = [len(edge_f)] + list(edges[edge_id][1:])
-        edges[edge_t.id] = [len(edge_t)] + list(edges[edge_id][1:])
+        self.H['edges'][edge_f.id] = [len(edge_f)] + list(edges[edge_id][1:])
+        self.H['edges'][edge_t.id] = [len(edge_t)] + list(edges[edge_id][1:])
 
     #----------------------------------------------------------------------
     def _updateNodesAfterSplit(self, nodes, node, edge_1, edge_2):
@@ -355,8 +357,9 @@ class Service(services.Service):
 
         """
         split_id = node.id
+        self.H['nodes'][split_id] = {}
 
-        def updateOneNode(split_id, node_1_id, node_2_id, edge_1_id, edge_2_id):
+        def updateOneNode(node_1_id, node_2_id, edge_1_id, edge_2_id):
             try:
                 nodes[node_1_id][node_2_id]
             except KeyError:
@@ -364,13 +367,15 @@ class Service(services.Service):
                 pass
             else:
                 # node_1_id DOES go to node_2_id
-                if split_id not in nodes:
-                    nodes[split_id] = {}
-                nodes[node_1_id][split_id] = edge_1_id
-                nodes[split_id][node_2_id] = edge_2_id
-                # Override original connection so it won't be used
-                # TODO: Should save this
-                nodes[node_1_id][node_2_id] = None
+                # Copy original adjacency list
+                self.H['nodes'][node_1_id] = {}
+                for n in nodes[node_1_id]:
+                    self.H['nodes'][node_1_id][n] = nodes[node_1_id][n]
+                # Remove original connection
+                del self.H['nodes'][node_1_id][node_2_id]
+                # Add connections across split edges
+                self.H['nodes'][node_1_id][split_id] = edge_1_id
+                self.H['nodes'][split_id][node_2_id] = edge_2_id
 
         # Get node IDs NOT at split
         node_1_id = [edge_1.node_f_id, edge_1.node_t_id][edge_1.node_t_id != split_id]
@@ -378,11 +383,11 @@ class Service(services.Service):
         # Get edge IDs for one arc direction
         edge_1_id, edge_2_id = edge_1.id, edge_2.id
         # Update for one direction
-        updateOneNode(split_id, node_1_id, node_2_id, edge_1_id, edge_2_id)
+        updateOneNode(node_1_id, node_2_id, edge_1_id, edge_2_id)
         # Swap the IDs and update for the other direction
         node_1_id, node_2_id = node_2_id, node_1_id
         edge_1_id, edge_2_id = edge_2_id, edge_1_id
-        updateOneNode(split_id, node_1_id, node_2_id, edge_1_id, edge_2_id)
+        updateOneNode(node_1_id, node_2_id, edge_1_id, edge_2_id)
 
     #----------------------------------------------------------------------
     def _makeDirectionsForPath(self,
@@ -528,7 +533,7 @@ class Service(services.Service):
         first = True
         for node_t_id, e, length in zip(node_ids[1:], edges, edge_lengths):
             node_t = [e.node_f, e.node_t][node_t_id == e.node_t.id]
-            
+
             street_name = street_names[edge_count]
             str_street_name = str(street_name)
 
