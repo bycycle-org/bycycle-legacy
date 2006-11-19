@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python2.4
 ################################################################################
 # $Id: shp2pgsql.py 187 2006-08-16 01:26:11Z bycycle $
 # Created 2006-09-07
@@ -131,7 +131,7 @@ sql_exe = 'psql'
 sql_args = '--quiet -d %s -f %s'  # % (database, SQL file)
 
 # Base path to regional shapefiles
-base_data_path = '/home/bycycle/byCycleData'
+base_data_path = os.path.join(os.environ['HOME'], 'byCycleData')
 
 # Name of database
 db_name = 'bycycle'
@@ -153,7 +153,7 @@ layer_path = os.path.join(data_path, layer)
 # Database config
 db_schema = region
 db_user = db_name
-db_pw_path = os.path.join(install_path, region_data_path, '.pw')
+db_pw_path = os.path.join(install_path, 'model/.pw')
 db_pass = open(db_pw_path).read().strip()
 # Raw tables go in the raw schema using the schema name as the table name.
 # "This is the raw table for schema X." With the scheme, we can create and
@@ -221,7 +221,7 @@ def createConnection():
     return psycopg2.connect(#host='localhost',
                             database=db_name,
                             user=db_user,
-                            #password=db_pass
+                            password=db_pass
                             )
 
 
