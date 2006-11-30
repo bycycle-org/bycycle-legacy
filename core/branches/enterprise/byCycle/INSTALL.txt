@@ -13,49 +13,85 @@ system. All of these are free and available for just about any platform.
 Core Dependencies
 -----------------
 
-[Must be installed in roughly this order.]
+Dependencies must be installed in roughly the order given. The provided
+installation commands are somewhat Ubuntu-specific but should work on 
+other platforms with a little modification (on Windows there are usually 
+installers for the things that are installed from source on Linux).
 
 - Python 2.4.x <http://www.python.org/>
 
+- setuptools <http://peak.telecommunity.com/DevCenter/setuptools>
+  wget http://peak.telecommunity.com/dist/ez_setup.py
+  sudo python ez_setup.py
+
 - PostgreSQL 8.1.x <http://www.postgresql.org/>
+  [FIXME: I'm not sure the dev stuff is actually needed.]
+  sudo apt-get install postgresql-8.1 postgresql-dev postgresql-server-dev-8.1
 
 - psycopg2 DBAPI module <http://initd.org/tracker/psycopg/wiki/PsycopgTwo>
-  easy_install -UZ psycopg2
+  sudo easy_install -UZ psycopg2
 
 - SQLAlchemy (latest) <http://www.sqlalchemy.org/>
-  easy_install -UZ SQLAlchemy
+  sudo easy_install -UZ SQLAlchemy
   
 - GEOS 2.2.3 <http://geos.refractions.net/geos-2.2.3.tar.bz2>
+  [I can't remember why, but the Ubuntu package won't work.]
+  tar xvbf geos-2.2.3.tar.bz2
+  ./configure
+  make
+  sudo make install
 
 - Proj 4.5.0 <ftp://ftp.remotesensing.org/proj/proj-4.5.0.tar.gz>
-
+  tar xvzf proj-4.5.0.tar.gz
+  ./configure
+  make
+  sudo make install
+  
 - PostGIS 1.1.6 <http://postgis.refractions.net/download/postgis-1.1.6.tar.gz>
   - Needs Proj and GEOS for some operations
-  
+  tar xvzf postgis-1.1.6.tar.gz
+  ./configure
+  make
+  sudo make install
+    
 - Python Cartographic Library - Core 0.11.0
   - Depends on zope.interface 
     <http://www.zope.org/Products/ZopeInterface/3.0.1final/ZopeInterface-3.0.1.tgz>
+    tar xvzf ZopeInterface-3.0.1.tgz   
   - Also needs Proj and GEOS for some operations
   <http://gispython.org/downloads/gispy/PCL-0.11.0.tar.gz>
+  tar xvzf PCL-0.11.0.tar.gz
   cd PCL/PCL-Core
-  python setup.py install
-
+  sudo python setup.py install
 
 Web Interface
 -------------
 
 - Pylons (latest) <http://pylonshq.com/>
-  easy_install -U Pylons
+  sudo easy_install -UZ Pylons
 
 - Google Map 
   If you want to view the Google Map on a local installation, you will need a 
   Google Maps API key for the domain name it runs under. 
   <http://www.google.com/apis/maps/>.
 
+Development
+-----------
+
+- Subversion <http://subversion.tigris.org/>
+  sudo apt-get install subversion
+  - On Windows, you'll almost definitely want TortoiseSVN 
+    <http://tortoisesvn.tigris.org/>
+    
+- On Ubuntu, you'll need to install some basic dev tools:
+  [FIXME: Other packages may be required as well.]
+  sudo apt-get install build-essential
+
 Deployment
 ----------
 
 - Apache 2.2.latest <http://httpd.apache.org/>
+  [Note: Not required for a dev environment--use Paste server.]
   - mod_python OR mod_proxy (this is an open question)
 
 Other combinations of the above software may work but have not been tested. In
@@ -65,6 +101,11 @@ supporting software.
 
 Installation
 ============
+
+- Check out the code:
+  svn co http://svn.bycycle.org/byCycle/core/branches/enterprise/byCycle byCycle
+- Move the byCycle directory to /usr/lib/python2.4/site-packages (substitute
+  "/usr/lib/python2.4" with path to your Python installation)
 
 
 Testing
@@ -114,8 +155,8 @@ its associated travel modes to the model:
   routing. This shouldn't be too difficult. You just need to specify which
   fields from the DB you want to use. To create the adjacency matrix, run
   __init__.py as a script. Next, you will modify bicycle.py to create the
-  weight (or cost if you prefer) function using the fields that should now be
-  in the adjacency matrix.
+  weight (or "cost" if you prefer) function using the fields that should now 
+  be in the adjacency matrix.
 
 If everything went well, you should now be able to look up addresses and find
 routes using the data you imported and the files modified as detailed above.
@@ -123,7 +164,8 @@ routes using the data you imported and the files modified as detailed above.
 One thing to keep in mind when doing the above is to make sure you keep the
 structure the same as the other data modes in the model. In other words, you
 want the same directory structure and the same paths, except you'll
-change metro to timbuktu and add or remove fields as appropriate to your data.
+change portlandor to timbuktu and add or remove fields as appropriate to your 
+data.
 
 
 Problems and Issues
