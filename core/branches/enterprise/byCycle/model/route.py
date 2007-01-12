@@ -42,7 +42,7 @@ class Route(object):
         self.linestring_ll = linestring_ll
 
     #----------------------------------------------------------------------
-    def __repr__(self):
+    def __simplify__(self):
         points = []
         for i in range(self.linestring_ll.numPoints()):
             points.append(self.linestring_ll.pointN(i))
@@ -53,7 +53,11 @@ class Route(object):
             'directions': self.directions,
             'distance': self.distance
         }
-        return repr(route)
+        return route
+        
+    #----------------------------------------------------------------------
+    def __repr__(self):
+        return repr(self.__simplify__())
 
     #----------------------------------------------------------------------
     def __str__(self):

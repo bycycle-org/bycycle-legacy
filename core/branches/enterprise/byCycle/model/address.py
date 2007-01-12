@@ -110,13 +110,16 @@ class PostalAddress(Address):
         result = joinAttrs([result, self.place], '\n')
         return result
 
-    def __repr__(self):
-        return repr({
-            'type': 'postal',
+    def __simplify__(self):
+        return {
+            'type': self.__class__.__name__,
             'number': self.number,
             'street_name': self.street_name,
             'place': self.place
-        })
+        }
+        
+    def __repr__(self):
+        return repr(self.__simplify__())
 
 
 class EdgeAddress(PostalAddress):
@@ -251,14 +254,17 @@ class IntersectionAddress(Address):
     def __str__(self):
         return joinAttrs((self.street_name, self.place), '\n')
 
-    def __repr__(self):
-        return repr({
-            'type': 'intersection',
+    def __simplify__(self):
+        return {
+            'type': self.__class__.__name__,
             'street_name1': self.street_name1,
             'place1': self.place1,
             'street_name2': self.street_name2,
             'place2': self.place2
-        })
+        }
+        
+    def __repr__(self):
+        return repr(self.__simplify__())
 
 
 class PointAddress(IntersectionAddress):

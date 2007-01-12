@@ -227,10 +227,6 @@ class Edge(object):
 
         return edge_f, edge_t
 
-    def clone(self):
-        from copy import deepcopy
-        return deepcopy(self)
-
     def __str__(self):
         stuff = [
             joinAttrs((
@@ -263,6 +259,22 @@ class Edge(object):
             ),
         ]
         return joinAttrs(stuff, join_string='\n')
+    
+    def __simplify__(self):
+        attrs = [col.name for col in self.c]
+        vals = [getattr(self, a) for a in attrs]
+        simple = dict(zip(attrs, vals))
+        linestring = self.geom.copy()
+        srs = SpatialReference(epsg=4326)
+        linestring.transform(src_proj=str(self.geom.srs), dst_proj=str(srs))
+        points = []
+        for i in range(linestring.numPoints()):
+            points.append(linestring.pointN(i))        
+        simple['geom'] = [{'x': p.x, 'y': p.y} for p in points]
+        return simple
+        
+    def __repr__(self):
+        return repr(self.__simplify__())
 
 
 class StreetName(object):
@@ -281,13 +293,18 @@ class StreetName(object):
         )
         return joinAttrs(attrs)
 
-    def __repr__(self):
-        return repr({
+    #----------------------------------------------------------------------
+    def __simplify__(self):
+        return {
             'prefix': (self.prefix or '').upper(),
             'name': self._name_for_str(),
             'sttype': (self.sttype or '').title(),
             'suffix': (self.suffix or '').upper()
-        })
+        }
+        
+    #----------------------------------------------------------------------
+    def __repr__(self):
+        return repr(self.__simplify__())
 
     def _name_for_str(self):
         """Return lower case name if name starts with int, else title case."""
@@ -350,12 +367,17 @@ class City(object):
         else:
             return '[No City]'
 
-    def __repr__(self):
-        return repr({
+    #----------------------------------------------------------------------
+    def __simplify__(self):
+        return {
             'id': self.id,
             'city': str(self)
-        })
-
+        }
+        
+    #----------------------------------------------------------------------
+    def __repr__(self):
+        return repr(self.__simplify__())
+        
     def __nonzero__(self):
         """A `City` must have at least a `city` (i.e., a city name)."""
         return bool(self.city)
@@ -380,11 +402,16 @@ class State(object):
         else:
             return '[No State]'
 
-    def __repr__(self):
-        return repr({
+    #----------------------------------------------------------------------
+    def __simplify__(self):
+        return {
             'id': str(self),
             'state': str(self.state or '[No State]').title()
-        })
+        }
+        
+    #----------------------------------------------------------------------
+    def __repr__(self):
+        return repr(self.__simplify__())
 
     def __nonzero__(self):
         """A `State` can have either an id (two-letter abbrev.) or state."""
@@ -442,12 +469,17 @@ class Place(object):
         city_state = joinAttrs([self.city, self.state], ', ')
         return joinAttrs([city_state, str(self.zip_code or '')])
 
-    def __repr__(self):
-        return repr({
-            'city': self.city,
-            'state': self.state,
+    #----------------------------------------------------------------------
+    def __simplify__(self):
+        return {
+            'city': self.city.__simplify__(),
+            'state': self.state.__simplify__(),
             'zip_code': str(self.zip_code or '')
-        })
+        }
+        
+    #----------------------------------------------------------------------
+    def __repr__(self):
+        return repr(self.__simplify__())
 
     def __nonzero__(self):
         return bool(self.city or self.state or self.zip_code)
@@ -544,7 +576,7 @@ class Point(object):
                     else:
                         return x, y, None
             raise ValueError(
-                'Could not initialize coordinates from "%s".' % point
+                'Could not initialize coordinates from "%s".' % str(point)
             )
         else:
             raise ValueError(

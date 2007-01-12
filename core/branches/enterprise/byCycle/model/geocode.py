@@ -1,4 +1,4 @@
-###########################################################################
+################################################################################
 # $Id$
 # Created 2005-??-??.
 #
@@ -64,16 +64,19 @@ class Geocode(object):
         return quote_plus(s)
 
     #----------------------------------------------------------------------
-    def __repr__(self):
-        result = {
-            'type': 'geocode',
-            'street_name': self.address.street_name,
-            'place': self.address.place,
+    def __simplify__(self):
+        return {
+            'type': self.__class__.__name__,
+            'street_name': self.address.street_name.__simplify__(),
+            'place': self.address.place.__simplify__(),
             'address': str(self.address),
             'point': self.xy_ll,
             'network_id': self.network_id
         }
-        return repr(result)
+        
+    #----------------------------------------------------------------------
+    def __repr__(self):
+        return repr(self.__simplify__())
 
 
 ###########################################################################
@@ -104,17 +107,20 @@ class PostalGeocode(Geocode):
         self.edge = edge
 
     #----------------------------------------------------------------------
-    def __repr__(self):
-        result = {
-            'type': 'postal',
+    def __simplify__(self):
+        return {
+            'type': self.__class__.__name__,
             'number': self.address.number,
-            'street_name': self.address.street_name,
-            'place': self.address.place,
+            'street_name': self.address.street_name.__simplify__(),
+            'place': self.address.place.__simplify__(),
             'address': str(self.address),
             'point': {'x': self.xy_ll.x, 'y': self.xy_ll.y},
             'network_id': self.network_id
         }
-        return repr(result)
+        
+    #----------------------------------------------------------------------
+    def __repr__(self):
+        return repr(self.__simplify__())
 
     #----------------------------------------------------------------------
     def __eq__(self, other):
@@ -150,18 +156,21 @@ class IntersectionGeocode(Geocode):
         self.node = node
 
     #----------------------------------------------------------------------
-    def __repr__(self):
-        result = {
-            'type': 'intersection',
-            'street_name1': self.address.street_name1,
-            'street_name2': self.address.street_name2,
-            'place1': self.address.place1,
-            'place2': self.address.place2,
+    def __simplify__(self):
+        return {
+            'type': self.__class__.__name__,
+            'street_name1': self.address.street_name1.__simplify__(),
+            'street_name2': self.address.street_name2.__simplify__(),
+            'place1': self.address.place1.__simplify__(),
+            'place2': self.address.place2.__simplify__(),
             'address': str(self.address),
             'point': {'x': self.xy_ll.x, 'y': self.xy_ll.y},
             'network_id': self.network_id
         }
-        return repr(result)
+        
+    #----------------------------------------------------------------------
+    def __repr__(self):
+        return repr(self.__simplify__())
 
     #----------------------------------------------------------------------
     def __eq__(self, other):
