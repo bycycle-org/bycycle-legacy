@@ -11,7 +11,9 @@
 # in the top level of this distribution. This software is provided AS IS with
 # NO WARRANTY OF ANY KIND.
 ################################################################################
-###########################################################################
+"""byCycle Exception."""
+
+
 class ByCycleError(Exception):
     def __init__(self, desc='byCycle Error'):
         self.description = desc
@@ -20,7 +22,6 @@ class ByCycleError(Exception):
         return str(self.description)
 
 
-###########################################################################
 class InputError(ByCycleError):
     def __init__(self, errors=[]):
         if isinstance(errors, basestring):
@@ -30,6 +31,10 @@ class InputError(ByCycleError):
         ByCycleError.__init__(self, desc=desc)
 
 
-###########################################################################
 class NotFoundError(ByCycleError):
     pass
+
+
+class IdentifyError(ByCycleError):
+    def __init__(self, desc):
+        ByCycleError.__init__(self, desc=desc)
