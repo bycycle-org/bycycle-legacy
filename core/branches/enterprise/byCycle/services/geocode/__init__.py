@@ -33,13 +33,12 @@ the Address Normalization service (normaddr):
 from sqlalchemy import orm
 from sqlalchemy.sql import select, func, and_, or_
 from sqlalchemy.exceptions import InvalidRequestError
-
 from byCycle.model.address import *
 from byCycle.model.geocode import *
 from byCycle.model.domain import Point
-
 from byCycle import services
 from byCycle.services import normaddr
+from byCycle.services import identify
 from byCycle.services.exceptions import ByCycleError, NotFoundError
 
 
@@ -67,11 +66,6 @@ class Service(services.Service):
     name = 'geocode'
 
     def __init__(self, region=None):
-        """
-
-        ``region`` `Region` | `string` | None
-
-        """
         services.Service.__init__(self, region=region)
 
     def query(self, q):
@@ -280,73 +274,47 @@ class Service(services.Service):
     def getPointGeocodes(self, oAddr):
         """Geocode point or node address represented by ``oAddr``.
 
-        ``oAddr`` -- A `PointAddress` (e.g., POINT(x y)) OR a `NodeAddress`. A
-        node "address" contains just the ID of some node.
+        ``oAddr``
+            A `PointAddress` (e.g., POINT(x y)) OR a `NodeAddress`. A node
+            "address" contains just the ID of some node.
 
-        return `list` -- A list containing one `IntersectionGeocode` or one
-        `PostalGeocode`, depending on whether the point is at an intersection
-        with cross streets or a dead end.
+        return `list`
+            A list containing one `IntersectionGeocode` or one
+            `PostalGeocode`, depending on whether the point is at an
+            intersection with cross streets or a dead end.
 
-        raise `AddressNotFoundError` -- Point doesn't match any nodes in the
-        database.
+        raise `AddressNotFoundError`
+            Point doesn't match any nodes in the database.
 
         """
-        SRID = self.region.SRID
-        units = self.region.units
-        earth_circumference = self.region.earth_circumference
-        layer_nodes = self.region.tables.layer_nodes
-        _c = layer_nodes.c
-        query = self.region.dbh.session.query(self.region.mappers.layer_nodes)
-        cols = [_c.id, _c.geom]
-
-        # Set up the SELECT clause according to whether ``oAddr`` is a
-        # `NodeAddress` or `PointAddress`
         try:
             # Special case of `Node` ID supplied directly
             node_id = oAddr.network_id
         except AttributeError:
             # No network ID, so look up `Node` by distance
-            wkt = str(oAddr.point)
-            # Function to convert the input point to native geometry
-            _f = func.transform(func.GeomFromText(wkt, 4326), SRID)
-            # Function to get the distance between input point and table points
-            dist_func = func.distance(_f, _c.geom)
-            # This is what we're SELECTing--the distance from the input point
-            # to points in the nodes table (along with the node ID and geom).
-            cols += [dist_func.label('dist')]
-            # Limit the search to within `expand_dist` feet of the input point.
-            # Keep trying until we find a match or until `expand_dist` is
-            # larger than half the circumference of the earth.
-            if units == 'feet':
-                expand_dist = 250
-                # This is about the length of a Portland block. I suppose we
-                # should figure out what the typical user click accuracy is,
-                # and set this according to that.
-            elif units == 'meters':
-                expand_dist = 85
-            _aa = _c.geom.op('&&')  # geometry A overlaps geom B operator
-            _e = func.expand  # geometry bounds expanding function
-            while expand_dist < earth_circumference:
-                where = _aa(_e(_f, expand_dist))
-                select_ = select(cols, where, order_by=['dist'], limit=1)
-                try:
-                    node = self._selectOneNode(query, select_)
-                except AddressNotFoundError:
-                    expand_dist <<= 1
-                else:
-                    break
-            if expand_dist > earth_circumference:
-                # Not found on `Earth`!
-                raise AddressNotFoundError(address=oAddr, region=self.region)
+            id_service = identify.Service(region=self.region)
+            try:
+                node = id_service.query(oAddr.point, layer='nodes')
+            except IdentifyError:
+                pass
         else:
-            select_ = select(cols, _c.id == node_id)
-            node = self._selectOneNode(query, select_)
+            reg = self.region
+            _c = reg.tables.layer_nodes.c
+            sel = select(_c, _c.id == node_id)
+            query = reg.dbh.session.query(reg.mappers.layer_nodes)
+            try:
+                node = query.selectone(sel)
+            except InvalidRequestError:
+                pass
 
         # TODO: Check the `Edge`'s street names and places for [No Name]s and
         # choose the `Edge`(s) that have the least of them. Also, we should
         # pick streets that have different names from each other when creating
         # `IntersectionAddresses`s
-        edges = node.edges
+        try:
+            edges = node.edges
+        except UnboundLocalError:
+            raise AddressNotFoundError(region=self.region, address=oAddr)
         if len(edges) > 1:
             # `node` has multiple outgoing edges
             edge1, edge2 = edges[0], edges[1]
@@ -404,28 +372,3 @@ class Service(services.Service):
         for where_clause in where_clauses:
             if where_clause is not None:
                 select_.append_whereclause(where_clause)
-
-    def _selectOneNode(self, query, select_):
-        """Attempt to get one, and only one, `Node`.
-
-        The main purpose of this method is to encapsulate the SQLAlchemly
-        InvalidRequestError and raise an AddressNotFoundError instead.
-
-        ``query`` -- A SQLAlchemy query object.
-        ``select_`` -- A SELECT statement that can return *only* one row.
-
-        return `Node` -- A single `Node` object.
-
-        raise `AddressNotFoundError` -- If there is not exactly one row
-        returned by the SELECT, this will be raised. Note that this could
-        happend if there are 0 or more than 1 rows. That's why the SELECT
-        should only be able to return 1 one row maximum, either by using
-        LIMIT 1 or some other way.
-
-        TODO: Fix this so it detects 0 versus multiple matches.
-
-        """
-        try:
-            return query.selectone(select_)
-        except InvalidRequestError:
-            raise AddressNotFoundError
