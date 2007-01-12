@@ -14,6 +14,7 @@
 """Provides the `Region` base class."""
 import os
 import marshal
+import math
 from sqlalchemy.sql import select
 from sqlalchemy.orm import mapper, relation
 from byCycle.model import db
@@ -40,7 +41,12 @@ regions = {
 
 
 class Mappers(object):
-    pass
+    def __getitem__(self, key):
+        """Allow access to mappers using dict notation."""
+        try:
+            return self.__dict__[key]
+        except KeyError:
+            raise KeyError('Unknown mapper: %s' % (key))
 
 
 class Region(object):
@@ -52,13 +58,6 @@ class Region(object):
         ``key`` is a unique identifier for the region, suitable for use as a
         dictionary/hash/javascript key. It should be the same as the region's
         package name.
-        
-        ``name`` `string` -- The region's name. Must be City, State (e.g.,
-        Portland, OR) matching region's package name. Region package names are
-        the region's city and state abbreviation smooshed together and
-        lowercase. (e.g., Portland, OR => portlandor).
-
-        ``edge_attrs`` `list` -- A list of street attribute names.
         
         TODO: Get the geometry/spatial attrs from the DB (SRID, units, etc)
 
@@ -91,6 +90,7 @@ class Region(object):
         self.data_path = os.path.join(self.model_path, key, 'data')
         self.matrix_path = os.path.join(self.data_path, 'matrix.pyc')
         
+	# Database handler
         self.dbh = db.DB(self)
 
     @property
@@ -234,26 +234,26 @@ class Region(object):
         import sqlalchemy
         from byCycle.lib import gis, meter
 
-        t = meter.Timer()
+        timer = meter.Timer()
+
         layer_edges = self.tables.layer_edges
         layer_nodes = self.tables.layer_nodes
 
         # Get the number of nodes
-        print 'Fetching node count...'
         result = layer_nodes.count().execute()
         num_nodes = result.fetchone()[0]
         result.close()
 
         # Get the edge attributes
-        t.start()
+	timer.start()
         print 'Fetching edge attributes...'
         cols = ['id', 'node_f_id', 'node_t_id', 'one_way', 'length(geom)']
-        if len(self.region.edge_attrs) > 1:
-            cols += self.region.edge_attrs[1:]
-        select_ = select(cols, engine=self.engine, from_obj=[layer_edges])
+        if len(self.edge_attrs) > 1:
+            cols += self.edge_attrs[1:]
+        select_ = select(cols, engine=self.dbh.engine, from_obj=[layer_edges])
         code = layer_edges.c.code
         
-        # TODO: Call concrete region class to get the edge filter
+        # TODO: Call region subclass to get the edge filter
         select_.append_whereclause(
             ((code >= 1200) & (code < 1600)) |
             ((code >= 3200) & (code < 3300))
@@ -261,19 +261,21 @@ class Region(object):
 
         result = select_.execute()
         num_edges = result.rowcount
-        print 'Took %s' % t.stop()
+        print 'Took %s seconds.' % timer.stop()
 
-        print 'Number of streets: %s' % num_edges
+        print '\nNumber of streets: %s' % num_edges
         print 'Number of nodes: %s' % num_nodes
 
         G = {'nodes': {}, 'edges': {}}
         nodes = G['nodes']
         edges = G['edges']
 
+	timer.start()
+	print
         print 'Creating adjacency matrix...'
         met = meter.Meter(num_items=num_edges, start_now=True)
         for i, row in enumerate(result):
-            adjustments = self.region._adjustRowForMatrix(self, row)
+            adjustments = self._adjustRowForMatrix(self, row)
 
             ix = row.id
             node_f_id, node_t_id = row.node_f_id, row.node_t_id
@@ -287,9 +289,9 @@ class Region(object):
             tf = one_way & 2
 
             entry = [self.encodeFloat(row.length)]
-            entry += [row[a] for a in self.region.edge_attrs[1:]]
+            entry += [row[a] for a in self.edge_attrs[1:]]
             for k in adjustments:
-                entry[self.region.edge_attrs_index[k]] = adjustments[k]
+                entry[self.edge_attrs_index[k]] = adjustments[k]
             edges[ix] = tuple(entry)
 
             if ft:
@@ -302,14 +304,15 @@ class Region(object):
                 nodes[node_t_id][node_f_id] = ix
 
             met.update(i+1)
-        print
         result.close()
+        print '\nTook %s seconds.' % timer.stop()
 
-        t.start()
-        print 'Saving adjacency matrix...'
+	timer.start()
+        print '\nSaving adjacency matrix...'
         self._saveMatrix(G)
-        self.region.G = G
-        print 'Took %s.' % t.stop()
+        self.G = G
+        print 'Took %s seconds.' % timer.stop()
+
         return G
 
     def encodeFloat(self, f):
