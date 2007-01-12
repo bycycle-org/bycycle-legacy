@@ -37,10 +37,10 @@ class Tables(object):
         self.__initTables(add_geometry=add_geometry)
 
     def __getitem__(self, key):
-        """Allow access to tables using `dict` notation."""
-        if name in self.__table_names:
+        """Allow access to tables using dict notation."""
+        try:
             return self.__dict__[key]
-        else:
+        except KeyError:
             raise KeyError('%s is not a table in the %s schema.' % 
                            (key, self.schema))
 
