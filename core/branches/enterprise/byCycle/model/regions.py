@@ -20,10 +20,8 @@ milwaukeewi = 'milwaukeewi'
 pittsburghpa = 'pittsburghpa'
 seattlewa = 'seattlewa'
 
-
 region_keys = (portlandor, milwaukeewi, pittsburghpa, seattlewa)
 regions = dict([(r, 1) for r in region_keys])
-
 
 states = ('or', 'pa', 'wa', 'wi')
 states_cities = dict([(s, {}) for s in states])
@@ -83,17 +81,17 @@ zip_codes.update(dict([(zc, portlandor) for zc in portlandor_zip_codes]))
 
 
 # region key alias => region key
-_aliases = ('all', '', None)
-region_aliases = dict([(a, 'all') for a in _aliases])
+aliases = ('all', '', None)
+region_aliases = dict([(a, 'all') for a in aliases])
 
-_aliases = (milwaukeewi, 'mil', 'milwaukee')
-region_aliases.update(dict([(a, milwaukeewi) for a in _aliases]))
+aliases = (milwaukeewi, 'mil', 'milwaukee')
+region_aliases.update(dict([(a, milwaukeewi) for a in aliases]))
 
-_aliases = (portlandor, 'metro', 'pdx', 'portland')
-region_aliases.update(dict([(a, portlandor) for a in _aliases]))
+aliases = (portlandor, 'metro', 'pdx', 'portland')
+region_aliases.update(dict([(a, portlandor) for a in aliases]))
 
-_aliases = (pittsburghpa, 'pgh')
-region_aliases.update(dict([(a, pittsburghpa) for a in _aliases]))
+aliases = (pittsburghpa, 'pgh')
+region_aliases.update(dict([(a, pittsburghpa) for a in aliases]))
 
 
 def getRegionKey(region):
