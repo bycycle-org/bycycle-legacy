@@ -1,5 +1,6 @@
-from byCycle.model import db, portlandor
+#!/usr/bin/env python
+
+from byCycle.model import portlandor
 region = portlandor.Region()
-db = db.DB(region)
-db.createAdjacencyMatrix()
+region.createAdjacencyMatrix()
 
