@@ -1,4 +1,44 @@
 #!/usr/bin/env python
+"""Run the `paster serve` command.
+
+The first arg to this script is the ini file to use. All following args are
+passed to paster as --options. If no args are given to this script,
+development.ini is used with the --reload option.
+
+"""
+import sys
+import os
+from os.path import abspath, dirname, join
+
+args = sys.argv
+
+# Goto the dir this file is in
+top_level = dirname(dirname(abspath(__file__)))
+os.chdir(top_level)
+
+# ini file name to pass to `paster serve`
+try:
+    ini = args[1]
+except IndexError:
+    ini = 'development'
+
+if not ini.endswith('.ini'):
+    ini = ini + '.ini'
+ini = join(top_level, ini)
+
+# Args to pass to `paster serve`
+try:
+    args = [''] + args[2:]
+except IndexError:
+    args = ['', 'reload']
+        
+# Run `paster serve` with args and ini file
+cmd = 'paster serve %s %s' % (' --'.join(args), ini)
+print cmd
+os.system(cmd)
+
+
+#!/usr/bin/env python
 import os
 from os.path import abspath, dirname, join
 top_level = dirname(dirname(abspath(__file__)))
