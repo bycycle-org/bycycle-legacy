@@ -7,6 +7,7 @@
 byCycle.Map.google = {
 
   description: 'Google Map',
+  api_loaded: false,
 
 /**
  * Do map initialization that needs to happen before page is done loading.
@@ -29,7 +30,7 @@ byCycle.Map.google = {
     var api_key = api_keys[byCycle.domain];
     if (api_key) {
       byCycle.util.writeScript(api_url + api_key);
-      byCycle.Map.google.api_loaded = true;
+      this.api_loaded = true;
       byCycle.logDebug('Google Maps API Loaded');
     } else {
       byCycle.logDebug('No API key found for ' + byCycle.domain);
@@ -38,11 +39,11 @@ byCycle.Map.google = {
 
   isLoadable: function() {
     var is_loadable = false;
-    if (byCycle.Map.google.api_loaded && GBrowserIsCompatible()) {   
+    if (this.api_loaded && GBrowserIsCompatible()) {   
         is_loadable = true;
     } else {
       var content = '<div style="padding: 5px;">';
-      if (byCycle.Map.google.api_loaded) {
+      if (this.api_loaded) {
         content += 'Your browser doesn\'t seem to meet the requirements for using this application. The following browsers are currently supported and are all free to download (<a href="http://www.mozilla.com/">Firefox</a> is an excellent choice):    <ul><li><a href="http://www.microsoft.com/windows/ie/downloads/default.asp">IE</a> 5.5+ (Windows)</li><li><a href="http://www.mozilla.com/">Firefox</a> 0.8+ (Windows, Mac, Linux)</li><li><a href="http://www.apple.com/safari/download/">Safari</a> 1.2.4+ (Mac)</li><li><a href="http://channels.netscape.com/ns/browsers/download.jsp">Netscape</a> 7.1+ (Windows, Mac, Linux)</li><li><a href="http://www.mozilla.org/products/mozilla1.x/">Mozilla</a> 1.4+ (Windows, Mac, Linux)</li><li><a href="http://www.opera.com/download/">Opera</a> 7.5+ (Windows, Mac, Linux)</li></ul>';
       } else {
         content += ('No Google Maps API key found for ' + byCycle.domain);

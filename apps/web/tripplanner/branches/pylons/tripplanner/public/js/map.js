@@ -146,13 +146,8 @@ byCycle.Map.Map.prototype = {
     };
     this.setCenter(point, 14);
     return this.addOverlay(marker);
-	
-	
-	GEvent.addListener(geocode.marker, "click", function() {
-	  map.openInfoWindowHtml(point, html);
-	});
   },
-		  
+          
   /**
    * Put some markers on the map
    * @param points An array of points
