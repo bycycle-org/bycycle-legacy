@@ -2,12 +2,15 @@ from setuptools import setup, find_packages
 
 setup(
     name='tripplanner',
-    version="",
-    #description="",
-    #author="",
-    #author_email="",
-    #url="",
-    install_requires=["Pylons>=0.9.1"],
+    version="0.4",
+    description="byCycle Trip Planner",
+    author="Wyatt Baldwin",
+    author_email="wyatt@bycycle.org",
+    url="http://tripplanner.bycycle.org/",
+    install_requires=["Pylons>=0.9.2",
+                      "byCycle>=0.4",
+                      "SQLAlchemy>=0.3"
+                      ],
     packages=find_packages(),
     include_package_data=True,
     test_suite = 'nose.collector',
