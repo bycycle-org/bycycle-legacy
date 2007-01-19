@@ -1,0 +1,67 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" 
+	"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml" xmlns:v="urn:schemas-microsoft-com:vml">
+	
+	<head>
+		<meta http-equiv="Content-Type" content="application/xhtml+xml; charset=utf-8" />
+          	
+		<title>Food Not Bombs Map</title>
+		
+		<%= stylesheet_link_tag 'reset-fonts-grids.css' %>
+		<%= stylesheet_link_tag 'base' %>
+		
+  		<%= javascript_include_tag :defaults %>
+		<script src="http://maps.google.com/maps?file=api&amp;v=2&amp;key=ABQIAAAAd_4WmZlgvQzchd_BQM0MPhTkxokDJkt52pLJLqHCpDW3lL7iXBTREVLn9gCRhMUesO754WIidhTq2g"></script>
+		<%= javascript_include_tag 'fnbmap' %>
+		
+		<script>
+			// Fire it up!
+  			Event.observe(window, 'load', FNBMap.on_load);
+  		</script>
+	</head>
+	
+	<body>
+		<div id="doc3">
+			<div id="hd">				
+				<div id="logo"><h1><a href="/" title="Food Not Bombs Map">Food Not Bombs Map</a></h1></div>
+
+				<div>
+					<ul id="nav">
+						<li><%= link_to 'Home', '/' %></li>
+						<li><%= link_to 'All Events', :controller => 'events', :action => 'list' %></li>
+						<li><%= link_to 'New Event', :controller => 'events', :action => 'new' %></li>
+						<li><%= link_to 'All Locations', :controller => 'locations', :action => 'list' %></li>
+						<li><%= link_to 'New Location', :controller => 'locations', :action => 'new' %></li>									
+					</ul>
+
+					<div id="tag_line">Made by <a href="http://www.bycycle.org/">byCycle.org</a></div>
+				</div>
+				<div style="clear: both;"></div>
+			</div>  
+			
+			<div id="bd">
+				<div id="yui-main"> 
+					<div class="yui-b">
+						<div class="yui-gf">
+						
+							<!-- Content: Plug in content for list, show, etc here. -->
+							<div id="content" class="yui-u first">
+								<% if flash[:notice] %>
+									<div style="padding: 5px; color: green;"><%= flash[:notice] %></div>
+								<% end %>
+								<%= yield  %>								
+							</div> 
+						
+							<!-- Map -->
+							<div id="map" class="yui-u"></div>
+														
+						</div>
+					</div>
+				</div>
+			</div>
+			
+			<div id="ft"></div>
+		</div>
+	</body>
+</html>

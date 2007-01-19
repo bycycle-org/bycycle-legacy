@@ -1,0 +1,41 @@
+<div class="location">
+	<% unless location.name.strip.empty? %>
+		<h3><%= location.name %></h3>
+	<% end %>
+
+	<% unless location.description.strip.empty? %>	
+		<div class="location_description">
+			<%= location.description %>
+		</div>
+	<% end %>
+
+	<% unless location.address.strip.empty? %>
+		<div class="location_address">
+			<%= location.address %>
+		</div>
+	<% end %>
+	
+	<div class="location_place">
+		<%= location.city.capitalize %>
+		<% unless location.state.strip.empty? %>
+			, <%= location.state.upcase %> 
+		<% end %>
+		<%= location.zip %>
+	</div>	
+	
+	<div class="location_coordinates">
+		<%= location.latitude %>, <%= location.longitude %>
+	</div>
+
+	<ul class="location_links">
+		<li>
+			<a href="#"
+				onclick="FNBMap.map.setCenter(new GLatLng(<%= location.latitude %>, <%= location.longitude %>));"
+				>Show on map</a>
+		</li>
+		
+		<li>
+			<%= link_to 'Edit location &raquo;', :action => 'edit', :id => location %>
+		</li>
+	</ul>
+</div>

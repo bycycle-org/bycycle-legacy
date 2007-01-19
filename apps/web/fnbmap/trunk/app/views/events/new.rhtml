@@ -1,0 +1,15 @@
+<h2>Create Event</h2>
+
+<div class="event">
+	<%= start_form_tag :action => 'create' %>
+	  <%= render :partial => 'form' %>
+	  <%= submit_tag 'Create Event' %>
+	<%= end_form_tag %>
+</div>
+
+<script>
+	Event.observe(window, 'load', function() {
+		var center = FNBMap.default_center;
+		FNBMap.map.setCenter(center, FNBMap.default_zoom);
+	});
+</script>
