@@ -1,0 +1,17 @@
+<h2>Edit Event</h2>
+
+<div class="event">
+	<%= start_form_tag :action => 'update', :id => @event %>
+	  <%= render :partial => 'form' %>
+  	<%= submit_tag 'Update Event' %>
+	<%= end_form_tag %>
+</div>
+
+<script>
+	Event.observe(window, 'load', function() {
+		var center = new GLatLng(<%= @event.location.latitude %>, <%= @event.location.longitude %>);
+		// TODO: Attach info_win to marker
+		FNBMap.map.addOverlay(new GMarker(center));
+		FNBMap.map.setCenter(center, FNBMap.default_zoom);
+	});
+</script>

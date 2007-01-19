@@ -1,0 +1,28 @@
+<%= error_messages_for 'event' %>
+
+<!--[form:event]-->
+<p>
+	<label for="event_name">Name</label><br/>
+	<%= text_field('event', 'name') %>
+</p>
+
+<p>
+	<label for="event_day_of_week">Day of Week</label><br/>
+	<%= select('event', 'day_id', Day.find_all.collect {|d| [(d.name.capitalize), d.id]}) %>
+</p>
+
+<p>
+	<label for="event_start_time">Start time</label><br/>
+	<%= text_field('event', 'start_time') %>
+</p>
+
+<p>
+	<label for="event_locations">Location</label><br/>
+	<%= select('event', 'location_id', Location.find_all.collect {|l| [l.address, l.id]}) %><br/>
+	<% if @event.location %>
+		<%= link_to('Edit location details &raquo;', :controller => 'locations', :action => 'edit', :id => @event.location) %><br/>
+	<% end %>
+	<%= link_to('Create a new location &raquo;', :controller => 'locations', :action => 'new') %>
+</p>
+<!--[eoform:event]-->
+
