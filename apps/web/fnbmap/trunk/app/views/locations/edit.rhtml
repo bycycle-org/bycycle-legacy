@@ -1,10 +1,12 @@
 <h2>Edit Location</h2>
 
+<%= error_messages_for :location %>
+
 <div class="location">
-	<%= start_form_tag :action => 'update', :id => @location %>
-	  <%= render :partial => 'form' %>
-	  <%= submit_tag 'Update Location' %>
-	<%= end_form_tag %>
+	<% form_for(:location, :url => location_path(@location), :html => { :method => :put }) do |f| %>
+		<%= render :partial => 'form' %>
+		<%= submit_tag 'Update Location' %>
+	<% end %>
 </div>
 
 <script>

@@ -1,6 +1,6 @@
 <div class="day">
 	<% day_name = day.name.capitalize %>
-	<h2 class="day_name"><%= day_name %></h2>							
+	<h2 class="day_name"><%= day_name %></h2>
 	<ul class="day_events">
 		<% unless day.events.empty? %>
 			<% day.events.each do |event| %>
@@ -10,5 +10,5 @@
 			No known events for <%= day_name %><br/>
 			<%= link_to 'Create a new event &raquo;', :action => 'new' %>
 		<% end %>
-	</ul>								
+	</ul>
 </div>
