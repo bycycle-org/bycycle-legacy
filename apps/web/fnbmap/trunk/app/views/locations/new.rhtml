@@ -1,10 +1,12 @@
 <h1>Create Location</h1>
 
+<%= error_messages_for :location %>
+
 <div class="location">
-	<%= start_form_tag :action => 'create' %>
-  	<%= render :partial => 'form' %>
-  	<%= submit_tag "Create Location" %>
-	<%= end_form_tag %>
+	<% form_for(:location, :url => locations_path) do |f| %>
+  		<%= render :partial => 'form' %>
+		<%= submit_tag "Create Location" %>
+	<% end %>
 </div>
 
 <script>

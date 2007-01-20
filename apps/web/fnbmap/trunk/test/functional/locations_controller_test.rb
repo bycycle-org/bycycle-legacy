@@ -13,76 +13,45 @@ class LocationsControllerTest < Test::Unit::TestCase
     @response   = ActionController::TestResponse.new
   end
 
-  def test_index
+  def test_should_get_index
     get :index
     assert_response :success
-    assert_template 'list'
+    assert assigns(:locations)
   end
 
-  def test_list
-    get :list
-
-    assert_response :success
-    assert_template 'list'
-
-    assert_not_nil assigns(:locations)
-  end
-
-  def test_show
-    get :show, :id => 1
-
-    assert_response :success
-    assert_template 'show'
-
-    assert_not_nil assigns(:location)
-    assert assigns(:location).valid?
-  end
-
-  def test_new
+  def test_should_get_new
     get :new
-
     assert_response :success
-    assert_template 'new'
-
-    assert_not_nil assigns(:location)
+  end
+  
+  def test_should_create_location
+    old_count = Location.count
+    post :create, :location => { }
+    assert_equal old_count+1, Location.count
+    
+    assert_redirected_to location_path(assigns(:location))
   end
 
-  def test_create
-    num_locations = Location.count
-
-    post :create, :location => {}
-
-    assert_response :redirect
-    assert_redirected_to :action => 'list'
-
-    assert_equal num_locations + 1, Location.count
+  def test_should_show_location
+    get :show, :id => 1
+    assert_response :success
   end
 
-  def test_edit
+  def test_should_get_edit
     get :edit, :id => 1
-
     assert_response :success
-    assert_template 'edit'
-
-    assert_not_nil assigns(:location)
-    assert assigns(:location).valid?
   end
-
-  def test_update
-    post :update, :id => 1
-    assert_response :redirect
-    assert_redirected_to :action => 'show', :id => 1
+  
+  def test_should_update_location
+    put :update, :id => 1, :location => { }
+    assert_redirected_to location_path(assigns(:location))
   end
-
-  def test_destroy
-    assert_not_nil Location.find(1)
-
-    post :destroy, :id => 1
-    assert_response :redirect
-    assert_redirected_to :action => 'list'
-
-    assert_raise(ActiveRecord::RecordNotFound) {
-      Location.find(1)
-    }
+  
+  def test_should_destroy_location
+    old_count = Location.count
+    delete :destroy, :id => 1
+    assert_equal old_count-1, Location.count
+    
+    assert_redirected_to locations_path
   end
 end

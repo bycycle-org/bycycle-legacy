@@ -1,54 +1,81 @@
 class EventsController < ApplicationController
+  # GET /events
+  # GET /events.xml
   def index
-    list
-    render :action => 'list'
+    @events = Event.find(:all)
+    @days = Day.find(:all)
+    
+    respond_to do |format|
+      format.html # index.rhtml
+      format.xml  { render :xml => @events.to_xml }
+    end
   end
 
-  # GETs should be safe (see http://www.w3.org/2001/tag/doc/whenToUseGet.html)
-  verify :method => :post, :only => [ :destroy, :create, :update ],
-         :redirect_to => { :action => :list }
-
-  def list
-    # List events by day
-    @events = Event.find_all
-    @days = Day.find_all
-  end
-
+  # GET /events/1
+  # GET /events/1.xml
   def show
     @event = Event.find(params[:id])
+
+    respond_to do |format|
+      format.html # show.rhtml
+      format.xml  { render :xml => @event.to_xml }
+    end
   end
 
+  # GET /events/new
   def new
     @event = Event.new
   end
 
-  def create
-    @event = Event.new(params[:event])
-    if @event.save
-      flash[:notice] = 'Event was successfully created.'
-      redirect_to :action => 'show', :id => @event.id
-    else
-      render :action => 'new'
-    end
-  end
-
+  # GET /events/1;edit
   def edit
     @event = Event.find(params[:id])
-    @locations = Location.find_all
+    @locations = Location.find(:all)
   end
 
-  def update
-    @event = Event.find(params[:id])
-    if @event.update_attributes(params[:event])
-      flash[:notice] = 'Event was successfully updated.'
-      redirect_to :action => 'show', :id => @event
-    else
-      render :action => 'edit'
+  # POST /events
+  # POST /events.xml
+  def create
+    @event = Event.new(params[:event])
+
+    respond_to do |format|
+      if @event.save
+        flash[:notice] = 'Event was successfully created.'
+        format.html { redirect_to event_url(@event) }
+        format.xml  { head :created, :location => event_url(@event) }
+      else
+        format.html { render :action => "new" }
+        format.xml  { render :xml => @event.errors.to_xml }
+      end
     end
   end
 
+  # PUT /events/1
+  # PUT /events/1.xml
+  def update
+    @event = Event.find(params[:id])
+
+    respond_to do |format|
+      if @event.update_attributes(params[:event])
+        flash[:notice] = 'Event was successfully updated.'
+        format.html { redirect_to event_url(@event) }
+        format.xml  { head :ok }
+      else
+        format.html { render :action => "edit" }
+        format.xml  { render :xml => @event.errors.to_xml }
+      end
+    end
+  end
+
+  # DELETE /events/1
+  # DELETE /events/1.xml
   def destroy
-    Event.find(params[:id]).destroy
-    redirect_to :action => 'list'
+    @event = Event.find(params[:id])
+    @event.destroy
+
+    respond_to do |format|
+      format.html { redirect_to events_url }
+      format.xml  { head :ok }
+    end
   end
 end

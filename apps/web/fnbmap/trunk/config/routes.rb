@@ -1,4 +1,9 @@
 ActionController::Routing::Routes.draw do |map|
+
+  # RESTful routes
+  map.resources :locations
+  map.resources :events
+
   # The priority is based upon order of creation: first created -> highest priority.
   
   # Sample of regular route:
@@ -18,5 +23,6 @@ ActionController::Routing::Routes.draw do |map|
   map.connect ':controller/service.wsdl', :action => 'wsdl'
 
   # Install the default route as the lowest priority.
+  map.connect ':controller/:action/:id.:format'
   map.connect ':controller/:action/:id'
 end

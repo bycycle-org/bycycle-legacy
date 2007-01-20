@@ -6,7 +6,7 @@
 	<head>
 		<meta http-equiv="Content-Type" content="application/xhtml+xml; charset=utf-8" />
           	
-		<title>Food Not Bombs Map</title>
+		<title>Food Not Bombs Map &raquo; <%= controller.action_name %></title>
 		
 		<%= stylesheet_link_tag 'reset-fonts-grids.css' %>
 		<%= stylesheet_link_tag 'base' %>
@@ -29,10 +29,10 @@
 				<div>
 					<ul id="nav">
 						<li><%= link_to 'Home', '/' %></li>
-						<li><%= link_to 'All Events', :controller => 'events', :action => 'list' %></li>
-						<li><%= link_to 'New Event', :controller => 'events', :action => 'new' %></li>
-						<li><%= link_to 'All Locations', :controller => 'locations', :action => 'list' %></li>
-						<li><%= link_to 'New Location', :controller => 'locations', :action => 'new' %></li>									
+						<li>List: <%= link_to 'Events', events_path %>, </li>
+						<li><%= link_to 'Locations', locations_path %></li>
+						<li>New: <%= link_to 'Event', new_event_path %>, </li>
+						<li><%= link_to 'Location', new_location_path %></li>									
 					</ul>
 
 					<div id="tag_line">Made by <a href="http://www.bycycle.org/">byCycle.org</a></div>
