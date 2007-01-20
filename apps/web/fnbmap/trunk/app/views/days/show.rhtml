@@ -1,8 +1,0 @@
-<% for column in Day.content_columns %>
-<p>
-  <b><%= column.human_name %>:</b> <%=h @day.send(column.name) %>
-</p>
-<% end %>
-
-<%= link_to 'Edit', :action => 'edit', :id => @day %> |
-<%= link_to 'Back', :action => 'list' %>
