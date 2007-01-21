@@ -1,8 +1,12 @@
-<ul id="days">
-	<% for day in @days %>
-		<li class="day_li"><%= render :partial => 'day', :object => day %></li>
-	<% end %>
-</ul>
+<% if @events.empty? %>
+	No events found. <%= link_to 'Create a new one &raquo;', new_event_path %>
+<% else %>
+	<ul id="days">
+		<% for day in @days %>
+			<li class="day_li"><%= render :partial => 'day', :object => day %></li>
+		<% end %>
+	</ul>
+<% end %>
 
 <script>
 	Event.observe(window, 'load', function() {
@@ -21,14 +25,17 @@
 			all_points.push(point);
 		<% end %>
 
+		var center;
+		var zoom;
 		if (all_points.length == 0) {
-			all_points.push(FNBMap.default_point);
+			center = FNBMap.default_point;
+			zoom = FNBMap.default_zoom;
 		} else {
 			var bounds = FNBMap.get_bounds_for_points(all_points);
 			var sw = bounds.getSouthWest();
 			var ne = bounds.getNorthEast();
-			var center = new GLatLng((sw.lat() + ne.lat()) / 2.0, (sw.lng() + ne.lng()) / 2.0);
-			FNBMap.map.setCenter(center, FNBMap.map.getBoundsZoomLevel(bounds));
+			center = new GLatLng((sw.lat() + ne.lat()) / 2.0, (sw.lng() + ne.lng()) / 2.0);
+			zoom = FNBMap.map.getBoundsZoomLevel(bounds);
 
 			for (var day in points_by_day) {
 				var day_points = points_by_day[day];
@@ -38,5 +45,6 @@
 				}
 			}
 		}
+		FNBMap.map.setCenter(center, zoom);
 	});
 </script>

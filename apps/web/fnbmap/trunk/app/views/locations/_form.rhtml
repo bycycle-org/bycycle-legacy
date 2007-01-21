@@ -30,7 +30,7 @@
 		<%= text_field 'location', 'zip', :size => 5 %>
 	</p>
 	
-	<a href="#" id="do_geocode_link" onclick="return false;">Find coordinates for address</a>
+	<a href="#" id="do_geocode_link" onclick="return false;">Find coordinates for this address</a>
 	
 </fieldset>
 
@@ -38,12 +38,12 @@
 	<legend>Coordinates</legend>
 	
 	<p>
-		<label for="location_latitude">Latitude</label><br/>
+		<label for="location_latitude">Latitude (example: 45.124582)</label><br/>
 		<%= text_field 'location', 'latitude', :size => 12 %>
 	</p>
 	
 	<p>
-		<label for="location_longitude">Longitude</label><br/>
+		<label for="location_longitude">Longitude (example: -123.468765)</label><br/>
 		<%= text_field 'location', 'longitude', :size => 12 %>
 	</p>
 	
@@ -55,17 +55,22 @@
 	Event.observe(window, 'load', function () {
 		FNBMap.geocoder = new GClientGeocoder();
 		Event.observe('do_geocode_link', 'click', function () {
-			FNBMap.geocoder.getLatLng([$F('location_address'), $F('location_city'), $F('location_state'), $F('location_zip')].join(' '), function (point) {
-				if (point) {
-					var zoom = FNBMap.map.getZoom();
-					FNBMap.map.setCenter(point, (zoom < FNBMap.default_zoom ? 14 : zoom));
-					FNBMap.map.addOverlay(new GMarker(point));
-					$('location_latitude').value = point.lat();
-					$('location_longitude').value = point.lng();					
-				} else {
-					alert('Address not found');
-				}
-			});
+			var address = [$F('location_address'), $F('location_city'), $F('location_state'), $F('location_zip')].join(' ');
+			if (address.replace(/^\s*/, '').replace(/\s*$/, '') == '') {
+				alert('Please enter an address');
+			} else {
+				FNBMap.geocoder.getLatLng(address, function (point) {
+					if (point) {
+						var zoom = FNBMap.map.getZoom();
+						FNBMap.map.setCenter(point, (zoom < FNBMap.default_zoom ? FNBMap.default_zoom : zoom));
+						FNBMap.map.addOverlay(new GMarker(point));
+						$('location_latitude').value = point.lat();
+						$('location_longitude').value = point.lng();					
+					} else {
+						alert('Address not found:\n' + address);
+					}
+				});
+			}
 		});
 		Event.observe('set_coords_link', 'click', function () {
 			var center = FNBMap.map.getCenter();

@@ -1,7 +1,5 @@
 <h2>Create Event</h2>
 
-<%= error_messages_for :event %>
-
 <div class="event">
 	<% form_for(:event, :url => events_path) do |f| %>
 		<%= render :partial => 'form' %>
