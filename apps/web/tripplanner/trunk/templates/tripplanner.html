@@ -45,6 +45,11 @@
   </head>
 
   <body onresize="resizeMap();" onunload="if (map) GUnload();">
+    <div id="notice" style="display: %(notice_display)s;">
+      <div id="notice_msg">%(notice)s</div>
+      <a href="javascript:void(0);" onclick="setElStyle('notice', 'display', 'none'); return false;" title="Hide this notice">OK</a>
+    </div>
+    
     <div id="doc3" class="yui-t4">
     
       <!-- hd -->
@@ -61,8 +66,8 @@
 		  <!-- Input -->
           <div id="input" class="yui-u">	  
 			<div>
-			  <a id="geocode_link" class="selected" href="javascript:void(0);" onclick="selectInputForm(this, 'geocode');">Search Map</a> | 
-			  <a id="route_link" href="javascript:void(0);" onclick="selectInputForm(this, 'route');">Find Route</a> | 
+			  <a id="geocode_link" class="%(geocode_link_class)s" href="javascript:void(0);" onclick="selectInputForm(this, 'geocode');">Search Map</a> | 
+			  <a id="route_link" class="%(route_link_class)s" href="javascript:void(0);" onclick="selectInputForm(this, 'route');">Find Route</a> | 
 			  <a href="javascript:void(0);" 
 				onclick="toggleTips(); return false;"
 				title="Toggle display of tips"
@@ -73,7 +78,8 @@
 			<form id="geocode_form" class="input_form"
 			  action="." 
 			  method="get" 
-			  onsubmit="doFind('geocode'); return false;">
+			  onsubmit="doFind('geocode'); return false;"
+			  style="display: %(geocode_form_display)s">
 			  
 			  <div>
 				<small>Enter address -OR- pick from map</small>
@@ -98,7 +104,7 @@
 			  action="." 
 			  method="get" 
 			  onsubmit="doFind('route'); return false;"
-			  style="display: none;">
+			  style="display: %(route_form_display)s">
 			  
 			  <div>
 				<small>Enter 'from' &amp; 'to' addresses -OR- pick from map</small>
@@ -117,7 +123,7 @@
 
 				<input type="text" id="to" name="to" class="input_field" tabindex="1"  title="To address or intersection (no business names)" value="%(to)s"/>
 
-				<select id="pref" name="pref" class="input_field">
+				<select id="pref" name="pref">
 				  <option value="default">[Route Preference]</option>
 				  <option value="default">Normal</option>
 				  <option value="safer">Safer</option>
