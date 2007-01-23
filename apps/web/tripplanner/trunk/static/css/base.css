@@ -71,28 +71,8 @@ hr
   text-decoration: none;
 }
 
-#tips {
-  border: 1px solid gray;
-  margin-bottom: 5px;
-  padding: 5px;
-}
-
-
-/* General */
-
-.page_section
-{
-  margin-bottom: 5px;
-  }
-
 
 /* Header */
-
-#print_header
-{ 
-  display: none; 
-  margin-bottom: 10px;
-  }
 
 #logo 
 {
@@ -116,6 +96,7 @@ hr
   text-align: right;         
   }
 
+
 /* Input */
 
 a.selected {
@@ -132,14 +113,18 @@ a.selected {
   width: 150px;
 }
 
-.input_form, .input_form div
-{
-  }
+  
+/* Left Column */
+
+#tips {
+  border: 1px solid gray;
+  margin-bottom: 5px;
+  padding: 5px;
+}
 
 #result
 {
   overflow: auto;
-  padding: 1px 2px 1px 1px;
   }
 
 #status
@@ -189,9 +174,6 @@ a.selected {
   font-style: italic;
   color: #444;
   }
-
-
-
 
 
 /* Directions Table */
@@ -263,18 +245,13 @@ a.selected {
   {  
     overflow: visible;
     }
-
-  #print_header
-  {  
-    display: block;
-    }
   
   #links, 
   #input, 
   #reverse_div, 
   #map_menu,
   #footer,
-  #right_panel
+  #secondary
   { 
     display: none;
     }
