@@ -46,7 +46,7 @@ class TripPlanner(object):
 
         try:
             # Get the CGI vars and put them into a standard dict
-            cgi_vars = cgi.FieldStorage()
+            cgi_vars = cgi.FieldStorage(keep_blank_values=1)
             params = {}
             for param in cgi_vars.keys():
                 param = ' '.join(param.split())
@@ -55,6 +55,9 @@ class TripPlanner(object):
                 if param.startswith('bycycle_'):
                     param = '_'.join(param.split('_')[1:])
                 params[param] = val
+                
+            # Take note of which parameters were passed
+            self.params_present = dict(zip(params.keys(), [True] * len(params)))
 
             # Process query and get result
             params['method'] = os.environ['REQUEST_METHOD']
@@ -134,8 +137,14 @@ class TripPlanner(object):
 
     def analyzeQuery(self, service=None, q=None, fr=None, to=None, **params):
         """Look at query variables and decide what type of query was made."""
-        # Note: When a param is None, that means it wasn't passed via CGI
-        if service == 'query' or (service is None and q is not None):
+        q_pres = 'q' in self.params_present
+        fr_pres = 'fr' in self.params_present
+        to_pres = 'to'  in self.params_present
+        region_pres = 'region' in self.params_present
+        service_pres = 'service' in self.params_present                
+        if service == 'query' or (not service_pres and q_pres):
+            # Service was specified as query OR it wasn't specified but q was
+            #
             # If param q contains the substring " to " between two other
             # substrings
             # OR if param q is a string repr of a list with at least two items,
@@ -157,12 +166,13 @@ class TripPlanner(object):
             else:
                 # q doesn't look like a route query; assume it's geocode query
                 service = 'geocode'        
-        elif (service == 'route' or 
-              (service is None and q is None and
-               fr is not None and to is not None)):
+        elif (service == 'route' or (not service_pres and not q_pres and fr_pres and to_pres)):
+            # Service was specified as route OR it wasn't specified but both fr and to were
+            #              
             service = 'route'
             q = [fr or '', to or '']
-        elif service is not None:
+        elif service_pres:
+            # A service was specified
             pass
         else:
             service = None
@@ -194,11 +204,8 @@ class TripPlanner(object):
         else:
             content_type = 'text/html'
             template_path = 'templates'
-            # Select template based on host
-            if self.host == 'bycycle.metro-region.org':
-                template = os.path.join(template_path, 'tripplanner.metro.html')
-            else:
-                template = os.path.join(template_path, 'tripplanner.html')
+            
+            template = os.path.join(template_path, 'tripplanner.html')
                 
             if response_text is None:
                 result = self.getWelcomeMessage(template)
@@ -209,6 +216,52 @@ class TripPlanner(object):
             else:
                 result_set['result_set']['html'] = html
                 result = html
+
+            params['notice_display'] = 'none'
+            params['notice'] = ''
+
+            q_pres = 'q' in self.params_present
+            fr_pres = 'fr' in self.params_present
+            to_pres = 'to'  in self.params_present
+            region_pres = 'region' in self.params_present
+            if fr_pres or to_pres:
+                # Show route form when either of 'from' or 'to' is passed as a CGI parameter
+                params['route_link_class'] = 'selected'
+                params['route_form_display'] = 'block'
+                params['geocode_link_class'] = ''
+                params['geocode_form_display'] = 'none'
+                
+                # See if either or both 'from' and 'to' are missing OR blank
+                if not (params['fr'] and params['to']):
+                    # If either one is missing...
+                    params['notice_display'] = 'block'             
+                    if not (params['fr'] or params['to']):
+                        # If _both_ are missing
+                        params['notice'] = 'Enter both your "from" and "to" addresses, then click the "Find Route" button.'
+                    elif not params['fr']:
+                        # If just 'from' is missing
+                        params['notice'] = 'Enter your "from" address, then click the "Find Route" button.'
+                    elif not params['to']:
+                        # If just 'to' is missing
+                        params['notice'] = 'Enter your "to" address, then click the "Find Route" button.'
+            else:
+                # Default: show geocode form
+                params['geocode_link_class'] = 'selected'
+                params['geocode_form_display'] = 'block'
+                params['route_link_class'] = ''
+                params['route_form_display'] = 'none'
+                if q_pres and not params['q']:
+                    # A blank search query was passed in the URL (i.e., ?q=)
+                    params['notice_display'] = 'block'
+                    params['notice'] = 'Enter something to search for, then click the "Find" button.'
+
+            if (q_pres or fr_pres or to_pres) and (not region_pres or (region_pres and not params['region'])):
+                # A query was passed in the URL but no region was specified
+                params['notice_display'] = 'block'
+                if params['notice']:
+                    params['notice'] += '<br/>Also, you must select a region.'
+                else:
+                    params['notice'] = 'You must select a region.'
 
             q = params['q']
             if isinstance(q, list):
