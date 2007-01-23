@@ -237,7 +237,7 @@ class TripPlanner(object):
     ## Callbacks
 
     def getIdAddr(self, geocode):
-        """Get the the edge or node ID type address for the given geocode."""
+        """Get the the edge or node ID type address for the given geocode. """
         type_ = geocode['type']
         if type_ == 'postal':
             id_addr = '%s+%s' % (geocode['number'], geocode['edge_id']) 
@@ -253,7 +253,7 @@ class TripPlanner(object):
                '  <h2 style="margin-top:0">Address</h2><p>%s</p><p>%s</p>' \
                '</div>'
         href = ' href="javascript:void(0);" '
-        onclick = ' onclick="setVal(\'%s\', \'%%s\', \'%%s\')" '
+        onclick = ' onclick="setVal(\'%s\', \'%%s\', \'%%s\'); el(\'route_link\').onclick();" '
         set = '<p>Set as <a %s %s>From</a> or ' \
               '<a %s %s>To</a> address for route</p>' % \
               (href, onclick % ('fr'),

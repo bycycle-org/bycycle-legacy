@@ -90,11 +90,11 @@ function swapFrAndTo() {
   user_to = fr;
 }
 
-
+ 
 function doFind(service, fr, to) {
   start_ms = new Date().getTime();
-  toggleTips(1);
   clearResult();
+  toggleTips(1);
   showStatus('Processing. Please wait<blink>...</blink>');
 
   var region = region_el.value;
@@ -104,7 +104,7 @@ function doFind(service, fr, to) {
     map.closeInfoWindow();
   
   if (!region) {
-    errors.push('Please select a Region</a>');
+    errors.push('Please select a Region (at top left of map)</a>');
     region_el.focus();
   }
 
@@ -250,6 +250,16 @@ function _routeCallback(status, result_set) {
 
 
 /* UI Manipulation */
+
+function selectInputForm(link, service) {
+  link.className = 'selected'; 
+  // Show selected
+  el(service+'_form').style.display = 'block';
+  // Hide other
+  service = (service == 'route' ? 'geocode' : 'route');
+  el(service+'_link').className = ''; 
+  el(service+'_form').style.display = 'none'; 
+}
 
 function setStatus(content, error) {
   if (error) 

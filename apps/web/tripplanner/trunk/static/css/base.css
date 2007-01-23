@@ -1,21 +1,7 @@
-html, body, table, td, tr, form
-{
-  padding: 0; 
-  margin: 0;
-  }
-
 html, body 
 {
   overflow: hidden;
   height: 100%;
-  }
-
-body, td
-{
-  font-family: verdana, helvetica, arial, sans-serif;
-  font-size: 12px;
-  background-color: white;
-  color: black;
   }
 
 table
@@ -29,36 +15,27 @@ td
   vertical-align: top;  
   }
 
-img
-{
-  border: 0;
-  }
+h1, h2, h3, h4, h5, h6 {
+    font-weight: bold;
+}
 
-h1
-{
-  font-size: 20px;
-  }
+h1 {
+    font-size: 167%;
+}
 
-h2
-{
-  font-size: 16px;
-  }
+h2 {
+    font-size: 152%;
+}
 
-h3
-{
-  font-size: 14px;
-  }
-
-h4
-{
-  font-size: 12px;
-  }
+p, li {
+  margin-bottom: 10px;
+}
 
 a
 {
   color: #46d;
-  }
-
+  } 
+   
 a:hover
 {
   color: #f08000;
@@ -73,12 +50,35 @@ hr
   }
 
 
-/* General */
+#doc3 {
+  padding: 10px;
+}
 
-#content_pane
-{
-  margin: 5px;
-  }
+#hd {
+  margin-bottom: 5px;
+}
+
+#links {
+  margin: 5px 0;
+  background: gray;
+  border: 1px solid #444;
+  padding: 5px;
+}
+
+#links a {
+  color: white;
+  font-weight: bold;
+  text-decoration: none;
+}
+
+#tips {
+  border: 1px solid gray;
+  margin-bottom: 5px;
+  padding: 5px;
+}
+
+
+/* General */
 
 .page_section
 {
@@ -92,11 +92,6 @@ hr
 { 
   display: none; 
   margin-bottom: 10px;
-  }
-
-#header td
-{
-  vertical-align: bottom;
   }
 
 #logo 
@@ -121,83 +116,24 @@ hr
   text-align: right;         
   }
 
-
-/* Content */
-
-#content
-{
-  margin-bottom: 0;
-  }
-
-#content_table 
-{ 
-  table-layout: fixed;
-  }
-
-#left_panel
-{ 
-  width: 300px;
-  padding-right: 5px;
-  }
-
-#center_panel
-{
- 
- }
-
-#right_panel
-{ 
-  width: 127px;
-  padding-left: 5px;
-  }
-
-
-/* Left Panel */
-
 /* Input */
 
-#input 
-{ 
-  background: #a7cc95;
-  border: 1px solid gray;
-  margin-bottom: 5px;
-  padding: 5px 5px 0 5px;
-  }
+a.selected {
+  font-weight: bold;
+  text-decoration: none;
+  color: black;
+}
 
-#input td
-{ 
-  vertical-align: middle;
-  background: #a7cc95;
-  }
+#q {
+  width: 400px;
+}
 
-#fr, #to
-{   
-  margin-bottom: 5px;
-  }
+#fr, #to {
+  width: 150px;
+}
 
 .input_form, .input_form div
 {
-  margin-bottom: 5px;
-  }
-
-.input_title 
-{  
-  font-weight: bold;
-  }
-
-.input_field 
-{ 
-  width: 244px;
-  }
-
-.input_button 
-{ 
-  width: 35px;
-  }
-
-#pref
-{
-  width: 245px;
   }
 
 #result
@@ -247,15 +183,6 @@ hr
   width: 250px;
   }
 
-
-/* Footer */
-
-#footer
-{
-  font-size: 11px;
-  padding: 5px 0;
-  }
-
 .disclaimer
 {
   font-size: 10px;
@@ -264,12 +191,7 @@ hr
   }
 
 
-/* Right Panel */
 
-#google_ads_win
-{ 
-  border: 1px solid gray;
-  }
 
 
 /* Directions Table */
