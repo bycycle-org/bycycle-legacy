@@ -33,8 +33,8 @@
  */
 var map;
 var center_marker;
-var center_point;
-var center_marker_html = '<div class="info_win"><p><a href="javascript:void(0);" onclick="setElVToMapLonLat(\'q\'); doFind(\'geocode\');">Find address of closest intersection</a></p><p>Set as <a href="javascript:void(0);" onclick="setElVToMapLonLat(\'fr\')">From</a> or <a href="javascript:void(0);" onclick="setElVToMapLonLat(\'to\')">To</a> address for route</p></div>';
+var center_point; 
+var center_marker_html = '<div class="info_win"><p><a href="javascript:void(0);" onclick="setElVToMapLonLat(\'q\'); doFind(\'geocode\');">Find address of closest intersection</a></p><p>Set as <a href="javascript:void(0);" onclick="setElVToMapLonLat(\'fr\'); el(\'route_link\').onclick();">From</a> or <a href="javascript:void(0);" onclick="setElVToMapLonLat(\'to\'); el(\'route_link\').onclick();">To</a> address for route</p></div>';
 
 // Start and end markers for routes
 var base_icon;
