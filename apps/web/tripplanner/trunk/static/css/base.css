@@ -50,9 +50,6 @@ hr
   }
 
 #notice {
-  position: absolute; 
-  top: 0; 
-  right: 0; 
   font-weight: bold; 
   font-size: 125%; 
   border: 1px solid #444; 
