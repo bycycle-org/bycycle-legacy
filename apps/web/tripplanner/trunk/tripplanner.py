@@ -513,7 +513,7 @@ class TripPlanner(object):
     def getWelcomeMessage(self, template):
         return '''
         <p style="margin-top:0;">
-          The <a href="byCycle.org"
+          The <a href="http://bycycle.org/"
                  title="byCycle Home Page"
                  >byCycle.org</a>
           bicycle trip planner is under active development.
