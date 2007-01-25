@@ -110,8 +110,8 @@ function swapFrAndTo() {
 function doFind(service, fr, to) {
   var amount = el((service == 'route' ? 'route' : 'geocode') + '_amount').value;
   if (amount != '') {
-	var opts = 'width=800,height=600,status=no,toolbar=yes,menubar=no,' + 
-			   'location=yes,directories=no,personalbar=no';
+	var opts = 'width=800,height=600,status=no,toolbar=yes,menubar=no,scrollbars=yes,' + 
+			   'location=yes,directories=no,personalbar=no,resizable=yes';
     window.open('http://bycycle.org/donate.html?amount=' + amount, 'byCycle_donate_window', opts);
   }
 
