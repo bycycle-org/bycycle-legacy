@@ -1,4 +1,4 @@
-html, body 
+html, body
 {
   overflow: hidden;
   height: 100%;
@@ -12,7 +12,7 @@ table
 
 td
 {
-  vertical-align: top;  
+  vertical-align: top;
   }
 
 h1, h2, h3, h4, h5, h6 {
@@ -34,8 +34,8 @@ p, li {
 a
 {
   color: #46d;
-  } 
-   
+  }
+
 a:hover
 {
   color: #f08000;
@@ -83,7 +83,7 @@ hr
   }
 
 #input {
-  
+
 }
 
 #map_menu, #input_tab_buttons {
@@ -113,11 +113,11 @@ hr
 }
 
 #notice {
-  font-weight: bold; 
-  font-size: 125%; 
+  font-weight: bold;
+  font-size: 125%;
   border: 1px solid gray;
   border-bottom: none;
-  padding: 5px; 
+  padding: 5px;
   background: #fd766a;
   text-align: center;
 }
@@ -153,10 +153,10 @@ a.selected {
 }
 
 #fr, #to {
-  width: 150px;
+  width: 184px;
 }
 
-  
+
 /* Left Column */
 
 #tips {
@@ -180,8 +180,8 @@ a.selected {
   border: 1px solid gray;
   }
 
-#reverse_div 
-{  
+#reverse_div
+{
   margin-bottom: 5px;
   }
 
@@ -189,8 +189,8 @@ a.selected {
 
 /* Center Panel */
 
-#map_menu 
-{  
+#map_menu
+{
   border: 1px solid gray;
   border-bottom: none;
   padding: 5px;
@@ -263,12 +263,12 @@ a.selected {
   margin-bottom: 10px;
 }
 
-.clear { 
+.clear {
   clear: both;
 }
 
-@media print { 
-  html, body, #result {  
+@media print {
+  html, body, #result {
     overflow: visible;
   }
 
@@ -278,15 +278,15 @@ a.selected {
     margin: 0;
     padding: 0;
   }
-  
-  #hd, 
-  #spacer, 
+
+  #hd,
+  #spacer,
   #reverse_div,
   #notice,
   #map_menu,
   #footer,
   #secondary,
-  #ft { 
+  #ft {
     display: none;
   }
 }
