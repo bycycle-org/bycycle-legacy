@@ -623,14 +623,16 @@ class TripPlanner(object):
         for d in directions:
             turn = d['turn'].title()
             street = d['street']
+            if isinstance(street, list):
+                street = street[1]
             if i == 1:
                 street = '%s toward %s' % (street, d['toward'])
             jogs = d['jogs']
             ls_index = d['ls_index']
             mi = d['distance']['mi']
 
-            if turn == 'straight':
-                turn = 'Continue'
+            if turn.lower() == 'straight':
+                turn = 'Becomes'
 
             row_i = [street]
             
