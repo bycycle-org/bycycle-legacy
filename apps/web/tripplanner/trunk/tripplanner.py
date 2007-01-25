@@ -8,25 +8,25 @@ All rights reserved.
 
 TERMS AND CONDITIONS FOR USE, MODIFICATION, DISTRIBUTION
 
-1. The software may be used and modified by individuals for noncommercial, 
+1. The software may be used and modified by individuals for noncommercial,
 private use.
 
 2. The software may not be used for any commercial purpose.
 
-3. The software may not be made available as a service to the public or within 
+3. The software may not be made available as a service to the public or within
 any organization.
 
 4. The software may not be redistributed.
 
-THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND 
-ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED 
-WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE 
-DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR 
-ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES 
-(INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; 
-LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON 
-ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT 
-(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS 
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR
+ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+(INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
+ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 """
@@ -55,7 +55,7 @@ class TripPlanner(object):
                 if param.startswith('bycycle_'):
                     param = '_'.join(param.split('_')[1:])
                 params[param] = val
-                
+
             # Take note of which parameters were passed
             self.params_present = dict(zip(params.keys(), [True] * len(params)))
 
@@ -81,10 +81,10 @@ class TripPlanner(object):
             print '</body></html>'
 
 
-    def processQuery(self, method='get', **params):    
+    def processQuery(self, method='get', **params):
         params['region'] = self.getRegion(**params)
 
-        # Analyze the query to determine the service and prepare the query for 
+        # Analyze the query to determine the service and prepare the query for
         # the service.
         A = self.analyzeQuery(**params)
         params['service'], params['q'], params['fr'], params['to'] = A
@@ -141,7 +141,7 @@ class TripPlanner(object):
         fr_pres = 'fr' in self.params_present
         to_pres = 'to'  in self.params_present
         region_pres = 'region' in self.params_present
-        service_pres = 'service' in self.params_present                
+        service_pres = 'service' in self.params_present
         if service == 'query' or (not service_pres and q_pres):
             # Service was specified as query OR it wasn't specified but q was
             #
@@ -159,16 +159,16 @@ class TripPlanner(object):
                 except TypeError:
                     words = None
             if isinstance(words, list) and len(words) > 1:
-                service = 'route'    
+                service = 'route'
                 q = words
                 fr = q[0]
                 to = q[1]
             else:
                 # q doesn't look like a route query; assume it's geocode query
-                service = 'geocode'        
+                service = 'geocode'
         elif (service == 'route' or (not service_pres and not q_pres and fr_pres and to_pres)):
             # Service was specified as route OR it wasn't specified but both fr and to were
-            #              
+            #
             service = 'route'
             q = [fr or '', to or '']
         elif service_pres:
@@ -181,7 +181,7 @@ class TripPlanner(object):
 
     def render(self, status, response_text, format='html', **params):
         result_set = ''
- 
+
         if response_text is not None:
             if status < 400:
                 result_set = eval(response_text)
@@ -199,14 +199,14 @@ class TripPlanner(object):
                 content = simplejson.dumps({'error':
                                             response_text or 'Unknown Error'})
             else:
-                result_set['result_set']['html'] = urllib.quote(html) 
+                result_set['result_set']['html'] = urllib.quote(html)
                 content = simplejson.dumps(result_set)
         else:
             content_type = 'text/html'
             template_path = 'templates'
-            
+
             template = os.path.join(template_path, 'tripplanner.html')
-                
+
             if response_text is None:
                 result = self.getWelcomeMessage(template)
             elif status >= 400:
@@ -226,15 +226,13 @@ class TripPlanner(object):
             region_pres = 'region' in self.params_present
             if fr_pres or to_pres:
                 # Show route form when either of 'from' or 'to' is passed as a CGI parameter
-                params['route_link_class'] = 'selected'
-                params['route_form_display'] = 'block'
-                params['geocode_link_class'] = ''
-                params['geocode_form_display'] = 'none'
-                
+                params['route_tab_class'] = 'selected'
+                params['geocode_tab_class'] = ''
+
                 # See if either or both 'from' and 'to' are missing OR blank
                 if not (params['fr'] and params['to']):
                     # If either one is missing...
-                    params['notice_display'] = 'block'             
+                    params['notice_display'] = 'block'
                     if not (params['fr'] or params['to']):
                         # If _both_ are missing
                         params['notice'] = 'Enter both your "from" and "to" addresses, then click the "Find Route" button.'
@@ -246,10 +244,8 @@ class TripPlanner(object):
                         params['notice'] = 'Enter your "to" address, then click the "Find Route" button.'
             else:
                 # Default: show geocode form
-                params['geocode_link_class'] = 'selected'
-                params['geocode_form_display'] = 'block'
-                params['route_link_class'] = ''
-                params['route_form_display'] = 'none'
+                params['geocode_tab_class'] = 'selected'
+                params['route_tab_class'] = ''
                 if q_pres and not params['q']:
                     # A blank search query was passed in the URL (i.e., ?q=)
                     params['notice_display'] = 'block'
@@ -265,7 +261,7 @@ class TripPlanner(object):
 
             q = params['q']
             if isinstance(q, list):
-               params['q'] = ' to '.join(q) 
+               params['q'] = ' to '.join(q)
 
             params['http_status'] = status
             params['response_text'] = urllib.quote(simplejson.dumps(result_set))
@@ -281,7 +277,7 @@ class TripPlanner(object):
             template_file.close()
 
         # Send result to client
-        self.write('Content-type: %s' % content_type)        
+        self.write('Content-type: %s' % content_type)
         self.write('Status: %s' % status)
         self.write()
         self.write(content, None)
@@ -293,9 +289,9 @@ class TripPlanner(object):
         """Get the the edge or node ID type address for the given geocode. """
         type_ = geocode['type']
         if type_ == 'postal':
-            id_addr = '%s+%s' % (geocode['number'], geocode['edge_id']) 
+            id_addr = '%s+%s' % (geocode['number'], geocode['edge_id'])
         elif type_ == 'intersection':
-            id_addr = geocode['node_id']    
+            id_addr = geocode['node_id']
         return id_addr
 
 
@@ -320,7 +316,7 @@ class TripPlanner(object):
             result = html % (disp_addr, set %
                              (id_addr, field_addr,
                               id_addr, field_addr))
-            code['html'] = urllib.quote(result)        
+            code['html'] = urllib.quote(result)
         elif status == 300:  # Multiple matches
             result = ['<h2>Multiple Matches Found</h2><ul class="mma_list">']
             for i, code in enumerate(geocodes):
@@ -487,7 +483,7 @@ class TripPlanner(object):
                 if reg == region:
                     opt = region_opt_selected
                 else:
-                    opt = region_opt 
+                    opt = region_opt
                 regions_opt_list.append(opt % (reg, '%s, %s' %
                                                (area.title(),
                                                 state.upper())))
@@ -509,13 +505,13 @@ class TripPlanner(object):
         </p>
         <p>
           If you find this site useful or would like help it improve, please
-          consider <b><a href="http://www.bycycle.org/support.html#donate" 
-          target="_new">donating</a></b>. Any amount helps. 
-        </p>        
+          consider <b><a href="http://www.bycycle.org/support.html#donate"
+          target="_new">donating</a></b>. Any amount helps.
+        </p>
         %s
         <p>
-          &copy; 2006 
-          <a href="http://www.bycycle.org/" 
+          &copy; 2006
+          <a href="http://www.bycycle.org/"
              title="byCycle Home Page"
              >byCycle.org</a>
           <br/>
@@ -529,8 +525,8 @@ class TripPlanner(object):
     def getDisclaimer(self):
         return '''
         <p>
-          <b>Disclaimer</b>: As you are riding, please keep in mind that you  
-          don\'t <i>have</i> to 
+          <b>Disclaimer</b>: As you are riding, please keep in mind that you
+          don\'t <i>have</i> to
           follow the suggested route. <i>It may not be safe at any given
           point.</i> If you see what looks like an unsafe or undesirable
           stretch in the suggested route, you can decide to walk, ride on the
@@ -539,8 +535,8 @@ class TripPlanner(object):
         <p>
           Users should independently verify all information presented here.
           This service is provided <b>AS IS</b> with <b>NO WARRANTY</b> of any
-          kind. 
-        </p>        
+          kind.
+        </p>
         '''
 
 
@@ -599,20 +595,23 @@ class TripPlanner(object):
               <td>%s miles</td>
             </tr>
         </table>
-        <table class="directions">        
+        <table class="directions">
             %%s
         </table>
         ''' % (fr_addr, len(linestring) - 1, to_addr, distance)
 
+        # Template for direction row
         d_row = '''
         <tr>
           <td class="count %s">
             <a href="javascript:void(0)"
                onclick="showMapBlowup(%s)">%s.</a>
           </td>
+          <td class="turn %s">%s</td>
           <td class="direction %s">%s</td>
+          <td class="segment_distance %s">%smi</td>
         </tr>
-        '''              
+        '''
 
         # Direction rows
         row_class = 'a'
@@ -622,55 +621,44 @@ class TripPlanner(object):
         row_i = []
         i = 1
         for d in directions:
-            turn = d['turn']
+            turn = d['turn'].title()
             street = d['street']
-            toward = d['toward']
+            if i == 1:
+                street = '%s toward %s' % (street, d['toward'])
             jogs = d['jogs']
             ls_index = d['ls_index']
             mi = d['distance']['mi']
 
-            row_i = []
-
             if turn == 'straight':
-                prev = street[0]
-                curr = street[1]
-                row_i.append('%s <b>becomes</b> %s' % (prev, curr))
-            else:
-                if i == 1:
-                    cmd = 'Go'
-                    on = 'on'
-                    onto = '<b>%s</b>' % street
-                else:
-                    cmd = 'Turn'
-                    on = 'onto'
-                    onto = '<b>%s</b>' % street
-                row_i.append('%s <b>%s</b> %s %s' % (cmd, turn, on, onto))
+                turn = 'Continue'
 
-            if not toward:
-                if i == last_i:
-                    toward = last_street
-                else:
-                    toward = '?'
-            row_i.append(' toward %s -- %smi' % (toward, mi))
-
-            if d['bikemode']:
-                row_i.append(' [%s]' % ', '.join([bm for bm in d['bikemode']]))
-
+            row_i = [street]
+            
             if jogs:
                 row_i.append('<br/>%sJogs...' % tab)
                 for j in jogs:
                     row_i.append('<br/>%s%s&middot; <i>%s</i> at %s' % \
                                  (tab, tab, j['turn'], j['street']))
 
-            d_rows.append(d_row % (row_class, ls_index, i, row_class,
-                                   ''.join(row_i)))
-            del row_i[:]
-            if row_class == 'a': row_class = 'b'
-            else: row_class = 'a'
+            # Create row for direction
+            d_rows.append(d_row % (
+                row_class, ls_index, i,     # count
+                row_class, turn,            # turn
+                row_class, ''.join(row_i),  # direction
+                row_class, mi               # segment distance
+            ))
+
+            row_class = ['a', 'b'][row_class == 'a']
             i += 1
 
-        last_row = d_row  % (row_class, len(linestring) - 1, i, row_class,
-                             '<b>End</b> at <b>%s</b>' % last_street)
+        # Tack on last direction
+        last_row = d_row  % (
+            row_class, len(linestring) - 1, i, 
+            row_class, 'End',
+            row_class, '%s' % last_street, 
+            row_class, mi
+        )
+        
         d_rows.append(last_row)
 
         table = table % ''.join([str(d) for d in d_rows])

@@ -121,13 +121,6 @@ function mapCreate() {
   start_icon.image = 'static/images/dd-start.png';
   end_icon = new GIcon(base_icon);
   end_icon.image = 'static/images/dd-end.png';
-
-  var reg_el = el('regions');
-  try {
-    selectRegion(reg_el[reg_el.selectedIndex].value);
-  } catch(e) {
-    selectRegion(reg_el.value);
-  }
 }
 
 
