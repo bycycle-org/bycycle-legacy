@@ -2,7 +2,7 @@
 
 // Widgets
 var input_tabs;
-var donate_panel;
+//var donate_panel;
 
 // Input elements
 var mach_q;
@@ -108,7 +108,7 @@ function swapFrAndTo() {
 
  
 function doFind(service, fr, to) {
-  var dollars = el('dollars').value;
+  //var dollars = el('dollars').value;
 
   start_ms = new Date().getTime();
   clearResult();
