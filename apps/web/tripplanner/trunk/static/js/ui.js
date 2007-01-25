@@ -1,55 +1,71 @@
-/** $Id: ui.js 190 2006-08-16 02:29:29Z bycycle $
- *
- * User Interface.
- * 
- * Copyright (C) 2006 Wyatt Baldwin, byCycle.org <wyatt@bycycle.org>
- * 
- * All rights reserved.
- * 
- * TERMS AND CONDITIONS FOR USE, MODIFICATION, DISTRIBUTION
- * 
- * 1. The software may be used and modified by individuals for noncommercial, 
- * private use.
- * 
- * 2. The software may not be used for any commercial purpose.
- * 
- * 3. The software may not be made available as a service to the public or within 
- * any organization.
- * 
- * 4. The software may not be redistributed.
- * 
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND 
- * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED 
- * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE 
- * DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR 
- * ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES 
- * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; 
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON 
- * ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT 
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS 
- * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- */
+/* $Id: ui.js 190 2006-08-16 02:29:29Z bycycle $ */
+
+// Widgets
+var input_tabs;
+var donate_panel;
+
+// Input elements
 var mach_q;
 var mach_fr;
 var mach_to;
 var user_q;
 var user_fr;
 var user_to;
-var geocodes;
-var linestring;
-var center;
+
+// Result stuff
 var start_ms;
+var geocodes;
+var route_line_color = '#000000';
+var linestring;
+
+// UI elements
 var map_el;
+var center;
 var result_el;
 var region_el;
-var route_line_color = '#000000';
 
 
-function initUI() {
+var address_tip = 'You can type in an address or intersection -OR- choose a point from the map. Please note that you can\'t enter businesses or other points of interest at this time, only addresses. <br/><br/>To pick a point from the map, first zoom in and center the map on the point you want, then click the red dot and choose the link "Find address of closest intersection."<br/><br/>The easiest way to center the map is to double click it. The point you double-click will move to the center.';
+	  
+var route_address_tip = 'For each of your "from" and "to" addresses you can type in an address or intersection -OR- choose a point from the map. Please note that you can"t enter businesses or other points of interest at this time, only addresses.<br/><br/>To pick a point from the map, first zoom in and center the map on the point you want, then click the red dot and choose the "From" or "To" link in "Set as From or To address for route."<br/><br/>The easiest way to center the map is to double click it. The point you double-click will move to the center.';      
+
+
+function afterPageLoad() {  
   map_el = el('map');
   result_el = el('result');
   region_el = el('regions');
+  
+  input_tabs = new YAHOO.widget.TabView('input_tab_container');
+  
+  resizeMap();
+
+  if (api_key) {
+	if (mapLoad()) {
+	  // do nothing for now
+	} else {
+	  setIH('map', 'Error loading map.');
+	}
+  } else {
+	setIH('map', 'Error loading map: Could not find valid API key for ' + base_url + '.');
+  }
+
+  try {
+    selectRegion(region_el[region_el.selectedIndex].value);
+  } catch(e) {
+	// regions element is not a <select>
+    selectRegion(region_el.value);
+  } 
+
+  var status = elV('http_status');
+  var response_text = unescape(elV('response_text'));
+  
+  if (status && response_text != '""') {
+	var req = {status: parseInt(status), responseText: response_text};
+	_callback(req);
+  }
+   
+  resizeMap();
+  el('input_tab_contents').style.display = '';
 }
 
 function getVal(id, mach_v, user_v) {
@@ -92,26 +108,26 @@ function swapFrAndTo() {
 
  
 function doFind(service, fr, to) {
+  var dollars = el('dollars').value;
+
   start_ms = new Date().getTime();
   clearResult();
-  toggleTips(1);
   showStatus('Processing. Please wait<blink>...</blink>');
 
   var region = region_el.value;
   var errors = [];
 
-  if (map)
-    map.closeInfoWindow();
+  map && map.closeInfoWindow();  
   
   if (!region) {
-    errors.push('Please select a Region (at top left of map)</a>');
+    errors.push('Please select a region (at top left of map).');
     region_el.focus();
   }
 
   if (service == 'geocode') {
     var q = getVal('q', mach_q, user_q);
     if (!q) {
-      errors.push('Please enter an Address');
+      errors.push('Please enter something to search for.');
       if (region)
 	el('q').focus();
     } else {
@@ -132,12 +148,12 @@ function doFind(service, fr, to) {
       var q = ['["', fr, '", "', to, '"]'].join('');
     } else {
       if (!fr) {
-	errors.push('Please enter a From address');
+	errors.push('Please enter a "from" address.');
 	if (region)
 	  el('fr').focus();
       }
       if (!to) {
-	errors.push('Please enter a To address');
+	errors.push('Please enter a "to" address.');
 	if (fr && region)
 	  el('to').focus();
       }
@@ -251,14 +267,22 @@ function _routeCallback(status, result_set) {
 
 /* UI Manipulation */
 
-function selectInputForm(link, service) {
-  link.className = 'selected'; 
-  // Show selected
-  el(service+'_form').style.display = 'block';
-  // Hide other
-  service = (service == 'route' ? 'geocode' : 'route');
-  el(service+'_link').className = ''; 
-  el(service+'_form').style.display = 'none'; 
+function hideAds() {
+  // Save center before resizing
+  var c = (map && map.getCenter());
+  // Remove entirely the container that holds the ads
+  var s = el('secondary'); 
+  s.parentNode.removeChild(s); 
+  el('yui-main-b').style.marginRight = '0px'; 
+  // Set center back to original center
+  resizeMap();
+  c && map.setCenter(c);
+}
+
+function hideNotice() {
+  setElStyle('notice', 'display', 'none'); 
+  resizeMap();  
+  return false;
 }
 
 function setStatus(content, error) {
@@ -303,8 +327,7 @@ function setElVToMapLonLat(id) {
   setElV(id, "lon=" + x + ", " + "lat=" + y);
 }
 
-function clearMap()
-{  
+function clearMap() {  
   if (map) {
     map.clearOverlays();
     for (var reg_key in regions) {
@@ -323,6 +346,7 @@ function resizeDisplay(dims) {
     result_el.style.height =  height + 'px'; 
   }
 }
+
 function resizeMap() {
   var dims = getWindowDimensions();
   var height = dims.h - elOffsetY(map_el) - 25;
@@ -362,17 +386,22 @@ function showGeocode(index, open_info_win) {
 function selectRegion(region) {
   region = regions[region] || regions.all;
   document.title = 'byCycle - Bicycle Trip Planner - ' + region.heading;
+  if (region.id != 'portlandor') {
+	el('pref').style.display = 'none';
+  } else {
+	el('pref').style.display = '';
+  }
   if (map) {
     _initRegion(region);
     centerAndZoomToBounds(region.bounds.gbounds, region.center);
     if (region.all) {
       var reg;
       for (var reg_key in regions) {
-	reg = regions[reg_key];
-	if (!reg.all) {
-	  _initRegion(reg);
-	  _showRegionOverlays(reg);
-	}
+	    reg = regions[reg_key];
+	    if (!reg.all) {
+	      _initRegion(reg);
+	      _showRegionOverlays(reg);
+	    }
       }
     } else {
       _showRegionOverlays(region);
