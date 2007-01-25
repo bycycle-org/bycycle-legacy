@@ -517,20 +517,20 @@ class TripPlanner(object):
                  title="byCycle Home Page"
                  >byCycle.org</a>
           bicycle trip planner is under active development.
-          Please <a href="http://www.bycycle.org/contact.html"
+          Please <a href="http://bycycle.org/contact"
           title="Send us problem reports, comments, questions, and suggestions"
           >contact us</a> with any problems, comments, questions, or
           suggestions.
         </p>
         <p>
           If you find this site useful or would like help it improve, please
-          consider <b><a href="http://www.bycycle.org/support.html#donate"
+          consider <b><a href="http://bycycle.org/support#donate"
           target="_new">donating</a></b>. Any amount helps.
         </p>
         %s
         <p>
           &copy; 2006
-          <a href="http://www.bycycle.org/"
+          <a href="http://bycycle.org/"
              title="byCycle Home Page"
              >byCycle.org</a>
           <br/>
