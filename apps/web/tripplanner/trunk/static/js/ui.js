@@ -20,6 +20,7 @@ var linestring;
 
 // UI elements
 var map_el;
+var bike_layer = null;
 var center;
 var result_el;
 var region_el;
@@ -69,6 +70,26 @@ function afterPageLoad() {
    
   resizeMap();
   el('input_tab_contents').style.display = '';
+}
+
+var bike_layer_state = false;
+function toggleBikeLayer() {
+  if (bike_layer_state) {
+	// Bike layer was on; turn it off
+	bike_layer.hide();
+	el('show_hide_bike_map').innerHTML = 'Show';
+  } else {
+	// Bike layer was off; turn it on
+	if (!bike_layer) {
+	  // First time turning bike layer on, create it
+	  bike_layer = makeBikeLayer(18);
+	  map.addOverlay(bike_layer);
+	}
+	el('show_hide_bike_map').innerHTML = 'Hide';
+	if (map.getZoom() < 9) map.setZoom(9);
+	bike_layer.show();
+  }
+  bike_layer_state = !bike_layer_state
 }
 
 function getVal(id, mach_v, user_v) {
@@ -339,13 +360,15 @@ function setElVToMapLonLat(id) {
   setElV(id, "lon=" + x + ", " + "lat=" + y);
 }
 
-function clearMap() {  
+function clearMap() {
   if (map) {
     map.clearOverlays();
+	debugger;
     for (var reg_key in regions) {
       var reg = regions[reg_key];
-      if (!reg.all)
-	_showRegionOverlays(reg, true);
+      if (!reg.all) {
+		_showRegionOverlays(reg, true);
+	  }
     }
     map.setCenter(map.getCenter());
   }
@@ -459,16 +482,16 @@ function _showRegionOverlays(region, use_cached) {
       var id = region.id;
       var sel = el('regions');
       if (sel.type == 'hidden') {
-	selectRegion(id);
+		selectRegion(id);
       } else {
-	for (var i = 0; i < sel.length; ++i) {
-	  var opt = sel.options[i];
-	  if (opt.value == id) {
-	    sel.selectedIndex = i;
-	    selectRegion(id);
-	    break;
-	  }
-	}
+		for (var i = 0; i < sel.length; ++i) {
+		  var opt = sel.options[i];
+		  if (opt.value == id) {
+		    sel.selectedIndex = i;
+		    selectRegion(id);
+		    break;
+		  }
+		}
       }
     });
   } else if (use_cached) {
