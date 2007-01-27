@@ -32,6 +32,7 @@
  *
  */
 var map;
+
 var center_marker;
 var center_point; 
 var center_marker_html = [
@@ -59,16 +60,20 @@ function mapLoad() {
     mapCreate();
     bRet = true;
   } else {
-    setIH('map', 
-	  '<p style="margin:10px;">Your browser doesn\'t seem to meet the requirements for using this application. The following browsers are currently supported and are all free to download (<a href="http://www.mozilla.com/">Firefox</a> is an excellent choice):</p> \
-               <ul> \
-	         <li><a href="http://www.microsoft.com/windows/ie/downloads/default.asp">IE</a> 5.5+ (Windows)</li> \
-		 <li><a href="http://www.mozilla.com/">Firefox</a> 0.8+ (Windows, Mac, Linux)</li> \
-		 <li><a href="http://www.apple.com/safari/download/">Safari</a> 1.2.4+ (Mac)</li> \
-		 <li><a href="http://channels.netscape.com/ns/browsers/download.jsp">Netscape</a> 7.1+ (Windows, Mac, Linux)</li> \
-		 <li><a href="http://www.mozilla.org/products/mozilla1.x/">Mozilla</a> 1.4+ (Windows, Mac, Linux)</li> \
-		 <li><a href="http://www.opera.com/download/">Opera</a> 7.5+ (Windows, Mac, Linux)</li> \
-	       </ul>');
+    setIH('map', [
+	  '<p style="margin:10px;">',
+		'Your browser doesn\'t seem to meet the requirements for using this application.',
+		'The following browsers are currently supported and are all free to download ',
+		'(<a href="http://www.mozilla.com/">Firefox</a> is an excellent choice):',
+	  '</p>',
+	  '<ul>',
+		 '<li><a href="http://www.microsoft.com/windows/ie/downloads/default.asp">IE</a> 5.5+ (Windows)</li>',
+		 '<li><a href="http://www.mozilla.com/">Firefox</a> 0.8+ (Windows, Mac, Linux)</li>',
+		 '<li><a href="http://www.apple.com/safari/download/">Safari</a> 1.2.4+ (Mac)</li>',
+		 '<li><a href="http://channels.netscape.com/ns/browsers/download.jsp">Netscape</a> 7.1+ (Windows, Mac, Linux)</li>',
+		 '<li><a href="http://www.mozilla.org/products/mozilla1.x/">Mozilla</a> 1.4+ (Windows, Mac, Linux)</li>',
+		 '<li><a href="http://www.opera.com/download/">Opera</a> 7.5+ (Windows, Mac, Linux)</li>',
+	  '</ul>'].join(''));
     bRet = False;
   }
   return bRet;
@@ -78,15 +83,12 @@ function mapLoad() {
 function mapCreate() {
   map = new GMap2(el('map'));
 
-  map.addMapType(makeMercatorMapType(G_NORMAL_MAP, 'Bike/Map', 18));
-  map.addMapType(makeMercatorMapType(G_SATELLITE_MAP, 'Bike/Sat', 20));
-
   map.setCenter(new GLatLng(0, 0), 2);
   
   map.addControl(new GLargeMapControl());
   map.addControl(new GMapTypeControl());
   map.addControl(new GScaleControl());
-
+  
   map.addControl(new GOverviewMapControl());
   var overview = document.getElementById('map_overview');
   document.getElementById('map').appendChild(overview);
@@ -108,19 +110,21 @@ function mapCreate() {
     map.addOverlay(center_marker);
     GEvent.clearListeners(center_marker, 'click');
     GEvent.addListener(center_marker, 'click', function() {
-      map.openInfoWindowHtml(center,
-			     center_marker_html);
+      map.openInfoWindowHtml(center, center_marker_html);
     });
   });
+  
   GEvent.addListener(map, 'maptypechanged', function() {
     var map_type = map.getCurrentMapType();
     if (map_type.onChangeTo) {
       map_type.onChangeTo();
     }
   });
+  
   GEvent.addListener(map, 'click', function() {
     map.closeInfoWindow();
   });
+  
   base_icon = new GIcon();
   base_icon.shadow = 'static/images/shadow50.png';
   base_icon.iconSize = new GSize(20, 34);
@@ -128,24 +132,24 @@ function mapCreate() {
   base_icon.iconAnchor = new GPoint(9, 34);
   base_icon.infoWindowAnchor = new GPoint(9, 2);
   base_icon.infoShadowAnchor = new GPoint(18, 25);
+  
   start_icon = new GIcon(base_icon);
   start_icon.image = 'static/images/dd-start.png';
+  
   end_icon = new GIcon(base_icon);
   end_icon.image = 'static/images/dd-end.png';
 }
 
-
-/**
- * Factory for creating Mercator map types (or at least it will be; right
- * now it's Metro-specific).
- */
-function makeMercatorMapType(base_type, name, zoom_levels) {
+function makeBikeLayer(zoom_levels) {
   var domain = 'mica.metro-region.org';
   var transparent_png = 'http://' + domain + 
     '/bycycle/images/transparent.png';
   var copyrights = new GCopyrightCollection("&copy; Metro");
-  var wms_url = 'http://' + domain + 
-    '/cgi-bin/mapserv-postgis?map=/var/www/html/bycycle/bycycle.map&';
+
+  var wms_url = [
+	'http://', domain, 
+	'/cgi-bin/mapserv-postgis?map=/var/www/html/bycycle/bycycle.map&'].join('');
+  
   var layers = 'pirate_network,county_lines';
   var tile_size = 256;
   var tile_size_less_one = tile_size - 1;
@@ -154,25 +158,27 @@ function makeMercatorMapType(base_type, name, zoom_levels) {
   var se, nw;
   var min_zoom = 9;
   var url = [wms_url,
-	     "SERVICE=WMS",
-	     "&VERSION=1.1.1",
-	     "&REQUEST=GetMap",
-	     "&LAYERS=", layers,
-	     "&STYLES=",
-	     "&FORMAT=", img_format,
-	     "&BGCOLOR=0xFFFFFF",
-	     "&TRANSPARENT=TRUE",
-	     "&SRS=", srs,
-	     "&WIDTH=", tile_size,
-	     "&HEIGHT=", tile_size].join('');
+	"SERVICE=WMS",
+	"&VERSION=1.1.1",
+	"&REQUEST=GetMap",
+	"&LAYERS=", layers,
+	"&STYLES=",
+	"&FORMAT=", img_format,
+	"&BGCOLOR=0xFFFFFF",
+	"&TRANSPARENT=TRUE",
+	"&SRS=", srs,
+	"&WIDTH=", tile_size,
+	"&HEIGHT=", tile_size].join('');
 
   var pdx_bounds = regions.portlandor.bounds;
   var pdx_sw = pdx_bounds.sw;
   var pdx_ne = pdx_bounds.ne;
   var bounds = new GLatLngBounds(new GLatLng(pdx_sw.lat, pdx_sw.lng), 
-				 new GLatLng(pdx_ne.lat, pdx_ne.lng));
+								 new GLatLng(pdx_ne.lat, pdx_ne.lng));
 
   var projection = new GMercatorProjection(zoom_levels);
+  
+  // FIXME: Why is this named with XXX?
   projection.XXXtileCheckRange = function(tile,  zoom,  tile_size) {
     var x = tile.x * tile_size;
     var y = tile.y * tile_size;
@@ -189,6 +195,7 @@ function makeMercatorMapType(base_type, name, zoom_levels) {
   };
 
   var layer = new GTileLayer(copyrights, 0, zoom_levels - 1);
+  
   layer.getTileUrl = function(tile, zoom) {
     projection.XXXtileCheckRange(tile, zoom, tile_size);
     if (zoom < min_zoom) {
@@ -208,19 +215,7 @@ function makeMercatorMapType(base_type, name, zoom_levels) {
     return .625; 
   };
 
-  var layers = [base_type.getTileLayers()[0], layer];
-  var opts = {errorMessage: 'Here Be Dragons'};
-  var map_type = new GMapType(layers, projection, name, opts);
-  
-  map_type.onChangeTo = function() {
-    if (map.getZoom() < min_zoom) {
-      map.setZoom(min_zoom);
-    }
-    if (!bounds.intersects(map.getBounds())) {
-      selectRegion('portlandor');
-    }
-  };
-  return map_type;
+  return new GTileLayerOverlay(layer);
 }
 
 function drawPolyLine(points, color, weight, opacity) {
