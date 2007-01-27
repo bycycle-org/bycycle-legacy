@@ -1,32 +1,49 @@
-var _prod_config = {
-  local: 0,
-  map_type: 'google',
-  map_state: 1
-};
-
-var _dev_config = {
-  local: 1,
-  map_type: 'base',
-  map_state: 1
-};
-
+$ = dojo.byId;
 
 /**
  * byCycle namespace
  */
 var byCycle = (function() {
+  // private:
+  var _prod_config = {
+    local: 0,
+    map_type: 'google',
+    map_state: 1
+  };
+
+  var _dev_config = {
+    local: 1,
+    map_type: 'base',
+    map_state: 1
+  };
+
   var base_url = location.href.split('?')[0];
   var domain = base_url.split('/')[2];
   var index = 0;
   var colors = ['#fff', '#ccc'];
 
-  var _public = {
+  var pairs = window.location.search.substr(1).split('&');
+  var _query_pairs = {};
+  for (var i = 0; i < pairs.length; ++i) {
+    var name_value = pairs[i].split('=');
+    _query_pairs[name_value[0]] = name_value[1];
+  }
+
+  var noop = function() {};
+
+  // public:
+  return {
+    // `debug` is a global set in the template; it's value is passed from 
+    // Pylons as an attribute of the global `g`
     config: debug ? _dev_config : _prod_config,
     base_url: base_url,
     domain: domain,
-    query_pairs: (window.location.search.substr(1)).toQueryParams(),
+    prefix: byCycle_prefix,
+    query_pairs: _query_pairs,
     default_map_type: 'base',
 
+    noop: noop,
+    
     /**
      * Get value for variable from query string if possible, otherwise use the
      * global config value
@@ -37,43 +54,11 @@ var byCycle = (function() {
         v = byCycle.config[var_name];
       } else if (typeof(func) == 'function') {
         // Override config setting with query string setting
-        logDebug('Overriding config', var_name);
         v = func(v);
       }
       return v;
     },
 
-    logInfo: function() {
-      if (arguments.length < 1) { return; }
-      var msgs = [];
-      for (var i = 0; i < arguments.length; ++i) {
-        msgs.push(arguments[i]);
-      }
-      var msg = msgs.join('\n');
-      if (msg) {
-        Element.update('status', msg);
-      }
-    },
-
-    logDebug: function() {
-      result = [];
-      for (var i = 0; i < arguments.length; ++i) {
-        result.push(arguments[i]);
-      }
-      var div = document.createElement('div');
-      div.innerHTML = result.join(' ');
-      div.style.padding = '2px';
-      div.style.backgroundColor = colors[index % 2];
-      index += 1;
-      Element.update(div, (result.join(' ') + '<br/>'));
-      $('debug_window_content').appendChild(div);
-    }
+    logDebug: (debug ? dojo.debug : noop),
   };
-
-  if (!debug) {
-    _public.logInfo = function() {}; 
-    _public.logDebug = function() {};
-  }
-
-  return _public;
 })();

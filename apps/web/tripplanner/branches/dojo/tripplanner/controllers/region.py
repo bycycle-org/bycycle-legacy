@@ -33,20 +33,11 @@ class RegionController(ViewController):
         service = service or 'query'
         service = ''.join(service.strip().split()).lower()
 
-        # Determine which input form should be shown
-        style = 'display: none;'
-        if service == 'route':
-            # show route form by hiding query
-            c.query_tab_style = style
-            c.route_label_class = 'selected'
-        else:
-            # show query form by hiding route
-            c.route_tab_style = style
-            c.query_label_class = 'selected'
-
+        c.active_input_pane = service
         c.region_key = region_key
         c.service_name = service
         c.region_options = self._makeRegionOptions(region_key)
+
         return render_response('/region/show.myt', region=region_key)
 
     def _makeRegionOptions(self, region=''):

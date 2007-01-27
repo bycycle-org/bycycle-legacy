@@ -8,9 +8,9 @@ def make_map():
     m = Mapper(directory=os.path.join(root_path, 'controllers'))
     print root_path
 
-    # This route handles displaying the error page and graphics used in the 404/500
-    # error pages. It should likely stay at the top to ensure that the error page is
-    # displayed properly.
+    # This route handles displaying the error page and graphics used in the
+    # 404/500 error pages. It should likely stay at the top to ensure that the
+    # error page is displayed properly.
     m.connect('error/:action/:id', controller='error')
 
                 
@@ -25,9 +25,9 @@ def make_map():
 
     # View ----------------------------------------------------------------
 
-    # /                => Show all regions
-    # /?params...      => Redirect according to params
-    # /region          => Show specific region
+    # /               => Show all regions
+    # /?params...     => Redirect according to params
+    # /region         => Show specific region
     # /region/service => Show specific region with service form focused
     m.connect(
         ':region/:service',

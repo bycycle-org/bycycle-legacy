@@ -4,6 +4,7 @@ import simplejson
 from byCycle.services.exceptions import *
 from tripplanner.lib.base import *
 from tripplanner.controllers.rest import RestController
+from tripplanner.controllers.region import RegionController
 
 
 class ServiceController(RestController):
@@ -11,19 +12,41 @@ class ServiceController(RestController):
 
     #----------------------------------------------------------------------
     def show(self, query, region, service_class=None, **params):
+        """Show the result of ``query``ing a service.
+
+        Subclasses should call return this method. In other words, they should
+        call this and return the result... unless a service-specific
+        ByCycleError is encountered, in which case control should return to
+        the subclass to handle the error and render the result.
+
+        ``query``
+            Query in form that back end service understands
+
+        ``region``
+            Name of region to perform query in
+
+        ``service_class``
+            Back end service subclass (e.g., route.Service)
+
+        ``params``
+            Optional service-specific parameters
+            E.g., for route, tmode=bike, pref=safer
+
+        """
         query = query or request.params.get('q', None)
-        format = request.params.get('format', 'html')
-        service = service_class(region=region)
-        result = None
-        to_json = None
+        self.service = service_class(region=region)
+        self.format = request.params.get('format', 'html')
+        self.message = ''
+        self.results = []
+
         try:
-            result = service.query(query, **params)
+            self.results = [self.service.query(query, **params)]
         except InputError, exc:
             c.title = 'Error%s' % (['', 's'][len(exc.errors) != 1])
-            http_status = 400
+            self.http_status = 400
         except NotFoundError, exc:
             c.title = 'Not Found'
-            http_status = 404
+            self.http_status = 404
         except ByCycleError:
             # Let subclass deal with any other `ByCycleError`s
             self.service = service
@@ -32,12 +55,11 @@ class ServiceController(RestController):
         except Exception, exc:
             c.title = 'Error'
             exc.description = str(exc)
-            http_status = 500
+            self.http_status = 500
         else:
-            template = service.name
-            http_status = 200
-            c.title = service.name.title()
-            to_json = eval(repr(result))
+            self.template = self.service.name
+            self.http_status = 200
+            c.title = self.service.name.title()
 
         try:
             # Was there an error?
@@ -45,93 +67,112 @@ class ServiceController(RestController):
         except UnboundLocalError:
             pass
         else:
-            template = 'error'
+            self.message = exc.description
+            self.template = 'error'
             c.classes = 'errors'
-            c.error_msg = exc.description
+            c.error_msg = self.message
 
-        return self._render(
-            service, template, http_status, format, result, to_json
-        )
+        # Get rid of this; there is no single result
+        # Set an HTML frag for each result
+        try:
+            self.result = self.results[0]
+        except IndexError:
+            self.result = None
+            
+        return self._get_response()
 
     #----------------------------------------------------------------------
-    def _render(self, service, template, http_status=200, format='html',
-                oResult=None, to_json=None):
+    def _get_response(self):
         """Render response after query to service.
 
-        Branch according to ``format`` and return the appropriate type of
-        response. ``format`` may be one of "frag" (or "fragment"), "json", or
-        "html" (default). "frag" will return an HTML fragment that will
-        replace the result area of the currently displayed page. "json" will
-        return a JSON object. "html" will return a complete HTML template with
-        the result filled in.
+        Return the appropriate type of response according to ``format``.
+        ``format`` may be one of "frag" (or "fragment"), "json", or "html"
+        (default). "json" will return a JSON object. "html" will return a
+        complete HTML template with the result filled in.
 
-        ``service`` `Service` -- A back end service object.
+        ``service`` `Service`
+            A back end service object.
 
-        ``template`` `str` -- Name of template to render.
+        ``template`` `str`
+            Name of template to render.
 
-        ``http_status`` `int` -- HTTP status code.
+        ``format``
+            Format of response content: html (default), fragment, or json.
 
-        ``format`` `str` -- Format for the response: HTML (full template),
-        fragment (partial), or JSON.
+        ``http_status`` `int`
+            HTTP status code.
 
-        ``oResult`` `object` -- The result returned from the back end service.
+        ``message`` `str`
+            A message describing the result or an error message.
 
-        ``to_json`` `str` -- A Python object that can be JSONififed.
+        ``results`` `list`
+            A list of results returned from the back end service. Empty on
+            error.
 
         return `WSGIResponse`
 
         """
-        if service and service.region:
-            region_key = service.region.key
-        else:
-            region_key = 'all'        
-        # Used by all formats
-        json = simplejson.dumps(to_json)
-        # Used by frag and html
-        result_template = '/service/%s.myt' % template
-        c.http_status = http_status
-        c.service = service
+        template = '/service/%s.myt' % self.template
+        self.fragment = render(template, oResult=self.result)
+        resp = getattr(self, '_get_%s_response' % self.format)()
+        resp.status_code = self.http_status
+        return resp
+
+    #----------------------------------------------------------------------
+    def _get_text_response(self):
+        text = render('/service/%s.txt.myt' % self.template, 
+                      oResult=self.result)
+        resp = Response(content=text, mimetype='text/plain')
+        return resp
+    
+    #----------------------------------------------------------------------
+    def _get_json_response(self):
+        simple_obj = {
+            'type': self.service.name,
+            'message': self.message,
+            'results': [r.__simplify__() for r in self.results],
+            'fragment': self.fragment,
+        }
+        json = simplejson.dumps(simple_obj)
+        resp = Response(content=json, mimetype='text/json')
+        return resp
+
+    #----------------------------------------------------------------------
+    def _get_html_response(self):
+        region_key = self.service.region.key or 'all'
+        
         c.region_key = region_key
-        c.result_id = ('%.6f' % time.time()).replace('.', '')
-        c.json = json
-        if format == 'json':
-            resp = Response(
-                content=json, mimetype='text/javascript', code=http_status
-            )
+        c.http_status = self.http_status
+        c.service = self.service
+
+        if self.http_status == 200:
+            c.result = self.fragment
         else:
-            content = render(result_template, oResult=oResult)
-            if format.startswith('frag'):
-                resp = Response(
-                    content=content,
-                    code=http_status
-                )
-            else:
-                from tripplanner.controllers.region import RegionController
-                if http_status == 200:
-                    c.result = content
-                else:
-                    c.errors = content
-                c.info = '\n'
-                c.help = None
-                region_controller = RegionController()
-                resp = region_controller.show(region_key, service.name)
-                resp.status_code = http_status
+            c.errors = self.fragment
+
+        c.info = '\n'
+        c.help = None
+
+        region_controller = RegionController()
+        resp = region_controller.show(region_key, self.service.name)
         return resp
 
     #----------------------------------------------------------------------
     def _makeRouteList(self, q):
-        """Try to parse a route list from the given query.
+        """Try to parse a route list from the given query, ``q``.
 
-        The query can be either a string with waypoints separated by ' to ' or
-        a string that will eval as a list. A ValueError is raised if query
+        The query can be . A ValueError is raised if query
         can't be parsed as a list of at least two strings.
 
-        ``q`` `string` -- User's input query
+        ``q``
+            Either a string with waypoints separated by ' to ' or a string
+            that will eval as a list
 
-        return [`str`] -- A list of route waypoints
+        return
+            A list of route waypoints
 
-        raise `ValueError` -- Query can't be parsed as a list of two or more
-        items
+        raise `ValueError`
+            Query can't be parsed as a list of two or more items
 
         """
         try:

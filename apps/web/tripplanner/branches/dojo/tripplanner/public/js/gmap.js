@@ -29,7 +29,7 @@ byCycle.Map.google = {
     var api_key = api_keys[byCycle.domain];
     if (api_key) {
       byCycle.util.writeScript(api_url + api_key);
-      byCycle.Map.google.api_loaded = true;
+      this.api_loaded = true;
       byCycle.logDebug('Google Maps API Loaded');
     } else {
       byCycle.logDebug('No API key found for ' + byCycle.domain);
@@ -38,39 +38,31 @@ byCycle.Map.google = {
 
   isLoadable: function() {
     var is_loadable = false;
-    if (byCycle.Map.google.api_loaded && GBrowserIsCompatible()) {   
+    if (this.api_loaded && GBrowserIsCompatible()) {   
         is_loadable = true;
     } else {
       var content = '<div style="padding: 5px;">';
-      if (byCycle.Map.google.api_loaded) {
+      if (this.api_loaded) {
         content += 'Your browser doesn\'t seem to meet the requirements for using this application. The following browsers are currently supported and are all free to download (<a href="http://www.mozilla.com/">Firefox</a> is an excellent choice):    <ul><li><a href="http://www.microsoft.com/windows/ie/downloads/default.asp">IE</a> 5.5+ (Windows)</li><li><a href="http://www.mozilla.com/">Firefox</a> 0.8+ (Windows, Mac, Linux)</li><li><a href="http://www.apple.com/safari/download/">Safari</a> 1.2.4+ (Mac)</li><li><a href="http://channels.netscape.com/ns/browsers/download.jsp">Netscape</a> 7.1+ (Windows, Mac, Linux)</li><li><a href="http://www.mozilla.org/products/mozilla1.x/">Mozilla</a> 1.4+ (Windows, Mac, Linux)</li><li><a href="http://www.opera.com/download/">Opera</a> 7.5+ (Windows, Mac, Linux)</li></ul>';
       } else {
         content += ('No Google Maps API key found for ' + byCycle.domain);
       }
-      Element.update('map', content + '</div>');
+      $('map_pane').innerHTML = (content + '</div>');
     }
     return is_loadable;
   }
 };
 
 
-/**
- * byCycle Google Map Constructor
- *
- * @param parent UI object
- * @param container Widget that contains this map
- */
-byCycle.Map.google.Map = function(parent, container) {
-  byCycle.Map.Map.call(this, parent, container);
-  this.createIcons();
-  this.initListeners();
-};
+dojo.declare('byCycle.Map.google.Map', byCycle.Map.base.Map, {
 
-
-/**
- * byCycle Google Map Methods
- */
-byCycle.Map.google.Map.prototype = Object.extend(new byCycle.Map.Map(), {
+  /**
+   * byCycle Google Map Constructor
+   */
+  initializer: function(ui, container) {
+    this.createListeners();
+  },
+  
   createMap: function(container) {
     var map = new GMap2(container);
     map.setCenter(new GLatLng(0, 0), 7);
@@ -78,12 +70,8 @@ byCycle.Map.google.Map.prototype = Object.extend(new byCycle.Map.Map(), {
     map.addControl(new GMapTypeControl());
     map.addControl(new GScaleControl());
     map.addControl(new GOverviewMapControl());
-    // Change default styling of map overview so it sits flush in the corner
-    var style = $('map_overview').firstChild.firstChild.style;
-    style.top = '8px';
-    style.left = '7px';
-    // Add keyboard navigation
-    var _gk = new GKeyboardHandler(map);
+    map.enableContinuousZoom();
+    new GKeyboardHandler(map);
     this.map = map;
   },
 
@@ -113,7 +101,7 @@ byCycle.Map.google.Map.prototype = Object.extend(new byCycle.Map.Map(), {
     this.end_icon = end_icon;
   },
 
-  initListeners: function() {
+  createListeners: function() {
     var self = this;
     GEvent.addListener(self.map, 'moveend', function() {
       self.center = self.map.getCenter();
@@ -126,8 +114,11 @@ byCycle.Map.google.Map.prototype = Object.extend(new byCycle.Map.Map(), {
       }
       self.center_marker.setPoint(self.center);
     });
-    GEvent.addListener(self.map, 'click', function() {
+    GEvent.addListener(self.map, 'click', function(overlay, point) {
       self.map.closeInfoWindow();
+      if (point) {
+        self.ui.handleMapClick({x: point.lng(), y: point.lat()});
+      }
     });
   },
 
@@ -137,7 +128,7 @@ byCycle.Map.google.Map.prototype = Object.extend(new byCycle.Map.Map(), {
     GEvent.addListener(obj, signal, func);
   },
 
-  unload: function() {
+  onUnload: function() {
     GUnload();
   },
 
@@ -200,14 +191,15 @@ byCycle.Map.google.Map.prototype = Object.extend(new byCycle.Map.Map(), {
     return marker;
   },
 
-  placeGeocodeMarker: function(point, node, icon) {
+  placeGeocodeMarker: function(point, node, zoom, icon) {
+    zoom = (typeof(zoom) != 'undefined' ? zoom : this.map.getZoom());
+    this.setCenter(point, zoom);
     var marker = this.placeMarker(point, icon);
-    var self = this;
     var g_lat_lng = new GLatLng(point.y, point.x);
+    var self = this;
     GEvent.addListener(marker, "click", function() {
       self.map.openInfoWindow(g_lat_lng, node);
-    });
-    this.setCenter(point, 14);
+    });    
     return marker;
   },
   
@@ -289,7 +281,7 @@ byCycle.Map.google.Map.prototype = Object.extend(new byCycle.Map.Map(), {
       geocode.marker = this.placeMarker(point);
       GEvent.addListener(geocode.marker, 'click', function() {
     self.map.openInfoWindowHtml(point, html);
-    this.parent.setResult(html);
+    this.ui.setResult(html);
       });
     }
     this.map.setCenter(new GLatLng(geocode.y, geocode.x), 14);

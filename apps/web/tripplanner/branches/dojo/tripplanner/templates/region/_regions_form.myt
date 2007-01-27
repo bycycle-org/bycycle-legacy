@@ -10,8 +10,8 @@
     </select>
   </div>
   <div>
-    <input type="submit" value="Go" onclick="Element.hide('regions_window');" />
+    <input type="submit" value="Go" onclick="dojo.html.hide('regions_pane');" />
     <input type="button" value="Cancel" 
-           onclick="Element.hide('regions_window'); return false;" />
+           onclick="dojo.html.hide('regions_pane'); return false;" />
   </div>
 </form>

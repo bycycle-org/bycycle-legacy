@@ -1,7 +1,3 @@
-<%flags>
-    inherit = 'result.myt'
-</%flags>
-
 <%args>
    oResult
    extra_content = None
@@ -15,6 +11,10 @@
 
 <div class="address">
    <% hAddr %>
+</div>
+
+<div class="coordinates">
+   <% '%.6f, %.6f' % (oResult.xy_ll.y, oResult.xy_ll.x) %>
 </div>
 
 <div>
