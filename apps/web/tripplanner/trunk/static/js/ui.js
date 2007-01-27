@@ -31,6 +31,9 @@ var route_address_tip = 'For each of your "from" and "to" addresses you can type
 
 
 function afterPageLoad() {  
+  YAHOO.util.Event.addListener(window, 'resize', resizeMap);
+  YAHOO.util.Event.addListener(window, 'unload', GUnload);
+  
   map_el = el('map');
   result_el = el('result');
   region_el = el('regions');
@@ -122,7 +125,9 @@ function doFind(service, fr, to) {
   var region = region_el.value;
   var errors = [];
 
-  map && map.closeInfoWindow();  
+  if (map) {
+	map.closeInfoWindow();  
+  }
   
   if (!region) {
     errors.push('Please select a region (at top left of map).');
@@ -139,32 +144,34 @@ function doFind(service, fr, to) {
       // Is the address really a route request?
       var i = q.toLowerCase().indexOf(' to ');
       if (i != -1) {
-	setElV('fr', q.substring(0, i));
-	setElV('to', q.substring(i+4));
+		setElV('fr', q.substring(0, i));
+		setElV('to', q.substring(i+4));
       }
     }
   } else if (service == 'route') {
-    if (!(fr || to)) {
-      // When fr and to are set in params, we're doing reverse directions
-      var fr = getVal('fr', mach_fr, user_fr);
-      var to = getVal('to', mach_to, user_to);
-    }
-    if (fr && to) {
-      var q = ['["', fr, '", "', to, '"]'].join('');
-    } else {
-      if (!fr) {
-	errors.push('Please enter a "from" address.');
-	if (region)
-	  el('fr').focus();
-      }
-      if (!to) {
-	errors.push('Please enter a "to" address.');
-	if (fr && region)
-	  el('to').focus();
-      }
-    }
+	if (!(fr || to)) {
+	  // When fr and to are set in params, we're doing reverse directions
+	  var fr = getVal('fr', mach_fr, user_fr);
+	  var to = getVal('to', mach_to, user_to);
+	}
+	if (fr && to) {
+	  var q = ['["', fr, '", "', to, '"]'].join('');
+	} else {
+	  if (!fr) {
+		errors.push('Please enter a "from" address.');
+		if (region) {
+		  el('fr').focus();
+		}
+	  }
+	  if (!to) {
+		errors.push('Please enter a "to" address.');
+		if (fr && region) {
+		  el('to').focus();
+		}
+	  }
+	}
   } else {
-    errors.push('Unknown service: ' + service);
+	errors.push('Unknown service: ' + service);
   }
 
   if (errors.length) {
@@ -223,15 +230,15 @@ function _callback(req) {
 
 function _geocodeCallback(status, result_set) {
   geocodes = result_set.result_set.result;
-  switch (status)
-    {
+  switch (status) {
     case 200: // A-OK, one match
-      if (map)
-	showGeocode(0, true);
+      if (map) {
+		showGeocode(0, true);
+	  }
       break;
     case 300:
       break;
-    }
+  }
 }
 	
 function _routeCallback(status, result_set) {
@@ -240,28 +247,28 @@ function _routeCallback(status, result_set) {
     {
     case 200: // A-OK, one match
       if (map) {
-	  var route_linestring = route.linestring;
-	  linestring = [];
-	  for (var i = 0; i < route_linestring.length; ++i) {
-	    var p = route_linestring[i];
-	    linestring.push(new GLatLng(p.y, p.x));
-	  }
-	  var linestring_len = linestring.length;
-	  var last_point_ix = linestring.length - 1;
-	  var bounds = getBoundsForPoints(linestring);
-	  var s_e_markers = placeMarkers([linestring[0],
-					  linestring[last_point_ix]],
-					 [start_icon, end_icon]);
-	  var s_mkr = s_e_markers[0];
-	  var e_mkr = s_e_markers[1];
-	  GEvent.addListener(s_mkr, 'click', function() { 
-	    map.showMapBlowup(linestring[0]);
-	  });	           
-	  GEvent.addListener(e_mkr, 'click', function() { 
-	    map.showMapBlowup(linestring[last_point_ix]); 
-	  });			
-	  centerAndZoomToBounds(bounds);
-	  drawPolyLine(linestring, route_line_color, null, .625);
+		var route_linestring = route.linestring;
+		linestring = [];
+		for (var i = 0; i < route_linestring.length; ++i) {
+		  var p = route_linestring[i];
+		  linestring.push(new GLatLng(p.y, p.x));
+		}
+		var linestring_len = linestring.length;
+		var last_point_ix = linestring.length - 1;
+		var bounds = getBoundsForPoints(linestring);
+		var s_e_markers = placeMarkers([linestring[0],
+						linestring[last_point_ix]],
+					   [start_icon, end_icon]);
+		var s_mkr = s_e_markers[0];
+		var e_mkr = s_e_markers[1];
+		GEvent.addListener(s_mkr, 'click', function() { 
+		  map.showMapBlowup(linestring[0]);
+		});	           
+		GEvent.addListener(e_mkr, 'click', function() { 
+		  map.showMapBlowup(linestring[last_point_ix]); 
+		});			
+		centerAndZoomToBounds(bounds);
+		drawPolyLine(linestring, route_line_color, null, .625);
       }
       break;			 
     case 300: // Multiple matches
