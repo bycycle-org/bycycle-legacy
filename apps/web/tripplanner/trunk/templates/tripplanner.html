@@ -13,8 +13,8 @@
 		<link rel="stylesheet" href="static/yui/reset-fonts-grids.css" type="text/css"/>
 		<link rel="stylesheet" href="static/yui/tabview.css" type="text/css"/>
 		<style>
-		/* Remove left and right 10px default margins. */
-		#doc3 {margin:auto;}
+			/* Remove left and right 10px default margins. */
+			#doc3 {margin:auto;}
 		</style>
 		
 		<link rel="stylesheet" href="static/css/base.css" type="text/css"/>
@@ -27,7 +27,7 @@
 		<script type="text/javascript" src="static/js/util.js"></script>
 	</head>
 
-	<body onresize="resizeMap();" onunload="if (map) GUnload();">
+	<body>
 		<div id="doc3" class="yui-t4">
 
 			<!-- hd -->
@@ -52,8 +52,10 @@
 				
 							<!-- Input Tab Buttons -->
 							<ul id="input_tab_buttons" class="yui-nav">
-								<li class="%(geocode_tab_class)s"><a id="geocode_link" href="#search-map"><em>Search Map</em></a></li>
-								<li class="%(route_tab_class)s"><a id="route_link" href="#find-route"><em>Find Route</em></a></li>
+								<li id="geocode_tab_button" class="%(geocode_tab_class)s"><a href="#search-map"><em>Search Map</em></a>
+								</li>
+								<li class="%(route_tab_class)s"><a id="route_link" href="#find-route"><em>Find Route</em></a>
+								</li>
 								<li><a href="#tips"><em>Tips</em></a></li>
 								<li><a href="#links"><em>Links</em></a></li>
 							</ul>
@@ -211,67 +213,71 @@
 
 							<!-- Map Stuff -->
 							<div class="yui-u">
-				
-								<!-- Notice -->
-								<div id="notice" style="display: %(notice_display)s;">
-									<div id="notice_msg">%(notice)s</div>
-									<a href="javascript:void(0);" onclick="hideNotice(); return false;" title="Hide this notice">Close</a>
+								
+								<div style="border: 1px solid gray;">
+								
+									<!-- Notice -->
+									<div id="notice" style="display: %(notice_display)s;">
+										<div id="notice_msg">%(notice)s</div>
+										<a href="javascript:void(0);" onclick="hideNotice(); return false;" title="Hide this notice">Close</a>
+									</div>
+					
+									<!-- Map Menu -->
+									<div id="map_menu">
+										<form id="region_form" class="input_form" action="." method="get" onsubmit="return false;">
+											<div>
+												<select id="regions" name="region"
+													tabindex="2"
+													title="Set the active region and zoom into it"
+													onchange="selectRegion(this.options[this.selectedIndex].value);">
+													<option value="">- Select Region -</option>
+													<option value="">All Regions</option>
+													%(regions_opt_list)s
+												</select>
+							
+												<noscript>
+													<input class="input_button"
+														title="Click to go to region"
+														tabindex="3"
+														type="submit"
+														value="Go!"/>
+												</noscript>
+							
+												<a href="javascript:void(0);"
+													title="Find address nearest to red dot at center of map"
+													onclick="setElVToMapLonLat('q'); doFind('geocode');"
+													>Find address at center</a>
+													&middot;
+												<a href="/"
+													title="Clear everything from the map"
+													onclick="clearMap(); return false;"
+													>Clear map</a>
+													&middot;
+												<a id="bookmark"
+													href=""
+													title="Link you can use to bookmark the current result"
+													>Link to this page</a>
+											</div>
+										</form>
+									</div>
+									<!-- End Map Menu -->
+					
+									<!-- Map -->
+									<div id="map">
+										<div id="map_msg" style="padding: 5px;">Loading map<blink>...</blink></div>
+										<noscript>
+											<div style="font-style: italic; padding: 5px;">
+												<p>To display a map here, JavaScript must be enabled in your browser. If you would like to view the map, please enable JavaScript and <a href="">try again</a>.</p>
+							
+												<p>Note that you must have a relatively recent browser for the map to display. We test in <a href="http://www.mozilla.com/">Mozilla Firefox</a> on Linux, Mac OS X, and Windows; Safari on Mac OS X; and Internet Explorer on Windows.</p>
+							
+												<p>If you don't have one of the above browsers, you may want to leave JavaScript turned off. On the other hand, if you feel like experimenting, you can <a href="mailto:feedback@bycycle.org">let us know</a> if the bicycle Trip Planner does or does not work in other browsers</p>
+											</div>
+										</noscript>
+									</div>
+									<!-- End Map -->
+								
 								</div>
-				
-								<!-- Map Menu -->
-								<div id="map_menu">
-									<form id="region_form" class="input_form" action="." method="get" onsubmit="return false;">
-										<div>
-											<select id="regions" name="region"
-												tabindex="2"
-												title="Set the active region and zoom into it"
-												onchange="selectRegion(this.options[this.selectedIndex].value);">
-												<option value="">- Select Region -</option>
-												<option value="">All Regions</option>
-												%(regions_opt_list)s
-											</select>
-						
-											<noscript>
-												<input class="input_button"
-													title="Click to go to region"
-													tabindex="3"
-													type="submit"
-													value="Go!"/>
-											</noscript>
-						
-											<a href="javascript:void(0);"
-												title="Find address nearest to red dot at center of map"
-												onclick="setElVToMapLonLat('q'); doFind('geocode');"
-												>Find address at center</a>
-												&middot;
-											<a href="/"
-												title="Clear everything from the map"
-												onclick="clearMap(); return false;"
-												>Clear map</a>
-												&middot;
-											<a id="bookmark"
-												href=""
-												title="Link you can use to bookmark the current result"
-												>Link to this page</a>
-										</div>
-									</form>
-								</div>
-								<!-- End Map Menu -->
-				
-								<!-- Map -->
-								<div id="map">
-									<div id="map_msg" style="padding: 5px;">Loading map<blink>...</blink></div>
-									<noscript>
-										<div style="font-style: italic; padding: 5px;">
-											<p>To display a map here, JavaScript must be enabled in your browser. If you would like to view the map, please enable JavaScript and <a href="">try again</a>.</p>
-						
-											<p>Note that you must have a relatively recent browser for the map to display. We test in <a href="http://www.mozilla.com/">Mozilla Firefox</a> on Linux, Mac OS X, and Windows; Safari on Mac OS X; and Internet Explorer on Windows.</p>
-						
-											<p>If you don't have one of the above browsers, you may want to leave JavaScript turned off. On the other hand, if you feel like experimenting, you can <a href="mailto:feedback@bycycle.org">let us know</a> if the bicycle Trip Planner does or does not work in other browsers</p>
-										</div>
-									</noscript>
-								</div>
-								<!-- End Map -->
 				
 								<div id="footer">
 									&nbsp;&copy; 2004 - 2007 <a href="http://byCycle.org/" title="byCycle Home Page">byCycle.org</a>
