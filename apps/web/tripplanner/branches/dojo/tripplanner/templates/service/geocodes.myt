@@ -38,7 +38,7 @@ link_template = '<a href="%s" onclick="%s">%s</a>' % ('%s', onclick, '%s')
         m.write(m.subexec('geocode.myt', oResult=geocode, extra_content=extra, set_as_s_or_e_display='none'))
     c.result_id = multi_id
     c.title = title
-    c.toggleable = False
+    c.collapsible = False
     c.classes = classes
     c.json_id = ''
     c.json = json

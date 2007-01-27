@@ -24,8 +24,7 @@ byCycle.util = {
    *        newline instead of a space
    * @return The cleaned string
    */
-  cleanString: function(the_string, keep_newlines)
-  {
+  cleanString: function(the_string, keep_newlines) {
     if (!the_string) { return ''; }
     // Remove leading and trailing whitespace
     the_string = the_string.replace(/^\s+|\s+$/g, '');

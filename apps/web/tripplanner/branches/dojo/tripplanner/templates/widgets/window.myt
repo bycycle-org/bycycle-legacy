@@ -4,7 +4,7 @@
    window_style = ''
    display = 'block'
    closeable = True
-   toggleable = False
+   collapsible = False
    title = ''
    toggle_handler = None
    close_handler = None
@@ -19,8 +19,8 @@
   content_id = '%s_content' % id
   content_id_attr = ['', 'id="%s"' % content_id][bool(id)]
   content_style_attr = ['', 'style="%s"' % content_style][bool(content_style)]
-  toggle_handler = toggle_handler or ("""Element.toggle('%s')""" % content_id)
-  close_handler = close_handler or ("""Element.remove('%s')""" % id)
+  toggle_handler = toggle_handler or ("""dojo.html.toggleDisplay('%s')""" % content_id)
+  close_handler = close_handler or ("""dojo.dom.removeNode('%s')""" % id)
 </%python>
 
 <div id="<% id %>"
@@ -33,7 +33,7 @@
           <td class="window_title l"><% title %></td>
           <td class="r">
             &nbsp;
-% if toggleable and content_id:
+% if collapsible and content_id:
             <a class="button" href="#<% '-'.join(('toggle', slug)).rstrip('-') %>"
                onclick="<% toggle_handler %>; return false;"
                title="Show/Hide">+/-</a>

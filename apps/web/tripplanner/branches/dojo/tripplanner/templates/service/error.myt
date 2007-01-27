@@ -2,7 +2,7 @@
     inherit = 'result.myt'
 </%flags>
 
-% c.toggleable = False
+% c.collapsible = False
 % errors = c.error_msg.split('\n')
 % if len(errors) == 1:
 <% errors[0] %>

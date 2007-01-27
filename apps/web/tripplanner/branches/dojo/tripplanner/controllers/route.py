@@ -22,20 +22,12 @@ class RouteController(ServiceController):
             )
         except MultipleMatchingAddressesError, exc:
             template = 'route_geocodes'
-            oResult = exc.choices
+            results = exc.choices
             http_status = 300
-            # Make a list of lists of "URL" addresses. URL addresses look like
-            # "123 Main St;123 45345"
-            to_json = []
-            for g in oResult:
-                if isinstance(g, list):
-                    to_json.append(None)
-                elif isinstance(g, Geocode):
-                    to_json.append(g.urlStr())
             c.title = 'Multiple Matches Found'
             c.classes = 'errors'
         # We'll get here only if there's an unhandled error in the superclass.
         # Otherwise, the superclass will handle rendering directly.
-        return self._render(
-            self.service, template, http_status, self.format, oResult, to_json
+        return self._get_response(
+            self.service, template, http_status, self.format, results=results
         )

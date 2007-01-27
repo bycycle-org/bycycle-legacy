@@ -1,5 +1,5 @@
 /**
- * byCycle.Map namespace
+ * byCycle Map namespace
  */
 byCycle.Map = {
   // Mapping of map type to map object
@@ -17,20 +17,20 @@ byCycle.Map = {
 /**
  * Base byCycle Map widget
  */
-byCycle.Map.Map = function (parent, container) {
-  if (typeof(parent) == 'undefined') {
-    return;
-  }
-  this.parent = parent;
-  this.container = container;
-  this.createMap(container);
-};
+dojo.declare('byCycle.Map.base.Map', null, {
 
+  /**
+   * Map Constructor
+   *
+   * @param parent UI object
+   * @param container Widget that contains this map
+   */
+  initializer: function(ui, container) {
+    this.ui = ui;
+    this.container = container;
+    this.createMap(container);
+  },
 
-byCycle.Map.base.Map = byCycle.Map.Map;
-
-
-byCycle.Map.Map.prototype = {
   createMap: function(container) {
     var map = document.createElement('div');
     map.style.overflow = 'auto';
@@ -41,14 +41,14 @@ byCycle.Map.Map.prototype = {
   },
 
   put: function(content) {
-    var div = Builder.node('div', 
-                           '#' + (this.put_count = (this.put_count || 1)) + 
-                           ' ' + content);
-    this.put_count += 1;                 
+    var div = document.createElement('div');
+    div.innerHTML = '#' + (this.put_count = (this.put_count || 1)) + ' ' +
+                    content;
+    this.put_count += 1;
     this.map.appendChild(div);
     return div;
   },
-  
+
   clear: function() {
     this.map.innerHTML = '';
   },
@@ -70,7 +70,7 @@ byCycle.Map.Map.prototype = {
     this.container.style.height = height + 'px';
   },
 
-  unload: function() {
+  onUnload: function() {
     document.body.innerHTML = 'Bye.';
   },
 
@@ -86,7 +86,7 @@ byCycle.Map.Map.prototype = {
   },
 
   setCenter: function(center, zoom) {
-    this.put(['Set Center: ', center.x, ', ', center.y, 
+    this.put(['Set Center: ', center.x, ', ', center.y,
               (zoom ? '; Zoom: ' + zoom : '')].join(''));
   },
 
@@ -115,7 +115,7 @@ byCycle.Map.Map.prototype = {
 
   drawPolyLine: function(points, color, weight, opacity) {
     var line = {
-      type: 'PolyLine', 
+      type: 'PolyLine',
       toString: function() {
         return this.type;
       }
@@ -125,9 +125,9 @@ byCycle.Map.Map.prototype = {
 
   placeMarker: function(point, icon) {
     var marker = {
-      type: 'Marker', 
-      x: point.x, 
-      y: point.y, 
+      type: 'Marker',
+      x: point.x,
+      y: point.y,
       toString: function() {
         return [this.type, ' at ', this.x, ', ', this.y].join('');
       }
@@ -135,24 +135,20 @@ byCycle.Map.Map.prototype = {
     return this.addOverlay(marker);
   },
 
-  placeGeocodeMarker: function(point, node, icon) {
+  placeGeocodeMarker: function(point, node, zoom, icon) {
     var marker = {
-      type: 'Geocode Marker', 
-      x: point.x, 
-      y: point.y, 
+      type: 'Geocode Marker',
+      x: point.x,
+      y: point.y,
       toString: function() {
-        return [this.type, ' at ', this.x, ', ', this.y, ' [', node.innerHTML, ']'].join('');
+        return [this.type, ' at ', this.x, ', ', this.y, 
+		' [', node.innerHTML, ']'].join('');
       }
     };
     this.setCenter(point, 14);
     return this.addOverlay(marker);
-	
-	
-	GEvent.addListener(geocode.marker, "click", function() {
-	  map.openInfoWindowHtml(point, html);
-	});
   },
-		  
+
   /**
    * Put some markers on the map
    * @param points An array of points
@@ -187,7 +183,6 @@ byCycle.Map.Map.prototype = {
     var comp = function(a, b) { return a - b; };
     xs.sort(comp);
     ys.sort(comp);
-    byCycle.logInfo(xs);
     var bounds = {
       sw: {x: xs[0], y: ys[0]},
       ne: {x: xs.pop(), y: ys.pop()}
@@ -197,7 +192,7 @@ byCycle.Map.Map.prototype = {
 
   /**
    * @param bounds A set of points representing a bounding box (sw, ne)
-   * @return Center of bounding box
+   * @return Center of bounding box {x: x, y: y}
    */
   getCenterOfBounds: function(bounds) {
     var sw = bounds.sw;
@@ -206,7 +201,6 @@ byCycle.Map.Map.prototype = {
   },
 
   centerAndZoomToBounds: function(bounds, center) {},
-
 
   showGeocode: function(geocode) {
     this.map.innerHTML += ('<br/>x: ' + geocode.x + ', y: ' + geocode.y);
@@ -221,7 +215,4 @@ byCycle.Map.Map.prototype = {
   addListener: function(obj, signal, func) {
     Event.observe(obj, signal, func);
   }
-};
-
-
-byCycle.Map.Map.prototype.base = byCycle.Map.Map.prototype;
+});

@@ -52,7 +52,7 @@ first = True  # First in oResult having multiple matches
         if first:
             first = False
     c.result_id = multi_id
-    c.toggleable = False
+    c.collapsible = False
     c.title = title
     c.classes = classes
     c.json_id = ''

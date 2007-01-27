@@ -28,20 +28,14 @@ ini = join(top_level, ini)
 
 # Args to pass to `paster serve`
 try:
-    args = [''] + args[2:]
+    args[2]
 except IndexError:
-    args = ['', 'reload']
-        
+    args = ['reload']
+    print 'Using default args: %s' % args
+else:
+    args = args[2:]    
+    
 # Run `paster serve` with args and ini file
-cmd = 'paster serve %s %s' % (' --'.join(args), ini)
+cmd = 'paster serve %s %s' % (' --'.join([''] + args), os.path.split(ini)[-1])
 print cmd
 os.system(cmd)
-
-
-#!/usr/bin/env python
-import os
-from os.path import abspath, dirname, join
-top_level = dirname(dirname(abspath(__file__)))
-os.chdir(top_level)
-ini = join(top_level, 'development.ini') 
-os.system('paster serve --reload %s' % ini)
