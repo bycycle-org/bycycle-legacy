@@ -363,7 +363,9 @@ function setElVToMapLonLat(id) {
 function clearMap() {
   if (map) {
     map.clearOverlays();
-	debugger;
+	if (bike_layer_state) {
+	  bike_layer.show();
+	}
     for (var reg_key in regions) {
       var reg = regions[reg_key];
       if (!reg.all) {
@@ -445,7 +447,6 @@ function selectRegion(region) {
 }
 
 function _initRegion(region) {
-  // WTF?: Why is this here when it could be in the regions file???
   if (map) {
     if (!region.bounds.gbounds) {
       var sw = region.bounds.sw;
@@ -467,8 +468,7 @@ function _initRegion(region) {
 }
 
 function _showRegionOverlays(region, use_cached) {
-  if (!map)
-    return;
+  if (!map) return;
 
   if (!region.marker) {
     icon = new GIcon();
@@ -477,7 +477,10 @@ function _showRegionOverlays(region, use_cached) {
     icon.iconAnchor = new GPoint(9, 10);
     icon.infoWindowAnchor = new GPoint(9, 10);
     icon.infoShadowAnchor = new GPoint(9, 10);
-    region.marker = placeMarker(region.center, icon);
+	if (!region.center) {
+	  _initRegion(region);
+	}
+	region.marker = placeMarker(region.center, icon);
     GEvent.addListener(region.marker, "click", function() { 
       var id = region.id;
       var sel = el('regions');
