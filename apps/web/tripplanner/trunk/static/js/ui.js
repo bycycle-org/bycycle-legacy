@@ -82,7 +82,7 @@ function toggleBikeLayer() {
 	// Bike layer was off; turn it on
 	if (!bike_layer) {
 	  // First time turning bike layer on, create it
-	  bike_layer = makeBikeLayer(18);
+	  bike_layer = makeBikeLayer(20);
 	  map.addOverlay(bike_layer);
 	}
 	el('show_hide_bike_map').innerHTML = 'Hide';
@@ -130,15 +130,18 @@ function swapFrAndTo() {
   user_to = fr;
 }
 
- 
+var has_donated = false;
 function doFind(service, fr, to) {
-  var amount = el((service == 'route' ? 'route' : 'geocode') + '_amount').value;
-  if (amount != '') {
-	var opts = 'width=800,height=600,status=no,toolbar=yes,menubar=no,scrollbars=yes,' + 
-			   'location=yes,directories=no,personalbar=no,resizable=yes';
-    window.open('http://bycycle.org/donate.html?amount=' + amount, 'byCycle_donate_window', opts);
+  if (!has_donated) {
+    var amount = el((service == 'route' ? 'route' : 'geocode') + '_amount').value;
+    if (amount != '') {
+      var opts = 'width=800,height=600,status=no,toolbar=yes,menubar=no,scrollbars=yes,' + 
+	'location=yes,directories=no,personalbar=no,resizable=yes';
+      window.open('http://bycycle.org/donate.html?amount=' + amount, 'byCycle_donate_window', opts);
+    }
+    has_donated = true;
   }
-
+    
   start_ms = new Date().getTime();
   clearResult();
   showStatus('Processing. Please wait<blink>...</blink>');
