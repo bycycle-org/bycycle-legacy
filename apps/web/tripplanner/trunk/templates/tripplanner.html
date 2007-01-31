@@ -56,7 +56,8 @@
 								</li>
 								<li class="%(route_tab_class)s"><a id="route_link" href="#find-route"><em>Find Route</em></a>
 								</li>
-								<li><a href="#tips"><em>Tips</em></a></li>
+								<li><a href="#help"><em>Help</em></a></li>
+								<li><a href="#feedback"><em>Feedback</em></a></li>
 								<li><a href="#links"><em>Links</em></a></li>
 							</ul>
 				
@@ -65,7 +66,7 @@
 								<div>			
 									<small>
 									  If you think this service is important, please consider 
-									  <a href="http://bycycle.org/donate.html" title="Support byCycle">donating</a>. 
+									  <a href="http://bycycle.org/support/donate" title="Support byCycle">donating</a>. 
 									  Any amount helps.
 									</small>
 						
@@ -94,14 +95,18 @@
 						
 										<div>
 											Enter address -OR- pick from map
-											<a href="javascript:void(0);" onclick="setResult(address_tip); toggleTips(1);" title="Tell me how">??</a>
+											<a href="javascript:void(0);" onclick="setResult(address_tip);" title="Tell me how">??</a>
 										</div>
 									</form>
 									<!-- End Geocode Form -->
 								</div>
 					
 								<div>
-									<small>If you think this service is important, please consider donating. Any amount helps.</small>
+									<small>
+									  If you think this service is important, please consider 
+									  <a href="http://bycycle.org/support/donate" title="Support byCycle">donating</a>. 
+									  Any amount helps.
+									</small>
 									
 									<!-- Route Form -->
 									<form id="route_form" class="input_form"
@@ -141,31 +146,43 @@
 						
 										<div>
 											Enter 'from' &amp; 'to' addresses -OR- pick from map
-											<a href="javascript:void(0);" onclick="setResult(route_address_tip); toggleTips(1);" title="Tell me how">??</a>
+											<a href="javascript:void(0);" onclick="setResult(route_address_tip);" title="Tell me how">??</a>
 										</div>
 									</form>
 									<!-- Route Form -->
 								</div>
 					
 								<div>
-									<!-- Tips -->
-									<ul>
+									<!-- Help -->
+									<p><a href="http://bycycle.org/trip-planner/help">Click here to view the trip planner help page &raquo;</a></p>
+									
+									<p>Here is a quick list of helpful hints (scroll down to see them all):</p>
+									
+									<ul id="tips">
 										<li>Select a region first (top left of map).</li>
 										<li>To save typing and increase the likelihood of addresses being found, don't enter the city, state, or zip code.</li>
 										<li>For the same reason, don't type in the street type (St, Ave, etc).</li>
 										<li>For number streets, use 1st, 2nd, etc, not First, Second, etc.</li>
-										<li>If the system still has trouble finding an address, enter an address by <a href="javascript:void(0);" onclick="setResult(address_tip); toggleTips();" title="Tell me how">picking it from the map</a>.</li>
+										<li>If the system still has trouble finding an address, enter an address by <a href="javascript:void(0);" onclick="setResult(address_tip);" title="Tell me how">picking it from the map</a>.</li>
 										<li>If you find a problem, please (pretty please!) <a href="http://bycycle.org/contact" title="Contact us with any problems or suggestions">let us know</a>.</li>
 									</ul>
-									<!-- End Tips -->
+									<!-- End Help -->
 								</div>
+					
+								<!-- Feedback -->
+								<div>
+										<p>We'd like to hear from you... about anything at all. In particular, we'd like to know if you have had any trouble using the trip planner and your ideas for making it better. <a href="http://bycycle.org/contact" title="Contact us with any problems or suggestions">Click here to go to our contact page &raquo;</a></p>
+										
+										<p>You can also make public comments in <a href="http://groups.google.com/group/byCycle" title="Make public comments, questions, and suggestions">the byCycle discussion group &raquo;</a></p>
+								</div>
+								<!-- End Feedback -->								
 					
 								<div>
 								<!-- Links -->
-								<p>Links to byCycle information and resources:</p>
+								<p>Links to <a href="http://bycycle.org/" title="byCycle Home Page">byCycle.org</a> information and resources:</p>
 								<p>
 									<a href="http://bycycle.org/" title="byCycle.org Home Page">byCycle.org</a> &middot;
-									<a href="http://groups.google.com/group/byCycle" title="Use instead of feedback to make public comments, questions, and suggestions">Discuss</a> &middot;
+									<a href="http://groups.google.com/group/byCycle" title="Make public comments, questions, and suggestions">Discuss</a> &middot;
 									<a href="http://bycycle.org/contact" title="Send us problem reports, comments, questions, and suggestions">Feedback</a> &middot;
 									<a href="http://bycycle.org/support" title="Get involved, buy a shirt, donate, ...">Support byCycle</a> &middot;
 									<a href="http://trac.bycycle.org/" title="Information for Developers (Trac)">Developers</a>

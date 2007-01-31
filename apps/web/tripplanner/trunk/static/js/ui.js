@@ -33,7 +33,8 @@ var route_address_tip = 'For each of your "from" and "to" addresses you can type
 
 function afterPageLoad() {  
   YAHOO.util.Event.addListener(window, 'resize', resizeMap);
-  YAHOO.util.Event.addListener(window, 'unload', GUnload);
+  var unload_func = typeof(GUnload) != 'undefined' ? GUnload : (function () {});
+  YAHOO.util.Event.addListener(window, 'unload', unload_func);
   
   map_el = el('map');
   result_el = el('result');

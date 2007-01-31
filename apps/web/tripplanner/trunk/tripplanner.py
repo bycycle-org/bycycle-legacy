@@ -480,11 +480,10 @@ class TripPlanner(object):
         """
         region = region.strip().lower().replace(',', '')
 
-        regions = {'or': ['portland',],
-                   'wi': ['milwaukee',],
-                   'pa': ['pittsburgh',],
-                   #'wa': ['seattle',]
-                   }
+        regions = {
+            'or': ['portland'],
+            'wi': ['milwaukee']
+        }
 
         states = regions.keys()
         states.sort()
@@ -529,7 +528,7 @@ class TripPlanner(object):
         </p>
         %s
         <p>
-          &copy; 2006
+          &copy; 2004 - 2007
           <a href="http://bycycle.org/"
              title="byCycle Home Page"
              >byCycle.org</a>

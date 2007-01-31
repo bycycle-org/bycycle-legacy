@@ -142,9 +142,8 @@ function mapCreate() {
 
 function makeBikeLayer(zoom_levels) {
   var domain = 'mica.metro-region.org';
-  var transparent_png = 'http://' + domain + 
-    '/bycycle/images/transparent.png';
-  var copyrights = new GCopyrightCollection("&copy; Metro");
+  var transparent_png = 'http://' + domain + '/bycycle/images/transparent.png';
+  var copyrights = new GCopyrightCollection('&copy; <a href="http://www.metro-region.org/">Metro</a>');
 
   var wms_url = [
 	'http://', domain, 

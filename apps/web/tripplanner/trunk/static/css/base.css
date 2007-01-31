@@ -21,8 +21,12 @@ h2 {
     font-size: 152%;
 }
 
-p, li {
+p {
   margin-bottom: 10px;
+}
+
+li {
+  margin-bottom: 5px;
 }
 
 a {
@@ -96,6 +100,14 @@ hr {
   color: black;
 }
 
+#tips {
+  list-style-type: disc;
+}
+
+#tips li {
+  margin-left: 20px;
+}
+
 #links {
   margin: 5px 0;
   background: gray;
@@ -128,12 +140,6 @@ a.selected {
 
 
 /* Left Column */
-
-#tips {
-  border: 1px solid gray;
-  margin-bottom: 5px;
-  padding: 5px;
-}
 
 #result {
   overflow: auto;}
@@ -232,7 +238,8 @@ a.selected {
 
 @media print {
   html, body, #result {
-    overflow: visible;}
+    overflow: visible;
+  }
 
   #yui-main div {
     float: none;
