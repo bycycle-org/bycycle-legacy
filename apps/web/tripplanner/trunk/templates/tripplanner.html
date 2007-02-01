@@ -1,390 +1,392 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 
 <html xmlns="http://www.w3.org/1999/xhtml" xmlns:v="urn:schemas-microsoft-com:vml">
-	<head>
-		<meta http-equiv="Content-Type" content="application/xhtml+xml; charset=utf-8"/>
-		<meta http-equiv="Pragma" content="no-cache"/>
-		<meta name="keywords" content="bicycle, bike, bicycle trip planner, bicycle route finder, bike trip planner, bike route finder, bicycle route, bicycle trip, bike route, bike trip, bicycle routing, bike routing, maps, bicycle maps, bike maps, bicycle advocacy, community, sustainability, portland, oregon, milwaukee, wisconsin"/>
-		<meta name="description" content="byCycle Bicycle Trip Planner -- A web-based, interactive, bicycle trip planner (route finder) for the Portland, Oregon, Milwaukee, Wisconsin, and, soon, other regions."/>
+  <head>
+    <meta http-equiv="Content-Type" content="application/xhtml+xml; charset=utf-8"/>
+    <meta http-equiv="Pragma" content="no-cache"/>
+    <meta name="keywords" content="bicycle, bike, bicycle trip planner, bicycle route finder, bike trip planner, bike route finder, bicycle route, bicycle trip, bike route, bike trip, bicycle routing, bike routing, maps, bicycle maps, bike maps, bicycle advocacy, community, sustainability, portland, oregon, milwaukee, wisconsin"/>
+    <meta name="description" content="byCycle Bicycle Trip Planner -- A web-based, interactive, bicycle trip planner (route finder) for the Portland, Oregon, Milwaukee, Wisconsin, and, soon, other regions."/>
+
+    <title>byCycle - Bicycle Trip Planner</title>
+
+    <!-- YUI Stylesheets -->
+    <link rel="stylesheet" href="static/yui/reset-fonts-grids.css" type="text/css"/>
+    <link rel="stylesheet" href="static/yui/tabview.css" type="text/css"/>
+    <style>
+      /* Remove left and right 10px default margins. */
+      #doc3 {margin:auto;}
+    </style>
+
+    <link rel="stylesheet" href="static/css/base.css" type="text/css"/>
+    <!--[if IE]>
+	<link rel="stylesheet" href="static/css/base_ie.css" type="text/css"/>
+	<![endif]-->
+
+    <!-- YUI JavaScripts -->
+    <script type="text/javascript" src="static/yui/yahoo-dom-event.js"></script>
+    <script type="text/javascript" src="static/js/util.js"></script>
+  </head>
+
+  <body>
+    <div id="doc3" class="yui-t4">
+
+      <!-- hd -->
+      <div id="hd">
+	<table id="hd_table">
+	  <tbody>
+	    <tr>
+	      <td id="logo" class="yui-u first">
+		<div id="logo_img">
+		  <a href="http://bycycle.org/" title="byCycle Home Page"><img src="static/images/logo.png" width="150" height="40" alt="byCycle.org" /></a>
+		</div>
+		<div id="app_name">
+		  <a href="/">Bicycle Trip Planner</a><br />
+		</div>
+		<div class="beta">
+		  <a href="http://en.wikipedia.org/wiki/Development_stage#Beta">beta</a>
+		</div>
+	      </td>
+	      
+	      <!-- Input -->
+	      <td id="input">
 		
-		<title>byCycle - Bicycle Trip Planner</title>
-		
-		<!-- YUI Stylesheets -->
-		<link rel="stylesheet" href="static/yui/reset-fonts-grids.css" type="text/css"/>
-		<link rel="stylesheet" href="static/yui/tabview.css" type="text/css"/>
-		<style>
-			/* Remove left and right 10px default margins. */
-			#doc3 {margin:auto;}
-		</style>
-		
-		<link rel="stylesheet" href="static/css/base.css" type="text/css"/>
-		<!--[if IE]>
-		<link rel="stylesheet" href="static/css/base_ie.css" type="text/css"/>
-		<![endif]-->
-		
-		<!-- YUI JavaScripts -->
-		<script type="text/javascript" src="static/yui/yahoo-dom-event.js"></script>
-		<script type="text/javascript" src="static/js/util.js"></script>
-	</head>
+		<!-- Input Tab Container -->
+		<div id="input_tab_container" class="yui-navset">
+		  
+		  <!-- Input Tab Buttons -->
+		  <ul id="input_tab_buttons" class="yui-nav">
+		    <li id="geocode_tab_button" class="%(geocode_tab_class)s"><a href="#search-map"><em>Search Map</em></a>
+		    </li>
+		    <li class="%(route_tab_class)s"><a id="route_link" href="#find-route"><em>Find Route</em></a>
+		    </li>
+		    <li><a href="#help"><em>Help</em></a></li>
+		    <li><a href="#feedback"><em>Feedback</em></a></li>
+		    <li><a href="#links"><em>Links</em></a></li>
+		  </ul>
+		  
+		  <!-- Input Tab Contents -->
+		  <div id="input_tab_contents" class="yui-content">
+		    <div>
+		      <small>
+			If you think this service is important, please consider
+			<a href="http://bycycle.org/support/donate" title="Support byCycle">donating</a>.
+			Any amount helps.
+		      </small>
 
-	<body>
-		<div id="doc3" class="yui-t4">
+		      <!-- Geocode Form -->
+		      <form id="geocode_form" class="input_form"
+			    action="."
+			    method="get"
+			    onsubmit="doFind('geocode'); return false;">
 
-			<!-- hd -->
-			<div id="hd">
+			<div>
+			  <input type="hidden" name="region" value="%(region)s"/>
+			  <input type="hidden" name="service" value="geocode"/>
+			  <input type="text" id="q" name="q" class="input_field" tabindex="1" title="Address or intersection (no businesses or other points of interest)" value="%(q)s"/>
 
-				<!-- hd grid -->
-				<div class="yui-gf">
+			  <select id="geocode_amount" name="amount">
+			    %(amount_options)s
+			  </select>
 
-					<div id="logo" class="yui-u first">
-						<div style="padding: 5px;">
-							<a href="http://bycycle.org/" title="byCycle Home Page">byCycle.org</a><br/>
-							<a href="/">Bicycle Trip Planner</a><br/>
-							<small>[<a href="http://en.wikipedia.org/wiki/Development_stage#Beta">beta</a>]</small>
-						</div>
-					</div>
-
-					<!-- Input -->
-					<div id="input" class="yui-u">
-
-						<!-- Input Tab Container -->
-						<div id="input_tab_container" class="yui-navset">
-				
-							<!-- Input Tab Buttons -->
-							<ul id="input_tab_buttons" class="yui-nav">
-								<li id="geocode_tab_button" class="%(geocode_tab_class)s"><a href="#search-map"><em>Search Map</em></a>
-								</li>
-								<li class="%(route_tab_class)s"><a id="route_link" href="#find-route"><em>Find Route</em></a>
-								</li>
-								<li><a href="#help"><em>Help</em></a></li>
-								<li><a href="#feedback"><em>Feedback</em></a></li>
-								<li><a href="#links"><em>Links</em></a></li>
-							</ul>
-				
-							<!-- Input Tab Contents -->
-							<div id="input_tab_contents" class="yui-content">
-								<div>			
-									<small>
-									  If you think this service is important, please consider 
-									  <a href="http://bycycle.org/support/donate" title="Support byCycle">donating</a>. 
-									  Any amount helps.
-									</small>
-						
-									<!-- Geocode Form -->
-									<form id="geocode_form" class="input_form"
-										action="."
-										method="get"
-										onsubmit="doFind('geocode'); return false;">
-						
-										<div>
-											<input type="hidden" name="region" value="%(region)s"/>
-											<input type="hidden" name="service" value="geocode"/>
-											<input type="text" id="q" name="q" class="input_field" tabindex="1" title="Address or intersection (no businesses or other points of interest)" value="%(q)s"/>
-							
-											<select id="geocode_amount" name="amount">
-											%(amount_options)s
-											</select>
-							
-											<input name="gb"
-												class="input_button"
-												title="Click to look up address"
-												tabindex="3"
-												type="submit"
-												value="Find"/>
-										</div>
-						
-										<div>
-											Enter address -OR- pick from map
-											<a href="javascript:void(0);" onclick="setResult(address_tip);" title="Tell me how">??</a>
-										</div>
-									</form>
-									<!-- End Geocode Form -->
-								</div>
-					
-								<div>
-									<small>
-									  If you think this service is important, please consider 
-									  <a href="http://bycycle.org/support/donate" title="Support byCycle">donating</a>. 
-									  Any amount helps.
-									</small>
-									
-									<!-- Route Form -->
-									<form id="route_form" class="input_form"
-										action="."
-										method="get"
-										onsubmit="doFind('route'); return false;">
-						
-										<div>
-											<input type="hidden" name="region" value="%(region)s"/>
-											<input type="hidden" name="service" value="route"/>
-											<input type="text" id="fr" name="fr" class="input_field" tabindex="1" title="From address or intersection (no business names)" value="%(fr)s"/>
-							
-											<a href="javascript:void(0);"
-												title="Swap From and To addresses"
-												onclick="swapFrAndTo();"
-												><img src="static/images/swapfrto.gif" alt="swap"/></a>
-							
-											<input type="text" id="to" name="to" class="input_field" tabindex="1"  title="To address or intersection (no business names)" value="%(to)s"/>
-							
-											<select id="pref" name="pref">
-											<option value="default">[Preference]</option>
-											<option value="default">Normal</option>
-											<option value="safer">Safer</option>
-											</select>
-							
-											<select id="route_amount" name="amount">
-											%(amount_options)s
-											</select>
-							
-											<input name="rb"
-												class="input_button"
-												title="Click to find route"
-												tabindex="3"
-												type="submit"
-												value="Find Route"/>
-										</div>
-						
-										<div>
-											Enter 'from' &amp; 'to' addresses -OR- pick from map
-											<a href="javascript:void(0);" onclick="setResult(route_address_tip);" title="Tell me how">??</a>
-										</div>
-									</form>
-									<!-- Route Form -->
-								</div>
-					
-								<div>
-									<!-- Help -->
-									<p><a href="http://bycycle.org/trip-planner/help">Click here to view the trip planner help page &raquo;</a></p>
-									
-									<p>Here is a quick list of helpful hints (scroll down to see them all):</p>
-									
-									<ul id="tips">
-										<li>Select a region first (top left of map).</li>
-										<li>To save typing and increase the likelihood of addresses being found, don't enter the city, state, or zip code.</li>
-										<li>For the same reason, don't type in the street type (St, Ave, etc).</li>
-										<li>For number streets, use 1st, 2nd, etc, not First, Second, etc.</li>
-										<li>If the system still has trouble finding an address, enter an address by <a href="javascript:void(0);" onclick="setResult(address_tip);" title="Tell me how">picking it from the map</a>.</li>
-										<li>If you find a problem, please (pretty please!) <a href="http://bycycle.org/contact" title="Contact us with any problems or suggestions">let us know</a>.</li>
-									</ul>
-									<!-- End Help -->
-								</div>
-					
-								<!-- Feedback -->
-								<div>
-										<p>We'd like to hear from you... about anything at all. In particular, we'd like to know if you have had any trouble using the trip planner and your ideas for making it better. <a href="http://bycycle.org/contact" title="Contact us with any problems or suggestions">Click here to go to our contact page &raquo;</a></p>
-										
-										<p>You can also make public comments in <a href="http://groups.google.com/group/byCycle" title="Make public comments, questions, and suggestions">the byCycle discussion group &raquo;</a></p>
-								</div>
-								<!-- End Feedback -->								
-					
-								<div>
-								<!-- Links -->
-								<p>Links to <a href="http://bycycle.org/" title="byCycle Home Page">byCycle.org</a> information and resources:</p>
-								<p>
-									<a href="http://bycycle.org/" title="byCycle.org Home Page">byCycle.org</a> &middot;
-									<a href="http://groups.google.com/group/byCycle" title="Make public comments, questions, and suggestions">Discuss</a> &middot;
-									<a href="http://bycycle.org/contact" title="Send us problem reports, comments, questions, and suggestions">Feedback</a> &middot;
-									<a href="http://bycycle.org/support" title="Get involved, buy a shirt, donate, ...">Support byCycle</a> &middot;
-									<a href="http://trac.bycycle.org/" title="Information for Developers (Trac)">Developers</a>
-								</p>
-								<!-- End Links -->
-							</div>
-							</div>
-							<!-- End Input Tabs Content -->
-				
-						</div>
-						<!-- End Input Tab Container -->
-				
-						<script type="text/javascript">
-							//<![CDATA[
-							// Hide tab contents to avoid ugly initial spillover over contents
-							el('input_tab_contents').style.display = 'none';
-							//]]>
-						</script>
-					</div>
-					<!-- End Input -->
-
-				</div>
-				<!-- End hd grid -->
-
+			  <input name="gb"
+				 class="input_button"
+				 title="Click to look up address"
+				 tabindex="3"
+				 type="submit"
+				 value="Find"/>
 			</div>
-			<!-- End hd -->
 
-			<hr id="spacer"/>
-
-			<!-- bd -->
-			<div id="bd">
-
-				<!-- Main -->
-				<div id="yui-main">
-					<div id="yui-main-b" class="yui-b">
-		
-						<!-- Main Grid -->
-						<div class="yui-gd">
-			
-							<div class="yui-u first">
-				
-								<!-- Result -->
-								<div id="result">
-								%(result)s
-								</div>
-								<!-- End Result -->
-				
-							</div>
-
-							<!-- Map Stuff -->
-							<div class="yui-u">
-								
-								<div style="border: 1px solid gray;">
-								
-									<!-- Notice -->
-									<div id="notice" style="display: %(notice_display)s;">
-										<div id="notice_msg">%(notice)s</div>
-										<a href="javascript:void(0);" onclick="hideNotice(); return false;" title="Hide this notice">Close</a>
-									</div>
-					
-									<!-- Map Menu -->
-									<div id="map_menu">
-										<form id="region_form" class="input_form" action="." method="get" onsubmit="return false;">
-											<div>
-												<select id="regions" name="region"
-													tabindex="2"
-													title="Set the active region and zoom into it"
-													onchange="selectRegion(this.options[this.selectedIndex].value);">
-													<option value="">- Select Region -</option>
-													<option value="">All Regions</option>
-													%(regions_opt_list)s
-												</select>
-							
-												<noscript>
-													<input class="input_button"
-														title="Click to go to region"
-														tabindex="3"
-														type="submit"
-														value="Go!"/>
-												</noscript>
-							
-												<a href="javascript:void(0);"
-													title="Find address nearest to red dot at center of map"
-													onclick="setElVToMapLonLat('q'); doFind('geocode');"
-													>Find address at center</a>
-													&middot;
-												<a href="javascript:void(0);"
-													title="Toggle bike map overlay"
-													onclick="toggleBikeLayer(); return false;"
-													><span id="show_hide_bike_map">Show</span> bike map</a>
-												&middot;
-												<a href="/"
-													title="Clear everything from the map"
-													onclick="clearMap(); return false;"
-													>Clear map</a>
-													&middot;
-												<a id="bookmark"
-													href=""
-													title="Link you can use to bookmark the current result"
-													>Link to this page</a>
-											</div>
-										</form>
-									</div>
-									<!-- End Map Menu -->
-					
-									<!-- Map -->
-									<div id="map">
-										<div id="map_msg" style="padding: 5px;">Loading map<blink>...</blink></div>
-										<noscript>
-											<div style="font-style: italic; padding: 5px;">
-												<p>To display a map here, JavaScript must be enabled in your browser. If you would like to view the map, please enable JavaScript and <a href="">try again</a>.</p>
-							
-												<p>Note that you must have a relatively recent browser for the map to display. We test in <a href="http://www.mozilla.com/">Mozilla Firefox</a> on Linux, Mac OS X, and Windows; Safari on Mac OS X; and Internet Explorer on Windows.</p>
-							
-												<p>If you don't have one of the above browsers, you may want to leave JavaScript turned off. On the other hand, if you feel like experimenting, you can <a href="mailto:feedback@bycycle.org">let us know</a> if the bicycle Trip Planner does or does not work in other browsers</p>
-											</div>
-										</noscript>
-									</div>
-									<!-- End Map -->
-								
-								</div>
-				
-								<div id="footer">
-									&nbsp;&copy; 2004 - 2007 <a href="http://byCycle.org/" title="byCycle Home Page">byCycle.org</a>
-									&middot;
-									Hosted at <a href="http://affil.aplus.net/Affiliates/click.jsp?bid=111&amp;aid=1003145">aPlus.net</a>
-									&middot;
-									<a href="http://www.bikeportland.org/">Portland bike news @ BikePortland.org</a>
-								</div>
-				
-							</div>
-							<!-- End Map Stuff -->
-
-						</div>
-						<!-- End Main Grid -->
-
-					</div>
-					<!-- End Main Block -->
-					
-				</div>
-				<!-- End Main -->
-
-				<!-- Secondary -->
-				<div id="secondary" class="yui-b" style="width: 120px;">
-
-					<!-- Google Ads -->
-					<div id="google_ads_win">
-		
-						<!-- "Title bar" with close button. -->
-						<div>
-							<a href="javascript:void(0);"
-								onclick="hideAds(); return false;"
-								title="Hide Ads"
-								>Hide Ads</a>
-						</div>
-			
-						<script type="text/javascript">
-							//<![CDATA[
-							google_ad_client = "pub-6971619329897557";
-							google_ad_width = 120;
-							google_ad_height = 600;
-							google_ad_format = "120x600_as";
-							google_ad_type = "text_image";
-							google_ad_channel ="";
-							google_color_border = "A7CC95";
-							google_color_bg = "FFFFFF";
-							google_color_link = "000000";
-							google_color_text = "000000";
-							google_color_url = "4466DD";
-							script("http://pagead2.googlesyndication.com/pagead/show_ads.js");
-							//CDATA]]>
-						</script>
-					</div>
-					<!-- End Google Ads -->
-				</div>
-				<!-- End Secondary -->
-
+			<div>
+			  Enter address -OR- pick from map
+			  <a href="javascript:void(0);" onclick="setResult(address_tip);" title="Tell me how">??</a>
 			</div>
-			<!-- End bd -->
+		      </form>
+		      <!-- End Geocode Form -->
+		    </div>
 
-			<div id="ft" style="display: none;"></div>
-		
-			<input type="hidden" id="http_status" name="http_status" value="%(http_status)s"/>
-			<input type="hidden" id="response_text" name="response_text" value='%(response_text)s'/>
-		
-			<!-- Placement down here recommended by crockford.com -->
-			<!-- YUI -->
-			<script type="text/javascript" src="static/yui/tabview.js"></script>
-			<!-- byCycle -->
-			<script type="text/javascript" src="static/js/ginit.js"></script>
-			<script type="text/javascript" src="static/js/ajax.js"></script>
-			<script type="text/javascript" src="static/js/regions.js"></script>
-			<script type="text/javascript" src="static/js/gmap.js"></script>
-			<script type="text/javascript" src="static/js/ui.js"></script>
-			<script type="text/javascript">
-				//<![CDATA[
-				YAHOO.util.Event.addListener(window, 'load', afterPageLoad);
-				//]]>
-			</script>
+		    <div>
+		      <small>
+			If you think this service is important, please consider
+			<a href="http://bycycle.org/support/donate" title="Support byCycle">donating</a>.
+			Any amount helps.
+		      </small>
+
+		      <!-- Route Form -->
+		      <form id="route_form" class="input_form"
+			    action="."
+			    method="get"
+			    onsubmit="doFind('route'); return false;">
+
+			<div>
+			  <input type="hidden" name="region" value="%(region)s"/>
+			  <input type="hidden" name="service" value="route"/>
+			  <input type="text" id="fr" name="fr" class="input_field" tabindex="1" title="From address or intersection (no business names)" value="%(fr)s"/>
+
+			  <a href="javascript:void(0);"
+			     title="Swap From and To addresses"
+			     onclick="swapFrAndTo();"
+			     ><img src="static/images/swapfrto.gif" alt="swap"/></a>
+
+			  <input type="text" id="to" name="to" class="input_field" tabindex="1"  title="To address or intersection (no business names)" value="%(to)s"/>
+
+			  <select id="pref" name="pref">
+			    <option value="default">[Preference]</option>
+			    <option value="default">Normal</option>
+			    <option value="safer">Safer</option>
+			  </select>
+
+			  <select id="route_amount" name="amount">
+			    %(amount_options)s
+			  </select>
+
+			  <input name="rb"
+				 class="input_button"
+				 title="Click to find route"
+				 tabindex="3"
+				 type="submit"
+				 value="Find Route"/>
+			</div>
+
+			<div>
+			  Enter 'from' &amp; 'to' addresses -OR- pick from map
+			  <a href="javascript:void(0);" onclick="setResult(route_address_tip);" title="Tell me how">??</a>
+			</div>
+		      </form>
+		      <!-- Route Form -->
+		    </div>
+
+		    <div>
+		      <!-- Help -->
+		      <p><a href="http://bycycle.org/trip-planner/help">Click here to view the trip planner help page &raquo;</a></p>
+
+		      <p>Here is a quick list of helpful hints (scroll down to see them all):</p>
+
+		      <ul id="tips">
+			<li>Select a region first (top left of map).</li>
+			<li>To save typing and increase the likelihood of addresses being found, don't enter the city, state, or zip code.</li>
+			<li>For the same reason, don't type in the street type (St, Ave, etc).</li>
+			<li>For number streets, use 1st, 2nd, etc, not First, Second, etc.</li>
+			<li>If the system still has trouble finding an address, enter an address by <a href="javascript:void(0);" onclick="setResult(address_tip);" title="Tell me how">picking it from the map</a>.</li>
+			<li>If you find a problem, please (pretty please!) <a href="http://bycycle.org/contact" title="Contact us with any problems or suggestions">let us know</a>.</li>
+		      </ul>
+		      <!-- End Help -->
+		    </div>
+
+		    <!-- Feedback -->
+		    <div>
+		      <p>We'd like to hear from you... about anything at all. In particular, we'd like to know if you have had any trouble using the trip planner and your ideas for making it better. <a href="http://bycycle.org/contact" title="Contact us with any problems or suggestions">Click here to go to our contact page &raquo;</a></p>
+
+		      <p>You can also make public comments in <a href="http://groups.google.com/group/byCycle" title="Make public comments, questions, and suggestions">the byCycle discussion group &raquo;</a></p>
+		    </div>
+		    <!-- End Feedback -->
+
+		    <div>
+		      <!-- Links -->
+		      <p>Links to <a href="http://bycycle.org/" title="byCycle Home Page">byCycle.org</a> information and resources:</p>
+		      <p>
+			<a href="http://bycycle.org/" title="byCycle.org Home Page">byCycle.org</a> &middot;
+			<a href="http://groups.google.com/group/byCycle" title="Make public comments, questions, and suggestions">Discuss</a> &middot;
+			<a href="http://bycycle.org/contact" title="Send us problem reports, comments, questions, and suggestions">Feedback</a> &middot;
+			<a href="http://bycycle.org/support" title="Get involved, buy a shirt, donate, ...">Support byCycle</a> &middot;
+			<a href="http://trac.bycycle.org/" title="Information for Developers (Trac)">Developers</a>
+		      </p>
+		      <!-- End Links -->
+		    </div>
+		  </div>
+		  <!-- End Input Tabs Content -->
 
 		</div>
-		<!-- End doc -->
-		
-	</body>
+		<!-- End Input Tab Container -->
+
+		<script type="text/javascript">
+		  //<![CDATA[
+		  // Hide tab contents to avoid ugly initial spillover over contents
+		  el('input_tab_contents').style.display = 'none';
+		  //]]>
+		</script>
+	      </td>
+	      <!-- End Input -->
+
+	    </tr>
+	  </tbody>
+	</table>
+	
+      </div>
+      <!-- End hd -->
+      
+      <!-- bd -->
+      <div id="bd">
+	
+	<!-- Main -->
+	<div id="yui-main">
+	  <div id="yui-main-b" class="yui-b">
+
+	    <!-- Main Grid -->
+	    <div class="yui-gd">
+
+	      <div class="yui-u first">
+
+		<!-- Result -->
+		<div id="result">
+		  %(result)s
+		</div>
+		<!-- End Result -->
+
+	      </div>
+
+	      <!-- Map Stuff -->
+	      <div class="yui-u">
+
+		<div style="border: 1px solid gray;">
+
+		  <!-- Notice -->
+		  <div id="notice" style="display: %(notice_display)s;">
+		    <div id="notice_msg">%(notice)s</div>
+		    <a href="javascript:void(0);" onclick="hideNotice(); return false;" title="Hide this notice">Close</a>
+		  </div>
+
+		  <!-- Map Menu -->
+		  <div id="map_menu">
+		    <form id="region_form" class="input_form" action="." method="get" onsubmit="return false;">
+		      <div>
+			<select id="regions" name="region"
+				tabindex="2"
+				title="Set the active region and zoom into it"
+				onchange="selectRegion(this.options[this.selectedIndex].value);">
+			  <option value="">- Select Region -</option>
+			  <option value="">All Regions</option>
+			  %(regions_opt_list)s
+			</select>
+
+			<noscript>
+			  <input class="input_button"
+				 title="Click to go to region"
+				 tabindex="3"
+				 type="submit"
+				 value="Go!"/>
+			</noscript>
+
+			<a href="javascript:void(0);"
+			   title="Find address nearest to red dot at center of map"
+			   onclick="setElVToMapLonLat('q'); doFind('geocode');"
+			   >Find address at center</a>
+			&middot;
+			<a href="javascript:void(0);"
+			   title="Toggle bike map overlay"
+			   onclick="toggleBikeLayer(); return false;"
+			   ><span id="show_hide_bike_map">Show</span> bike map</a>
+			&middot;
+			<a href="/"
+			   title="Clear everything from the map"
+			   onclick="clearMap(); return false;"
+			   >Clear map</a>
+			&middot;
+			<a id="bookmark"
+			   href=""
+			   title="Link you can use to bookmark the current result"
+			   >Link to this page</a>
+		      </div>
+		    </form>
+		  </div>
+		  <!-- End Map Menu -->
+
+		  <!-- Map -->
+		  <div id="map">
+		    <div id="map_msg" style="padding: 5px;">Loading map<blink>...</blink></div>
+		    <noscript>
+		      <div style="font-style: italic; padding: 5px;">
+			<p>To display a map here, JavaScript must be enabled in your browser. If you would like to view the map, please enable JavaScript and <a href="">try again</a>.</p>
+
+			<p>Note that you must have a relatively recent browser for the map to display. We test in <a href="http://www.mozilla.com/">Mozilla Firefox</a> on Linux, Mac OS X, and Windows; Safari on Mac OS X; and Internet Explorer on Windows.</p>
+
+			<p>If you don't have one of the above browsers, you may want to leave JavaScript turned off. On the other hand, if you feel like experimenting, you can <a href="mailto:feedback@bycycle.org">let us know</a> if the bicycle Trip Planner does or does not work in other browsers</p>
+		      </div>
+		    </noscript>
+		  </div>
+		  <!-- End Map -->
+
+		</div>
+
+		<div id="footer">
+		  &nbsp;&copy; 2004 - 2007 <a href="http://byCycle.org/" title="byCycle Home Page">byCycle.org</a>
+		  &middot;
+		  Hosted at <a href="http://affil.aplus.net/Affiliates/click.jsp?bid=111&amp;aid=1003145">aPlus.net</a>
+		  &middot;
+		  <a href="http://www.bikeportland.org/">Portland bike news @ BikePortland.org</a>
+		</div>
+
+	      </div>
+	      <!-- End Map Stuff -->
+
+	    </div>
+	    <!-- End Main Grid -->
+
+	  </div>
+	  <!-- End Main Block -->
+
+	</div>
+	<!-- End Main -->
+
+	<!-- Secondary -->
+	<div id="secondary" class="yui-b" style="width: 120px;">
+
+	  <!-- Google Ads -->
+	  <div id="google_ads_win">
+
+	    <!-- "Title bar" with close button. -->
+	    <div>
+	      <a href="javascript:void(0);"
+		 onclick="hideAds(); return false;"
+		 title="Hide Ads"
+		 >Hide Ads</a>
+	    </div>
+
+	    <script type="text/javascript">
+	      //<![CDATA[
+	      google_ad_client = "pub-6971619329897557";
+	      google_ad_width = 120;
+	      google_ad_height = 600;
+	      google_ad_format = "120x600_as";
+	      google_ad_type = "text_image";
+	      google_ad_channel ="";
+	      google_color_border = "A7CC95";
+	      google_color_bg = "FFFFFF";
+	      google_color_link = "000000";
+	      google_color_text = "000000";
+	      google_color_url = "4466DD";
+	      script("http://pagead2.googlesyndication.com/pagead/show_ads.js");
+	      //CDATA]]>
+	    </script>
+	  </div>
+	  <!-- End Google Ads -->
+	</div>
+	<!-- End Secondary -->
+
+      </div>
+      <!-- End bd -->
+
+      <div id="ft" style="display: none;"></div>
+
+      <input type="hidden" id="http_status" name="http_status" value="%(http_status)s"/>
+      <input type="hidden" id="response_text" name="response_text" value='%(response_text)s'/>
+
+      <!-- Placement down here recommended by crockford.com -->
+      <!-- YUI -->
+      <script type="text/javascript" src="static/yui/tabview.js"></script>
+      <!-- byCycle -->
+      <script type="text/javascript" src="static/js/ginit.js"></script>
+      <script type="text/javascript" src="static/js/ajax.js"></script>
+      <script type="text/javascript" src="static/js/regions.js"></script>
+      <script type="text/javascript" src="static/js/gmap.js"></script>
+      <script type="text/javascript" src="static/js/ui.js"></script>
+      <script type="text/javascript">
+	//<![CDATA[
+	YAHOO.util.Event.addListener(window, 'load', afterPageLoad);
+	//]]>
+      </script>
+
+    </div>
+    <!-- End doc -->
+
+  </body>
 </html>
