@@ -52,26 +52,38 @@ hr {
   height: 100px;
 }
 
-#logo, #input {
-  height: 100px;
-  border: 1px solid gray;
+#hd_table {
+  width: 100%;
+  border-collapse: collapse;
 }
 
 #logo {
-  font-weight: bold;
-  font-size: 14px;
-  background: #a7cc95;
+  vertical-align: middle;
+}
+
+#logo, #input {
+  height: 100px;
+}
+
+#logo {
+  width: 160px;
 }
 
 #logo a {
   text-decoration: none;
-  color: #000;}
+  color: #000;
+}
 
 #logo a:hover {
   color: #f08000;}
 
-#input {
+.beta {
+  text-align: center;
+  font-size: 75%;
+}
 
+#input {
+  border: 1px solid gray;
 }
 
 #map_menu, #input_tab_buttons {
@@ -174,7 +186,7 @@ a.selected {
 }
 
 #map_menu {
-  border-bottom: 2px solid #666;
+  border-bottom: 1px solid #666;
   padding: 5px;
 }
 
