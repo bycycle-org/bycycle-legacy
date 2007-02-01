@@ -1,25 +1,21 @@
 html, body {
   overflow: hidden;
-  height: 100%;}
+  height: 100%;
+}
 
 table {
   width: 100%;
-  border-collapse: collapse;}
+  border-collapse: collapse;
+}
 
 td {
-  vertical-align: top;}
-
-h1, h2, h3, h4, h5, h6 {
-    font-weight: bold;
+  vertical-align: top;
 }
 
-h1 {
-    font-size: 167%;
-}
-
-h2 {
-    font-size: 152%;
-}
+/* Headings */
+h1, h2, h3, h4, h5, h6 { font-weight: bold; }
+h1 { font-size: 167%; }
+h2 { font-size: 152%; }
 
 p {
   margin-bottom: 10px;
@@ -30,118 +26,73 @@ li {
 }
 
 a {
-  color: #46d;}
+  color: #46d;
+}
 
 a:hover {
-  color: #f08000;}
+  color: #f08000;
+}
 
-hr {
-  color: gray;
-  background-color: gray;
-  height: 5px;
-  border: none;}
+.clear {
+  clear: both;
+}
 
+
+/* Document Container **********/
 #doc3 {
   padding: 10px;
 }
 
-/* Header */
+
+/* Header **********/
 
 #hd {
   margin-bottom: 5px;
-  height: 100px;
 }
 
-#hd_table {
-  width: 100%;
-  border-collapse: collapse;
-}
-
+/* Logo */
 #logo {
   vertical-align: middle;
 }
-
 #logo, #input {
-  height: 100px;
+  /*height: 100px;*/
 }
-
 #logo {
   width: 160px;
 }
-
 #logo a {
   text-decoration: none;
   color: #000;
 }
-
 #logo a:hover {
-  color: #f08000;}
-
+  color: #f08000;
+}
 .beta {
   text-align: center;
   font-size: 75%;
 }
 
+/* Input Tabs */
 #input {
   border: 1px solid gray;
 }
-
-#map_menu, #input_tab_buttons {
-  border-bottom: 1px solid gray;
-  padding: 5px;
-  background: #99b3cc;
-}
-
-#map_menu a, #input_tab_buttons li a {
-  color: white;
-  font-weight: bold;
-}
-
-#input_tab_contents {
-  padding: 5px;
-  height: 62px;
-  overflow: auto;
-}
-
 #input_tab_buttons li a, #input_tab_buttons li a em {
   color: white;
   font-weight: bold;
 }
-
 #input_tab_buttons li.selected a, #input_tab_buttons li.selected a em {
   color: black;
 }
-
-#tips {
-  list-style-type: disc;
-}
-
-#tips li {
-  margin-left: 20px;
-}
-
-#links {
-  margin: 5px 0;
-  background: gray;
-  border: 1px solid #444;
-  padding: 5px;
-}
-
-#links a {
-  color: white;
-  font-weight: bold;
-  text-decoration: none;
-}
-
-
-/* Input */
-
 a.selected {
   font-weight: bold;
   text-decoration: none;
   color: black;
 }
-
+.input_tab_content {
+  padding: 5px;
+  height: 75px;
+  overflow: auto;
+}
 #q {
   width: 400px;
 }
@@ -149,29 +100,54 @@ a.selected {
 #fr, #to {
   width: 184px;
 }
+#tips {
+  width: 90%;
+  list-style-type: disc;
+}
+#tips li {
+  margin-left: 20px;
+}
+#links {
+  margin: 5px 0;
+  background: gray;
+  border: 1px solid #444;
+  padding: 5px;
+}
+#links a {
+  color: white;
+  font-weight: bold;
+  text-decoration: none;
+}
 
+
+/* Body ***********/
 
 /* Left Column */
-
-#result {
-  overflow: auto;}
-
 #status {
   padding: 5px;
   margin-bottom: 5px;
   background: #a7cc95;
   color: black;
   font-weight: bold;
-  border: 1px solid gray;}
+  border: 1px solid gray;
+}
+
+#result {
+  overflow: auto;
+}
 
 #reverse_div {
   margin-bottom: 5px;
 }
 
+.disclaimer {
+  font-size: 10px;
+  font-style: italic;
+  color: #444;
+}
 
 
 /* Center Panel */
-
 #notice {
   font-weight: bold;
   font-size: 125%;
@@ -185,9 +161,15 @@ a.selected {
   color: #46d;
 }
 
-#map_menu {
-  border-bottom: 1px solid #666;
+/* Map Menu */
+#map_menu, #input_tab_buttons {
+  border-bottom: 1px solid gray;
   padding: 5px;
+  background: #99b3cc;
+}
+#map_menu a, #input_tab_buttons li a {
+  color: white;
+  font-weight: bold;
 }
 
 #loading {
@@ -195,15 +177,11 @@ a.selected {
 }
 
 .info_win {
-  width: 250px;}
-
-.disclaimer {
-  font-size: 10px;
-  font-style: italic;
-  color: #444;}
+  width: 250px;
+}
 
 
-/* Directions Table */
+/* Directions Table **********/
 
 .start {
   color: green;
@@ -216,7 +194,8 @@ a.selected {
 .start h2, .end h2, .total_distance h2 {
   padding: 0px;
   margin: 0px;
-  font-size: 14px;}
+  font-size: 14px;
+}
 
 .summary td, .directions td {
   border: 1px solid gray;
@@ -244,9 +223,8 @@ a.selected {
   margin-bottom: 10px;
 }
 
-.clear {
-  clear: both;
-}
+
+/* Print Rules **********/
 
 @media print {
   html, body, #result {
