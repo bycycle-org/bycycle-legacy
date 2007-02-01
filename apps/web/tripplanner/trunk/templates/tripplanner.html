@@ -12,7 +12,7 @@
     <!-- YUI Stylesheets -->
     <link rel="stylesheet" href="static/yui/reset-fonts-grids.css" type="text/css"/>
     <link rel="stylesheet" href="static/yui/tabview.css" type="text/css"/>
-    <style>
+    <style type="text/css">
       /* Remove left and right 10px default margins. */
       #doc3 {margin:auto;}
     </style>
@@ -46,13 +46,13 @@
 		  <a href="http://en.wikipedia.org/wiki/Development_stage#Beta">beta</a>
 		</div>
 	      </td>
-	      
+
 	      <!-- Input -->
 	      <td id="input">
-		
+
 		<!-- Input Tab Container -->
 		<div id="input_tab_container" class="yui-navset">
-		  
+
 		  <!-- Input Tab Buttons -->
 		  <ul id="input_tab_buttons" class="yui-nav">
 		    <li id="geocode_tab_button" class="%(geocode_tab_class)s"><a href="#search-map"><em>Search Map</em></a>
@@ -63,10 +63,10 @@
 		    <li><a href="#feedback"><em>Feedback</em></a></li>
 		    <li><a href="#links"><em>Links</em></a></li>
 		  </ul>
-		  
+
 		  <!-- Input Tab Contents -->
 		  <div id="input_tab_contents" class="yui-content">
-		    <div>
+		    <div class="input_tab_content">
 		      <small>
 			If you think this service is important, please consider
 			<a href="http://bycycle.org/support/donate" title="Support byCycle">donating</a>.
@@ -104,7 +104,7 @@
 		      <!-- End Geocode Form -->
 		    </div>
 
-		    <div>
+		    <div class="input_tab_content">
 		      <small>
 			If you think this service is important, please consider
 			<a href="http://bycycle.org/support/donate" title="Support byCycle">donating</a>.
@@ -155,7 +155,7 @@
 		      <!-- Route Form -->
 		    </div>
 
-		    <div>
+		    <div class="input_tab_content">
 		      <!-- Help -->
 		      <p><a href="http://bycycle.org/trip-planner/help">Click here to view the trip planner help page &raquo;</a></p>
 
@@ -173,14 +173,14 @@
 		    </div>
 
 		    <!-- Feedback -->
-		    <div>
+		    <div class="input_tab_content">
 		      <p>We'd like to hear from you... about anything at all. In particular, we'd like to know if you have had any trouble using the trip planner and your ideas for making it better. <a href="http://bycycle.org/contact" title="Contact us with any problems or suggestions">Click here to go to our contact page &raquo;</a></p>
 
 		      <p>You can also make public comments in <a href="http://groups.google.com/group/byCycle" title="Make public comments, questions, and suggestions">the byCycle discussion group &raquo;</a></p>
 		    </div>
 		    <!-- End Feedback -->
 
-		    <div>
+		    <div class="input_tab_content">
 		      <!-- Links -->
 		      <p>Links to <a href="http://bycycle.org/" title="byCycle Home Page">byCycle.org</a> information and resources:</p>
 		      <p>
@@ -210,13 +210,13 @@
 	    </tr>
 	  </tbody>
 	</table>
-	
+
       </div>
       <!-- End hd -->
-      
+
       <!-- bd -->
       <div id="bd">
-	
+
 	<!-- Main -->
 	<div id="yui-main">
 	  <div id="yui-main-b" class="yui-b">
@@ -292,7 +292,7 @@
 
 		  <!-- Map -->
 		  <div id="map">
-		    <div id="map_msg" style="padding: 5px;">Loading map<blink>...</blink></div>
+		    <div id="map_msg" style="padding: 5px;">Loading map. Please wait...</div>
 		    <noscript>
 		      <div style="font-style: italic; padding: 5px;">
 			<p>To display a map here, JavaScript must be enabled in your browser. If you would like to view the map, please enable JavaScript and <a href="">try again</a>.</p>
