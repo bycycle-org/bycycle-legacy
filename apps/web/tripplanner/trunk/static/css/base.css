@@ -47,9 +47,22 @@ a:hover {
 /* Header **********/
 
 #hd {
-  margin-bottom: 5px;
+  margin-bottom: 10px;
 }
 
+/* Masthead */
+#masthead { 
+  position: absolute;
+  top: 10px;
+  left: 10px;
+}
+#masthead a {
+  text-decoration: none;
+  color: #000;
+}
+#masthead a:hover {
+  color: #f08000;
+}
 /* Logo */
 #logo {
   vertical-align: middle;
@@ -60,20 +73,15 @@ a:hover {
 #logo {
   width: 160px;
 }
-#logo a {
-  text-decoration: none;
-  color: #000;
-}
-#logo a:hover {
-  color: #f08000;
-}
-.beta {
+#version {
   text-align: center;
   font-size: 75%;
 }
 
 /* Input Tabs */
 #input {
+  height: 112px;
+  margin-left: 160px;
   border: 1px solid gray;
 }
 #input_tab_buttons li a, #input_tab_buttons li a em {
@@ -82,11 +90,7 @@ a:hover {
 }
 #input_tab_buttons li.selected a, #input_tab_buttons li.selected a em {
   color: black;
-}
-a.selected {
-  font-weight: bold;
   text-decoration: none;
-  color: black;
 }
 .input_tab_content {
   padding: 5px;
@@ -180,6 +184,9 @@ a.selected {
   width: 250px;
 }
 
+#footer { 
+  font-size: 11px;
+}
 
 /* Directions Table **********/
 

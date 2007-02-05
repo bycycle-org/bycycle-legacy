@@ -18,9 +18,7 @@
     </style>
 
     <link rel="stylesheet" href="static/css/base.css" type="text/css"/>
-    <!--[if IE]>
-	<link rel="stylesheet" href="static/css/base_ie.css" type="text/css"/>
-	<![endif]-->
+    <!--[if IE]><link rel="stylesheet" href="static/css/base_ie.css" type="text/css"/><![endif]-->
 
     <!-- YUI JavaScripts -->
     <script type="text/javascript" src="static/yui/yahoo-dom-event.js"></script>
@@ -29,187 +27,175 @@
 
   <body>
     <div id="doc3" class="yui-t4">
+      <!-- Masthead -->
+      <div id="masthead">
+	<div id="logo">
+	  <a href="http://bycycle.org/" title="byCycle Home Page">
+	    <img src="static/images/logo.png" width="150" height="40" alt="byCycle.org" />
+	  </a>
+	</div>
+	<div id="app_name">
+	  <a href="/">Bicycle Trip Planner</a><br />
+	</div>
+	<div id="version">
+	  <a href="http://en.wikipedia.org/wiki/Development_stage#Beta">beta</a>
+	</div>
+      </div>
+      <!-- End Masthead -->
 
       <!-- hd -->
       <div id="hd">
-	<table id="hd_table">
-	  <tbody>
-	    <tr>
-	      <td id="logo" class="yui-u first">
-		<div id="logo_img">
-		  <a href="http://bycycle.org/" title="byCycle Home Page"><img src="static/images/logo.png" width="150" height="40" alt="byCycle.org" /></a>
-		</div>
-		<div id="app_name">
-		  <a href="/">Bicycle Trip Planner</a><br />
-		</div>
-		<div class="beta">
-		  <a href="http://en.wikipedia.org/wiki/Development_stage#Beta">beta</a>
-		</div>
-	      </td>
+	<!-- Input -->
+	<div id="input">
+	  <!-- Input Tab Container -->
+	  <div id="input_tab_container" class="yui-navset">
+	    <!-- Input Tab Buttons -->
+	    <ul id="input_tab_buttons" class="yui-nav">
+	      <li id="geocode_tab_button" class="%(geocode_tab_class)s"><a href="#search-map"><em>Search Map</em></a>
+	      </li>
+	      <li class="%(route_tab_class)s"><a id="route_link" href="#find-route"><em>Find Route</em></a>
+	      </li>
+	      <li><a href="#help"><em>Help</em></a></li>
+	      <li><a href="#feedback"><em>Feedback</em></a></li>
+	      <li><a href="#links"><em>Links</em></a></li>
+	    </ul>
 
-	      <!-- Input -->
-	      <td id="input">
+	    <!-- Input Tab Contents -->
+	    <div id="input_tab_contents" class="yui-content">
+	      <div class="input_tab_content">
+		<small>
+		  If you think this service is important, please consider
+		  <a href="http://bycycle.org/support/donate" title="Support byCycle">donating</a>.
+		  Any amount helps.
+		</small>
 
-		<!-- Input Tab Container -->
-		<div id="input_tab_container" class="yui-navset">
+		<!-- Geocode Form -->
+		<form id="geocode_form" class="input_form"
+		      action="."
+		      method="get"
+		      onsubmit="doFind('geocode'); return false;">
 
-		  <!-- Input Tab Buttons -->
-		  <ul id="input_tab_buttons" class="yui-nav">
-		    <li id="geocode_tab_button" class="%(geocode_tab_class)s"><a href="#search-map"><em>Search Map</em></a>
-		    </li>
-		    <li class="%(route_tab_class)s"><a id="route_link" href="#find-route"><em>Find Route</em></a>
-		    </li>
-		    <li><a href="#help"><em>Help</em></a></li>
-		    <li><a href="#feedback"><em>Feedback</em></a></li>
-		    <li><a href="#links"><em>Links</em></a></li>
-		  </ul>
+		  <div>
+		    <input type="hidden" name="region" value="%(region)s"/>
+		    <input type="hidden" name="service" value="geocode"/>
+		    <input type="text" id="q" name="q" class="input_field" tabindex="1" title="Address or intersection (no businesses or other points of interest)" value="%(q)s"/>
 
-		  <!-- Input Tab Contents -->
-		  <div id="input_tab_contents" class="yui-content">
-		    <div class="input_tab_content">
-		      <small>
-			If you think this service is important, please consider
-			<a href="http://bycycle.org/support/donate" title="Support byCycle">donating</a>.
-			Any amount helps.
-		      </small>
+		    <select id="geocode_amount" name="amount">
+		      %(amount_options)s
+		    </select>
 
-		      <!-- Geocode Form -->
-		      <form id="geocode_form" class="input_form"
-			    action="."
-			    method="get"
-			    onsubmit="doFind('geocode'); return false;">
-
-			<div>
-			  <input type="hidden" name="region" value="%(region)s"/>
-			  <input type="hidden" name="service" value="geocode"/>
-			  <input type="text" id="q" name="q" class="input_field" tabindex="1" title="Address or intersection (no businesses or other points of interest)" value="%(q)s"/>
-
-			  <select id="geocode_amount" name="amount">
-			    %(amount_options)s
-			  </select>
-
-			  <input name="gb"
-				 class="input_button"
-				 title="Click to look up address"
-				 tabindex="3"
-				 type="submit"
-				 value="Find"/>
-			</div>
-
-			<div>
-			  Enter address -OR- pick from map
-			  <a href="javascript:void(0);" onclick="setResult(address_tip);" title="Tell me how">??</a>
-			</div>
-		      </form>
-		      <!-- End Geocode Form -->
-		    </div>
-
-		    <div class="input_tab_content">
-		      <small>
-			If you think this service is important, please consider
-			<a href="http://bycycle.org/support/donate" title="Support byCycle">donating</a>.
-			Any amount helps.
-		      </small>
-
-		      <!-- Route Form -->
-		      <form id="route_form" class="input_form"
-			    action="."
-			    method="get"
-			    onsubmit="doFind('route'); return false;">
-
-			<div>
-			  <input type="hidden" name="region" value="%(region)s"/>
-			  <input type="hidden" name="service" value="route"/>
-			  <input type="text" id="fr" name="fr" class="input_field" tabindex="1" title="From address or intersection (no business names)" value="%(fr)s"/>
-
-			  <a href="javascript:void(0);"
-			     title="Swap From and To addresses"
-			     onclick="swapFrAndTo();"
-			     ><img src="static/images/swapfrto.gif" alt="swap"/></a>
-
-			  <input type="text" id="to" name="to" class="input_field" tabindex="1"  title="To address or intersection (no business names)" value="%(to)s"/>
-
-			  <select id="pref" name="pref">
-			    <option value="default">[Preference]</option>
-			    <option value="default">Normal</option>
-			    <option value="safer">Safer</option>
-			  </select>
-
-			  <select id="route_amount" name="amount">
-			    %(amount_options)s
-			  </select>
-
-			  <input name="rb"
-				 class="input_button"
-				 title="Click to find route"
-				 tabindex="3"
-				 type="submit"
-				 value="Find Route"/>
-			</div>
-
-			<div>
-			  Enter 'from' &amp; 'to' addresses -OR- pick from map
-			  <a href="javascript:void(0);" onclick="setResult(route_address_tip);" title="Tell me how">??</a>
-			</div>
-		      </form>
-		      <!-- Route Form -->
-		    </div>
-
-		    <div class="input_tab_content">
-		      <!-- Help -->
-		      <p><a href="http://bycycle.org/trip-planner/help">Click here to view the trip planner help page &raquo;</a></p>
-
-		      <p>Here is a quick list of helpful hints (scroll down to see them all):</p>
-
-		      <ul id="tips">
-			<li>Select a region first (top left of map).</li>
-			<li>To save typing and increase the likelihood of addresses being found, don't enter the city, state, or zip code.</li>
-			<li>For the same reason, don't type in the street type (St, Ave, etc).</li>
-			<li>For number streets, use 1st, 2nd, etc, not First, Second, etc.</li>
-			<li>If the system still has trouble finding an address, enter an address by <a href="javascript:void(0);" onclick="setResult(address_tip);" title="Tell me how">picking it from the map</a>.</li>
-			<li>If you find a problem, please (pretty please!) <a href="http://bycycle.org/contact" title="Contact us with any problems or suggestions">let us know</a>.</li>
-		      </ul>
-		      <!-- End Help -->
-		    </div>
-
-		    <!-- Feedback -->
-		    <div class="input_tab_content">
-		      <p>We'd like to hear from you... about anything at all. In particular, we'd like to know if you have had any trouble using the trip planner and your ideas for making it better. <a href="http://bycycle.org/contact" title="Contact us with any problems or suggestions">Click here to go to our contact page &raquo;</a></p>
-
-		      <p>You can also make public comments in <a href="http://groups.google.com/group/byCycle" title="Make public comments, questions, and suggestions">the byCycle discussion group &raquo;</a></p>
-		    </div>
-		    <!-- End Feedback -->
-
-		    <div class="input_tab_content">
-		      <!-- Links -->
-		      <p>Links to <a href="http://bycycle.org/" title="byCycle Home Page">byCycle.org</a> information and resources:</p>
-		      <p>
-			<a href="http://bycycle.org/" title="byCycle.org Home Page">byCycle.org</a> &middot;
-			<a href="http://groups.google.com/group/byCycle" title="Make public comments, questions, and suggestions">Discuss</a> &middot;
-			<a href="http://bycycle.org/contact" title="Send us problem reports, comments, questions, and suggestions">Feedback</a> &middot;
-			<a href="http://bycycle.org/support" title="Get involved, buy a shirt, donate, ...">Support byCycle</a> &middot;
-			<a href="http://trac.bycycle.org/" title="Information for Developers (Trac)">Developers</a>
-		      </p>
-		      <!-- End Links -->
-		    </div>
+		    <input name="gb"
+			   class="input_button"
+			   title="Click to look up address"
+			   tabindex="3"
+			   type="submit"
+			   value="Find"/>
 		  </div>
-		  <!-- End Input Tabs Content -->
 
-		</div>
-		<!-- End Input Tab Container -->
+		  <div>
+		    Enter address -OR- pick from map
+		    <a href="javascript:void(0);" onclick="setResult(address_tip);" title="Tell me how">??</a>
+		  </div>
+		</form>
+		<!-- End Geocode Form -->
+	      </div>
 
-		<script type="text/javascript">
-		  //<![CDATA[
-		  // Hide tab contents to avoid ugly initial spillover over contents
-		  el('input_tab_contents').style.display = 'none';
-		  //]]>
-		</script>
-	      </td>
-	      <!-- End Input -->
+	      <div class="input_tab_content">
+		<small>
+		  If you think this service is important, please consider
+		  <a href="http://bycycle.org/support/donate" title="Support byCycle">donating</a>.
+		  Any amount helps.
+		</small>
 
-	    </tr>
-	  </tbody>
-	</table>
+		<!-- Route Form -->
+		<form id="route_form" class="input_form"
+		      action="."
+		      method="get"
+		      onsubmit="doFind('route'); return false;">
+
+		  <div>
+		    <input type="hidden" name="region" value="%(region)s"/>
+		    <input type="hidden" name="service" value="route"/>
+		    <input type="text" id="fr" name="fr" class="input_field" tabindex="1" title="From address or intersection (no business names)" value="%(fr)s"/>
+
+		    <a href="javascript:void(0);"
+		       title="Swap From and To addresses"
+		       onclick="swapFrAndTo();"
+		       ><img src="static/images/swapfrto.gif" alt="swap"/></a>
+
+		    <input type="text" id="to" name="to" class="input_field" tabindex="1"  title="To address or intersection (no business names)" value="%(to)s"/>
+
+		    <select id="pref" name="pref">
+		      <option value="default">[Preference]</option>
+		      <option value="default">Normal</option>
+		      <option value="safer">Safer</option>
+		    </select>
+
+		    <select id="route_amount" name="amount">
+		      %(amount_options)s
+		    </select>
+
+		    <input name="rb"
+			   class="input_button"
+			   title="Click to find route"
+			   tabindex="3"
+			   type="submit"
+			   value="Find Route"/>
+		  </div>
+
+		  <div>
+		    Enter 'from' &amp; 'to' addresses -OR- pick from map
+		    <a href="javascript:void(0);" onclick="setResult(route_address_tip);" title="Tell me how">??</a>
+		  </div>
+		</form>
+		<!-- Route Form -->
+	      </div>
+
+	      <div class="input_tab_content">
+		<!-- Help -->
+		<p><a href="http://bycycle.org/trip-planner/help">Click here to view the trip planner help page &raquo;</a></p>
+
+		<p>Here is a quick list of helpful hints (scroll down to see them all):</p>
+
+		<ul id="tips">
+		  <li>Select a region first (top left of map).</li>
+		  <li>To save typing and increase the likelihood of addresses being found, don't enter the city, state, or zip code.</li>
+		  <li>For the same reason, don't type in the street type (St, Ave, etc).</li>
+		  <li>For number streets, use 1st, 2nd, etc, not First, Second, etc.</li>
+		  <li>If the system still has trouble finding an address, enter an address by <a href="javascript:void(0);" onclick="setResult(address_tip);" title="Tell me how">picking it from the map</a>.</li>
+		  <li>If you find a problem, please (pretty please!) <a href="http://bycycle.org/contact" title="Contact us with any problems or suggestions">let us know</a>.</li>
+		</ul>
+		<!-- End Help -->
+	      </div>
+
+	      <!-- Feedback -->
+	      <div class="input_tab_content">
+		<p>We'd like to hear from you... about anything at all. In particular, we'd like to know if you have had any trouble using the trip planner and your ideas for making it better. <a href="http://bycycle.org/contact" title="Contact us with any problems or suggestions">Click here to go to our contact page &raquo;</a></p>
+
+		<p>You can also make public comments in <a href="http://groups.google.com/group/byCycle" title="Make public comments, questions, and suggestions">the byCycle discussion group &raquo;</a></p>
+	      </div>
+	      <!-- End Feedback -->
+
+	      <div class="input_tab_content">
+		<!-- Links -->
+		<p>Links to <a href="http://bycycle.org/" title="byCycle Home Page">byCycle.org</a> information and resources:</p>
+		<p>
+		  <a href="http://bycycle.org/" title="byCycle.org Home Page">byCycle.org</a> &middot;
+		  <a href="http://groups.google.com/group/byCycle" title="Make public comments, questions, and suggestions">Discuss</a> &middot;
+		  <a href="http://bycycle.org/contact" title="Send us problem reports, comments, questions, and suggestions">Feedback</a> &middot;
+		  <a href="http://bycycle.org/support" title="Get involved, buy a shirt, donate, ...">Support byCycle</a> &middot;
+		  <a href="http://trac.bycycle.org/" title="Information for Developers (Trac)">Developers</a>
+		</p>
+		<!-- End Links -->
+	      </div>
+	    </div>
+	    <!-- End Input Tabs Content -->
+
+	  </div>
+	  <!-- End Input Tab Container -->
+
+	</div>
+	<!-- End Input -->
 
       </div>
       <!-- End hd -->
@@ -312,7 +298,7 @@
 		  &middot;
 		  Hosted at <a href="http://affil.aplus.net/Affiliates/click.jsp?bid=111&amp;aid=1003145">aPlus.net</a>
 		  &middot;
-		  <a href="http://www.bikeportland.org/">Portland bike news @ BikePortland.org</a>
+		  <a href="http://www.bikeportland.org/">Portland bike news</a>
 		</div>
 
 	      </div>
@@ -387,6 +373,5 @@
 
     </div>
     <!-- End doc -->
-
   </body>
 </html>

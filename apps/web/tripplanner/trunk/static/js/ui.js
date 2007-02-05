@@ -41,8 +41,6 @@ function afterPageLoad() {
   region_el = el('regions');
   
   input_tabs = new YAHOO.widget.TabView('input_tab_container');
-  
-  resizeMap();
 
   if (api_key) {
 	if (mapLoad()) {
@@ -70,11 +68,11 @@ function afterPageLoad() {
   }
    
   resizeMap();
-  el('input_tab_contents').style.display = '';
 }
 
 var bike_layer_state = false;
 function toggleBikeLayer() {
+  if (!map) return;
   if (bike_layer_state) {
 	// Bike layer was on; turn it off
 	bike_layer.hide();
@@ -390,7 +388,7 @@ function resizeDisplay(dims) {
 
 function resizeMap() {
   var dims = getWindowDimensions();
-  var height = dims.h - elOffsetY(map_el) - 25;
+  var height = dims.h - elOffsetY(map_el) - 23;
   if (height >= 0) {
     map_el.style.height = height + 'px';
     if (map) {
