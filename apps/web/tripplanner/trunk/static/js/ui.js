@@ -52,6 +52,8 @@ function afterPageLoad() {
 	setIH('map', 'Error loading map: Could not find valid API key for ' + base_url + '.');
   }
 
+  resizeMap();  // Don't remove this!
+
   try {
     selectRegion(region_el[region_el.selectedIndex].value);
   } catch(e) {
@@ -66,8 +68,9 @@ function afterPageLoad() {
 	var req = {status: parseInt(status), responseText: response_text};
 	_callback(req);
   }
-   
+
   resizeMap();
+  el('input_tab_contents').style.display = 'block';   
 }
 
 var bike_layer_state = false;
