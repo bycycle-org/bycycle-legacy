@@ -523,7 +523,7 @@ class TripPlanner(object):
         </p>
         <p>
           If you find this site useful or would like help it improve, please
-          consider <b><a href="http://bycycle.org/support#donate"
+          consider <b><a href="http://bycycle.org/support/donate"
           target="_new">donating</a></b>. Any amount helps.
         </p>
         %s
