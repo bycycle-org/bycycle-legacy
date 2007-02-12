@@ -32,12 +32,9 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 """
 # Portland, OR Data Mode
 # 11/07/2005
-import sys
-sys.path.insert(0, '/home/bycycle/byCycle/live')
-
 import math
 from byCycle.tripplanner.model import mode
- 
+
 
 class Mode(mode.Mode):
     def __init__(self):

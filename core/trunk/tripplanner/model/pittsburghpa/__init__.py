@@ -1,6 +1,7 @@
 """$Id$
 
-Description goes here.
+Pittsburgh, PA Data Mode
+Created 11/07/2005
 
 Copyright (C) 2006 Wyatt Baldwin, byCycle.org <wyatt@bycycle.org>
 
@@ -30,9 +31,6 @@ ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 """
-# Pittsburgh, PA Data Mode
-# 11/07/2005
-
 import math
 from byCycle.tripplanner.model import mode
  
