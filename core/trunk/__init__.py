@@ -30,5 +30,5 @@ ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 """
-install_path = '/home/u2/bycycle/lib/python2.4/site-packages/byCycle'
-
+from os.path import abspath, dirname
+install_path = dirname(abspath(__file__))
