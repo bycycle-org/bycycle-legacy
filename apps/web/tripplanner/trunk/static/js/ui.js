@@ -309,9 +309,9 @@ function hideAds() {
   // Save center before resizing
   var c = (map && map.getCenter());
   // Remove entirely the container that holds the ads
-  var s = el('secondary'); 
-  s.parentNode.removeChild(s); 
-  el('yui-main-b').style.marginRight = '0px'; 
+  document.body.removeChild(el('ads')); 
+  el('header').style.marginRight = '0px';
+  el('content').style.marginRight = '0px';
   // Set center back to original center
   resizeMap();
   c && map.setCenter(c);
@@ -381,9 +381,11 @@ function clearMap() {
   }
 }
 
+var bC_footer_height = 24;
+
 function resizeDisplay(dims) {
   dims = dims || getWindowDimensions();
-  var height = dims.h - elOffsetY(result_el) - 5;
+  var height = dims.h - elOffsetY(result_el) - bC_footer_height;
   if (height >= 0) {
     result_el.style.height =  height + 'px'; 
   }
@@ -391,7 +393,7 @@ function resizeDisplay(dims) {
 
 function resizeMap() {
   var dims = getWindowDimensions();
-  var height = dims.h - elOffsetY(map_el) - 23;
+  var height = dims.h - elOffsetY(map_el) - bC_footer_height;
   if (height >= 0) {
     map_el.style.height = height + 'px';
     if (map) {
