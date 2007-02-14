@@ -1,36 +1,36 @@
+/* LIVE */
+html, body, table, td, tr, form {
+  padding: 0;
+  margin: 0;
+}
 html, body {
   overflow: hidden;
   height: 100%;
+}
+body, td {
+  font-family: Verdana, Helvetica, Arial, sans-serif;
+  font-size: 80%;
+  background-color: white;
+  color: black;
 }
 
 table {
   width: 100%;
   border-collapse: collapse;
 }
-
 td {
   vertical-align: top;
 }
 
-/* Headings */
-h1, h2, h3, h4, h5, h6 { font-weight: bold; }
-h1 { font-size: 167%; }
-h2 { font-size: 152%; }
-
-p {
-  margin-bottom: 10px;
-}
-
-li {
-  margin-bottom: 5px;
+img {
+  border: 0;
 }
 
 a {
   color: #46d;
 }
-
 a:hover {
-  color: #f08000;
+  color: orange;
 }
 
 .clear {
@@ -38,55 +38,64 @@ a:hover {
 }
 
 
-/* Document Container **********/
-#doc3 {
-  padding: 10px;
+/* Top level layout */
+#header, #content {
+  margin-right: 125px;
+  padding: 5px;
+}
+#header {
+  padding-bottom: 0;
+}
+#ads {
+  position: absolute;
+  top: 5px;
+  right: 5px;
+  width: 120px;
 }
 
-
-/* Header **********/
-
-#hd {
-  margin-bottom: 10px;
-}
 
 /* Masthead */
 #masthead { 
-  position: absolute;
-  top: 10px;
-  left: 10px;
+  float: left;
+  width: 150px;
 }
 #masthead a {
   text-decoration: none;
   color: #000;
 }
 #masthead a:hover {
-  color: #f08000;
-}
-/* Logo */
-#logo {
-  vertical-align: middle;
-}
-#logo, #input {
-  /*height: 100px;*/
-}
-#logo {
-  width: 160px;
+  color: orange;
 }
 #version {
   text-align: center;
-  font-size: 75%;
+  font-size: 85%;
 }
+
 
 /* Input Tabs */
 #input {
+  margin-left: 155px;
   height: 112px;
-  margin-left: 160px;
   border: 1px solid gray;
 }
-#input_tab_buttons li a, #input_tab_buttons li a em {
+ul#input_tab_buttons {
+  list-style-type: none;
+  list-style-image: none;
+  list-style-position: outside;
+  margin: 0;
+  padding: 0;
+}
+ul#input_tab_buttons li {
+  margin: 0;
+  padding: 2px 5px;
+  border-right: 1px solid gray;
+}
+ul#input_tab_buttons li a, ul#input_tab_buttons li a em {
   color: white;
   font-weight: bold;
+}
+#input_tab_buttons li.selected {
+  background: white;
 }
 #input_tab_buttons li.selected a, #input_tab_buttons li.selected a em {
   color: black;
@@ -96,6 +105,10 @@ a:hover {
   padding: 5px;
   height: 75px;
   overflow: auto;
+}
+.first-p {
+  margin-top: 0;
+  padding-top: 0;
 }
 #q {
   width: 400px;
@@ -124,7 +137,19 @@ a:hover {
 }
 
 
-/* Body ***********/
+/* Content ***********/
+
+
+/* Column Layout */
+#col-a {
+  float: left;
+  width: 29%;
+}
+#col-b {
+  float: right;
+  width: 69%;
+}
+
 
 /* Left Column */
 #status {
@@ -137,6 +162,7 @@ a:hover {
 }
 
 #result {
+  padding-right: 5px;
   overflow: auto;
 }
 
@@ -152,6 +178,9 @@ a:hover {
 
 
 /* Center Panel */
+#map_container {
+ border: 1px solid gray;
+}
 #notice {
   font-weight: bold;
   font-size: 125%;
@@ -160,11 +189,9 @@ a:hover {
   background: #fd766a;
   text-align: center;
 }
-
 #notice a {
   color: #46d;
 }
-
 /* Map Menu */
 #map_menu, #input_tab_buttons {
   border-bottom: 1px solid gray;
@@ -184,8 +211,15 @@ a:hover {
   width: 250px;
 }
 
-#footer { 
+#footer {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  width: 100%;
+  padding: 2px;
   font-size: 11px;
+  background: #ddd;
+  z-index: 1000;
 }
 
 /* Directions Table **********/
