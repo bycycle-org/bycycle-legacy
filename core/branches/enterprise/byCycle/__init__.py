@@ -1,4 +1,4 @@
-################################################################################
+###############################################################################
 # $Id$
 # Created 2005-11-07
 #
@@ -10,6 +10,6 @@
 # For terms of use and warranty details, please see the LICENSE file included
 # in the top level of this distribution. This software is provided AS IS with
 # NO WARRANTY OF ANY KIND.
-################################################################################
+###############################################################################
 from os.path import abspath, dirname
 install_path = dirname(abspath(__file__))

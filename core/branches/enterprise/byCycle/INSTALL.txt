@@ -18,97 +18,127 @@ installation commands are somewhat Ubuntu-specific but should work on
 other platforms with a little modification (on Windows there are usually
 installers for the things that are installed from source on Linux).
 
-- Python 2.5.x <http://www.python.org/>
+Theoretically, assuming you are on Ubuntu, this whole section could be run as 
+a shell script and everything would be magically installed. However, that is 
+unlikely to work at this time.
 
-- setuptools <http://peak.telecommunity.com/DevCenter/setuptools>
-  wget http://peak.telecommunity.com/dist/ez_setup.py
-  python ez_setup.py
+## Adjust this if you want files to be downloaded to some other location
+cd $HOME/src
 
-- PostgreSQL 8.1.x <http://www.postgresql.org/>
-  [FIXME: I'm not sure the dev stuff is actually needed.]
-  apt-get install postgresql-8.1 postgresql-dev postgresql-server-dev-8.1
+## On Ubuntu, you'll need to install some basic dev tools:
+# FIXME: Other packages may be required as well
+sudo apt-get install build-essential
 
-- psycopg2 DBAPI module <http://initd.org/tracker/psycopg/wiki/PsycopgTwo>
-  easy_install -UZ psycopg2
+## Python 2.5.x <http://www.python.org/>
+# I like a nice, clean, private install in $HOME
+# All the commands below assume Python is installed in $HOME
+# Adjust as necessary
+wget http://www.python.org/ftp/python/2.5/Python-2.5.tar.bz2
+./configure --prefix=$HOME
+make && make install
 
-- SQLAlchemy (latest) <http://www.sqlalchemy.org/>
-  easy_install -UZ SQLAlchemy
+## setuptools <http://peak.telecommunity.com/DevCenter/setuptools>
+wget http://peak.telecommunity.com/dist/ez_setup.py
+$HOME/bin/python2.5 ez_setup.py
 
-- GEOS 2.2.3 <http://geos.refractions.net/geos-2.2.3.tar.bz2>
-  [I can't remember why, but the Ubuntu package won't work.]
-  tar xvbf geos-2.2.3.tar.bz2
-  ./configure
-  make
-  make install
+## PostgreSQL 8.1.x <http://www.postgresql.org/>
+# FIXME: I'm not sure the dev stuff is actually needed
+sudo apt-get install postgresql-8.1 postgresql-dev postgresql-server-dev-8.1
 
-- Proj 4.5.0 <ftp://ftp.remotesensing.org/proj/proj-4.5.0.tar.gz>
-  tar xvzf proj-4.5.0.tar.gz
-  ./configure
-  make
-  make install
+## psycopg2 DBAPI module <http://initd.org/tracker/psycopg/wiki/PsycopgTwo>
+easy_install -UZ psycopg2
 
-- PostGIS 1.1.6 <http://postgis.refractions.net/download/postgis-1.1.6.tar.gz>
-  - Needs Proj and GEOS for some operations
-  tar xvzf postgis-1.1.6.tar.gz
-  ./configure
-  make
-  make install
+## SQLAlchemy (latest) <http://www.sqlalchemy.org/>
+$HOME/bin/easy_install-2.5 -UZ SQLAlchemy
 
-- Python Cartographic Library - Core 0.11.0
-  - Depends on zope.interface
-    <http://www.zope.org/Products/ZopeInterface/3.3.0/zope.interface-3.3.0.tar.gz>
-    tar xvzf zope.interface-3.3.0.tar.gz
-    cd zope.interface-3.3.0
-    setup.py install
-  - Also needs Proj and GEOS for some operations
-  <http://gispython.org/downloads/gispy/PCL-0.11.0.tar.gz>
-  tar xvzf PCL-0.11.0.tar.gz
-  cd PCL/PCL-Core
-  python setup.py install
+## GEOS 2.2.3
+# I can't remember why, but the Ubuntu package won't work
+wget http://geos.refractions.net/geos-2.2.3.tar.bz2
+tar xvbf geos-2.2.3.tar.bz2
+./configure && make && sudo make install
 
-Web Interface
--------------
+## Proj 4.5.0
+wget ftp://ftp.remotesensing.org/proj/proj-4.5.0.tar.gz
+tar xvzf proj-4.5.0.tar.gz
+./configure && make && sudo make install
 
-- Pylons (latest) <http://pylonshq.com/>
-  easy_install -UZ Pylons
+## PostGIS 1.1.6
+# Depends on Proj and GEOS for some operations
+wget http://postgis.refractions.net/download/postgis-1.2.1.tar.gz
+tar xvzf postgis-1.1.6.tar.gz
+./configure && make && sudo make install
 
-- Google Map
-  If you want to view the Google Map on a local installation, you will need a
-  Google Maps API key for the domain name it runs under.
-  <http://www.google.com/apis/maps/>.
+## zope.interface
+wget http://www.zope.org/Products/ZopeInterface/3.3.0/zope.interface-3.3.0.tar.gz
+tar xvzf zope.interface-3.3.0.tar.gz
+cd zope.interface-3.3.0
+$HOME/bin/python2.5 setup.py install
 
-Development
------------
+## Python Cartographic Library - Core 0.11.0
+# Depends on Proj and GEOS for some operations
+# Depends on zope.interface
+wget http://gispython.org/downloads/gispy/PCL-0.11.0.tar.gz>
+tar xvzf PCL-0.11.0.tar.gz
+cd PCL/PCL-Core
+$HOME/bin/python2.5 setup.py install
 
-- Subversion <http://subversion.tigris.org/>
-  apt-get install subversion
-  - On Windows, you'll almost definitely want TortoiseSVN
-    <http://tortoisesvn.tigris.org/>
+## Subversion <http://subversion.tigris.org/>
+sudo apt-get install subversion
 
-- On Ubuntu, you'll need to install some basic dev tools:
-  [FIXME: Other packages may be required as well.]
-  apt-get install build-essential
+# On Windows, you'll almost definitely want TortoiseSVN
+# <http://tortoisesvn.tigris.org/>
+
 
 Deployment
 ----------
 
-- Apache 2.2.latest <http://httpd.apache.org/>
-  [Note: Not required for a dev environment--use Paste server.]
-  - mod_python OR mod_proxy (this is an open question)
+## Apache <http://httpd.apache.org/>
+# Note: Not required for a dev environment--use Paste server
+
+## mod_python OR mod_proxy (this is an open question)
 
 Other combinations of the above software may work but have not been tested. In
 general, we are going to keep up with the latest stable releases of all
 supporting software.
 
 
-Installation
-============
+Installation of byCycle Core
+============================
 
-- Check out the code:
-  svn co http://svn.bycycle.org/byCycle/core/branches/enterprise/byCycle byCycle
+## Check out the code:
+# May require a password? Use guest:guest
+svn co http://svn.bycycle.org/byCycle/core/branches/enterprise/byCycle byCycle
 
-- Move the byCycle directory to /usr/lib/python2.4/site-packages (substitute
-  "/usr/lib/python2.4" with path to your Python installation)
+# Move the byCycle directory to $PATH/python2.5/site-packages (substitute 
+# $PATH with path to your Python installation)
+mv byCycle $HOME/lib/python2.5/site-packages
+
+
+Installation of Trip Planner Web Application
+============================================
+
+TODO: This probably belongs in a different document--i.e., with the Pylons app. That
+doc should start out by saying, "First, install the byCycle core and its 
+dependencies using the instructions at..."
+
+## Pylons (latest) <http://pylonshq.com/>
+easy_install -UZ Pylons
+
+## Check out the Trip Planner Pylons Web application:
+# Note: Even though the branch is called dojo, Prototype is used in the app. This
+# will be renamed soon (and, incidentally, will be merged to trunk soon as well).
+svn co http://svn.bycycle.org/byCycle/apps/web/tripplanner/branches/dojo tripplanner
+
+## Try firing up the Web app:
+cd tripplanner
+./script/serve
+# If that doesn't work, you may need to adjust the prefix variable in the serve
+# script.
+
+## Google Map
+# If you want to view the Google Map on a local installation, you will need a
+# Google Maps API key for the domain name it runs under.
+#  <http://www.google.com/apis/maps/>.
 
 
 Testing
