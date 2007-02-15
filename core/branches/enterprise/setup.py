@@ -2,9 +2,9 @@
 # $Id$
 # Created 2006-09-07
 #
-# Project setup.
+# Project setup for byCycle Core.
 #
-# Copyright (C) 2006 Wyatt Baldwin, byCycle.org <wyatt@bycycle.org>.
+# Copyright (C) 2006, 2007 Wyatt Baldwin, byCycle.org <wyatt@bycycle.org>.
 # All rights reserved.
 #
 # For terms of use and warranty details, please see the LICENSE file included
@@ -19,15 +19,15 @@ setup(
 
     description='byCycle Core Services',
     long_description='Address normalization, geocoding, routing and other GIS-related services',
-
-    license='',
+    
+    license='Restricted personal use only',
     
     author='Wyatt L Baldwin',
     author_email='wyatt@byCycle.org',
-
+    
     url='http://bycycle.org/',
-    #download_url='http://bycycle.org/dist/byCycleCore',
-
+    download_url='http://svn.bycycle.org/core/branches/enterprise#egg=byCycleCore-dev',
+    
     classifiers=[
     'Development Status - Alpha',
     'License :: Restricted personal use only',
