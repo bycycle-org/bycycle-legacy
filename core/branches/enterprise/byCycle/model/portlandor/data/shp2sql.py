@@ -55,7 +55,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 # TODO
 #  Turn this into a derived class; create a base class that all regions can use
 import sys, os
-from byCycle.lib import gis, meter
+from byCycle.util import gis, meter
 
 
 CWD = os.getcwd()

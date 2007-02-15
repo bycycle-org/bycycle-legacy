@@ -33,7 +33,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 # Pittsburgh shapefile import
 import sys, os
 from pysqlite2 import dbapi2 as sqlite
-from byCycle.lib import gis, meter
+from byCycle.util import gis, meter
 
 
 

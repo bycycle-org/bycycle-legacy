@@ -63,7 +63,7 @@ from sqlalchemy.schema import Column
 from byCycle.model.data.sqltypes import Geometry
 
 from byCycle import install_path
-from byCycle.lib import meter
+from byCycle.util import meter
 from byCycle.model.portlandor.data.tables import Tables, SRID
 from byCycle.model.portlandor.data.cities import cities_atof
 

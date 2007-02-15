@@ -12,7 +12,7 @@
 # NO WARRANTY OF ANY KIND.
 ################################################################################
 import unittest
-from byCycle.lib import meter
+from byCycle.util import meter
 from byCycle.services.geocode import *
 from byCycle.model.geocode import Geocode, PostalGeocode, IntersectionGeocode
 

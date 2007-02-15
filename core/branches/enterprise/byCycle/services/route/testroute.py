@@ -12,7 +12,7 @@
 # NO WARRANTY OF ANY KIND.
 ################################################################################
 import unittest
-from byCycle.lib import meter
+from byCycle.util import meter
 from byCycle.services.route import *
 from byCycle.model.route import Route
 

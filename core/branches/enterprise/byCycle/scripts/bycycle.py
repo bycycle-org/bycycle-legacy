@@ -27,7 +27,7 @@ def __getbyCycleImportPath(level):
 import sys
 sys.path.insert(0, __getbyCycleImportPath(3))
 from byCycle.model import regions
-from byCycle.lib import meter
+from byCycle.util import meter
 
 
 import_path = 'byCycle.services.%s'

@@ -43,7 +43,7 @@ Here's what the route service does:
 
 """
 from cartography.geometry import LineString
-from byCycle.lib import gis
+from byCycle.util import gis
 from byCycle.services.exceptions import ByCycleError, InputError, NotFoundError
 from byCycle.model.address import *
 from byCycle.model.geocode import *
