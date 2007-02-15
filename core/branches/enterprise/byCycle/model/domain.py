@@ -1,4 +1,4 @@
-################################################################################
+###############################################################################
 # $Id$
 # Created 2006-09-14.
 #
@@ -10,7 +10,7 @@
 # For terms of use and warranty details, please see the LICENSE file included
 # in the top level of this distribution. This software is provided AS IS with
 # NO WARRANTY OF ANY KIND.
-################################################################################
+###############################################################################
 """
 A collection of domain object definitions (AKA classes).
 
@@ -29,7 +29,7 @@ classes) and exceptions.
 from sqlalchemy.sql import func, select
 from cartography import geometry
 from cartography.proj import SpatialReference
-from byCycle.util.util import joinAttrs
+from byCycle.util import joinAttrs
 
 
 class Node(object):
