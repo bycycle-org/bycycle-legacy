@@ -1,8 +1,8 @@
-################################################################################
+###############################################################################
 # $Id$
 # Created 2006-09-07
 #
-# Distutils setup.
+# Project setup.
 #
 # Copyright (C) 2006 Wyatt Baldwin, byCycle.org <wyatt@bycycle.org>.
 # All rights reserved.
@@ -10,41 +10,39 @@
 # For terms of use and warranty details, please see the LICENSE file included
 # in the top level of this distribution. This software is provided AS IS with
 # NO WARRANTY OF ANY KIND.
-################################################################################
-from distutils.core import setup
-
+###############################################################################
+from setuptools import setup, find_packages
 
 setup(
-    name='byCycle',
-    description='byCycle Trip Planner',
-    long_description='byCycle Trip Planner',
+    name='byCycleCore',
+    version='0.4a0',
+
+    description='byCycle Core Services',
+    long_description='Address normalization, geocoding, routing and other GIS-related services',
+
+    license='',
+    
     author='Wyatt L Baldwin',
     author_email='wyatt@byCycle.org',
-    url='http://www.byCycle.org/',
-    version='0.3.5a',
+
+    url='http://bycycle.org/',
+    #download_url='http://bycycle.org/dist/byCycleCore',
+
     classifiers=[
-        'Development Status - Alpha',
-        'License :: Restricted personal use only',
-        'Intended Audience :: Developers',
-        'Programming Language :: Python',
-        'Environment :: Console',
-        'Environment :: Web Environment',
-        ],
-    packages=[
-        'lib',
-        'model',
-        'model.data',
-        'model.tests',
-        'model.milwaukeewi',
-        'model.milwaukeewi.data',
-        'model.portlandor',
-        'model.portlandor.data',
-        'model.pittsburghpa',
-        'model.pittsburghpa.data',
-        'scripts',
-        'services',
-        'services.normaddr',                
-        'services.geocode',                
-        'services.route',
-        ],
+    'Development Status - Alpha',
+    'License :: Restricted personal use only',
+    'Intended Audience :: Developers',
+    'Programming Language :: Python',
+    'Environment :: Console',
+    ],
+
+    packages=find_packages(),
+
+    zip_safe=False,
+
+    install_requires=(
+    'psycopg2==2.0.6b1',
+    'SQLAlchemy==0.3.4',
+    'zope.interface==3.3.0',
+    ),
 )
