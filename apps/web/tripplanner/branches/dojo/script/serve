@@ -10,6 +10,10 @@ import sys
 import os
 from os.path import abspath, dirname, join
 
+# Change this if the Python you're using to run the Pylons app wasn't
+# installed in $HOME
+prefix = os.environ['HOME']
+
 args = sys.argv
 
 # Goto the dir this file is in
@@ -34,8 +38,12 @@ except IndexError:
     print 'Using default args: %s' % args
 else:
     args = args[2:]    
+
     
 # Run `paster serve` with args and ini file
-cmd = 'paster serve %s %s' % (' --'.join([''] + args), os.path.split(ini)[-1])
+args = ' --'.join([''] + args)
+ini = os.path.split(ini)[-1]
+cmd = '%s/bin/paster serve %s %s' % (prefix, args, ini)
+                                     
 print cmd
 os.system(cmd)
