@@ -12,7 +12,7 @@
 # NO WARRANTY OF ANY KIND.
 ################################################################################
 """Address classes."""
-from byCycle.lib.util import joinAttrs
+from byCycle.util.util import joinAttrs
 from byCycle.model.domain import *
 
 

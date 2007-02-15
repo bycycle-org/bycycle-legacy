@@ -90,7 +90,7 @@ class Region(object):
         self.data_path = os.path.join(self.model_path, key, 'data')
         self.matrix_path = os.path.join(self.data_path, 'matrix.pyc')
         
-	# Database handler
+        # Database handler
         self.dbh = db.DB(self)
 
     @property
@@ -232,7 +232,7 @@ class Region(object):
 
         """
         import sqlalchemy
-        from byCycle.lib import gis, meter
+        from byCycle.util import gis, meter
 
         timer = meter.Timer()
 
@@ -245,7 +245,7 @@ class Region(object):
         result.close()
 
         # Get the edge attributes
-	timer.start()
+        timer.start()
         print 'Fetching edge attributes...'
         cols = ['id', 'node_f_id', 'node_t_id', 'one_way', 'length(geom)']
         if len(self.edge_attrs) > 1:
@@ -270,8 +270,8 @@ class Region(object):
         nodes = G['nodes']
         edges = G['edges']
 
-	timer.start()
-	print
+        timer.start()
+        print
         print 'Creating adjacency matrix...'
         met = meter.Meter(num_items=num_edges, start_now=True)
         for i, row in enumerate(result):
@@ -307,7 +307,7 @@ class Region(object):
         result.close()
         print '\nTook %s seconds.' % timer.stop()
 
-	timer.start()
+        timer.start()
         print '\nSaving adjacency matrix...'
         self._saveMatrix(G)
         self.G = G

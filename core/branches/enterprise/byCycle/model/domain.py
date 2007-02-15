@@ -29,7 +29,7 @@ classes) and exceptions.
 from sqlalchemy.sql import func, select
 from cartography import geometry
 from cartography.proj import SpatialReference
-from byCycle.lib.util import joinAttrs
+from byCycle.util.util import joinAttrs
 
 
 class Node(object):
