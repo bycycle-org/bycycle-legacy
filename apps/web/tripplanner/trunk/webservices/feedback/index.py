@@ -32,7 +32,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 """
 #!/usr/local/bin/python2.4
 # Feedback Web Service
-from byCycle.lib import wsrest
+from byCycle.util import wsrest
 
 class Feedback(wsrest.RestWebService):
     def __init__(self):

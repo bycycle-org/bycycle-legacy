@@ -32,8 +32,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 """
 # Address Normalization Web Service
 
-from byCycle.lib import wsrest
-from byCycle.tripplanner.services import normaddr
+from byCycle.util import wsrest
+from byCycle.services import normaddr
 
 class Normaddr(wsrest.RestWebService):
     def __init__(self, **params):
