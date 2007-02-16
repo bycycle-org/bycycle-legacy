@@ -30,7 +30,7 @@ ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 """
-from byCycle.tripplanner.model import seattlewa
+from byCycle.model import seattlewa
 
 class BikeDesignation:
   NOT_DESIGNATED, PATH, LANE, URBAN_CONNECTOR, NEIGHBORHOOD_CONNECTOR = range(5)

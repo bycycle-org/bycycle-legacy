@@ -35,9 +35,9 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 import time
 from byCycle.util import gis
-from byCycle.tripplanner.services import excs
-from byCycle.tripplanner.model import address, intersection
-from byCycle.tripplanner.services import geocode
+from byCycle.services import excs
+from byCycle.model import address, intersection
+from byCycle.services import geocode
 import sssp
 
 
@@ -100,7 +100,7 @@ def get(region='', q=[], tmode='bicycle', pref='', return_messages=False,
 
     # The mode is a combination of the data/travel modes
     st = time.time()
-    path = 'byCycle.tripplanner.model.%s.%s'
+    path = 'byCycle.model.%s.%s'
     module = __import__(path % (region, tmode), globals(), locals(), [''])
     mode = module.Mode(pref=pref)
     messages.append('Time to instantiate mode: %s' % (time.time() - st))
