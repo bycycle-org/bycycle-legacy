@@ -32,7 +32,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 """
 import math
-from byCycle.tripplanner.model import mode
+from byCycle.model import mode
  
 
 class Mode(mode.Mode):

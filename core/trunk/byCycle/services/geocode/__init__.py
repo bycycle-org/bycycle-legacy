@@ -31,8 +31,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 """
 from byCycle.util import gis
-from byCycle.tripplanner.model import mode, address, geocode
-from byCycle.tripplanner.services import excs, normaddr
+from byCycle.model import mode, address, geocode
+from byCycle.services import excs, normaddr
 
 
 class GeocodeError(excs.ByCycleError):
@@ -85,7 +85,7 @@ def get(region='', q='', **params):
         raise excs.InputError(errors)
 
     if not isinstance(region, mode.Mode):
-        path = 'byCycle.tripplanner.model.%s'
+        path = 'byCycle.model.%s'
         oMode = __import__(path % region, globals(), locals(), ['']).Mode()
     else:
         oMode = region

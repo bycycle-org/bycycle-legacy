@@ -39,8 +39,8 @@ Accepts these types of addresses:
 """
 import re
 from byCycle.util import gis
-from byCycle.tripplanner.services import excs
-from byCycle.tripplanner.model import mode, address, states, sttypes, compass
+from byCycle.services import excs
+from byCycle.model import mode, address, states, sttypes, compass
 
 
 # RE to check to see if a string has at least one word char
@@ -150,7 +150,7 @@ def parse(sAddress, sOrOMode):
 
     """
     if not isinstance(sOrOMode, mode.Mode):
-        path = 'byCycle.tripplanner.model.%s'
+        path = 'byCycle.model.%s'
         oMode = __import__(path % sOrOMode, globals(), locals(), ['']).Mode()
     else:
         oMode = sOrOMode

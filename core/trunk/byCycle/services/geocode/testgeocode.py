@@ -32,8 +32,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 """
 if __name__ == '__main__':
     import unittest
-    from byCycle.tripplanner.services.geocode import *
-    from byCycle.tripplanner.model import portlandor
+    from byCycle.services.geocode import *
+    from byCycle.model import portlandor
 
     class DontTestMilwaukee(unittest.TestCase):
         A = {#' ',

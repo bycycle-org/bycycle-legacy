@@ -33,7 +33,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 # Milwaukee Bicycle Travel Mode
 # 11/07/2005
 
-from byCycle.tripplanner.model import milwaukeewi
+from byCycle.model import milwaukeewi
 
 class Mode(milwaukeewi.Mode):
     def __init__(self, **kwargs):

@@ -35,7 +35,7 @@ import sys
 sys.path.insert(0, '/home/dacc/byCycle')
 
 import math
-from byCycle.tripplanner.model import mode
+from byCycle.model import mode
  
 
 class Mode(mode.Mode):

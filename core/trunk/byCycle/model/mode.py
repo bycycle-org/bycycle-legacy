@@ -41,7 +41,7 @@ import address, segment, intersection
 
 
 class Mode(object):
-    path = os.path.join(install_path, 'tripplanner/model')
+    path = os.path.join(install_path, 'model')
     # The number of digits to save when encoding a float as an int
     int_exp = 6
     # Multiplier to create int-encoded float
