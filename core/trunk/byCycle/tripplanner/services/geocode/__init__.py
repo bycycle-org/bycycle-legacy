@@ -30,7 +30,7 @@ ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 """
-from byCycle.lib import gis
+from byCycle.util import gis
 from byCycle.tripplanner.model import mode, address, geocode
 from byCycle.tripplanner.services import excs, normaddr
 

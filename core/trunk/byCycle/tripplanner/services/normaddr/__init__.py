@@ -38,7 +38,7 @@ Accepts these types of addresses:
 
 """
 import re
-from byCycle.lib import gis
+from byCycle.util import gis
 from byCycle.tripplanner.services import excs
 from byCycle.tripplanner.model import mode, address, states, sttypes, compass
 
