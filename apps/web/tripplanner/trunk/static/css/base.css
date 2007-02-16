@@ -75,7 +75,6 @@ a:hover {
 /* Input Tabs */
 #input {
   margin-left: 155px;
-  height: 112px;
   border: 1px solid gray;
 }
 ul#input_tab_buttons {
@@ -139,17 +138,15 @@ ul#input_tab_buttons li a, ul#input_tab_buttons li a em {
 
 /* Content ***********/
 
-
 /* Column Layout */
 #col-a {
   float: left;
-  width: 29%;
+  width: 30%;
 }
 #col-b {
   float: right;
   width: 69%;
 }
-
 
 /* Left Column */
 #status {
