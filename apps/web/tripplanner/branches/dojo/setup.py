@@ -47,7 +47,7 @@ setup(
     zip_safe=False,
     
     install_requires=(
-    'byCycleCore==0.4a0.dev',
+    'byCycleCore==dev',
     'Pylons>=0.9.4.1',
     ),
 
