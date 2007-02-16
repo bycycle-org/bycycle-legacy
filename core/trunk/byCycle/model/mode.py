@@ -36,7 +36,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 import os
 import MySQLdb
 from byCycle import install_path
-from byCycle.util import gis, util
+import byCycle.util as util
+from byCycle.util import gis
 import address, segment, intersection
 
 
