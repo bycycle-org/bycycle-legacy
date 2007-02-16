@@ -1,6 +1,6 @@
 """$Id$
 
-Tests for the lib.gis module.
+Tests for the util.gis module.
 
 Copyright (C) 2006 Wyatt Baldwin, byCycle.org <wyatt@bycycle.org>
 
@@ -32,7 +32,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 """
 if __name__ == '__main__':
     import unittest
-    from byCycle.lib.gis import *
+    from byCycle.util.gis import *
 
 
     class TestPointClass(unittest.TestCase):
