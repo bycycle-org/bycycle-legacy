@@ -17,23 +17,28 @@ setup(
     name='byCycleCore',
     version='0.4a0',
 
-    description='byCycle Core Services',
-    long_description='Address normalization, geocoding, routing and other GIS-related services',
+    description='byCycle Core Services -- PostgreSQL/PostGIS/SQLAlchemy version',
+    long_description='Address normalization, geocoding, routing and other GIS-related services. We still have not decided on a license, but it will most likely end up being the GPL.',
     
-    license='Restricted personal use only',
+    license='Free For Home Use',
     
-    author='Wyatt L Baldwin',
+    author='Wyatt L Baldwin, byCycle.org',
     author_email='wyatt@byCycle.org',
+
+    keywords='bicycle bike cycyle trip planner route finder',
     
     url='http://bycycle.org/',
-    download_url='http://svn.bycycle.org/core/branches/enterprise#egg=byCycleCore-dev',
+    download_url='http://guest:guest@svn.bycycle.org/core/branches/enterprise#egg=byCycleCore-dev',
     
     classifiers=[
-    'Development Status - Alpha',
-    'License :: Restricted personal use only',
-    'Intended Audience :: Developers',
-    'Programming Language :: Python',
+    'Development Status :: 3 - Alpha',
     'Environment :: Console',
+    'Intended Audience :: Developers',
+    'License :: Free For Home Use',
+    'Natural Language :: English',
+    'Programming Language :: Python',
+    'Topic :: Other/Nonlisted Topic',
+    'Topic :: Scientific/Engineering :: GIS',
     ],
 
     packages=find_packages(),
