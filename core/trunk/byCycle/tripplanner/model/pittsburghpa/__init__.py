@@ -57,7 +57,7 @@ class Mode(mode.Mode):
  
 if __name__ == '__main__':
     import time
-    from byCycle.lib import meter
+    from byCycle.util import meter
     
     t = meter.Timer()
     

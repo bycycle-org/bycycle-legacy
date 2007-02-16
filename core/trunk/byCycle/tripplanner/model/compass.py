@@ -30,7 +30,7 @@ ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 """
-from byCycle.lib.util import swapKeysAndValues
+from byCycle.util import swapKeysAndValues
 
 
 directions_ftoa = {'north'     : 'n',

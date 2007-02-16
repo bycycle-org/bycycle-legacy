@@ -32,7 +32,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 """
 if __name__ == '__main__':
     import unittest
-    from byCycle.lib.gis import *
+    from byCycle.util.gis import *
 
 
     class TestPointClass(unittest.TestCase):

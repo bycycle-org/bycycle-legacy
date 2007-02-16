@@ -36,7 +36,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 import os
 import MySQLdb
 from byCycle import install_path
-from byCycle.lib import gis, util
+from byCycle.util import gis, util
 import address, segment, intersection
 
 
@@ -101,7 +101,7 @@ class Mode(object):
 
         """
         import math
-        from byCycle.lib import gis, meter
+        from byCycle.util import gis, meter
         
         # Get the edge attributes
         t = meter.Timer()

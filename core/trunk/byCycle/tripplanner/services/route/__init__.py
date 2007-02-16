@@ -34,7 +34,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 # 28 Dec 2004
 
 import time
-from byCycle.lib import gis
+from byCycle.util import gis
 from byCycle.tripplanner.services import excs
 from byCycle.tripplanner.model import address, intersection
 from byCycle.tripplanner.services import geocode
