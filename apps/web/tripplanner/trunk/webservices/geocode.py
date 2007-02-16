@@ -30,8 +30,8 @@ ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 """
-from byCycle.lib import wsrest
-from byCycle.tripplanner.services import excs, geocode
+from byCycle.util import wsrest
+from byCycle.services import excs, geocode
 
 class Geocode(wsrest.RestWebService):
     def __init__(self, **params):

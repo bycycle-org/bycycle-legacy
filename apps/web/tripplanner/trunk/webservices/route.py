@@ -32,8 +32,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 """
 # Route Web Service
 
-from byCycle.lib import wsrest
-from byCycle.tripplanner.services import excs, route
+from byCycle.util import wsrest
+from byCycle.services import excs, route
 
 class Route(wsrest.RestWebService):
     def __init__(self, **params):
