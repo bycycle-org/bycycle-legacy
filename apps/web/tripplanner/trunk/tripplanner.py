@@ -37,7 +37,7 @@ import re
 import datetime
 import urllib
 import simplejson
-from byCycle.lib import wsrest
+from byCycle.util import wsrest
 
 
 class TripPlanner(object):
