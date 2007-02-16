@@ -74,6 +74,7 @@ a:hover {
 
 /* Input Tabs */
 #input {
+  height: 112px;
   margin-left: 155px;
   border: 1px solid gray;
 }
