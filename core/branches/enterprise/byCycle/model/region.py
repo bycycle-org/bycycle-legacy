@@ -85,13 +85,12 @@ class Region(object):
         self.float_encode = float_encode
         self.float_decode = float_decode
 
-        # Set up path to data files
-        self.model_path = os.path.abspath(os.path.dirname(__file__))
-        self.data_path = os.path.join(self.model_path, key, 'data')
-        self.matrix_path = os.path.join(self.data_path, 'matrix.pyc')
+        # Get database handler
+        self.dbh = db.DB()
         
-        # Database handler
-        self.dbh = db.DB(self)
+        # Set up path to data files for this region
+        self.data_path = os.path.join(self.dbh.model_path, key, 'data')
+        self.matrix_path = os.path.join(self.data_path, 'matrix.pyc')
 
     @property
     def tables(self):
