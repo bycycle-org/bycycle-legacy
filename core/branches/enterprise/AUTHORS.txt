@@ -1,0 +1,8 @@
+Architect/Designer/Lead Developer:
+    Wyatt Baldwin <wyatt@byCycle.org>
+
+Pittsburgh Integration:
+    Jessi Berkelhammer <jessi@cmu.edu>, <jessi@bycycle.org>
+
+Seattle Integration:
+    Daniel Carleton <dacc@marcade.org>
