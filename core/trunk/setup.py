@@ -26,6 +26,7 @@ setup(
     author_email='wyatt@byCycle.org',
 
     url='http://bycycle.org/',
+    # This, in effect, creates an alias to the latest 0.3 dev version
     download_url='http://guest:guest@svn.bycycle.org/core/trunk#egg=byCycleCore-0.3a0.dev',
     
     classifiers=[
