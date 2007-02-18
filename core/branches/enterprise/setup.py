@@ -28,6 +28,7 @@ setup(
     keywords='bicycle bike cycyle trip planner route finder',
     
     url='http://bycycle.org/',
+    # This, in effect, creates an alias to the latest 0.4 dev version
     download_url='http://guest:guest@svn.bycycle.org/core/branches/enterprise#egg=byCycleCore-dev',
     
     classifiers=[
