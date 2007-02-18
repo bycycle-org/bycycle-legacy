@@ -1,46 +1,34 @@
-"""$Id$
+###############################################################################
+# $Id$
+# Created 2005-11-07
+#
+# Milwaukee, WI, region.
+#
+# Copyright (C) 2006 Wyatt Baldwin, byCycle.org <wyatt@bycycle.org>.
+# All rights reserved.
+#
+# For terms of use and warranty details, please see the LICENSE file included
+# in the top level of this distribution. This software is provided AS IS with
+# NO WARRANTY OF ANY KIND.
+###############################################################################
+"""This module defines the Milwaukee, WI, region."""
+import math
+from byCycle.model import region
 
-Description goes here.
 
-Copyright (C) 2006 Wyatt Baldwin, byCycle.org <wyatt@bycycle.org>
+block_length = 5280.0 / 20.0
+jog_length = block_length / 2.0
 
-All rights reserved.
 
-TERMS AND CONDITIONS FOR USE, MODIFICATION, DISTRIBUTION
+class _Region(region.Region):
 
-1. The software may be used and modified by individuals for noncommercial, 
-private use.
+    title = 'Milwaukee, WI'
+    block_length = block_length
+    jog_length = jog_length
+    edge_attrs = ['bikemode', 'lanes', 'adt', 'spd']
 
-2. The software may not be used for any commercial purpose.
-
-3. The software may not be made available as a service to the public or within 
-any organization.
-
-4. The software may not be redistributed.
-
-THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND 
-ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED 
-WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE 
-DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR 
-ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES 
-(INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; 
-LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON 
-ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT 
-(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS 
-SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-
-"""
-# Milwaukee, WI Data Mode
-# 11/07/2005
-
-from byCycle.model import mode
- 
-
-class Mode(mode.Mode):
     def __init__(self):
-        self.region = 'milwaukeewi'
-        self.edge_attrs = ['bikemode', 'lanes', 'adt', 'spd']
-        mode.Mode.__init__(self)
+        region.Region.__init__(self, 'milwaukeewi')
 
     def _adjustRowForMatrix(self, row):
         one_way = row['one_way']
@@ -54,6 +42,12 @@ class Mode(mode.Mode):
             one_way = 0
         row['one_way'] = one_way
 
-if __name__ == '__main__':
-    md = Mode();
-    G = md.createAdjacencyMatrix()
+
+__region = None
+
+
+def Region(*args, **kwargs):
+    global __region
+    if __region is None:
+        __region = _Region(*args, **kwargs)
+    return __region

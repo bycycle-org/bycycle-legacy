@@ -36,6 +36,13 @@ regions = {
         'title': 'Portland, OR',
         'units': 'feet',
         'earth_circumference': 131484672
+    },
+    
+    'milwaukeewi': {
+        'SRID': 2913,
+        'title': 'Milwaukee, WI',
+        'units': 'feet',
+        'earth_circumference': 131484672
     }
 }
 
@@ -274,7 +281,7 @@ class Region(object):
         print 'Creating adjacency matrix...'
         met = meter.Meter(num_items=num_edges, start_now=True)
         for i, row in enumerate(result):
-            adjustments = self._adjustRowForMatrix(self, row)
+            adjustments = self._adjustRowForMatrix(row)
 
             ix = row.id
             node_f_id, node_t_id = row.node_f_id, row.node_t_id
