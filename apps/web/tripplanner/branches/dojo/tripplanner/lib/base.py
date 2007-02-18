@@ -1,10 +1,11 @@
-from pylons import Response, c, g, h, cache, request, session
+from pylons import Response, c, g, cache, request, session
 from pylons.controllers import WSGIController
-from pylons.decorators import jsonify, rest, validate
+from pylons.decorators import jsonify, validate
 from pylons.templating import render, render_response
 from pylons.helpers import abort, redirect_to, etag_cache
+from pylons.i18n import N_, _, ungettext
 import tripplanner.models as model
-
+import tripplanner.lib.helpers as h
 
 class BaseController(WSGIController):
     def __call__(self, environ, start_response):
@@ -12,3 +13,7 @@ class BaseController(WSGIController):
         # is under environ['pylons.routes_dict'] should you want to check
         # the action or route vars here
         return WSGIController.__call__(self, environ, start_response)
+
+# Include the '_' function in the public names
+__all__ = [__name for __name in locals().keys() if not __name.startswith('_') \
+           or __name == '_']
