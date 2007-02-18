@@ -86,32 +86,32 @@ class TestPointAddress(unittest.TestCase):
     
     def test_WKT(self):
         oAddr = PointAddress(x=-123.12, y=45)
-        self.assertEqual(str(oAddr), 'POINT(-123.120000 45.000000)')
+        self.assertEqual(str(oAddr), 'POINT (-123.120000 45.000000)')
         
     def test_Eval(self):
         oAddr = PointAddress(point='(-123.12, 45)')
-        self.assertEqual(str(oAddr), 'POINT(-123.120000 45.000000)')
+        self.assertEqual(str(oAddr), 'POINT (-123.120000 45.000000)')
         oAddr = PointAddress(point='{"x": -123.12, "y": 45}')
-        self.assertEqual(str(oAddr), 'POINT(-123.120000 45.000000)')
+        self.assertEqual(str(oAddr), 'POINT (-123.120000 45.000000)')
         
     def test_Kwargs(self):
         oAddr = PointAddress(point='x=-123.12, y=45')
-        self.assertEqual(str(oAddr), 'POINT(-123.120000 45.000000)')
+        self.assertEqual(str(oAddr), 'POINT (-123.120000 45.000000)')
 
     def test_Dict(self):
         oAddr = PointAddress(point={'x': -123.12, 'y': 45})
-        self.assertEqual(str(oAddr), 'POINT(-123.120000 45.000000)')
+        self.assertEqual(str(oAddr), 'POINT (-123.120000 45.000000)')
 
     def test_Object(self):
         class P:
             x = -123.12
             y = 45
         oAddr = PointAddress(point=P())
-        self.assertEqual(str(oAddr), 'POINT(-123.120000 45.000000)')
+        self.assertEqual(str(oAddr), 'POINT (-123.120000 45.000000)')
 
     def test_Sequence(self):
         oAddr = PointAddress(point=(-123.12, 45))
-        self.assertEqual(str(oAddr), 'POINT(-123.120000 45.000000)')        
+        self.assertEqual(str(oAddr), 'POINT (-123.120000 45.000000)')        
         
         
 if __name__ == "__main__":
