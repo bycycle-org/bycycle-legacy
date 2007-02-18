@@ -14,14 +14,28 @@ Software Prerequisites
 There are few pieces of additional software necessary to run the byCycle
 system. All of these are free and available for just about any platform:
 
-- Python 2.4.latest <http://www.python.org/>
-- MySQL 4.1.latest <http://www.mysql.org/>
-- MySQLdb 1.2.1 <http://sourceforge.net/projects/mysql-python>
+- zlib needed if installing Python from source
+  apt-get install zlib1g-dev
+
+- Python 2.5.latest <http://www.python.org/>  
+
+- MySQL 4.1.latest (5.0 works for development) <http://www.mysql.org/>
+  apt-get install mysql-server-5.0 libmysqlclient15-dev
+
   Note: In the future, when we have a dedicated server to run the system
         on, we will most likely migrate to PostgreSQL + PostGIS
   Note: It is also possible to implement a particular data mode using a 
         different database (e.g., SQLite), but how much work that would 
         take is unknown
+
+- setuptools/easy_install
+  Get ez_setup.py, then run it with the correct Python version
+
+- MySQL-python <http://sourceforge.net/projects/mysql-python>
+  easy_install MySQL-python  # May need to specify version to avoid betas
+
+- simplejson
+  easy_install simplejson
 
 If you want to be able to interact with the system locally through a web 
 browser, you will need:
@@ -35,7 +49,7 @@ For the Google Map, you will need:
         a particular directory in your web tree and its subdirectories)
 
 If you want to be able to import data from a shapefile, you will need:
-- libmygis 0.5.5 <http://jcole.us/software/libmygis/>
+- libmygis 0.7.2 <http://jcole.us/software/libmygis/libmygis-0.7.2.tar.gz>
 
 Other versions of the above software may work, but other combinations have not 
 been tested. In general, we are going to keep up with the latest stable 
