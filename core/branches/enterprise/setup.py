@@ -46,7 +46,7 @@ setup(
     zip_safe=False,
 
     install_requires=(
-    'psycopg2==2.0.6b1',
+    'psycopg2==2.0.5.1',
     'SQLAlchemy==0.3.4',
     'zope.interface==3.3.0',
     ),
