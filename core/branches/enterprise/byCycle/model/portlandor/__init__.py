@@ -1,4 +1,4 @@
-################################################################################
+###############################################################################
 # $Id$
 # Created 2005-11-07
 #
@@ -10,7 +10,7 @@
 # For terms of use and warranty details, please see the LICENSE file included
 # in the top level of this distribution. This software is provided AS IS with
 # NO WARRANTY OF ANY KIND.
-################################################################################
+###############################################################################
 """This module defines the Portland, OR, region."""
 import math
 from byCycle.model import region
@@ -32,15 +32,16 @@ class _Region(region.Region):
     def __init__(self):
         region.Region.__init__(self, 'portlandor')
 
-    def _adjustRowForMatrix(self, dbh, row):
+    def _adjustRowForMatrix(self, row):
         adjustments = {
-            'abs_slp': dbh.encodeFloat(row['abs_slp']),
-            'up_frac': dbh.encodeFloat(row['up_frac']),
+            'abs_slp': self.encodeFloat(row['abs_slp']),
+            'up_frac': self.encodeFloat(row['up_frac']),
         }
         return adjustments
 
 
 __region = None
+
 
 def Region(*args, **kwargs):
     global __region
