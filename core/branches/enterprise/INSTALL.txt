@@ -31,8 +31,10 @@ Core Dependencies
 cd $HOME/src
 
 ## On Ubuntu, you'll need to install some basic dev tools:
-# FIXME: Other packages may be required as well
-sudo apt-get install build-essential
+sudo apt-get install build-essential flex
+
+## If you're going to install Python from source, you'll need this:
+sudo apt-get install zlib1g-dev
 
 ## Subversion <http://subversion.tigris.org/>
 # On Windows, you'll almost definitely also want TortoiseSVN
@@ -40,7 +42,6 @@ sudo apt-get install build-essential
 sudo apt-get install subversion
 
 ## PostgreSQL 8.1.x <http://www.postgresql.org/>
-# FIXME: I'm not sure the dev stuff is actually needed
 sudo apt-get install postgresql-8.1 postgresql-dev postgresql-server-dev-8.1
 
 ## GEOS 2.2.3
@@ -83,7 +84,7 @@ $HOME/bin/python2.5 ez_setup.py
 
 ## Note: At this point you may be able to use setuptools to install the Python
 ## packages below automatically (except the PCL). Try one of the following 
-## first:
+## first (use login:password guest:guest for Subversion if it asks):
 # Just the byCycle core:
 $HOME/bin/easy_install-2.5 -Z byCycleCore  
 # Core plus Trip Planner Web app:
@@ -106,9 +107,9 @@ $HOME/bin/python2.5 setup.py install
 ## Python Cartographic Library (PCL) - Core 0.11.0
 # Depends on Proj and GEOS for some operations
 # Depends on zope.interface
-wget http://gispython.org/downloads/gispy/PCL-0.11.0.tar.gz>
+wget http://gispython.org/downloads/gispy/PCL-0.11.0.tar.gz
 tar xvzf PCL-0.11.0.tar.gz
-cd PCL/PCL-Core
+cd PCL-0.11.0/PCL-Core
 $HOME/bin/python2.5 setup.py install
 
 
