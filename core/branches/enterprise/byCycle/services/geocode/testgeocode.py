@@ -50,7 +50,7 @@ class TestPortlandOR(unittest.TestCase):
         self.assertRaises(AddressNotFoundError, self._query, q)
 
     ### Intersection
-        
+
     def test_IntersectionAddress_BothPlaces(self):
         q = 'W Burnside St, Portland, OR 97204 AND NW 3rd Ave, Portland, OR 97209'
         geocode = self._query(q)
@@ -78,11 +78,11 @@ class TestPortlandOR(unittest.TestCase):
     def test_IntersectionAddress_OnlyPlace1(self):
         q = 'Burnside St, Portland, OR 97209 AT 3rd Ave'
         geocode = self._query(q)
-        
+
     def test_IntersectionAddress_OnlyPlace2(self):
         q = 'Burnside St & 3rd Ave, Portland, OR 97209'
         geocode = self._query(q)
-        
+
     ### Node
 
     def test_NodeAddress(self):
@@ -108,8 +108,8 @@ class TestPortlandOR(unittest.TestCase):
     def test_PointAddress_StringTuple_Parens(self):
         q = '(-122.67334, 45.523307)'
         geocode = self._query(q)
-        
-    def test_PointAddress_StringTuple_NoParens(self):   
+
+    def test_PointAddress_StringTuple_NoParens(self):
         q = '-122.67334, 45.523307'
         geocode = self._query(q)
 
