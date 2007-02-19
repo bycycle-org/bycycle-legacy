@@ -8,15 +8,16 @@ Tabinator.prototype = {
    */
   initialize: function(tab_control) {
     this.tab_control = $(tab_control);
-    this.tabs = this.createTabs();
-    this.show(this.getInitialTab());
+	this.create_tabs();
+    this.show(this.get_initial_tab());
   },
   
-  createTabs: function() {
+  create_tabs: function() {
     // An individual Tab object. Contains tab id, button, link, and content.
     var tab;
     // All the Tabs in this Tab control (usually a DIV)
     var tabs = {};
+    var tab_ids_in_order = [];
     // Get the Tab buttons (usually LIs)
     var tab_buttons = this.tab_control.getElementsByClassName('tab-buttons')[0];
     tab_buttons = tab_buttons.getElementsByClassName('tab-button');
@@ -39,22 +40,37 @@ Tabinator.prototype = {
         // DOM element containing this Tab's content
         tab.content = $(tab_id);
         tabs[tab_id] = tab;
-        Event.observe(tab_link, 'click', this.activate.bindAsEventListener(this));
+	tab_ids_in_order.push(tab_id);
+        Event.observe(tab_link, 'click', this.on_click.bindAsEventListener(this));
         if (!this.first_tab) {
           this.first_tab = tab;
         }
       }
     }).bind(this));
-    return $H(tabs);
+    this.tabs = $H(tabs);
+	this.tab_ids_in_order = tab_ids_in_order;
   },
   
-  activate: function(event) {
+  on_click: function(event) {
+    // Select tab on click event
     Event.stop(event);
-    // Hide all tabs
-    this.tabs.values().each(this.hide.bind(this));
-    // Activate selected tab
     var tab_link = Event.findElement(event, 'a');
-    this.show(this.tabs[tab_link.tab_id]);
+    this.select_by_id(tab_link.tab_id);
+  },
+
+  select: function(index) {
+    // Select tab programatically by index
+    if (index < 0) {
+      // Allow indexing from end using negative index
+      index = this.tab_ids_in_order.length + index
+    }
+    this.select_by_id(this.tab_ids_in_order[index]);
+  },
+  
+  select_by_id: function(tab_id) {
+    // Select tab programatically by ID
+    this.tabs.values().each(this.hide.bind(this));
+    this.show(this.tabs[tab_id]);    
   },
   
   hide: function(tab) {
@@ -70,10 +86,9 @@ Tabinator.prototype = {
   /**
    * Return the tab ID for a link. The tab ID is the hash part of a URL.
    *
-   * @param tab_link An <A>nchor DOM element
+   * @param tab_link An <A>nchor DOM element (or any obj with href attribute).
    */
   get_tab_id: function(tab_link) {
-    byCycle.logDebug(tab_link);
     var id = tab_link.href.match(/#(\w.+)/);
     if (id) {
       return id[1];
@@ -82,7 +97,7 @@ Tabinator.prototype = {
     }
   },
       
-  getInitialTab: function() {
+  get_initial_tab: function() {
     var initial_tab;
     var initial_tab_id = this.get_tab_id(window.location);
     if (initial_tab_id) {
