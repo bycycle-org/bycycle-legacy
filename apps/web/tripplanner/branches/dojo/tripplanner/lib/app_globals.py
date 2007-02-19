@@ -1,3 +1,6 @@
+from paste.deploy.converters import asbool
+
+
 class Globals(object):
 
     def __init__(self, global_conf, app_conf, **extra):
