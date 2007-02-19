@@ -1,17 +1,15 @@
-$ = dojo.byId;
-
 /**
  * byCycle namespace
  */
 var byCycle = (function() {
   // private:
-  var _prod_config = {
+  var prod_config = {
     local: 0,
     map_type: 'google',
     map_state: 1
   };
 
-  var _dev_config = {
+  var dev_config = {
     local: 1,
     map_type: 'base',
     map_state: 1
@@ -19,27 +17,25 @@ var byCycle = (function() {
 
   var base_url = location.href.split('?')[0];
   var domain = base_url.split('/')[2];
-  var index = 0;
-  var colors = ['#fff', '#ccc'];
-
-  var pairs = window.location.search.substr(1).split('&');
-  var _query_pairs = {};
-  for (var i = 0; i < pairs.length; ++i) {
-    var name_value = pairs[i].split('=');
-    _query_pairs[name_value[0]] = name_value[1];
-  }
-
+  var query_pairs = (window.location.search.substr(1)).toQueryParams();
+  
   var noop = function() {};
 
   // public:
   return {
     // `debug` is a global set in the template; it's value is passed from 
     // Pylons as an attribute of the global `g`
-    config: debug ? _dev_config : _prod_config,
+    config: debug ? dev_config : prod_config,
+    
     base_url: base_url,
     domain: domain,
+    
+    // Prefix for when app is mounted at other than root (/)
     prefix: byCycle_prefix,
-    query_pairs: _query_pairs,
+    
+    // URL query parameters as a Hash
+    query_pairs: query_pairs,
+
     default_map_type: 'base',
 
     noop: noop,
@@ -59,6 +55,6 @@ var byCycle = (function() {
       return v;
     },
 
-    logDebug: (debug ? dojo.debug : noop),
+    logDebug: (debug ? console.log : noop),
   };
 })();

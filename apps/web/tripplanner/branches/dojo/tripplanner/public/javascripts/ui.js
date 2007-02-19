@@ -64,9 +64,11 @@ byCycle.UI = (function() {
      * Do stuff that must happen _during_ page load
      */
     beforeLoad: function() {
+      $('content').setStyle({visibility: 'hidden'});
+      Element.show('loading');
       byCycle.UI.setLoadingStatus('Initializing map...');
       map_state && map_type.beforeLoad();
-      dojo.addOnLoad(byCycle.UI.onLoad);
+      Event.observe(window, 'load', byCycle.UI.onLoad);
     },
 
     /**
@@ -75,6 +77,8 @@ byCycle.UI = (function() {
     onLoad: function() {
       self = byCycle.UI;
       self._assignUIElements();
+      
+      self.input_tab_control = new Tabinator(self.input_container);
 
       // If map is "on" and specified map type is loadable, use that map type.
       // Otherwise, use the default map type (base).
@@ -83,24 +87,31 @@ byCycle.UI = (function() {
       }
       self.map = new self.map_type.Map(self, self.map_pane);
 
-      self.setEventHandlers();
-      self.setRegionFromSelectBox();
+      self._createEventHandlers();
 
       // For URLs containing a query
-      // TODO: Do async call after load
+      // TODO: Do async call after load???
       self.handleQuery();
 
-      dojo.html.setVisibility('root_container', 'visible');
-      dojo.html.hide($('result_container'));
+      self.onResize();
+      self.setRegionFromSelectBox();
+
+      Element.remove('loading');
+      $('content').setStyle({visibility: 'visible'});
       self.focusServiceElement(self.service == 'route' ? 'route' : 'query');
-      dojo.dom.destroyNode($('loading'));
+      
+      if (debug) {
+        self.hideAds();
+      }
+      
+      self.onResize();
     },
 
     _assignUIElements: function() {
       // Input elements
-      self.input_container = dojo.widget.byId('input_container');
-      self.query_pane = dojo.widget.byId('query_pane');
-      self.route_pane = dojo.widget.byId('route_pane');
+      self.input_container = $('input_container');
+      self.query_pane = $('search-the-map');
+      self.route_pane = $('find-a-route');
       self.query_form = $('query_form');
       self.route_form = $('route_form');
       self.q_el = $('q');
@@ -108,21 +119,20 @@ byCycle.UI = (function() {
       self.e_el = $('e');
       self.pref_el = $('pref');
 
+      // Bar
       self.status = $('status');
+      self.spinner = $('spinner');
       self.bookmark_el = $('bookmark');
 
-      // Display panes (results and messages)
-      self.display_container = dojo.widget.byId('display_container');
-      self.message_pane = dojo.widget.byId('message_pane');
+      // Messages
+      self.message_pane = $('message_pane');
       self.info_pane = $('info_pane');
       self.error_pane = $('error_pane');
       self.help_pane = $('help_pane');
       self.message_panes = [self.info_pane, self.error_pane, self.help_pane];
 
       // Result elements (location and route lists in tab container)
-      self.result_container = dojo.widget.byId('result_container');
-      self.location_list_pane = dojo.widget.byId('location_list_pane');
-      self.route_list_pane = dojo.widget.byId('route_list_pane');
+      self.result_pane = $('result_pane');
       self.location_list = $('location_list');
       self.route_list = $('route_list');
 
@@ -133,27 +143,55 @@ byCycle.UI = (function() {
 
     /* Events ****************************************************************/
 
-    setEventHandlers: function() {
-      dojo.event.connect(window, 'resize', self.onResize);
-      dojo.event.connect(document.body, 'unload', self.onUnload);
-      dojo.event.connect('swap_s_and_e', 'click', self.swapStartAndEnd);
+    _createEventHandlers: function() {
+      Event.observe(window, 'resize', self.onResize);
+      Event.observe(document.body, 'unload', self.onUnload);
+      Event.observe('swap_s_and_e', 'click', self.swapStartAndEnd);
+      Event.observe(self.query_form, 'submit', self.runGenericQuery);
+      Event.observe(self.route_form, 'submit', self.runRouteQuery);
+      Event.observe('hide_ads_button', 'click', self.hideAds);
     },
 
-    onUnload: function() {
+    onResize: function(event) {
+      var dims = Element.getDimensions(document.body);
+      byCycle.logDebug('Viewport dimensions:', dims.width, dims.height);
+
+      var footer_height = 19;
+
+      // Resize column A
+      var pos = Position.cumulativeOffset(self.message_pane);
+      var height = dims.height - pos[1] - footer_height - 5;
+      var els = [self.message_pane, self.result_pane];
+      var style = {height: height + 'px'};
+      els.each(function (el) { el.setStyle(style); });
+      
+      // Resize map
+      pos = Position.cumulativeOffset(self.map_pane);
+      height = dims.height - pos[1] - footer_height;
+      self.map.setSize({h: height});
+    },
+
+    onUnload: function(event) {
       document.body.style.display = 'none';
       self.map.onUnload();
     },
 
-    /** Input **/
+    hideAds: function (event) {
+      event && Event.stop(event);
+      Element.remove('ads');
+      var ids = ['header', 'bar', 'content'];
+      var style = {marginRight: '0px'};
+      ids.each(function (id) { $(id).setStyle(style); });
+    },
+      
+    /* Input *****************************************************************/
 
     focusServiceElement: function(service) {
       service == 'route' ? self.s_el.focus() : self.q_el.focus();
     },
 
     selectInputTab: function(service) {
-      self.input_container.selectChild(service == 'route' ?
-                                       self.route_pane :
-                                       self.query_pane);
+      self.input_tab_control.select(service == 'route' ? 1 : 0);
     },
 
     swapStartAndEnd: function() {
@@ -209,29 +247,41 @@ byCycle.UI = (function() {
       query_obj.after(request);
     },
 
-    runQuery: function(form, input) {
-      byCycle.logDebug('Entered runQuery...');
-      var query_class;
-      var q = self.q_el.value;
-      if (!q) {
-        self.q_el.focus();
-        self.showErrors('Please enter something to search for!');
-      } else {
+    runGenericQuery: function(event, input /* =undefined */) {
+      byCycle.logDebug('Entered runGenericQuery...');
+      var q = input || self.q_el.value;
+      if (q) {
+        var query_class;
         // Is the query a route?
         var i = q.toLowerCase().indexOf(' to ');
         if (i != -1) {
           // Query looks like a route
           self.s_el.value = q.substring(0, i);
           self.e_el.value = q.substring(i + 4);
-          query_class = 'Route';
+          query_class = self.RouteQuery;
         } else {
-          // Query doesn't look like a route
-          query_class = 'Geocode';
+          // Query doesn't look like a route; default to geocode query
+          query_class = self.GeocodeQuery;
         }
-        // Run query
-        new self[query_class + 'Query'](form, input).run();
+        self.runQuery(event, self.GeocodeQuery, input);
+      } else {
+        self.q_el.focus();
+        self.showErrors('Please enter something to search for!');
       }
-      byCycle.logDebug('Left runQuery');
+      byCycle.logDebug('Left runGenericQuery');
+    },
+
+    runQuery: function(event, query_class, input /* =undefined */) {
+      event && Event.stop(event);
+      new query_class({input: input}).run();
+    },
+
+    runGeocodeQuery: function(event, input) {
+      self.runQuery(event, self.GeocodeQuery, input);
+    },
+
+    runRouteQuery: function(event, input) {
+      self.runQuery(event, self.RouteQuery, input);
     },
 
     showErrors: function(errors) {
@@ -251,30 +301,30 @@ byCycle.UI = (function() {
      * Select from multiple matching geocodes
      */
     selectGeocode: function(select_link) {
-      var r = self.result_container;
+      var r = self.result_pane;
 
       // Get a handle to the selected geocode's "window"
       var selected = select_link.parentNode.parentNode.parentNode.parentNode;
 
       // Change the title of the selected geocode's window to "Geocode"
-      var el = dojo.html.getElementsByClass('window_title', selected)[0];
+      var el = selected.getElementsByClassName('window_title')[0];
       el.innerHTML = 'Geocode';
 
       // Remove the selected geocode's "Select" link
-      dojo.dom.removeNode(select_link.parentNode);
+      Element.remove(select_link.parentNode);
 
       // Show the "set as start or end" links
-      var el = dojo.html.getElementsByClass('set_as_s_or_e', selected)[0];
+      var el = selected.getElementsByClassName('set_as_s_or_e')[0];
       el.style.display = 'block';
 
-      // Insert the selected geocode at the top of the results div
-      r.insertBefore(selected, r.firstChild);
+      // Append the selected geocode to the bottom of the results pane
+      r.append(selected);
 
       // Clear and hide the errors div
       self.error_pane.innerHTML = '';
-      dojo.html.hide(self.error_pane);
+      Element.hide(self.error_pane);
 
-      var json = dojo.html.getElementsByClass('json', selected)[0];
+      var json = selected.getElementsByClassName('json')[0];
       json.id = 'json';
 
       self.simulateQuery('GeocodeQuery');
@@ -290,7 +340,7 @@ byCycle.UI = (function() {
       var geocodes = select_link.parentNode.parentNode.parentNode.parentNode.parentNode;
 
       var multi = geocodes.parentNode;
-      dojo.dom.removeNode(geocodes);
+      Element.remove(geocodes);
 
       var parts = select_link.href.split('/');
       var last_i = parts.length - 1;
@@ -300,14 +350,14 @@ byCycle.UI = (function() {
       var addr = parts[last_i];
       self.route_choices[i] = addr;
 
-      var next_multi = dojo.html.getElementsByClass('geocodes', multi)[0];
+      var next_multi = multi.getElementsByClassName('geocodes')[0];
 
       if (next_multi) {
-        dojo.html.show(next_multi);
+        Element.show(next_multi);
         self.status.innerHTML = 'Way to go!';
       } else {
         self.error_pane.innerHTML = '';
-        dojo.html.hide(self.error_pane);
+        Element.hide(self.error_pane);
         new self.RouteQuery(null, self.route_choices).run();
       }
     },
@@ -318,7 +368,7 @@ byCycle.UI = (function() {
       } catch (e) {
         if (e instanceof TypeError) {
           // result_el wasn't registered as a `Result` (hopefully intentionally)
-          dojo.dom.destroyNode(result_el);
+          Element.remove(result_el);
         } else {
           byCycle.logDebug('Unhandled Exception in byCycle.UI.removeResult: ',
                            e.name, e.message);
@@ -365,22 +415,19 @@ byCycle.UI = (function() {
       byCycle.logDebug('Bookmark:', self.bookmark_el.href);
     },
 
-    /* Display Pane **********************************************************/
+    /* Results ***************************************************************/
 
     showMessagePane: function(sub_pane) {
-      dojo.html.hide(self.result_container.domNode);
-      dojo.lang.forEach(self.message_panes, dojo.html.hide);
-      dojo.html.show(sub_pane || self.info_pane);
-      dojo.html.show(self.message_pane.domNode);
-      self.display_container.onResized();
+      Element.hide(self.result_pane);
+      self.message_panes.each(Element.hide);
+      Element.show(sub_pane || self.info_pane);
+      Element.show(self.message_pane);
     },
 
-    showResultContainer: function(list_pane) {
-      dojo.html.hide(self.message_pane.domNode);
-      dojo.html.show(self.result_container.domNode);
-      self.result_container.selectChild(list_pane || self.location_list_pane);
-      self.result_container.onResized();
-      self.display_container.onResized();
+    showResultPane: function(list_pane) {
+      Element.hide(self.message_pane);
+      Element.show(self.result_pane);
+      self.result_pane.selectChild(list_pane || self.location_list_pane);
     },
 
     /* Map *******************************************************************/
@@ -410,28 +457,26 @@ byCycle.UI = (function() {
     /* Regions ***************************************************************/
 
     setRegionFromSelectBox: function() {
-      var opts = self.region_el.options;
-      var region = opts[self.region_el.selectedIndex].value;
-      self.setRegion(region);
+      self.setRegion($F(self.region_el));
     },
 
-    setRegion: function(region) {
-      var regions = byCycle.regions;
-      self.region = region || 'all';
-      region = regions[region] || regions.all;
-      self._initRegion(region);
-      self.map.centerAndZoomToBounds(region.bounds, region.center);
-      if (region.all) {
+    setRegion: function(region_key) {
+      var regions = byCycle.regions.regions;
+      var region = regions[region_key];
+      self.region = region_key || 'all';
+      if (region) {
+        // Zoom to a specific region
+        self._initRegion(region);
+        self.map.centerAndZoomToBounds(region.bounds, region.center);
+        self._showRegionOverlays(region);
+      } else {
+        // Show all regions
         var reg;
         for (var reg_key in regions) {
           reg = regions[reg_key];
-          if (!reg.all) {
-            self._initRegion(reg);
-            self._showRegionOverlays(reg);
-          }
+          self._initRegion(reg);
+          self._showRegionOverlays(reg);
         }
-      } else {
-        self._showRegionOverlays(region);
       }
     },
 
