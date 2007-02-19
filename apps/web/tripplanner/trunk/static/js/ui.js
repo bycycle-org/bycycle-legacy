@@ -60,12 +60,9 @@ function afterPageLoad() {
 	// regions element is not a <select>
     selectRegion(region_el.value);
   } 
-
-  var status = elV('http_status');
-  var response_text = unescape(elV('response_text'));
   
   if (status && response_text != '""') {
-	var req = {status: parseInt(status), responseText: response_text};
+	var req = {status: http_status, responseText: response_text};
 	_callback(req);
   }
 

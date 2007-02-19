@@ -9,13 +9,7 @@
 
     <title>byCycle - Bicycle Trip Planner</title>
 
-    <!-- YUI Stylesheets -->
     <link rel="stylesheet" href="static/yui/tabview.css" type="text/css"/>
-    <style type="text/css">
-      /* Remove left and right 10px default margins. */
-      #doc3 {margin:auto;}
-    </style>
-
     <link rel="stylesheet" href="static/css/base.css" type="text/css"/>
     <!--[if IE]><link rel="stylesheet" href="static/css/base_ie.css" type="text/css"/><![endif]-->
 
@@ -25,12 +19,12 @@
   </head>
 
   <body>
-  
-  
+
+
 	<!-- Header -->
 	<div id="header">
-	
-	
+
+
 	  <!-- Masthead -->
 	  <div id="masthead">
 		<div id="logo">
@@ -46,8 +40,8 @@
 		</div>
 	  </div>
 	  <!-- End Masthead -->
-  
-  
+
+
 	  <!-- Input -->
 	  <div id="input">
 		<!-- Input Tab Container -->
@@ -60,10 +54,10 @@
 			<li><a href="#feedback"><em>Feedback</em></a></li>
 			<li><a href="#links"><em>Links</em></a></li>
 		  </ul>
-	  
+
 		  <!-- Input Tab Contents -->
 		  <div id="input_tab_contents" class="yui-content">
-	  
+
 			<div class="input_tab_content">
 			  <small>
 				<a name="search-map"></a>
@@ -71,22 +65,22 @@
 				<a href="http://bycycle.org/support/donate" title="Support byCycle">donating</a>.
 				Any amount helps.
 			  </small>
-	  
+
 			  <!-- Geocode Form -->
 			  <form id="geocode_form" class="input_form"
 					action="."
 					method="get"
 					onsubmit="doFind('geocode'); return false;">
-		  
+
 				<div>
 				  <input type="hidden" name="region" value="%(region)s"/>
 				  <input type="hidden" name="service" value="geocode"/>
 				  <input type="text" id="q" name="q" class="input_field" tabindex="1" title="Address or intersection (no businesses or other points of interest)" value="%(q)s"/>
-		  
+
 				  <select id="geocode_amount" name="amount">
 					%(amount_options)s
 				  </select>
-		  
+
 				  <input name="gb"
 					 class="input_button"
 					 title="Click to look up address"
@@ -94,7 +88,7 @@
 					 type="submit"
 					 value="Find"/>
 				</div>
-		  
+
 				<div>
 				  Enter address -OR- pick from map
 				  <a href="javascript:void(0);" onclick="setResult(address_tip);" title="Tell me how">??</a>
@@ -102,7 +96,7 @@
 			  </form>
 			  <!-- End Geocode Form -->
 			</div>
-	  
+
 			<div class="input_tab_content">
 			  <small>
 				<a name="find-route"></a>
@@ -110,35 +104,35 @@
 				<a href="http://bycycle.org/support/donate" title="Support byCycle">donating</a>.
 				Any amount helps.
 			  </small>
-	  
+
 			  <!-- Route Form -->
 			  <form id="route_form" class="input_form"
 					action="."
 					method="get"
 					onsubmit="doFind('route'); return false;">
-		  
+
 				<div>
 				  <input type="hidden" name="region" value="%(region)s"/>
 				  <input type="hidden" name="service" value="route"/>
 				  <input type="text" id="fr" name="fr" class="input_field" tabindex="1" title="From address or intersection (no business names)" value="%(fr)s"/>
-		  
+
 				  <a href="javascript:void(0);"
 					 title="Swap From and To addresses"
 					 onclick="swapFrAndTo();"
 					 ><img src="static/images/swapfrto.gif" alt="swap"/></a>
-		  
+
 				  <input type="text" id="to" name="to" class="input_field" tabindex="1"  title="To address or intersection (no business names)" value="%(to)s"/>
-		  
+
 				  <select id="pref" name="pref">
 					<option value="default">[Preference]</option>
 					<option value="default">Normal</option>
 					<option value="safer">Safer</option>
 				  </select>
-		  
+
 				  <select id="route_amount" name="amount">
 					%(amount_options)s
 				  </select>
-		  
+
 				  <input name="rb"
 					 class="input_button"
 					 title="Click to find route"
@@ -146,7 +140,7 @@
 					 type="submit"
 					 value="Find Route"/>
 				</div>
-		  
+
 				<div>
 				  Enter 'from' &amp; 'to' addresses -OR- pick from map
 				  <a href="javascript:void(0);" onclick="setResult(route_address_tip);" title="Tell me how">??</a>
@@ -154,16 +148,16 @@
 			  </form>
 			  <!-- Route Form -->
 			</div>
-	  
+
 			<div class="input_tab_content">
 			  <!-- Help -->
 			  <p class="first-p">
 				<a name="help"></a>
 				<a href="http://bycycle.org/projects/trip-planner/help">Click here to view the trip planner help page &raquo;</a>
 			  </p>
-		  
+
 			  <p>Here is a quick list of helpful hints (scroll down to see them all):</p>
-		  
+
 			  <ul id="tips">
 				<li>Select a region first (top left of map).</li>
 				<li>To save typing and increase the likelihood of addresses being found, don't enter the city, state, or zip code.</li>
@@ -174,22 +168,22 @@
 			  </ul>
 			  <!-- End Help -->
 			</div>
-	  
+
 			<!-- Feedback -->
 			<div class="input_tab_content">
 			  <p class="first-p">
 				<a name="feedback"></a>
 				We'd like to hear from you... about anything at all. In particular, we'd like to know if you have had any trouble using the trip planner and your ideas for making it better. <a href="http://bycycle.org/contact" title="Contact us with any problems or suggestions">Click here to go to our contact page &raquo;</a>
 			  </p>
-		  
+
 			  <p>You can also make public comments in <a href="http://groups.google.com/group/byCycle" title="Make public comments, questions, and suggestions">the byCycle discussion group &raquo;</a></p>
 			</div>
 			<!-- End Feedback -->
-	  
+
 			<div class="input_tab_content">
 			  <!-- Links -->
 			  <p class="first-p">
-				<a name="links"></a>			
+				<a name="links"></a>
 				Links to <a href="http://bycycle.org/" title="byCycle Home Page">byCycle.org</a> information and resources:
 			  </p>
 			  <p>
@@ -203,25 +197,25 @@
 			</div>
 		  </div>
 		  <!-- End Input Tabs Content -->
-	  
-	  
+
+
 		  <script type="text/javascript">
 			//<![CDATA[
 			el('input_tab_contents').style.display = 'none';
 			//]]>
 		  </script>
-	  
-	  
+
+
 		</div>
 		<!-- End Input Tab Container -->
-  
+
 	  </div>
 	  <!-- End Input -->
 
   	  <div class="clear"></div>
 
 	</div>
-	
+
 
 	<!-- Content -->
 	<div id="content">
@@ -230,19 +224,19 @@
 	  <div id="col-a">
 		<div id="result">%(result)s</div>
 	  </div>
-  
-  
+
+
 	  <div id="col-b">
-  
+
 		<!-- Map Container -->
 		<div id="map_container">
-  
+
 		  <!-- Notice -->
 		  <div id="notice" style="display: %(notice_display)s;">
 			<div id="notice_msg">%(notice)s</div>
 			<a href="javascript:void(0);" onclick="hideNotice(); return false;" title="Hide this notice">Close</a>
 		  </div>
-  
+
 		  <!-- Map Menu -->
 		  <div id="map_menu">
 			<form id="region_form" class="input_form" action="." method="get" onsubmit="return false;">
@@ -255,7 +249,7 @@
 			  <option value="">All Regions</option>
 			  %(regions_opt_list)s
 			</select>
-  
+
 			<noscript>
 			  <input class="input_button"
 				 title="Click to go to region"
@@ -263,7 +257,7 @@
 				 type="submit"
 				 value="Go!"/>
 			</noscript>
-  
+
 			<a href="javascript:void(0);"
 			   title="Find address nearest to red dot at center of map"
 			   onclick="setElVToMapLonLat('q'); doFind('geocode');"
@@ -287,30 +281,30 @@
 			</form>
 		  </div>
 		  <!-- End Map Menu -->
-  
+
 		  <!-- Map -->
 		  <div id="map">
 			<div id="map_msg" style="padding: 5px;">Loading map. Please wait...</div>
 			<noscript>
 			  <div style="font-style: italic; padding: 5px;">
 			<p>To display a map here, JavaScript must be enabled in your browser. If you would like to view the map, please enable JavaScript and <a href="">try again</a>.</p>
-  
+
 			<p>Note that you must have a relatively recent browser for the map to display. We test in <a href="http://www.mozilla.com/">Mozilla Firefox</a> on Linux, Mac OS X, and Windows; Safari on Mac OS X; and Internet Explorer on Windows.</p>
-  
+
 			<p>If you don't have one of the above browsers, you may want to leave JavaScript turned off. On the other hand, if you feel like experimenting, you can <a href="mailto:feedback@bycycle.org">let us know</a> if the bicycle Trip Planner does or does not work in other browsers</p>
 			  </div>
 			</noscript>
 		  </div>
 		  <!-- End Map -->
-	
+
 		</div>
 		<!-- Map Container -->
-  		
+
 	  </div>
-	
-	  
+
+
 	  <div class="clear"></div>
-	
+
 
 	</div>
 	<!-- End Content -->
@@ -325,23 +319,20 @@
 	  <a href="http://www.bikeportland.org/">Portland bike news</a>
 	</div>
 	<!-- End Footer -->
-		
+
 
 	<!-- Google Ads -->
-	<div id="ads">  
+	<div id="ads">
 	  <div style="text-align: right;">
-		<a href="javascript:void(0);" 
-		  onclick="hideAds(); return false;" 
+		<a href="javascript:void(0);"
+		  onclick="hideAds(); return false;"
 		  title="Hide Ads"
 		  >Hide Ads</a>
 	  </div>
 	  <script type="text/javascript" src="static/js/ads.js"></script>
 	</div>
 	<!-- End Google Ads -->
-	  
 
-	<input type="hidden" id="http_status" name="http_status" value="%(http_status)s"/>
-	<input type="hidden" id="response_text" name="response_text" value='%(response_text)s'/>
 
 	<!-- Placement down here recommended by crockford.com -->
 	<!-- YUI -->
@@ -355,6 +346,8 @@
 	<script type="text/javascript">
 	  //<![CDATA[
 	  YAHOO.util.Event.addListener(window, 'load', afterPageLoad);
+	  var http_status = %(http_status)s;
+	  var response_text = unescape('%(response_text)s');
 	  //]]>
 	</script>
 
