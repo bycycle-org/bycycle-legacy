@@ -5,17 +5,25 @@ from tripplanner.controllers.view import ViewController
 
 class RegionController(ViewController):
 
-    def show(self, region, service):
-        """Show template for ``region``.
+    def __before__(self):
+        # Default template context
+        #c.region_title = 'All Regions'
+        c.http_status = 'null'
+        c.service = 'query'
+        c.region_key = 'all'
 
-        Routes
-        ------
-        /
-        /region
-        /region/service
+    def index(self):
+        c.regions = []  # Get all regions from DB
+        return render_response('/regions/index.html')
 
-        """        
+    def show(self, region):
+        """Show ``region``."""
+        # IF   region = Region.find(params[:id])
+        # ELSE region = Region.find_by_name(params[:id])
+
         # Region not given in URL path; see if it's given as a query param
+        # TODO: Maybe there should be some middleware to convert old-style
+        #       URLs to the new Routes???
         if region is None:
             region = request.params.get('region', None)
             if region is not None:
@@ -30,41 +38,32 @@ class RegionController(ViewController):
             region_key = 'all'
             c.errors = 'Unknown region: %s' % region
 
-        service = service or 'query'
-        service = ''.join(service.strip().split()).lower()
-
-        c.active_input_pane = service
         c.region_key = region_key
-        c.service_name = service
-        c.region_options = self._makeRegionOptions(region_key)
+        c.region_options = self._makeRegionOptions()
 
-        return render_response('/region/show.myt', region=region_key)
+        return render_response('/region/show.myt')  # /region/%s.html % region_key
 
-    def _makeRegionOptions(self, region=''):
-        """Make HTML options list with ``region`` selected, if ``region``.
+    def _makeRegionOptions(self):
+        """Make list of (display text, value) tuples for HTML options list.
 
-        ``region`` `string` -- A valid region key or "all".
+        return -- A list of (display text, value) pairs
 
         """
         options = []
-        option = '<option value="%s"%s>%s</option>'
-        regions = {
+        # TODO: We should get these from a central location (I think the back
+        #       end contains a list of regions, or it could be added to the
+        #       existing regions module or to a DB table.)
+        state_cities = {
             'or': ['portland',],
             'wi': ['milwaukee',],
-            'wa': ['seattle',],
         }
-        states = regions.keys()
+        states = state_cities.keys()
         states.sort()
         for state in states:
-            areas = regions[state]
-            areas.sort()
-            for area in areas:
-                _r = '%s%s' % (area, state)
-                text = '%s, %s' % (area.title(), state.upper())
-                value = ''.join(text.split())
-                if _r == region:
-                    selected = ' selected="selected"'
-                else:
-                    selected = ''
-                options.append(option % (_r, selected, text))
-        return '\n'.join(options)
+            cities = state_cities[state]
+            cities.sort()
+            for city in cities:
+                value = '%s%s' % (city, state)
+                display_text = '%s, %s' % (city.title(), state.upper())
+                options.append((display_text, value))
+        return options
