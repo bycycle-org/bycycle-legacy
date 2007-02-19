@@ -1,137 +1,168 @@
+/* DEV */
 html, body, table, td, tr, form {
   padding: 0;
   margin: 0;
 }
-
 html, body {
   overflow: hidden;
   height: 100%;
 }
-
-body {
-  min-width: 700px;
-}
-
 body, td {
   font-family: Verdana, Helvetica, Arial, sans-serif;
-  font-size: 12px;
+  font-size: 80%;
   background-color: white;
   color: black;
 }
 
 table {
+  width: 100%;
   border-collapse: collapse;
 }
+td { vertical-align: top; }
 
-td {
-  vertical-align: top;
+img { border: 0; }
+
+a { color: #46d; }
+a:hover { color: orange; }
+
+.clear { clear: both; }
+.first_p { margin-top: 0; }
+
+/* Top level layout */
+#header, #bar, #content {
+  margin-right: 120px;
+}
+#header, #bar {
+  padding: 5px;
+}
+#ads {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 120px;
+  height: 100%;
+  background: #a7cc95;
+}
+#ad_title_bar {
+  border-left: 1px solid #a7cc95;
+  text-align: right;
+  background: white;
 }
 
-img {
-  border: 0;
+/* Content Column Layout */
+#col-a {
+  float: left;
+  width: 30%;
+}
+#col-b {
+  float: right;
+  width: 69%;
+  border-left: 1px solid gray;
 }
 
-h1 {
-  font-size: 20px;
-}
 
-h2 {
-  font-size: 16px;
+/* Masthead */
+#masthead { 
+  float: left;
+  width: 150px;
 }
-
-h3 {
-  font-size: 14px;
+#masthead a {
+  text-decoration: none;
+  color: #000;
 }
-
-h4 {
-  font-size: 12px;
-}
-
-a {
-  color: #46d;
-}
-
-a:hover {
+#masthead a:hover {
   color: orange;
 }
-
-#loading {
-  margin: 0;
-  padding: 20px;
-  background: #fd766a;
-  border-bottom: 1px solid gray;
-}
-
-#loading h1 {
-  margin-top: 0;
-}
-
-#loading p {
-  margin-bottom: 0;
-}
-
-#root_container {
-  height: 100%;
-  visibility: hidden;
-  overflow: hidden;
-}
-
-#top_container {
-  height: 86px;
-  border-bottom: 1px solid gray;
-}
-
-
-/* Logo */
-
-#logo_pane {
-  border-right: 1px solid gray;
-  padding: 10px;
-  background: #fffa73;
+#version {
+  text-align: center;
+  font-size: 85%;
 }
 
 
 /* Input */
-
 #input_container {
-  overflow: hidden;
+  margin-left: 155px;
+  border: 1px solid gray;
+}
+/* Tab Buttons */
+.tab-buttons {
+  list-style-type: none;
+  list-style-image: none;
+  list-style-position: outside;
+  margin: 0;
+  padding: 0;
+  background: #99b3cc;
+  border-bottom: 1px solid gray;
+}
+.tab-button {
+  display: inline; /*-moz-inline-stack */
+  margin: 0;
+  padding: 0;
+  border-right: 1px solid gray;
+}
+.selected-tab-button {
+  background: white;
+}
+/* Tab Button Links */
+.tab-button a {
+  padding: 0 5px;
+  color: white;
+  font-weight: bold;
+}
+.selected-tab-button a {
+  color: black;
+  text-decoration: none;
+}
+/* Tab Contents */
+.tab-contents {
   padding: 5px;
 }
-
-body .dojoTabPane {
-  padding: 5px;
+.tab-content {
+  display: none;
 }
-
+.selected-tab-content {
+  display: block;
+}
+/* Input Controls */
 #q {
   width: 368px;
 }
-
 #s, #e {
   width: 170px;
 }
-
 #swap_s_and_e a {
   text-decoration: none;
 }
-
+/* Input Labels */
 .input_label {
   margin-top: 5px;
-  font-size: 11px;
-  color: #404040;
+  font-size: 85%;
+  color: #333;
 }
 
 
 /* Status & Links */
-
 #bar {
-  font-size: 12px;
-  height: 22px;
   background: #a7cc95;
-  padding: 5px;
-  border-bottom: 1px solid gray;
+  border: solid gray;
+  border-width: 1px 0;
+}
+#status {
+  float: left;
+}
+#links {
+  float: right;
+  text-align: right;
 }
 
+
+/* Content Column A -- Results and Messages */
 #spinner {
+  position: absolute;
+  left: -1px;
+  top: -1px;
+}
+.spinner {
   float: left;
   width: 16px;
   height: 16px;
@@ -141,101 +172,92 @@ body .dojoTabPane {
   border: 1px solid gray;
 }
 
-#status, #links {
-  padding-top: 3px;
+/* Results */
+#message_pane, #result_pane {
+  padding: 5px 0 0 5px;
+  overflow: auto;
 }
-
-#links {
-  text-align: right;
-}
-
-
-/* Display */
-
-#display_container {
-  padding: 5px;  
-}
-
-#message_pane {
-
-}
-
-#result_container {
-  overflow: hidden;
-}
-
 #results .fixed_pane {
   margin-bottom: 2px;
 }
-
 .result_list {
   list-style: none;
   padding: 0;
   margin: 0;
 }
-
 .result_list li {
   margin-bottom: 5px;
 }
-
 .multi .window .title_bar, .multi .window .title_bar td {
   background: #99b3cc;
 }
-
 .route_multi {
 
 }
+#reverse_div {
+  margin-bottom: 5px;
+}
+.disclaimer {
+  font-size: 85%;
+  font-style: italic;
+  color: #666;
+}
 
+/* Errors */
 .errors .title_bar, .errors .title_bar td {
   background: #fd766a;
 }
-
 .errors div.error {
   margin-bottom: 2px;
   padding: 2px;
   border: 1px solid #fd766a;
 }
 
-#reverse_div {
-  margin-bottom: 5px;
-}
 
-.disclaimer {
-  font-size: 10px;
-  font-style: italic;
-  color: #444;
-}
-
-
-/* Map */
-
-/* Contains map, map controls, and any other map-related stuff */
-
-#map_container {
-  width: 80%;
-}
-
+/* Column B -- Map, map controls, and any other map-related stuff */
 #map_menu {
-  border: 1px solid gray;
-  border-top: none;
+  border-bottom: 1px solid gray;
   padding: 5px;
 }
-
 /* The map object is inserted here */
 #map_pane {
-  overflow: hidden;
   background: #99b3cc;
-  border: solid gray;
-  border-width: 0 1px;
 }
-
 .info_win {
   width: 250px;
 }
 
 
-/* Ads */
+/* Footer */
+#footer {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  width: 100%;
+  padding: 2px;
+  font-size: 11px;
+  background: #ddd;
+  z-index: 1000;
+  border-top: 1px solid gray;
+}
 
+
+/* Loading */
+#loading {
+  position: absolute;
+  top: 2px;
+  left: 160px;
+  padding: 5px;
+  background: #a7cc95;
+  border-left: 1px solid gray;
+  width: 100%;
+  height: 100%;
+}
+#loading h2 {
+  margin-top: 0;
+}
+
+/* Ads */
 #ads_pane {
   width: 120px;
   overflow: hidden;
@@ -243,84 +265,51 @@ body .dojoTabPane {
 }
 
 
-/* Debug */
-
-#debug_window {
-  position: absolute;
-  bottom: 0;
-  right: 0;
-  width: 300px;
-  height: 400px;
-  overflow: auto;
-  background: white;
-}
-
-
 /* Route Summary & Directions */
-
 .start {
   color: #a7cc95;
 }
-
 .end {
   color: #fd766a;
 }
-
 .summary, .directions {
   border: 1px solid gray;
 }
-
 .summary div {
   border-bottom: 1px solid gray;
   padding: 2px;
 }
-
 .summary a {
   text-decoration: none;
 }
-
-.directions {
-  border: 1px solid gray;
-}
-
 .directions div {
   padding: 2px;
 }
-
 .directions a {
   text-decoration: none;
   color: black;
 }
-
 .directions a:hover {
   color: orange;
 }
-
+/* Alternating rows */
 .a {
   background: #ccc;
 }
-
 .b {
   background: #fff;
 }
 
 
-/* Print Rules */
-
+/* Print */
 @media print {
   html, body, #display_container {
     overflow: visible;
   }
-
   #print_header {
     display: block;
   }
-
-  #links,
-  #input,
-  #reverse_div,
-  #map_menu,
-  #ads_pane {
+  #links, #input, #reverse_div, #map_menu, #ads_pane {
     display: none;
   }
 }
