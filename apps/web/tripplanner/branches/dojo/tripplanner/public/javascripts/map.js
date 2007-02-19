@@ -15,17 +15,18 @@ byCycle.Map = {
 
 
 /**
- * Base byCycle Map widget
+ * Base byCycle Map
  */
-dojo.declare('byCycle.Map.base.Map', null, {
-
+byCycle.Map.base.Map = Class.create();
+byCycle.Map.base.Map.prototype = {
   /**
    * Map Constructor
    *
    * @param parent UI object
    * @param container Widget that contains this map
    */
-  initializer: function(ui, container) {
+  initialize: function(ui, container) {
+    if (arguments.length == 0) return;
     this.ui = ui;
     this.container = container;
     this.createMap(container);
@@ -142,7 +143,7 @@ dojo.declare('byCycle.Map.base.Map', null, {
       y: point.y,
       toString: function() {
         return [this.type, ' at ', this.x, ', ', this.y, 
-		' [', node.innerHTML, ']'].join('');
+        ' [', node.innerHTML, ']'].join('');
       }
     };
     this.setCenter(point, 14);
@@ -215,4 +216,4 @@ dojo.declare('byCycle.Map.base.Map', null, {
   addListener: function(obj, signal, func) {
     Event.observe(obj, signal, func);
   }
-});
+};

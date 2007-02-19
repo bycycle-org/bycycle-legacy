@@ -5,7 +5,6 @@
 
 // Register this map type in the byCycle Map namespace
 byCycle.Map.google = {
-
   description: 'Google Map',
 
 /**
@@ -17,14 +16,20 @@ byCycle.Map.google = {
     var api_url = 'http://maps.google.com/maps?file=api&amp;v=2&amp;key=';
     var api_keys = {
       'tripplanner.bycycle.org': 'ABQIAAAAd_4WmZlgvQzchd_BQM0MPhQ8y5tnWrQRsyOlME1eHkOS3wQveBSeFCpOUAfP10H6ec-HcFWPgiJOCA',
+      
       'satellite.bycycle.org:5000':
-      'ABQIAAAAd_4WmZlgvQzchd_BQM0MPhRY_I4CLwGh95qVWYjrRjsuZNzP3BSOxRXLsVSuuatyFhv0hQfFohQxBQ',
+'ABQIAAAAd_4WmZlgvQzchd_BQM0MPhRY_I4CLwGh95qVWYjrRjsuZNzP3BSOxRXLsVSuuatyFhv0hQfFohQxBQ',
+
       'prototype.bycycle.org': 'ABQIAAAAd_4WmZlgvQzchd_BQM0MPhTPU6PNPDk7LC31EIff_k4JZWpNmBQshai4v8RM5FaT-4FRWeyJA4VHaQ',
+
       'bycycle.metro-region.org':
-      'ABQIAAAAd_4WmZlgvQzchd_BQM0MPhR7upyhxOh7UQa5Yu3ebGZe2uQ8SxRPJtyMUYYgIBQsAROpcOySx6G1RQ',
+'ABQIAAAAd_4WmZlgvQzchd_BQM0MPhR7upyhxOh7UQa5Yu3ebGZe2uQ8SxRPJtyMUYYgIBQsAROpcOySx6G1RQ',
+
       'dev.bycycle.org': 'ABQIAAAAd_4WmZlgvQzchd_BQM0MPhQSskL_eAzZotWlegWekqLPLda0sxQZNf0_IshFell3z8qP8s0Car117A',
+
       'dev.bycycle.org:5000': 'ABQIAAAAd_4WmZlgvQzchd_BQM0MPhTkxokDJkt52pLJLqHCpDW3lL7iXBTREVLn9gCRhMUesO754WIidhTq2g',
-      'www.bycycle.org': 'ABQIAAAAd_4WmZlgvQzchd_BQM0MPhQ9bMyOoze7XFWIje4XR3o1o-U-cBTwScNT8SYtwSl70gt4wHCO-23Y3g'
+
+      'bycycle.org': 'ABQIAAAAd_4WmZlgvQzchd_BQM0MPhQ9bMyOoze7XFWIje4XR3o1o-U-cBTwScNT8SYtwSl70gt4wHCO-23Y3g'
     };
     var api_key = api_keys[byCycle.domain];
     if (api_key) {
@@ -41,25 +46,25 @@ byCycle.Map.google = {
     if (this.api_loaded && GBrowserIsCompatible()) {   
         is_loadable = true;
     } else {
-      var content = '<div style="padding: 5px;">';
-      if (this.api_loaded) {
-        content += 'Your browser doesn\'t seem to meet the requirements for using this application. The following browsers are currently supported and are all free to download (<a href="http://www.mozilla.com/">Firefox</a> is an excellent choice):    <ul><li><a href="http://www.microsoft.com/windows/ie/downloads/default.asp">IE</a> 5.5+ (Windows)</li><li><a href="http://www.mozilla.com/">Firefox</a> 0.8+ (Windows, Mac, Linux)</li><li><a href="http://www.apple.com/safari/download/">Safari</a> 1.2.4+ (Mac)</li><li><a href="http://channels.netscape.com/ns/browsers/download.jsp">Netscape</a> 7.1+ (Windows, Mac, Linux)</li><li><a href="http://www.mozilla.org/products/mozilla1.x/">Mozilla</a> 1.4+ (Windows, Mac, Linux)</li><li><a href="http://www.opera.com/download/">Opera</a> 7.5+ (Windows, Mac, Linux)</li></ul>';
-      } else {
-        content += ('No Google Maps API key found for ' + byCycle.domain);
+      $('map_message').show();
+      if (!this.api_loaded) {
+        $('map_message').update('No Google Maps API key found for ' + byCycle.domain);
       }
-      $('map_pane').innerHTML = (content + '</div>');
     }
     return is_loadable;
   }
 };
 
 
-dojo.declare('byCycle.Map.google.Map', byCycle.Map.base.Map, {
-
-  /**
-   * byCycle Google Map Constructor
-   */
-  initializer: function(ui, container) {
+/**
+ * byCycle Google Map
+ */
+byCycle.Map.google.Map = Class.create();
+byCycle.Map.google.Map.prototype = Object.extend(new byCycle.Map.base.Map(), {
+  initialize: function(ui, container) {
+    this.superclass = byCycle.Map.base.Map.prototype;
+    this.superclass.initialize.apply(this, arguments);
+    this.createIcons();
     this.createListeners();
   },
   
@@ -135,7 +140,7 @@ dojo.declare('byCycle.Map.google.Map', byCycle.Map.base.Map, {
   /* Size/Dimensions */
 
   setSize: function(dims) {
-    this.base.setSize.call(this, dims);
+    this.superclass.setSize.call(this, dims);
     this.map.checkResize();
     this.map.setCenter(this.map.getCenter());
   },
