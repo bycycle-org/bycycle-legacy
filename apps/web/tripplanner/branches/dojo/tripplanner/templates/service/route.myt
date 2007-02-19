@@ -65,9 +65,10 @@
 
 
 <div class="directions">
-% row_class = 'a'
 % last_i = len(directions) - 1
+% row_class = 'a'
 % for i, d in enumerate(directions):
+%     row_class = h.cycle('a', 'b')
 %     turn = d['turn']
 %     street = d['street']
 %     point = linestring.pointN(d['linestring_index'])
@@ -114,8 +115,9 @@
            <% bikemodes %>
            <% jogs %>
     </div>
-%     row_class = ['a', 'b'][row_class == 'a']
 % #for
+
+
     <div class="<% row_class %>">
         <a href="<% map_blowup_href %>"
            onclick="<% map_blowup_onclick % (e.xy_ll.x, e.xy_ll.y) %>"
@@ -123,11 +125,17 @@
     </div>
 </div>
 
-<p><b>Disclaimer</b>: As you are riding, please keep in mind that you don't
-<i>have</i> to follow the suggested route. <i>It may not be safe at any given
-point.</i> If you see what looks like an unsafe or undesirable stretch in the
-suggested route, you can decide to walk, ride on the sidewalk, or go a
-different way.</p>
 
-<p>Users should independently verify all information presented here. This
-service is provided <b>AS IS</b> with <b>NO WARRANTY</b> of any kind.</p>
+<p>
+  <b>Disclaimer</b>: As you are riding, please keep in mind that you don't 
+  <i>have</i> to follow the suggested route. <i>It may not be safe at any 
+  given point.</i> If you see what looks like an unsafe or undesirable 
+  stretch in the suggested route, you can decide to walk, ride on the 
+  sidewalk, or go a different way.
+</p>
+
+
+<p>
+  Users should independently verify all information presented here. This 
+  service is provided <b>AS IS</b> with <b>NO WARRANTY</b> of any kind.
+</p>

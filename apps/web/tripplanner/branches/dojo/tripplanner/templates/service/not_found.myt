@@ -8,7 +8,7 @@
             <a class="button"
                href=""
                title="Remove this Result"
-               onclick="dojo.dom.removeNode('<% c.result_id %>'); return false;"
+               onclick="Element.remove('<% c.result_id %>'); return false;"
                >X</a>
           </td>
         </tr>

@@ -19,8 +19,8 @@
   content_id = '%s_content' % id
   content_id_attr = ['', 'id="%s"' % content_id][bool(id)]
   content_style_attr = ['', 'style="%s"' % content_style][bool(content_style)]
-  toggle_handler = toggle_handler or ("""dojo.html.toggleDisplay('%s')""" % content_id)
-  close_handler = close_handler or ("""dojo.dom.removeNode('%s')""" % id)
+  toggle_handler = toggle_handler or ("""Element.toggle('%s')""" % content_id)
+  close_handler = close_handler or ("""Element.remove('%s')""" % id)
 </%python>
 
 <div id="<% id %>"
