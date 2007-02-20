@@ -1,47 +1,34 @@
 from tripplanner.lib.base import *
 from byCycle.model import regions
-from tripplanner.controllers.view import ViewController
+from tripplanner.controllers.rest import RestController
 
 
-class RegionController(ViewController):
+class RegionsController(RestController):
 
     def __before__(self):
+        """Do stuff before main action is invoked."""
         # Default template context
-        #c.region_title = 'All Regions'
         c.http_status = 'null'
         c.service = 'query'
         c.region_key = 'all'
 
-    def index(self):
-        c.regions = []  # Get all regions from DB
-        return render_response('/regions/index.html')
-
-    def show(self, region):
-        """Show ``region``."""
-        # IF   region = Region.find(params[:id])
-        # ELSE region = Region.find_by_name(params[:id])
-
-        # Region not given in URL path; see if it's given as a query param
-        # TODO: Maybe there should be some middleware to convert old-style
-        #       URLs to the new Routes???
-        if region is None:
-            region = request.params.get('region', None)
-            if region is not None:
-                redirect_to('/%s' % region)
-
+    def show(self, id, format=None):
+        """Show the ``region`` named ``id``."""
         # Get region key for region
         try:
-            region_key = regions.getRegionKey(region)
+            region_key = regions.getRegionKey(id)
         except ValueError:
-            # Bad/unknown region
-            # TODO: Show an error instead of just showing all regions
-            region_key = 'all'
-            c.errors = 'Unknown region: %s' % region
-
+            c.errors = 'Unknown region: %s' % id
+            redirect_to('/')
+            
         c.region_key = region_key
         c.region_options = self._makeRegionOptions()
 
-        return render_response('/region/show.myt')  # /region/%s.html % region_key
+        return render_response('/%s/%s.html' % 
+                               (self.collection_name, region_key))
+
+    def query(self):
+        pass
 
     def _makeRegionOptions(self):
         """Make list of (display text, value) tuples for HTML options list.
