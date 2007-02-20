@@ -1,13 +1,13 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 
 
-<html xmlns="http://www.w3.org/1999/xhtml" xmlns:v="urn:schemas-microsoft-com:vml">
-
+<html xmlns="http://www.w3.org/1999/xhtml">
+  ${h.if_ie('<xml:namespace ns="urn:schemas-microsoft-com:vml" prefix="v"/>')}
 
   <head>
     <meta http-equiv="Content-Type" content="application/xhtml+xml; charset=utf-8" />
 
-    <meta name="author" value="Wyatt Baldwin, wyatt@byCycle.org" />
+    <meta name="author" content="Wyatt Baldwin, wyatt@byCycle.org" />
 
     <meta name="keywords" content="bicycle, bike, bicycle trip planner, bicycle route finder, bike trip planner, bike route finder, bicycle route, bicycle trip, bike route, bike trip, bicycle routing, bike routing, maps, bicycle maps, bike maps, bicycle advocacy, community, sustainability, portland, oregon, milwaukee, wisconsin" />
 
@@ -16,7 +16,7 @@
     <title>byCycle.org - Bicycle Trip Planner - ${c.region}</title>
 
     ${h.stylesheet_link_tag('base.css')}
-    <!--[if IE]>${h.stylesheet_link_tag('base_ie.css')}<![endif]-->
+    ${h.if_ie(h.stylesheet_link_tag('base_ie.css'))}
 
     <script type="text/javascript" >
       //<![CDATA[
@@ -136,6 +136,7 @@
 			 title="byCycle Home Page (opens in new window)"
 			 target="byCyle_window"
 			 >byCycle</a> bicycle trip planner.
+		% endif
 	  </div>
 
 
@@ -283,10 +284,10 @@
 
     <!-- Loading -->
     <div id="loading" style="display: none;">
+	  <div class="spinner">
+		${h.image_tag('spinner.gif', width=16, height=16)}
+	  </div>
       <h2>
-        <div class="spinner">
-          ${h.image_tag('spinner.gif', width=16, height=16)}
-        </div>
         Loading. Please wait...
       </h2>
       <p id="loading_status"></p>
@@ -328,3 +329,18 @@
 
   </body>
 </html>
+
+
+<%def name="make_tab_buttons(*tab_ids)">
+<!--
+  Make the 'tab buttons' for a tab control (a set of LIs)
+  ``tab_ids`` is one or more strings suitable for a URL hash (like tab-id-13)
+  Each generated LI has class 'tab-button'
+  Each LI has an A element that has href='#tab-id'
+  The A element's link text and title attribute are 'Tab Id'
+-->
+  % for t in tab_ids:
+<% link_text = t.replace('-', ' ').capitalize() %>\
+<li class="tab-button">${h.link_to(link_text, '#%s' % t, title=link_text)}</li>\
+  % endfor
+</%def>
