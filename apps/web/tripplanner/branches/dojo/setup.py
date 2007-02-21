@@ -50,7 +50,7 @@ setup(
     install_requires=(
     'byCycleCore>=0.4a0.dev,==dev',
     'Pylons>=0.9.4.1',
-    'Mako>=0.1.2',
+    'Mako>=0.1.3',
     ),
 
     test_suite = 'nose.collector',
