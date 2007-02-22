@@ -26,9 +26,6 @@ from __future__ import with_statement
 import os
 import math
 
-import psycopg2
-import psycopg2.extensions
-
 from sqlalchemy.engine import create_engine
 from sqlalchemy.schema import BoundMetaData
 from sqlalchemy.orm import create_session
