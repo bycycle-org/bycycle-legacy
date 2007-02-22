@@ -13,19 +13,16 @@ class RegionsController(RestController):
         c.region_key = 'all'
 
     def show(self, id, format=None):
-        """Show the ``region`` named ``id``."""
+        """Show the ``region`` with ID or name or key ``id``."""
         # Get region key for region
         try:
             region_key = regions.getRegionKey(id)
         except ValueError:
             c.errors = 'Unknown region: %s' % id
-            redirect_to('/')
-            
+            redirect_to('/%s' % self.collection_name)
         c.region_key = region_key
         c.region_options = self._makeRegionOptions()
-
-        return render_response('/%s/%s.html' % 
-                               (self.collection_name, region_key))
+        return self._render_response(template=region_key)
 
     def query(self):
         pass
