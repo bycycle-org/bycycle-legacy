@@ -51,6 +51,7 @@ setup(
     'byCycleCore>=0.4a0.dev,==dev',
     'Pylons>=0.9.4.1',
     'Mako>=0.1.3',
+    'Elixir>=0.1.0',
     ),
 
     test_suite = 'nose.collector',
