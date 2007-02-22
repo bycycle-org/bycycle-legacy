@@ -21,6 +21,8 @@ Singletons are stupid. At the very least, we should use a better
 implementation.
 
 """
+from __future__ import with_statement
+
 import os
 import math
 
@@ -35,25 +37,23 @@ from sqlalchemy.orm import create_session
 class _DB(object):
     """Global database connection handler."""
 
-    def __init__(self):
+    def __init__(self, debug=False, echo=False):
         """Create the global (Singleton) database handler."""
         self.model_path = os.path.abspath(os.path.dirname(__file__))        
-        self.engine = create_engine('postgres://', creator=self.createConnection)
+        self.engine = create_engine(self.getConnectionUri())
         self.metadata = BoundMetaData(self.engine)
         self.raw_metadata = BoundMetaData(self.engine)
         self.session = create_session(bind_to=self.engine)
+        if debug and echo:
+            self.turnSQLEchoOn()
 
-    def createConnection(self):
-        """Set up and return underlying DB connection."""
+    def getConnectionUri(self):
+        """Get database connection URI (DSN)."""
+        dburi = 'postgres://bycycle:%s@localhost/bycycle'
         pw_path = os.path.join(self.model_path, '.pw')
-        pw_file = file(pw_path)
-        pw = pw_file.read().strip()
-        pw_file.close()
-        return psycopg2.connect(
-            database='bycycle',
-            user='bycycle',
-            password=pw
-        )
+        with file(pw_path) as pw_file:
+            password = pw_file.read().strip()
+        return dburi % (password)
 
     def getById(self, mapper, table, *ids):
         """Get objects from ``table`` using ``mapper`` and order by ``ids``.
