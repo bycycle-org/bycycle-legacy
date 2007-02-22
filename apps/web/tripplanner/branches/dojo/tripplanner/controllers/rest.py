@@ -1,10 +1,6 @@
 from tripplanner.lib.base import *
 
 
-# Connect dynamic metadata to global DB engine
-model.connect()
-
-
 class RestController(BaseController):
     """Base class for RESTful controllers."""
 
@@ -38,11 +34,16 @@ class RestController(BaseController):
 
         # TODO: Is there a library in Paste/Pylons that will do this
         # conversion from under_score to UnderScore?
-        entity_name = ''.join([word.title() for word in self.member_name.split('_')])
+        entity_name = ''.join([word.title() for word in 
+                               self.member_name.split('_')])
 
         # Import the entity class for the resource
         # This is sorta like ``from model import entity_name``
         self.Entity = getattr(model, entity_name)
+        
+        # Connect dynamic metadata to global DB engine (apparently needs to be
+        # done on every request)
+        model.connect()
 
     def _render_response(self, format=None, template=None):
         """Renders a response for those actions that return content.
