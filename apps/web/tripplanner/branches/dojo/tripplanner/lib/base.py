@@ -5,7 +5,7 @@ from pylons.templating import render, render_response
 from pylons.helpers import abort, redirect_to, etag_cache
 from pylons.i18n import N_, _, ungettext
 
-import byCycle.model as model
+from byCycle import model
 import tripplanner.lib.helpers as h
 
 
