@@ -18,7 +18,10 @@ generic (i.e., not region-specific) database functions.
 
 TODO: The ``DB`` class is a (poorly implemented) Singleton. Ian Bicking thinks
 Singletons are stupid. At the very least, we should use a better
-implementation.
+implementation. Perhaps the class and it's methods should be replaced with
+module-level functions, then we'd just import db and db.whatever(), which is
+basically what happens now anyway, except that there's an extra step to
+instantiate the class.
 
 """
 from __future__ import with_statement
