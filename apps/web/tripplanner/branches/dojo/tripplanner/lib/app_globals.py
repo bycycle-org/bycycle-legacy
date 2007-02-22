@@ -28,7 +28,7 @@ class Globals(object):
             your global variables.
             
         """
-        self.debug = asbool(global_conf.get('debug'))
+        self.debug = asbool(global_conf.get('debug', False))
         
     def __del__(self):
         """
