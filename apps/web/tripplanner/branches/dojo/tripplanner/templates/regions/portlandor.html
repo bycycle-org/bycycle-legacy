@@ -1,18 +1,16 @@
-<%flags>
-    inherit = 'region.myt'
-</%flags>
+<%inherit file="show.html"/>
 
 
-<&|SELF:section, name='region' &>
+<%def name='region_title()'>
   Portland, OR
-</&>
+</%def>
 
 
 <!-- Route preference form control -->
-<&|SELF:section, name='route_pref' &>
+<%def name='route_pref()'>
   <select id="pref" name="pref" tabindex="8">
     <option value="default">- Route Type -</option>
     <option value="default">Normal</option>
     <option value="safer">Safer</option>
   </select>
-</&>
+</%def>
