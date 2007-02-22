@@ -4,8 +4,10 @@ from pylons.decorators import jsonify, validate
 from pylons.templating import render, render_response
 from pylons.helpers import abort, redirect_to, etag_cache
 from pylons.i18n import N_, _, ungettext
-import tripplanner.models as model
+
+import byCycle.model as model
 import tripplanner.lib.helpers as h
+
 
 class BaseController(WSGIController):
     def __call__(self, environ, start_response):
