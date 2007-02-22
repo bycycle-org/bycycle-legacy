@@ -1,11 +1,22 @@
 import paste.deploy
+from byCycle import model
+
 
 def setup_config(command, filename, section, vars):
-    """
-    Place any commands to setup tripplanner here.
-    """
+    """Set up the application."""
+    print '== Setting up byCycle Trip Planner Web application...'
+    
+    # Get configuration
     conf = paste.deploy.appconfig('config:' + filename)
-    paste.deploy.CONFIG.push_process_config({'app_conf':conf.local_conf,
-                                             'global_conf':conf.global_conf})
-    pass
+    app_conf = conf.local_conf
+    paste.deploy.CONFIG.push_process_config({
+        'app_conf': app_conf,
+        'global_conf': conf.global_conf
+    })
 
+    # Create database tables that don't exist
+    print '== Creating database tables (only those that do not exist)...'
+    model.create_all()
+    print '== Done creating database tables.'
+
+    print '== Done setting up byCycle Trip Planner Web application.'
