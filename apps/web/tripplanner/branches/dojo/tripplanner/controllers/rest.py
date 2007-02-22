@@ -1,5 +1,8 @@
-# TODO: move to lib.base???
 from tripplanner.lib.base import *
+
+
+# Connect dynamic metadata to global DB engine
+model.connect()
 
 
 class RestController(BaseController):
@@ -10,8 +13,8 @@ class RestController(BaseController):
 
         We assume the controller file is named after the resource's collection
         name and that there is a corresponding top level template directory.
-        For example for a Pants resource the controller file will be named
-        pants.py and there will be a template directory at /templates/pants.
+        For example, for a Hat resource, the controller file will be named
+        pants.py and there will be a template directory at /templates/hats.
 
         """
         route_info = request.environ['pylons.routes_dict']
@@ -23,18 +26,31 @@ class RestController(BaseController):
         
         # If ``member_name`` is explicitly set, use it; else, guess that the
         # member name is simply the collection name with an "s" hacked off.
-        # TODO: Find better way to get member name when it's not explicitly set.
-        self.member_name = getattr(self, 'member_name', self.collection_name[0:-1])
+        # TODO: Find better way to get member name when it's not explicitly
+        # set.
+        self.member_name = getattr(self, 'member_name', 
+                                   self.collection_name[0:-1])
         
         c.controller = self.controller
         c.action = self.action
         c.collection_name = self.collection_name
         c.member_name = self.member_name
 
-    def _render_response(self, format):
+        # TODO: Is there a library in Paste/Pylons that will do this
+        # conversion from under_score to UnderScore?
+        entity_name = ''.join([word.title() for word in self.member_name.split('_')])
+
+        # Import the entity class for the resource
+        # This is sorta like ``from model import entity_name``
+        self.Entity = getattr(model, entity_name)
+
+    def _render_response(self, format=None, template=None):
         """Renders a response for those actions that return content.
 
         ``format`` -- The format of the response content
+        
+        ``template`` -- An alternative template; by default, a template named
+        after the action is used.
 
         """
         if format is None:
@@ -42,17 +58,29 @@ class RestController(BaseController):
             # /templates/collection_name directory that corresponds to
             # ``self.action``
             return render_response('/%s/%s.html' % 
-                                   (self.collection_name, self.action))
+                                   (self.collection_name, 
+                                    template or self.action))
         else:
             raise NotImplementedError
+    
+    def _set_member(self, id=None):
+        if id is None:
+            member = self.Entity()
+        else:
+            member = self.Entity.select(id)
+        setattr(c, self.member_name, member)
 
+    def _set_collection(self, page=0, num_items=10):
+        collection = self.Entity.select()
+        setattr(c, self.collection_name, collection)        
+        
     def index(self, format=None):
         """GET / 
         
         Show all items in collection.
         
         """
-        setattr(c, self.collection_name, [])  # Fetch all Objects in collection
+        self._set_collection()
         return self._render_response(format)
 
     def new(self, format=None):
@@ -62,7 +90,7 @@ class RestController(BaseController):
         /resource/create.
 
         """
-        setattr(c, self.member_name, None)  # a new empty Object
+        self._set_member()
         return self._render_response(format)
 
     def show(self, id, format=None):
@@ -71,7 +99,8 @@ class RestController(BaseController):
         Show existing item having ID ``id``.
 
         """
-        setattr(c, self.member_name, None)  # Object with ``id``
+        print 'show'
+        self._set_member(id)
         return self._render_response(format)
 
     def edit(self, id, format=None):
@@ -81,7 +110,7 @@ class RestController(BaseController):
         should PUT to /resource/update.
 
         """
-        setattr(c, self.member_name, None)  # Object with ``id``
+        self._set_member(id)
         return self._render_response(format)
 
     def create(self):
@@ -98,7 +127,7 @@ class RestController(BaseController):
         Update existing item having ID ``id`` with PUT data.
 
         """
-        setattr(c, self.member_name, None)  # Object with ``id``
+        self._set_member(id)
 
     def delete(self, id):
         """DELETE /resource/id
