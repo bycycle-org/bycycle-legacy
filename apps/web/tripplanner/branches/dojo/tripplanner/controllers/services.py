@@ -1,16 +1,16 @@
 import time
 import re
 import simplejson
+
 from byCycle.services.exceptions import *
+
 from tripplanner.lib.base import *
 from tripplanner.controllers.rest import RestController
-from tripplanner.controllers.region import RegionController
 
 
-class ServiceController(RestController):
+class ServicesController(RestController):
     """Base class for controllers that interact with back end services."""
 
-    #----------------------------------------------------------------------
     def show(self, query, region, service_class=None, **params):
         """Show the result of ``query``ing a service.
 
@@ -81,75 +81,6 @@ class ServiceController(RestController):
             
         return self._get_response()
 
-    #----------------------------------------------------------------------
-    def _get_response(self, wrapped_in=None):
-        """Render response after query to service.
-
-        Return the appropriate type of response according to ``format``.
-        ``format`` can be one of 'html', 'json', or 'text' (TODO: Add XML???).
-
-        ``wrapped_in`` 
-            Optional template to wrap the response in
-
-        return `WSGIResponse`
-
-        """
-        content, mimetype = getattr(self, '_get_%s_response' % self.format)()
-        if wrapped_in:
-            # TODO: wrap content in template
-            resp = None
-        else:
-            resp = Response(content=content, mimetype=mimetype)
-            resp.status_code = self.http_status
-        return resp
-
-    #----------------------------------------------------------------------
-    def _get_text_response(self):
-        """Get plain text"""
-        template = '/service/%s.txt.myt' % self.template
-        text = render(template, oResult=self.result)
-        return text, 'text/plain'
-    
-    #----------------------------------------------------------------------
-    def _get_json_response(self):
-        """Get a JSON string"""
-        simple_obj = {
-            'type': self.service.name,
-            'message': self.message,
-            'results': [r.__simplify__() for r in self.results],
-            'fragment': self._get_html_response()[0],
-        }
-        json = simplejson.dumps(simple_obj)
-        return json, 'text/plain'
-
-    #----------------------------------------------------------------------
-    def _get_html_response(self):
-        """Get an HTML fragment"""
-        template = '/service/%s.myt' % self.template
-        html = render(template, oResult=self.result)
-        return html, 'text/html'
-        
-    #----------------------------------------------------------------------
-    def _wrap_response_in(self, template):
-        region_key = self.service.region.key or 'all'
-        
-        c.region_key = region_key
-        c.http_status = self.http_status
-        c.service = self.service
-
-        if self.http_status == 200:
-            c.result = self.fragment
-        else:
-            c.errors = self.fragment
-
-        c.info = '\n'
-        c.help = None
-
-        region_controller = RegionController()
-        resp = region_controller.show(region_key, self.service.name)
-        return resp
-
-    #----------------------------------------------------------------------
     def _makeRouteList(self, q):
         """Try to parse a route list from the given query, ``q``.
 
