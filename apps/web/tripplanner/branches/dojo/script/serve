@@ -16,7 +16,7 @@ prefix = os.environ['HOME']
 
 args = sys.argv
 
-# Goto the dir this file is in
+# Goto the top level of the project
 top_level = dirname(dirname(abspath(__file__)))
 os.chdir(top_level)
 
