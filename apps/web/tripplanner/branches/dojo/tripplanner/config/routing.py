@@ -11,10 +11,19 @@ def make_map(global_conf={}, app_conf={}):
     # error page is displayed properly.
     mapper.connect('error/:action/:id', controller='error')
 
+    # Default route => Show list of regions
     mapper.connect('', controller='regions')
+    
     mapper.resource('region', 'regions')
-    mapper.resource('geocode', 'geocodes')
-    mapper.resource('route', 'routes')
+
+    # Service routes
+    options = dict(
+        collection=dict(find='GET'),
+        path_prefix='regions/:parent_id'
+    )
+    mapper.resource('service', 'services', **options)
+    mapper.resource('geocode', 'geocodes', **options)
+    mapper.resource('route', 'routes', **options)
 
     # Define your routes. The more specific and detailed routes should be
     # defined first, so they may take precedent over the more generic routes.
