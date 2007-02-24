@@ -6,6 +6,7 @@ from pylons.helpers import abort, redirect_to, etag_cache
 from pylons.i18n import N_, _, ungettext
 
 from byCycle import model
+
 import tripplanner.lib.helpers as h
 
 
@@ -14,6 +15,10 @@ class BaseController(WSGIController):
         # Insert any code to be run per request here. The Routes match
         # is under environ['pylons.routes_dict'] should you want to check
         # the action or route vars here
+
+        # Connect dynamic metadata to global DB engine
+        model.connect()
+
         return WSGIController.__call__(self, environ, start_response)
 
 # Include the '_' function in the public names
