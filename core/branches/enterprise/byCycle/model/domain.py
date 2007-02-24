@@ -27,9 +27,28 @@ classes) and exceptions.
 
 """
 from sqlalchemy.sql import func, select
+
+from elixir import Entity, Unicode
+from elixir import has_field, using_options
+
 from cartography import geometry
 from cartography.proj import SpatialReference
+
 from byCycle.util import joinAttrs
+
+
+class Region(Entity):
+    has_field('title', Unicode)
+    using_options(tablename='regions')
+
+class Service(Entity):
+    pass
+
+class Geocode(Service):
+    pass
+
+class Route(Service):
+    pass
 
 
 class Node(object):
