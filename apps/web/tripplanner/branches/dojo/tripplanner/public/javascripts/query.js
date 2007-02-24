@@ -45,7 +45,7 @@ byCycle.UI.Query.prototype = {
   doQuery: function() {
     // Done only if no errors in before()
     byCycle.logDebug('Entered doQuery...');
-    var path = [this.ui.region, this.ui.service].join('/')
+    var path = ['regions', this.ui.region, this.ui.service + ';find'].join('/')
     var url = [byCycle.prefix, path].join('');
     var params = this.input ? 
                  $H(this.input).toQueryString() : 
@@ -55,7 +55,6 @@ byCycle.UI.Query.prototype = {
       method:'get',
       asynchronous: true,
       evalScripts: true,
-      //insertion: Insertion.Bottom,
       onLoading: this.onLoading.bind(this),
       onSuccess: this.onSuccess.bind(this),
       onFailure: this.onFailure.bind(this),
@@ -116,17 +115,15 @@ byCycle.UI.Query.prototype = {
   callback: function(result) {},
 
   getElapsedTimeMessage: function() {
-    var elapsed_time_msg;
-    if (this.start_ms) {
+    var elapsed_time_msg = '';
+    if (this.http_status < 400 && this.start_ms) {
       elapsed_time = (new Date().getTime() - this.start_ms) / 1000.0;
       elapsed_time_msg = ['Took ', elapsed_time, ' second',
                           (elapsed_time == 1.00 ? '' : 's'), '.'].join('');
-    } else {
-      elapsed_time_msg = '';
     }
     byCycle.logDebug(this.http_status);
     elapsed_time_msg = [this.ui.status_messages[this.http_status || 200], '. ',
-                        elapsed_time_msg, ' [', this.http_status, ']'].join('');
+                        elapsed_time_msg].join('');
     return elapsed_time_msg;
   }
 };
@@ -152,7 +149,7 @@ byCycle.UI.GeocodeQuery.prototype = Object.extend(new byCycle.UI.Query(), {
       var result_list = opts.result_list || ui.location_list;
     }
     
-    this.superclass.initialize.call(this, 'geocode', form, result_list, opts);
+    this.superclass.initialize.call(this, 'geocodes', form, result_list, opts);
   },
 
   before: function() {
@@ -231,7 +228,7 @@ byCycle.UI.RouteQuery.prototype = Object.extend(new byCycle.UI.Query(), {
       var result_list = opts.result_list || ui.route_list;
     }
     
-    this.superclass.initialize.call(this, 'route', form, result_list, opts);
+    this.superclass.initialize.call(this, 'routes', form, result_list, opts);
     
     // this.ui.selectInputTab(service);
   },

@@ -33,7 +33,7 @@ byCycle.UI = (function() {
 
     // Current state (TODO: Make object for these???)
     region: 'all',
-    service: 'query',
+    service: 'services',
     query: null,
     is_first_result: true,
     result: null,
@@ -45,7 +45,7 @@ byCycle.UI = (function() {
     status_messages: {
       200: 'Done',
       300: 'Please choose carefully',
-      400: 'Oops',
+      400: 'Sorry, we were unable to understand your request',
       404: "Sorry, that wasn't found",
       500: 'Something unexpected happened'
     },
@@ -98,7 +98,7 @@ byCycle.UI = (function() {
 
       Element.remove('loading');
       $('content').setStyle({visibility: 'visible'});
-      self.focusServiceElement(self.service == 'route' ? 'route' : 'query');
+      self.focusServiceElement(self.service == 'routes' ? 'route' : 'query');
       
       if (debug) {
         self.hideAds();
