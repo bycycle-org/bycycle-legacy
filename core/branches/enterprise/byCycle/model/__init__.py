@@ -16,14 +16,15 @@ byCycle model package.
 
 """
 import elixir
-from elixir import Entity, Unicode
-from elixir import has_field, using_options
 
+# TODO: I'd rather just import db and use it directly, which implies removing
+#       the DB class and moving its methods to db module functions
+#       [wlb 2/23/07]
 from byCycle.model import db
-
-
-# Get the global database handler
 _db = db.DB()
+
+from byCycle.model.domain import *
+
 
 def connect():
     """Connect the elixir dynamic metadata to database handler's engine.
@@ -32,18 +33,13 @@ def connect():
 
     Note: this doesn't connect to the database; it just wires elixir's
     dynamic metadata object up to the engine.
-    
+
     """
     elixir.metadata.connect(_db.engine)
 
 def create_all():
+    """Create all Entity tables that don't already exist."""
     _db.turnSQLEchoOn()
     connect()
     elixir.create_all()
     _db.turnSQLEchoOff()
-
-
-class Region(Entity):
-    has_field('title', Unicode)
-    using_options(tablename='regions')
-    
