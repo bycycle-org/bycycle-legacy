@@ -13,7 +13,7 @@
 ###############################################################################
 """Address classes."""
 from byCycle.util import joinAttrs
-from byCycle.model import *
+from byCycle.model.domain import StreetName, Place, Point
 
 
 class AddressError(Exception):

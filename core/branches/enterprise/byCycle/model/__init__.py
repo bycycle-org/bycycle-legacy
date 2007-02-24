@@ -24,6 +24,7 @@ from byCycle.model import db
 _db = db.DB()
 
 from byCycle.model.domain import *
+from byCycle.model.address import *
 
 
 def connect():
@@ -43,3 +44,11 @@ def create_all():
     connect()
     elixir.create_all()
     _db.turnSQLEchoOff()
+
+def drop_all():
+    """Create all Entity tables that don't already exist."""
+    _db.turnSQLEchoOn()
+    connect()
+    elixir.drop_all()
+    _db.turnSQLEchoOff()
+    
