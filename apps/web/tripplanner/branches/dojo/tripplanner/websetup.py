@@ -16,6 +16,7 @@ def setup_config(command, filename, section, vars):
 
     # Create database tables that don't exist
     print '== Creating database tables (only those that do not exist)...'
+    #model.drop_all()
     model.create_all()
     print '== Done creating database tables.'
 
