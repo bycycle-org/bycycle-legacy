@@ -18,12 +18,10 @@ Some domain classes have been split out into other modules. This is usually
 done when there are a set of related classes (such as the various address
 classes) and exceptions.
 
-`Node`
-`Edge`
-`StreetName`
-`City`
-`Place`
-`Point`
+Classes:
+
+``Region``, ``Service``, ``Geocode``, ``Route``, ``Node``, ``Edge``,
+``StreetName``, ``City``, ``Place``, ``Point``
 
 """
 from sqlalchemy.sql import func, select
@@ -35,6 +33,7 @@ from cartography import geometry
 from cartography.proj import SpatialReference
 
 from byCycle.util import joinAttrs
+from byCycle.model.data.sqltypes import *
 
 
 class Region(Entity):
@@ -42,13 +41,16 @@ class Region(Entity):
     using_options(tablename='regions')
 
 class Service(Entity):
-    pass
+    has_field('title', Unicode)
+    using_options(tablename='services')
 
 class Geocode(Service):
-    pass
+    has_field('geom', POINT(2913))
+    using_options(tablename='geocodes')
 
 class Route(Service):
-    pass
+    has_field('geom', LINESTRING(2913))
+    using_options(tablename='routes')
 
 
 class Node(object):
@@ -312,7 +314,6 @@ class StreetName(object):
         )
         return joinAttrs(attrs)
 
-    #----------------------------------------------------------------------
     def __simplify__(self):
         return {
             'prefix': (self.prefix or '').upper(),
@@ -321,7 +322,6 @@ class StreetName(object):
             'suffix': (self.suffix or '').upper()
         }
         
-    #----------------------------------------------------------------------
     def __repr__(self):
         return repr(self.__simplify__())
 
@@ -386,14 +386,12 @@ class City(object):
         else:
             return '[No City]'
 
-    #----------------------------------------------------------------------
     def __simplify__(self):
         return {
             'id': self.id,
             'city': str(self)
         }
         
-    #----------------------------------------------------------------------
     def __repr__(self):
         return repr(self.__simplify__())
         
@@ -421,14 +419,12 @@ class State(object):
         else:
             return '[No State]'
 
-    #----------------------------------------------------------------------
     def __simplify__(self):
         return {
             'id': str(self),
             'state': str(self.state or '[No State]').title()
         }
         
-    #----------------------------------------------------------------------
     def __repr__(self):
         return repr(self.__simplify__())
 
@@ -488,7 +484,6 @@ class Place(object):
         city_state = joinAttrs([self.city, self.state], ', ')
         return joinAttrs([city_state, str(self.zip_code or '')])
 
-    #----------------------------------------------------------------------
     def __simplify__(self):
         return {
             'city': self.city.__simplify__(),
@@ -496,7 +491,6 @@ class Place(object):
             'zip_code': str(self.zip_code or '')
         }
         
-    #----------------------------------------------------------------------
     def __repr__(self):
         return repr(self.__simplify__())
 
@@ -514,7 +508,6 @@ class InitCoordinatesException(Exception):
 class Point(object):
     """Simple point. Currently supports only X and Y (and not Z)."""
 
-    #----------------------------------------------------------------------
     def __init__(self, point=None, x=None, y=None, z=None):
         """Coords can be given via ``point`` OR ``x`` AND ``y`` AND ``z``.
 
@@ -540,7 +533,6 @@ class Point(object):
         """
         self.x, self.y, self.z = self._initCoordinates(point, x, y, z)
 
-    #----------------------------------------------------------------------
     def _initCoordinates(self, point, x, y, z):
         """Get x, y, and z coordinates.
 
@@ -603,7 +595,6 @@ class Point(object):
                 'either point OR x and y.'
             )
 
-    #----------------------------------------------------------------------
     def _initCoordinatesFromSequence(self, s):
         try:
             return s[0], s[1]
@@ -616,7 +607,6 @@ class Point(object):
                     'Missing y value (x: "%s").' % s[0]
                 )
 
-    #----------------------------------------------------------------------
     def _initCoordinatesFromEval(self, s):
         try:
             eval_point = eval(s)
@@ -630,7 +620,6 @@ class Point(object):
             x, y, z = self._initCoordinates(eval_point, None, None, None)
             return x, y
 
-    #----------------------------------------------------------------------
     def _initCoordinatesFromWKTString(self, wkt):
         try:
             wkt = wkt.strip().upper()
@@ -643,7 +632,6 @@ class Point(object):
                 '"%s" does not appear to be a WKT point.' % str(wkt)
             )
 
-    #----------------------------------------------------------------------
     def _initCoordinatesFromObject(self, obj):
         try:
             return obj.x, obj.y
@@ -652,7 +640,6 @@ class Point(object):
                 '"%s" does not have both x and y attributes.' % str(obj)
             )
 
-    #----------------------------------------------------------------------
     def _initCoordinatesFromDict(self, d):
         try:
             return d['x'], d['y']
@@ -665,7 +652,6 @@ class Point(object):
                 '"%s" is not a dict.' % str(d)
             )
 
-    #----------------------------------------------------------------------
     def _initCoordinatesFromKwargsString(self, point):
         """A kwargs point is a str with x & y specified like keyword args.
 
@@ -733,12 +719,10 @@ class Point(object):
         except NameError:
             raise InitCoordinatesException(err)
 
-    #----------------------------------------------------------------------
     def __str__(self):
         """Return a WKT string for this point."""
         return 'POINT (%.6f %.6f)' % (self.x, self.y)
 
-    #----------------------------------------------------------------------
     def __repr__(self):
         return (
             "{'x': %.6f, 'y': %.6f, 'z': %.6f}" %
