@@ -18,15 +18,15 @@
     ${h.stylesheet_link_tag('base.css')}
     ${h.if_ie(h.stylesheet_link_tag('base_ie.css'))}
 
-    <script type="text/javascript" >
+    <script type="text/javascript">
       //<![CDATA[
       // Global setup
       var debug = ${'true' if bool(g.debug) else 'false'};
       byCycle_prefix = '${h.url_for('/')}';
       //]]>
     </script>
-
-    ${h.javascript_include_tag(builtins=True)}
+    
+    ${h.javascript_include_tag(builtins=True)}    
     ${h.javascript_include_tag('bycycle', 'util')}
   </head>
 
@@ -220,9 +220,20 @@
 
 
         <!-- Result Pane -->
-        <div id="result_pane">
-          <ul id="location_list" class="result_list"></ul>
-          <ul id="route_list" class="result_list"></ul>
+        <div id="result_pane" class="tab-control">
+          <ul id="result_tab_buttons" class="tab-buttons">
+            ${self.make_tab_buttons('locations', 'routes')}
+          </ul>
+
+          <div class="tab-contents">
+            <div id="locations" class="tab-content">
+              <ul id="location_list" class="result_list"></ul>
+            </div>
+
+            <div id="routes" class="tab-content">
+              <ul id="route_list" class="result_list"></ul>
+            </div>
+          </div>
         </div>
         <!-- End Result Pane -->
 
@@ -306,9 +317,11 @@
     <!-- End Ads -->
 
 
-    <% js_files = ('regions', 'map', 'gmap', 'ui', 'query', 'result', 'widgets/tabinator') %>
+    <% js_files = (
+         'regions', 'map', 'gmap', 'ui', 'query', 'result',
+         'widgets/tabinator', 'widgets/fixed_pane'
+    ) %>
     ${h.javascript_include_tag(*js_files)}
-
 
     <script type="text/javascript">
       //<![CDATA[
@@ -316,7 +329,7 @@
       byCycle.UI.beforeLoad();
       // Values calculated in the controller
       // Only set status when there's a result
-      byCycle.UI.http_status${' = %i;' % c.http_status if c.http_status else ''};
+      byCycle.UI.http_status ${'= %i;' % c.http_status if c.http_status else ''};
       byCycle.UI.region = '${c.region_key}';
       byCycle.UI.service = '${c.service}';
       byCycle.UI.query = '${c.q}';
@@ -354,4 +367,3 @@
 
 <!-- Route preference form control -->
 <%def name='route_pref()'></%def>
-
