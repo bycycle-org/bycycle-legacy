@@ -191,7 +191,7 @@ byCycle.Map.google.Map.prototype = Object.extend(new byCycle.Map.base.Map(), {
   },
 
   placeMarker: function(point, icon) {
-    var marker = new GMarker(point, icon);
+    var marker = new GMarker(new GLatLng(point.y, point.x), icon);
     this.map.addOverlay(marker);
     return marker;
   },
