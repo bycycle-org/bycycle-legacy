@@ -17,6 +17,9 @@ var byCycle = (function() {
   
   var noop = function() {};
 
+  var hostname = location.hostname;
+  var port = location.port;
+
   // public:
   return {
     // `debug` is a global set in the template; it's value is passed from 
@@ -24,7 +27,7 @@ var byCycle = (function() {
     config: debug ? dev_config : prod_config,
 
     // Used to look Google API key in gmap.js and to make queries in ui.js
-    domain: location.hostname,
+    domain: (port ? ([hostname, port].join(':')) : hostname)),
     
     // Prefix for when app is mounted at other than root (/)
     prefix: byCycle_prefix,
