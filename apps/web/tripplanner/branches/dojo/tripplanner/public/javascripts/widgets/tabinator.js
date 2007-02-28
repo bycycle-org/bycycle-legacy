@@ -1,17 +1,17 @@
 /**
  * Tabinator Tab control
  */
-var Tabinator = Class.create();
-Tabinator.prototype = {
+byCycle.widget.TabControl = Class.create();
+byCycle.widget.TabControl.prototype = {
   /**
-   * @param tab_control The DOM container (or its ID) for this Tab control 
+   * @param dom_node The DOM container (or its ID) for this Tab control
    */
-  initialize: function(tab_control) {
-    this.tab_control = $(tab_control);
-	this.create_tabs();
+  initialize: function(dom_node) {
+    this.dom_node = $(dom_node);
+    this.create_tabs();
     this.show(this.get_initial_tab());
   },
-  
+
   create_tabs: function() {
     // An individual Tab object. Contains tab id, button, link, and content.
     var tab;
@@ -19,7 +19,7 @@ Tabinator.prototype = {
     var tabs = {};
     var tab_ids_in_order = [];
     // Get the Tab buttons (usually LIs)
-    var tab_buttons = this.tab_control.getElementsByClassName('tab-buttons')[0];
+    var tab_buttons = this.dom_node.getElementsByClassName('tab-buttons')[0];
     tab_buttons = tab_buttons.getElementsByClassName('tab-button');
     // For each Tab button...
     tab_buttons.each((function (tab_button) {
@@ -34,13 +34,13 @@ Tabinator.prototype = {
         tab.id = tab_id;
         tab.button = tab_button;
         tab.link = tab_link;
-        // When the Tab is clicked, we use this ID to dereference the Tab 
+        // When the Tab is clicked, we use this ID to dereference the Tab
         // object in this Tab control's set of Tabs
         tab.link.tab_id = tab_id;
         // DOM element containing this Tab's content
         tab.content = $(tab_id);
         tabs[tab_id] = tab;
-	tab_ids_in_order.push(tab_id);
+        tab_ids_in_order.push(tab_id);
         Event.observe(tab_link, 'click', this.on_click.bindAsEventListener(this));
         if (!this.first_tab) {
           this.first_tab = tab;
@@ -48,9 +48,9 @@ Tabinator.prototype = {
       }
     }).bind(this));
     this.tabs = $H(tabs);
-	this.tab_ids_in_order = tab_ids_in_order;
+    this.tab_ids_in_order = tab_ids_in_order;
   },
-  
+
   on_click: function(event) {
     // Select tab on click event
     Event.stop(event);
@@ -66,18 +66,18 @@ Tabinator.prototype = {
     }
     this.select_by_id(this.tab_ids_in_order[index]);
   },
-  
+
   select_by_id: function(tab_id) {
     // Select tab programatically by ID
     this.tabs.values().each(this.hide.bind(this));
-    this.show(this.tabs[tab_id]);    
+    this.show(this.tabs[tab_id]);
   },
-  
+
   hide: function(tab) {
     tab.button.removeClassName('selected-tab-button');
     tab.content.removeClassName('selected-tab-content');
   },
-  
+
   show: function(tab) {
     tab.button.addClassName('selected-tab-button');
     tab.content.addClassName('selected-tab-content');
@@ -96,7 +96,7 @@ Tabinator.prototype = {
       return null;
     }
   },
-      
+
   get_initial_tab: function() {
     var initial_tab;
     var initial_tab_id = this.get_tab_id(window.location);
