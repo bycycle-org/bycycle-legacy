@@ -37,7 +37,7 @@ byCycle.UI = (function() {
     query: null,
     is_first_result: true,
     result: null,
-    results: {},
+    results: {'geocodes': {}, 'routes': {}},
     route_choices: null,
     http_status: null,
     response_text: null,
@@ -78,7 +78,8 @@ byCycle.UI = (function() {
       self = byCycle.UI;
       self._assignUIElements();
       
-      self.input_tab_control = new Tabinator(self.input_container);
+      self.input_tab_control = new byCycle.widget.TabControl(self.input_container);
+      self.result_tab_control = new byCycle.widget.TabControl(self.result_pane);
 
       // If map is "on" and specified map type is loadable, use that map type.
       // Otherwise, use the default map type (base).
@@ -380,9 +381,11 @@ byCycle.UI = (function() {
       if (!confirm('Remove all of your results and clear the map?')) {
         return;
       }
-      for (var result_id in self.results) {
-        self.results[result_id].remove();
-      }
+      self.results.values().each(function (service_results) {
+	service_results.values().each(function (result) {
+	  service_results[result.id].remove();
+	});
+      });
     },
 
     reverseDirections: function(s, e) {
