@@ -27,7 +27,7 @@ var byCycle = (function() {
     config: debug ? dev_config : prod_config,
 
     // Used to look Google API key in gmap.js and to make queries in ui.js
-    domain: (port ? ([hostname, port].join(':')) : hostname)),
+    domain: (port ? [hostname, port].join(':') : hostname),
     
     // Prefix for when app is mounted at other than root (/)
     prefix: byCycle_prefix,
@@ -38,6 +38,9 @@ var byCycle = (function() {
     default_map_type: 'base',
 
     noop: noop,
+    
+    // Namespace for byCycle widgets
+    widget: {},
     
     /**
      * Get value for variable from query string if possible, otherwise use the
