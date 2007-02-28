@@ -34,6 +34,7 @@ byCycle.Map.base.Map.prototype = {
 
   createMap: function(container) {
     var map = document.createElement('div');
+    map.style.height = '100%';
     map.style.overflow = 'auto';
     map.style.padding = '5px';
     container.appendChild(map);
@@ -146,7 +147,7 @@ byCycle.Map.base.Map.prototype = {
         ' [', node.innerHTML, ']'].join('');
       }
     };
-    this.setCenter(point, 14);
+    this.setCenter(point, zoom);
     return this.addOverlay(marker);
   },
 
