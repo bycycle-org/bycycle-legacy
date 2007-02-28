@@ -17,6 +17,8 @@
 
     ${h.stylesheet_link_tag('base.css')}
     ${h.if_ie(h.stylesheet_link_tag('base_ie.css'))}
+    ${h.stylesheet_link_tag('tab-control.css')}
+    ${h.stylesheet_link_tag('fixed-pane.css')}
 
     <script type="text/javascript">
       //<![CDATA[
@@ -319,7 +321,7 @@
 
     <% js_files = (
          'regions', 'map', 'gmap', 'ui', 'query', 'result',
-         'widgets/tabinator', 'widgets/fixed_pane'
+         'widgets/tab_control', 'widgets/fixed_pane'
     ) %>
     ${h.javascript_include_tag(*js_files)}
 
