@@ -14,10 +14,6 @@ var byCycle = (function() {
     map_type: 'base',
     map_state: 1
   };
-
-  var base_url = location.href.split('?')[0];
-  var domain = base_url.split('/')[2];
-  var query_pairs = (window.location.search.substr(1)).toQueryParams();
   
   var noop = function() {};
 
@@ -26,15 +22,15 @@ var byCycle = (function() {
     // `debug` is a global set in the template; it's value is passed from 
     // Pylons as an attribute of the global `g`
     config: debug ? dev_config : prod_config,
-    
-    base_url: base_url,
-    domain: domain,
+
+    // Used to look Google API key in gmap.js and to make queries in ui.js
+    domain: location.hostname,
     
     // Prefix for when app is mounted at other than root (/)
     prefix: byCycle_prefix,
     
     // URL query parameters as a Hash
-    query_pairs: query_pairs,
+    query_pairs: location.search.toQueryParams(),
 
     default_map_type: 'base',
 
@@ -45,11 +41,13 @@ var byCycle = (function() {
      * global config value
      */
     getParamVal: function(var_name, func) {
+      // Override config setting with query string setting
       var v = byCycle.query_pairs[var_name];
       if (typeof(v) == 'undefined') {
+	// Query string override not given; use config
         v = byCycle.config[var_name];
       } else if (typeof(func) == 'function') {
-        // Override config setting with query string setting
+        // Process query string value with func, iff given
         v = func(v);
       }
       return v;
