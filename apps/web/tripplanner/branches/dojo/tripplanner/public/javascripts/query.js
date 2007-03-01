@@ -128,18 +128,14 @@ byCycle.UI.Query.prototype = {
     var service = this.service;
     var Result = this.ui.Result;
     var ui_results = this.ui.results;
-    var result, id, widget, dom_node;  // w: widget, n: node
+    var result, id, widget, dom_node;
     response.results.each(function (r, i) {
-      dom_node = nodes[i];
-
-      widget = new byCycle.widget.FixedPane(dom_node);
-
       id = [service, 'result', new Date().getTime()].join('_');
+      dom_node = nodes[i];
+      dom_node.id = id;
+      widget = new byCycle.widget.FixedPane(dom_node);
       result = new Result(id, r, service, widget);
-
-      widget.dom_node.id = id;
       widget.register_listeners('close', result.remove.bind(result));
-
       results.push(result);
       ui_results[service][id] = result;
     });
@@ -210,12 +206,13 @@ byCycle.UI.GeocodeQuery.prototype = Object.extend(new byCycle.UI.Query(), {
     byCycle.logDebug('Entered GeocodeQuery.processResults()...');
     var zoom = this.ui.is_first_result ? 14 : undefined;
     // For each result, place a marker on the map.
-    var div, content_pane;
+    var div, link, content_pane;
     var placeGeocodeMarker = this.ui.map.placeGeocodeMarker.bind(this.ui.map);
     results.each(function (r) {
       div = document.createElement('div');
       content_pane = r.widget.content_pane.cloneNode(true);
-      //content_pane.getElementsByClassName('show-on-map')[0].remove();
+      link = content_pane.getElementsByClassName('show-on-map-link')[0];
+      content_pane.innerHTML = link.innerHTML;
       div.appendChild(content_pane);
       r.addOverlay(placeGeocodeMarker(r.result.point, div, zoom));
     });
