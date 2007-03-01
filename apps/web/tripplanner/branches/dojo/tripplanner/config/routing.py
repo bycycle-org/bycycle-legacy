@@ -25,13 +25,6 @@ def make_map(global_conf={}, app_conf={}):
     mapper.resource('geocode', 'geocodes', **options)
     mapper.resource('route', 'routes', **options)
 
-    # Define your routes. The more specific and detailed routes should be
-    # defined first, so they may take precedent over the more generic routes.
-    # For more information, refer to the routes manual @
-    # http://routes.groovie.org/docs/
-
-    # Default routes
-    mapper.connect(':controller/:action/:id')
     # This one can be used to display a template directly
     mapper.connect('*url', controller='template', action='view')
 
