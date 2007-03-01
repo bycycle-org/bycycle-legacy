@@ -12,43 +12,22 @@
 # NO WARRANTY OF ANY KIND.
 ################################################################################
 """
-byCycle model package.
+byCycle model package. 
+
+This file sets up the model API by exposing the database module & its engine
+and all of the model/domain/entity classes.
 
 """
-import elixir
-
 # TODO: I'd rather just import db and use it directly, which implies removing
 #       the DB class and moving its methods to db module functions
 #       [wlb 2/23/07]
 from byCycle.model import db
 _db = db.DB()
 
+# Expose domain/entity classes via model API
 from byCycle.model.domain import *
 from byCycle.model.address import *
 
 
-def connect():
-    """Connect the elixir dynamic metadata to database handler's engine.
-
-    Connects in the context of the current thread.
-
-    Note: this doesn't connect to the database; it just wires elixir's
-    dynamic metadata object up to the engine.
-
-    """
-    elixir.metadata.connect(_db.engine)
-
-def create_all():
-    """Create all Entity tables that don't already exist."""
-    _db.turnSQLEchoOn()
-    connect()
-    elixir.create_all()
-    _db.turnSQLEchoOff()
-
-def drop_all():
-    """Create all Entity tables that don't already exist."""
-    _db.turnSQLEchoOn()
-    connect()
-    elixir.drop_all()
-    _db.turnSQLEchoOff()
-    
+# Expose ``engine`` via the model API
+engine = _db.engine
