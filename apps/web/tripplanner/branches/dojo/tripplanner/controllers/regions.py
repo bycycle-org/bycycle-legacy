@@ -11,10 +11,10 @@ class RegionsController(RestController):
     
     def show(self, id, format=None):
         """Show the ``region`` with ID or name or key ``id``."""
-        # Get region key for region
         region_key = self._get_region_key(id)
         c.region_key = region_key
-        return self._render_response(format=format, template=region_key)
+        template = region_key if region_key != 'all' else 'index'
+        return self._render_response(format=format, template=template)
 
     @staticmethod
     def _set_default_context():
