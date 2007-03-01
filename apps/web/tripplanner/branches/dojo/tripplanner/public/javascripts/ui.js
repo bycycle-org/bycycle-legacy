@@ -421,16 +421,18 @@ byCycle.UI = (function() {
     /* Results ***************************************************************/
 
     showMessagePane: function(sub_pane) {
-      Element.hide(self.result_pane);
+      sub_pane = sub_pane || self.info_pane;
+      self.result_pane.hide();
       self.message_panes.each(Element.hide);
-      Element.show(sub_pane || self.info_pane);
-      Element.show(self.message_pane);
+	  sub_pane.show();
+      self.message_pane.show();
     },
 
     showResultPane: function(list_pane) {
-      Element.hide(self.message_pane);
-      Element.show(self.result_pane);
-      self.result_pane.selectChild(list_pane || self.location_list_pane);
+	  list_pane = list_pane || self.location_list;
+      self.message_pane.hide();
+	  self.result_tab_control.select_by_id(list_pane.parentNode.id)
+      self.result_pane.show();
     },
 
     /* Map *******************************************************************/
