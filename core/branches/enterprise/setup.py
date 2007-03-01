@@ -49,7 +49,7 @@ setup(
     install_requires=(
     'psycopg2==2.0.5.1',
     'SQLAlchemy==0.3.5',
-    'Elixir==0.1.0',
-    'zope.interface==3.3.0',
+    'Elixir==0.2.0',
+    'zope.interface==3.3.0.1',
     ),
 )
