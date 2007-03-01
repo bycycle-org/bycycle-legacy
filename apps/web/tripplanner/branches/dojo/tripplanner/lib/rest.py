@@ -1,15 +1,71 @@
 """
-Import this instead of ``base`` in controllers. 
 
-Do this (which also pulls in everything from ``base``):
+Adds support for Rails-style RESTful ActiveRecord resources. Provides a
+RESTful controller class that uses Elixir (and therefore SQLAlchemy) to
+interface with the database. Makes certain assumptions about project layout
+and uses those assumptions to take action.
 
-from tripplanner.lib.rest import *
+Assumptions
+===========
 
-instead of this:
+* Routes are set up with map.resource like this:
 
-from tripplanner.lib.base import *
+  map.resource('member_name', 'collection_name')
+
+  Example:
+      map.resource('cow', 'cows')
+
+* Nested resource routes are set up like this:
+
+  map.resource('member_name', 'collection_name',
+               path_prefix='parent_collection_name/:parent_id')
+
+  Note that you must use :parent_id and not any other name.
+  parent_collection_name is replaced with the plural name of the parent
+  resource.
+
+  Example:
+      map.resource('animal', 'animals')
+      map.resource('cow', 'cows', path_prefix='animals/:parent_id'))
+
+* lib.base imports your model under the name "model" and your model will...
+  * connect to your database using via SQLAlchemy.
+  * expose its underlying database SQLAlchemy ``engine`` via model.engine.
+  * expose your elixir.Entity classes, regardless of where they are
+    actually defined.
+
+* Templates for a resource are in project/templates/collection_name.
+
+  Template file names correspond to controller action names, so there should
+  be new, show, edit, and index templates.
+
+  The default is to render templates with an HTML extension. If ``format`` is
+  supplied to an action, that format will override the default.
+
+  There are built-in methods to return HTML, HTML fragment, plain text, and
+  JSON content. All except the last use templates with a corresponding
+  extenstion (.html, .frag or .fragment, .text or .txt); JSON is rendered by
+  calling the __simplify__ method of either the Entity objects of a collection
+  or a single member/Entity object (depending on which action was invoked).
+
+  [Possible FIXME: Should the Entity classes define a to_json method instead?
+   But then that means they needs to know about JSON... which they are already
+   sort-of aware of via their __simplify__ method.]
+
+* Your controllers will inherit from RestController instead of BaseController:
+
+  This module is a drop in replacement for ``base``, so do this in your
+  controllers (which will pull in everything that's defined or imported in
+  ``base``; you don't need to modify ``base`` except to import you model):
+
+    from tripplanner.lib.rest import *
+
+  instead of this:
+
+    from tripplanner.lib.base import *
 
 """
+import elixir
 import simplejson
 
 from tripplanner.lib.base import *
@@ -27,6 +83,9 @@ class RestController(BaseController):
         hats.py and there will be a template directory at /templates/hats.
 
         """
+        # Connect dynamic metadata to database engine
+        elixir.metadata.connect(model.engine)
+
         route_info = request.environ['pylons.routes_dict']
         self.parent_id = route_info.get('parent_id', None)
         self.controller = route_info['controller']
