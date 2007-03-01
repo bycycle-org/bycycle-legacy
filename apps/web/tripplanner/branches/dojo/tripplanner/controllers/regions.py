@@ -7,30 +7,36 @@ class RegionsController(RestController):
 
     def __before__(self):
         """Do stuff before main action is invoked."""
-        # Default template context
-        c.http_status = 'null'
-        c.service = 'query'
-        c.region_key = 'all'
-
+        self._set_default_context()
+    
     def show(self, id, format=None):
         """Show the ``region`` with ID or name or key ``id``."""
         # Get region key for region
-        try:
-            region_key = regions.getRegionKey(id)
-        except ValueError:
-            c.errors = 'Unknown region: %s' % id
-            redirect_to('/%s' % self.collection_name)
+        region_key = self._get_region_key(id)
         c.region_key = region_key
-        c.region_options = self._makeRegionOptions()
-        return self._render_response(template=region_key)
+        return self._render_response(format=format, template=region_key)
 
-    def query(self):
-        pass
+    @staticmethod
+    def _set_default_context():
+        """Set default template context."""
+        c.service = 'services'
+        c.region_key = 'all'
+        c.region_options = RegionsController._makeRegionOptions()
 
-    def _makeRegionOptions(self):
+    @staticmethod
+    def _get_region_key(region_id):
+        try:
+            return regions.getRegionKey(region_id)
+        except ValueError:
+            c.errors = 'Unknown region: %s' % region_id
+            redirect_to('/regions')
+
+    @staticmethod
+    def _makeRegionOptions():
         """Make list of (display text, value) tuples for HTML options list.
 
-        return -- A list of (display text, value) pairs
+        return
+            A list of (display text, value) pairs
 
         """
         options = []
