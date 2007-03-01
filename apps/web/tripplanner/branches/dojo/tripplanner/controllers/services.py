@@ -2,8 +2,7 @@ import re
 
 from byCycle.services.exceptions import *
 
-from tripplanner.lib.base import *
-from tripplanner.controllers.rest import RestController
+from tripplanner.lib.rest import *
 from tripplanner.controllers.regions import RegionsController
 
 
