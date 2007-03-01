@@ -208,39 +208,16 @@ byCycle.UI.GeocodeQuery.prototype = Object.extend(new byCycle.UI.Query(), {
 
   processResults: function(response, results) {
     byCycle.logDebug('Entered GeocodeQuery.processResults()...');
-    var zoom;
-    if (this.ui.is_first_result) {
-      zoom = 14;
-    }
-
+    var zoom = this.ui.is_first_result ? 14 : undefined;
     // For each result, place a marker on the map.
-    var result, widget, content, footer, marker;
-    var show_on_map, show_on_map_link;
-    var set_as_start, set_as_end;
-    var ui = this.ui;
-    var map = ui.map;
-    var placeGeocodeMarker = map.placeGeocodeMarker.bind(map);
+    var div, content_pane;
+    var placeGeocodeMarker = this.ui.map.placeGeocodeMarker.bind(this.ui.map);
     results.each(function (r) {
-      result = r.result;
-      widget = r.widget;
-      footer = widget.footer;
-
-      show_on_map_link = footer.getElementsByClassName('show-on-map-link')[0];
-      set_as_start = footer.getElementsByClassName('set-as-start')[0];
-      set_as_end = footer.getElementsByClassName('set-as-end')[0];
-
-      footer.show();
-
-      // Map marker for result
-      var div = document.createElement('div');
-      var h2 = document.createElement('h2');
-      h2.innerHTML = widget.title;
-      content = widget.content_pane.cloneNode(true);
-      content.getElementsByClassName('show-on-map')[0].remove();
-      div.appendChild(h2);
-      div.appendChild(content);
-      marker = placeGeocodeMarker(result.point, div, zoom);
-      r.addOverlay(marker);
+      div = document.createElement('div');
+      content_pane = r.widget.content_pane.cloneNode(true);
+      //content_pane.getElementsByClassName('show-on-map')[0].remove();
+      div.appendChild(content_pane);
+      r.addOverlay(placeGeocodeMarker(r.result.point, div, zoom));
     });
     byCycle.logDebug('Left GeocodeQuery.processResults().');
   }

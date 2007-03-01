@@ -6,9 +6,9 @@ html, body {
   overflow: hidden;
   height: 100%;
 }
+body { font-size: 80%; }
 body, td {
   font-family: Verdana, Helvetica, Arial, sans-serif;
-  font-size: 80%;
   background-color: white;
   color: black;
 }
@@ -136,8 +136,8 @@ a:hover { color: orange; }
   padding: 5px 0 0 5px;
   overflow: auto;
 }
-#results .fixed_pane {
-  margin-bottom: 2px;
+#result_pane .tab-contents {
+  padding-bottom: 0;
 }
 .result_list {
   list-style: none;
@@ -146,12 +146,6 @@ a:hover { color: orange; }
 }
 .result_list li {
   margin-bottom: 5px;
-}
-.multi .window .title_bar, .multi .window .title_bar td {
-  background: #99b3cc;
-}
-.route_multi {
-
 }
 #reverse_div {
   margin-bottom: 5px;
