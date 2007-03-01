@@ -18,11 +18,7 @@ byCycle.widget.FixedPane.prototype = {
     this.dom_node = $(dom_node);
     this.title_bar = this.dom_node.getElementsByClassName('title-bar')[0];
     this.title = this.title_bar.getElementsByClassName('title')[0].innerHTML;
-    var content_pane = this.dom_node.getElementsByClassName('content-pane')[0];
-    this.header = content_pane.getElementsByClassName('header')[0];
-    this.body = content_pane.getElementsByClassName('body')[0];
-    this.footer = content_pane.getElementsByClassName('footer')[0];
-    this.content_pane = content_pane;
+    this.content_pane = this.dom_node.getElementsByClassName('content-pane')[0];
     this._create_controls();
     !this.open && this.content_pane.hide();
   },
@@ -69,7 +65,12 @@ byCycle.widget.FixedPane.prototype = {
     this.dom_node.remove();
   },
 
-  // TODO: Refactor to Widget superclass
+  /**
+   * Register one or more functions to be called back when the event with
+   * ``event_name`` is called.
+   *
+   * TODO: Refactor to Widget superclass?
+   */
   register_listeners: function (event_name /*, funcs */) {
     var listeners = this._get_listeners(event_name);
     for (var i = 1; i < arguments.length; ++i) {
