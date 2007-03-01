@@ -1,3 +1,15 @@
+"""
+Import this instead of ``base`` in controllers. 
+
+Do this (which also pulls in everything from ``base``):
+
+from tripplanner.lib.rest import *
+
+instead of this:
+
+from tripplanner.lib.base import *
+
+"""
 import simplejson
 
 from tripplanner.lib.base import *
