@@ -1,3 +1,6 @@
+% if not c.wrap:
+  ${self.body()}
+% else:
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 
 
@@ -27,8 +30,8 @@
       byCycle_prefix = '${h.url_for('/')}';
       //]]>
     </script>
-    
-    ${h.javascript_include_tag(builtins=True)}    
+
+    ${h.javascript_include_tag(builtins=True)}
     ${h.javascript_include_tag('bycycle', 'util')}
   </head>
 
@@ -180,9 +183,8 @@
 
 
         <!-- Message Pane -->
-        <div id="message_pane">
+        <div id="message_pane" style="${'display: none;' if c.service else ''}">
           <div id="info_pane">
-                    ${self.body()}
             % if c.info:
               ${c.info}
             % else:
@@ -216,24 +218,32 @@
             % endif
           </div>
           <div id="error_pane">${c.errors}</div>
-          <div id="help_pane"></div>
         </div>
         <!-- End Message Pane -->
 
 
         <!-- Result Pane -->
-        <div id="result_pane" class="tab-control">
+        <div id="result_pane" class="tab-control"
+             style="${'display: none;' if not c.service else ''}">
           <ul id="result_tab_buttons" class="tab-buttons">
             ${self.make_tab_buttons('locations', 'routes')}
           </ul>
 
           <div class="tab-contents">
             <div id="locations" class="tab-content">
-              <ul id="location_list" class="result_list"></ul>
+              <ul id="location_list" class="result_list">
+                % if c.service == 'geocodes':
+                  <li>${self.body()}</li>
+                % endif
+              </ul>
             </div>
 
             <div id="routes" class="tab-content">
-              <ul id="route_list" class="result_list"></ul>
+              <ul id="route_list" class="result_list">
+                % if c.service == 'routes':
+                  <li>${self.body()}</li>
+                % endif
+              </ul>
             </div>
           </div>
         </div>
@@ -369,3 +379,5 @@
 
 <!-- Route preference form control -->
 <%def name='route_pref()'></%def>
+
+% endif
