@@ -245,7 +245,7 @@ class RestController(BaseController):
         else:
             c.parent = parent
     parent = property(_get_parent, _set_parent)
-    
+
     def _get_member(self):
         return self._member
     def _set_member(self, member):
@@ -288,7 +288,7 @@ class RestController(BaseController):
 
         """
         self._set_parent_by_id(parent_id)
-        self.member = self.Entity.get(id) if id is not None else self.Entity() 
+        self.member = self.Entity.get(id) if id is not None else self.Entity()
 
     def _set_collection_by_id(self, parent_id=None, page=0, num_items=10):
         """Set collection (or subset) attribute on both ``self`` and ``c``.
@@ -332,6 +332,8 @@ class RestController(BaseController):
         # _get_*_content methods need to add the file extension (if needed)
         tmpl = (template or self.action)
         self.template = '/%s/%s' % (self.collection_name, tmpl)
+
+        c.wrap = self._wrap()
 
         content, mimetype = _get_content()
         response_args.update(dict(content=content, mimetype=mimetype))
@@ -390,12 +392,19 @@ class RestController(BaseController):
         html = render('%s.html' % self.template)
         return html, 'text/html'
 
-    def _get_fragment_content(self):
-        """Get an HTML fragment and mimetype."""
-        html = render('%s.frag' % self.template)
-        return html, 'text/html'
-    _get_frag_content = _get_fragment_content
-
     def _get_xml_content(self):
         """Get XML content."""
-        raise ValueError('Sorry, XML not spoken here.')
+        html = render('%s.xml' % self.template)
+        return html, 'text/xml'
+    
+    def _wrap(self):
+        """Whether to wrap a template in its parent template.
+
+        Default is `True`. If wrap is set in query params, convert its value
+        to bool and use that value; otherwise, return True.
+        
+        """
+        wrap = request.params.get('wrap', 'true')
+        if wrap.lower() in ('0', 'n', 'no', 'false', 'nil'):
+            return False
+        return True

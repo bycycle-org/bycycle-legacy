@@ -17,6 +17,7 @@ class ServicesController(RestController):
 
         # Override default region context
         c.region_key = RegionsController._get_region_key(self.parent_id)
+        c.service = self.controller
 
     def find(self, parent_id=None):
         """Generic find method. Expects a ``q`` query parameter.
@@ -72,10 +73,8 @@ class ServicesController(RestController):
 
         """
         c.q = query
-
         service = service_class(region=c.region_key)
         format = request.params.get('format', 'html')
-        template = 'show'
 
         try:
             result = service.query(query, **params)
@@ -88,7 +87,6 @@ class ServicesController(RestController):
         except ByCycleError:
             # Let subclass deal with any other `ByCycleError`s
             self.format = format
-            self.template = template
             raise
         except Exception, exc:
             c.http_status = 500
@@ -104,6 +102,7 @@ class ServicesController(RestController):
             except TypeError:
                 # No, it's a single object (AKA member)
                 self.member = result
+                template = 'show'
             else:
                 # Yes
                 self.collection = result
@@ -131,11 +130,12 @@ class ServicesController(RestController):
 
         """
         def f(obj):
+            c.wrap = False
             return {
                 'type': self.member_name,
                 'message': c.message,
                 'results': (obj if isinstance(obj, list) else [obj]),
-                'fragment': self._get_fragment_content()[0]
+                'fragment': self._get_html_content()[0]
             }
         return super(ServicesController, self)._get_json_content(obj_func=f)
 
