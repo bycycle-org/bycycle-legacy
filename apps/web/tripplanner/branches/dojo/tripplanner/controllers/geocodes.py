@@ -18,8 +18,7 @@ class GeocodesController(ServicesController):
             template = 'index'
             c.http_status = 300
             c.title = 'Multiple Matches Found'
-            c.classes = 'errors'
-            self._setattr(self.collection_name, exc.geocodes)
+            self.collection = exc.geocodes
 
         # We'll get here only if there's an unhandled error in the superclass.
         # Otherwise, the superclass will handle rendering.

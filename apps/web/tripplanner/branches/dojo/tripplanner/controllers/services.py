@@ -97,12 +97,17 @@ class ServicesController(RestController):
         else:
             c.http_status = 200
             c.title = service.name.title()
-            if isinstance(result, (list, tuple)):
-                name = self.collection_name
-                template = 'index'
+            try:
+                # Is the result a collection? Note that member objects should
+                # not be iterable!
+                result[0]
+            except TypeError:
+                # No, it's a single object (AKA member)
+                self.member = result
             else:
-                name = self.member_name
-            self._setattr(name, result)
+                # Yes
+                self.collection = result
+                template = 'index'
 
         try:
             # Was there an error?
@@ -112,7 +117,6 @@ class ServicesController(RestController):
         else:
             template = 'error'
             c.message = exc.description
-            c.classes = 'errors'
 
         return self._render_response(
             format=format, template=template, code=c.http_status
