@@ -10,17 +10,20 @@ field_addr = unquote_plus(code.urlStr())
 
 <div class="fixed-pane">
    <div class="title-bar">
-      <div class="title">Location</div>
+      <div class="title">
+         Location
+         <span class="small">
+            <a class="show-on-map-link"
+               href="#show-location-on-map"
+               title="Show this location on the map"
+               onclick="byCycle.UI.map.setCenter({x: ${x}, y: ${y}}); return false;"
+               >show on map</a>
+         </span>
+      </div>
    </div>
 
    <div class="content-pane">
-      <div class="address">
-         <a class="show-on-map-link"
-            href="#show-location-on-map"
-            title="Show this location on the map"
-            onclick="byCycle.UI.map.setCenter({x: ${x}, y: ${y}}); return false;"
-            >${html_addr}</a>
-      </div>
+      <div class="address">${html_addr}</div>
 
       <div class="set_as_s_or_e">
          Set as

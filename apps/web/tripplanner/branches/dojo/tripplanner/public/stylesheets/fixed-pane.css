@@ -15,7 +15,6 @@
 }
 .fixed-pane .title-bar .title a {
   color: white;
-  text-decoration: none;
 }
 .fixed-pane .title-bar .title a:hover {
   color: orange;
