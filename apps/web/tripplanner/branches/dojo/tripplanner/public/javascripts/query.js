@@ -206,13 +206,11 @@ byCycle.UI.GeocodeQuery.prototype = Object.extend(new byCycle.UI.Query(), {
     byCycle.logDebug('Entered GeocodeQuery.processResults()...');
     var zoom = this.ui.is_first_result ? 14 : undefined;
     // For each result, place a marker on the map.
-    var div, link, content_pane;
+    var div, content_pane;
     var placeGeocodeMarker = this.ui.map.placeGeocodeMarker.bind(this.ui.map);
     results.each(function (r) {
       div = document.createElement('div');
       content_pane = r.widget.content_pane.cloneNode(true);
-      link = content_pane.getElementsByClassName('show-on-map-link')[0];
-      content_pane.innerHTML = link.innerHTML;
       div.appendChild(content_pane);
       r.addOverlay(placeGeocodeMarker(r.result.point, div, zoom));
     });
