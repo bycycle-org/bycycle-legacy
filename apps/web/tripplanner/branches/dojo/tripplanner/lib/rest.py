@@ -93,11 +93,12 @@ class RestController(BaseController):
 
         # Get parent name and parent Entity class for nested controller
         self.parent_name = getattr(self, 'parent_name', None)
-        if self.parent_name:
+        if self.parent_name is not None:
             parent_entity_name = ''.join([word.title() for word in
                                           self.parent_name.split('_')])
             self.ParentEntity = getattr(model, parent_entity_name)
         else:
+            self.parent_name = 'parent'
             parent_entity_name = None
             self.ParentEntity = None
 
@@ -143,7 +144,7 @@ class RestController(BaseController):
             parent with this ID.
 
         """
-        self._set_collection(parent_id)
+        self._set_collection_by_id(parent_id)
         return self._render_response(format)
 
     def new(self, parent_id=None, format=None):
@@ -157,7 +158,7 @@ class RestController(BaseController):
             ``ParentEntity`` class having that ID.
 
         """
-        self._set_member(parent_id)
+        self._set_member_by_id(parent_id)
         return self._render_response(format)
 
     def show(self, parent_id=None, id=None, format=None):
@@ -166,7 +167,7 @@ class RestController(BaseController):
         Show existing item that has parent ID ``parent_id`` and ID ``id``.
 
         """
-        self._set_member(parent_id, id)
+        self._set_member_by_id(parent_id, id)
         return self._render_response(format)
 
     def edit(self, parent_id=None, id=None, format=None):
@@ -176,7 +177,7 @@ class RestController(BaseController):
         ``parent_id`` and ID ``id``. The form should PUT to /resource/update.
 
         """
-        self._set_member(parent_id, id)
+        self._set_member_by_id(parent_id, id)
         return self._render_response(format)
 
     def create(self, parent_id=None, format=None):
@@ -185,9 +186,9 @@ class RestController(BaseController):
         Create with POST data a new item that has parent ID ``parent_id``.
 
         """
-        self._set_member(parent_id)
+        self._set_member_by_id(parent_id)
 
-        # TODO: Add POST data to self.member here
+        # TODO: Add POST data to self.member here.
 
         self.Entity.flush([self.member])
         redirect_to(id=self.member.id, parent_id=parent_id, format=format,
@@ -200,9 +201,9 @@ class RestController(BaseController):
         and ID ``id`` .
 
         """
-        self._set_member(parent_id, id)
+        self._set_member_by_id(parent_id, id)
 
-        # TODO: Update self.member with PUT data here
+        # TODO: Update self.member with PUT data here.
 
         self.Entity.flush([self.member])
         redirect_to(parent_id=parent_id, id=id, format=format, action='show')
@@ -213,16 +214,16 @@ class RestController(BaseController):
         Delete the existing item that has parent_id ``parent_id`` ID ``id``.
 
         """
-        self._set_member(parent_id, id)
+        self._set_member_by_id(parent_id, id)
         self.Entity.delete(self.member)
         self.Entity.flush([self.member])
         redirect_to(parent_id=parent_id, format=format, action='index')
 
     def _setattr(self, name, value):
-        """Set attribute on ``c`` and ``self``.
+        """Set attribute on both ``c`` and ``self``.
 
         ``name``
-            The name of the attribute
+            The name of the attribute (the specific resource name)
 
         ``value``
             The value of the attribute
@@ -231,7 +232,37 @@ class RestController(BaseController):
         setattr(self, name, value)
         setattr(c, name, value)
 
-    def _set_parent(self, parent_id=None):
+    def _get_parent(self):
+        return self._parent
+    def _set_parent(self, parent):
+        """Set the parent object to ``parent``."""
+        self._parent = parent
+        # 'parent' is the default parent name. If we don't check for this
+        # we'll end up in a nice recursively infinite loop when calling
+        # _setattr.
+        if self.parent_name != 'parent':
+            self._setattr(self.parent_name, parent)
+        else:
+            c.parent = parent
+    parent = property(_get_parent, _set_parent)
+    
+    def _get_member(self):
+        return self._member
+    def _set_member(self, member):
+        """Set the member object to ``member``."""
+        self._member = member
+        self._setattr(self.member_name, member)
+    member = property(_get_member, _set_member)
+
+    def _get_collection(self):
+        return self._collection
+    def _set_collection(self, collection):
+        """Set the collection object to ``collection``."""
+        self._collection = collection
+        self._setattr(self.collection_name, collection)
+    collection = property(_get_collection, _set_collection)
+
+    def _set_parent_by_id(self, parent_id=None):
         """Set parent attribute on both ``self`` and ``c``.
 
         The member is attached as parent_name, where parent_name is specified
@@ -239,13 +270,11 @@ class RestController(BaseController):
 
         """
         if self.ParentEntity and parent_id is not None:
-            parent = self.ParentEntity.get(parent_id)
+            self.parent = self.ParentEntity.get(parent_id)
         else:
-            parent = None
-        self.parent = parent
-        self._setattr(self.parent_name or 'parent', parent)
+            self.parent = None
 
-    def _set_member(self, parent_id=None, id=None):
+    def _set_member_by_id(self, parent_id=None, id=None):
         """Set member attribute on both ``self`` and ``c``.
 
         The member is attached as member_name, where member_name is the
@@ -258,15 +287,10 @@ class RestController(BaseController):
             The ID of the member to attach
 
         """
-        self._set_parent(parent_id)
-        if id is None:
-            member = self.Entity()
-        else:
-            member = self.Entity.get(id)
-        self.member = member
-        self._setattr(self.member_name, member)
+        self._set_parent_by_id(parent_id)
+        self.member = self.Entity.get(id) if id is not None else self.Entity() 
 
-    def _set_collection(self, parent_id=None, page=0, num_items=10):
+    def _set_collection_by_id(self, parent_id=None, page=0, num_items=10):
         """Set collection (or subset) attribute on both ``self`` and ``c``.
 
         The collection is attached as collection_name, where collection_name
@@ -281,9 +305,8 @@ class RestController(BaseController):
             TODO: Is there something in WebHelpers that can handle pagination?
 
         """
-        self._set_parent(parent_id)
+        self._set_parent_by_id(parent_id)
         self.collection = self.Entity.select()
-        self._setattr(self.collection_name, self.collection)
 
     def _render_response(self, format='html', template=None, **response_args):
         """Renders a response for those actions that return content.
