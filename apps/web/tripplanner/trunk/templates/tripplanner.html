@@ -52,7 +52,6 @@
 			<li class="%(route_tab_class)s"><a id="route_link" href="#find-route"><em>Find Route</em></a></li>
 			<li><a href="#help"><em>Help</em></a></li>
 			<li><a href="#feedback"><em>Feedback</em></a></li>
-			<li><a href="#links"><em>Links</em></a></li>
 		  </ul>
 
 		  <!-- Input Tab Contents -->
@@ -153,10 +152,8 @@
 			  <!-- Help -->
 			  <p class="first-p">
 				<a name="help"></a>
-				<a href="http://bycycle.org/projects/trip-planner/help">Click here to view the trip planner help page &raquo;</a>
+				Here is a quick list of helpful hints (scroll down to see them all). For more detailed help, <a href="http://bycycle.org/projects/trip-planner/help">click here &raquo;</a>
 			  </p>
-
-			  <p>Here is a quick list of helpful hints (scroll down to see them all):</p>
 
 			  <ul id="tips">
 				<li>Select a region first (top left of map).</li>
@@ -179,22 +176,6 @@
 			  <p>You can also make public comments in <a href="http://groups.google.com/group/byCycle" title="Make public comments, questions, and suggestions">the byCycle discussion group &raquo;</a></p>
 			</div>
 			<!-- End Feedback -->
-
-			<div class="input_tab_content">
-			  <!-- Links -->
-			  <p class="first-p">
-				<a name="links"></a>
-				Links to <a href="http://bycycle.org/" title="byCycle Home Page">byCycle.org</a> information and resources:
-			  </p>
-			  <p>
-				<a href="http://bycycle.org/" title="byCycle.org Home Page">byCycle.org</a> &middot;
-				<a href="http://groups.google.com/group/byCycle" title="Make public comments, questions, and suggestions">Discuss</a> &middot;
-				<a href="http://bycycle.org/contact" title="Send us problem reports, comments, questions, and suggestions">Feedback</a> &middot;
-				<a href="http://bycycle.org/support" title="Get involved, buy a shirt, donate, ...">Support byCycle</a> &middot;
-				<a href="http://trac.bycycle.org/" title="Information for Developers (Trac)">Developers</a>
-			  </p>
-			  <!-- End Links -->
-			</div>
 		  </div>
 		  <!-- End Input Tabs Content -->
 
@@ -214,6 +195,24 @@
 
   	  <div class="clear"></div>
 
+	</div>
+
+
+	<div id="bar">
+	  <div id="status"></div>
+
+      <!-- Links -->
+      <div id="links">
+		<a id="bookmark"
+		   href=""
+		   title="Link you can use to bookmark the current result"
+		   >Link to this page</a>
+		|
+		<a href="http://bycycle.org/support"
+		   title="Get involved, buy a shirt, donate, ..."
+		   >Support byCycle</a>
+      </div>
+      <!-- End Links -->
 	</div>
 
 
@@ -272,11 +271,6 @@
 			   title="Clear everything from the map"
 			   onclick="clearMap(); return false;"
 			   >Clear map</a>
-			&middot;
-			<a id="bookmark"
-			   href=""
-			   title="Link you can use to bookmark the current result"
-			   >Link to this page</a>
 			  </div>
 			</form>
 		  </div>
@@ -312,11 +306,19 @@
 
 	<!-- Footer -->
 	<div id="footer">
-	  &nbsp;&copy; 2004 - 2007 <a href="http://byCycle.org/" title="byCycle Home Page">byCycle.org</a>
+	  &copy; 2004 - 2007
+	  <a href="http://byCycle.org/" title="byCycle Home Page">byCycle.org</a>
+
 	  &middot;
-	  Hosted at <a href="http://affil.aplus.net/Affiliates/click.jsp?bid=111&amp;aid=1003145">aPlus.net</a>
+
+	  Hosted at
+	  <a href="http://affil.aplus.net/Affiliates/click.jsp?bid=111&amp;aid=1003145">aPlus.net</a>
+
 	  &middot;
-	  <a href="http://www.bikeportland.org/">Portland bike news</a>
+
+	  <a href="http://trac.bycycle.org/"
+		 title="Information for Developers (Trac)"
+		 >Developers</a>
 	</div>
 	<!-- End Footer -->
 
@@ -328,6 +330,9 @@
 		  onclick="hideAds(); return false;"
 		  title="Hide Ads"
 		  >Hide Ads</a>
+	  </div>
+	  <div id="bike-portland">
+		<a href="http://www.bikeportland.org/">Portland	bike news</a>
 	  </div>
 	  <script type="text/javascript" src="static/js/ads.js"></script>
 	</div>
