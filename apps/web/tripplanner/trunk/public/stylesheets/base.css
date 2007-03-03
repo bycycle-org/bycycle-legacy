@@ -284,25 +284,21 @@ ul#input_tab_buttons li a, ul#input_tab_buttons li a em {
 /* Print Rules **********/
 
 @media print {
-  html, body, #result {
+  html, body {
     overflow: visible;
   }
-
-  #yui-main div {
-    float: none;
-    width: 100%;
-    margin: 0;
+  html, body, #col-a, #col-b, #result {
     padding: 0;
+    margin: 0;
+    width: 100%;  
   }
-
-  #hd,
-  #spacer,
-  #reverse_div,
-  #notice,
-  #map_menu,
-  #footer,
-  #secondary,
-  #ft {
+  #col-a, #col-b {
+    float: none;
+  }
+  #result {
+    height: auto;
+  }
+  .gmnoprint, .noprint {
     display: none;
   }
 }
