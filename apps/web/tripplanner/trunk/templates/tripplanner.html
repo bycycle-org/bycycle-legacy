@@ -9,13 +9,13 @@
 
     <title>byCycle - Bicycle Trip Planner</title>
 
-    <link rel="stylesheet" href="static/yui/tabview.css" type="text/css"/>
-    <link rel="stylesheet" href="static/css/base.css" type="text/css"/>
-    <!--[if IE]><link rel="stylesheet" href="static/css/base_ie.css" type="text/css"/><![endif]-->
+    <link rel="stylesheet" href="public/yui/tabview.css" type="text/css"/>
+    <link rel="stylesheet" href="public/stylesheets/base.css" type="text/css"/>
+    <!--[if IE]><link rel="stylesheet" href="public/stylesheets/base_ie.css" type="text/css"/><![endif]-->
 
     <!-- YUI JavaScripts -->
-    <script type="text/javascript" src="static/yui/yahoo-dom-event.js"></script>
-    <script type="text/javascript" src="static/js/util.js"></script>
+    <script type="text/javascript" src="public/yui/yahoo-dom-event.js"></script>
+    <script type="text/javascript" src="public/javascripts/util.js"></script>
   </head>
 
   <body>
@@ -29,7 +29,7 @@
 	  <div id="masthead">
 		<div id="logo">
 		  <a href="http://bycycle.org/" title="byCycle Home Page">
-			<img src="static/images/logo.png" width="150" height="40" alt="byCycle.org" />
+			<img src="public/images/logo.png" width="150" height="40" alt="byCycle.org" />
 		  </a>
 		</div>
 		<div id="app_name">
@@ -118,7 +118,7 @@
 				  <a href="javascript:void(0);"
 					 title="Swap From and To addresses"
 					 onclick="swapFrAndTo();"
-					 ><img src="static/images/swapfrto.gif" alt="swap"/></a>
+					 ><img src="public/images/swapfrto.gif" alt="swap"/></a>
 
 				  <input type="text" id="to" name="to" class="input_field" tabindex="1"  title="To address or intersection (no business names)" value="%(to)s"/>
 
@@ -334,20 +334,20 @@
 	  <div id="bike-portland">
 		<a href="http://www.bikeportland.org/">Portland	bike news</a>
 	  </div>
-	  <script type="text/javascript" src="static/js/ads.js"></script>
+	  <script type="text/javascript" src="public/javascripts/ads.js"></script>
 	</div>
 	<!-- End Google Ads -->
 
 
 	<!-- Placement down here recommended by crockford.com -->
 	<!-- YUI -->
-	<script type="text/javascript" src="static/yui/tabview.js"></script>
+	<script type="text/javascript" src="public/yui/tabview.js"></script>
 	<!-- byCycle -->
-	<script type="text/javascript" src="static/js/ginit.js"></script>
-	<script type="text/javascript" src="static/js/ajax.js"></script>
-	<script type="text/javascript" src="static/js/regions.js"></script>
-	<script type="text/javascript" src="static/js/gmap.js"></script>
-	<script type="text/javascript" src="static/js/ui.js"></script>
+	<script type="text/javascript" src="public/javascripts/ginit.js"></script>
+	<script type="text/javascript" src="public/javascripts/ajax.js"></script>
+	<script type="text/javascript" src="public/javascripts/regions.js"></script>
+	<script type="text/javascript" src="public/javascripts/gmap.js"></script>
+	<script type="text/javascript" src="public/javascripts/ui.js"></script>
 	<script type="text/javascript">
 	  //<![CDATA[
 	  YAHOO.util.Event.addListener(window, 'load', afterPageLoad);

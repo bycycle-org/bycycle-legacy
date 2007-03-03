@@ -478,7 +478,7 @@ function _showRegionOverlays(region, use_cached) {
 
   if (!region.marker) {
     icon = new GIcon();
-    icon.image = "static/images/x.png";
+    icon.image = "public/images/x.png";
     icon.iconSize = new GSize(17, 19);
     icon.iconAnchor = new GPoint(9, 10);
     icon.infoWindowAnchor = new GPoint(9, 10);

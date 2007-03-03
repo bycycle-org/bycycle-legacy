@@ -99,7 +99,7 @@ function mapCreate() {
   new GKeyboardHandler(map);
 
   var icon = new GIcon();
-  icon.image = 'static/images/reddot15.png';
+  icon.image = 'public/images/reddot15.png';
   icon.iconSize = new GSize(15, 15);
   icon.iconAnchor = new GPoint(7, 7);
 
@@ -129,7 +129,7 @@ function mapCreate() {
   });
   
   base_icon = new GIcon();
-  base_icon.shadow = 'static/images/shadow50.png';
+  base_icon.shadow = 'public/images/shadow50.png';
   base_icon.iconSize = new GSize(20, 34);
   base_icon.shadowSize = new GSize(37, 34);
   base_icon.iconAnchor = new GPoint(9, 34);
@@ -137,10 +137,10 @@ function mapCreate() {
   base_icon.infoShadowAnchor = new GPoint(18, 25);
   
   start_icon = new GIcon(base_icon);
-  start_icon.image = 'static/images/dd-start.png';
+  start_icon.image = 'public/images/dd-start.png';
   
   end_icon = new GIcon(base_icon);
-  end_icon.image = 'static/images/dd-end.png';
+  end_icon.image = 'public/images/dd-end.png';
 }
 
 function makeBikeLayer(zoom_levels) {
