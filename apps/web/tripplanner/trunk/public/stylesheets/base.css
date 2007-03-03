@@ -250,11 +250,11 @@ ul#input_tab_buttons li a, ul#input_tab_buttons li a em {
   font-size: 14px;
 }
 
-.summary, .directions {
+.directions {
   width: 99%;
   border-collapse: collapse;
 }
-.summary td, .directions td {
+.directions td {
   border: 1px solid gray;
   padding: 4px;
 }

@@ -592,28 +592,27 @@ class TripPlanner(object):
         to_addr = to_addr.replace('\n', '<br/>')
 
         table = '''
-        <table class="summary">
+        <table class="directions">
             <tr>
-              <td class="start">
+              <td class="start" colspan="2">
                 <h2><a href="javascript:void(0);" class="start"
                        onclick="showMapBlowup(0);">Start</a></h2>
               </td>
-              <td class="start">%s</a>
+              <td class="start" colspan="2">%s</a>
               </td>
             </tr>
             <tr>
-              <td class="end">
+              <td class="end" colspan="2">
                 <h2><a href="javascript:void(0);" class="end"
                        onclick="showMapBlowup(%s);">End</a></h2>
               </td>
-              <td class="end">%s</td>
+              <td class="end" colspan="2">%s</td>
             </tr>
             <tr>
-              <td class="total_distance"><h2>Distance</h2></td>
-              <td>%s miles</td>
+              <td class="total_distance" colspan="2"><h2>Distance</h2></td>
+              <td colspan="2">%s miles</td>
             </tr>
-        </table>
-        <table class="directions">
+
             %%s
         </table>
         ''' % (fr_addr, len(linestring) - 1, to_addr, distance)
