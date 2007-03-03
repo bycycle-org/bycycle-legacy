@@ -91,6 +91,9 @@ function mapCreate() {
   
   map.addControl(new GOverviewMapControl());
   var overview = document.getElementById('map_overview');
+  var i = overview.firstChild.firstChild;
+  i.style.left = '8px';
+  i.style.top = '8px';
   document.getElementById('map').appendChild(overview);
  
   new GKeyboardHandler(map);

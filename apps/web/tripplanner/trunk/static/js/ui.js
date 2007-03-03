@@ -148,9 +148,7 @@ function doFind(service, fr, to) {
   var region = region_el.value;
   var errors = [];
 
-  if (map) {
-	map.closeInfoWindow();  
-  }
+  map && map.closeInfoWindow();
   
   if (!region) {
     errors.push('Please select a region (at top left of map).');
@@ -235,13 +233,14 @@ function _callback(req) {
   if (status < 400) {
     if (start_ms) {
       var elapsed_time = (new Date().getTime() - start_ms) / 1000.0;
-      var elapsed_time = ['<p><small>Took ', elapsed_time, ' second', 
-			  (elapsed_time == 1.00 ? '' : 's'), 
-			  ' to find result.</small></p>'].join('');
+	  var s = elapsed_time == 1.00 ? '' : 's';
+      var elapsed_time = ['Took ', elapsed_time, ' second', s, 
+	                      ' to find result.'].join('');
     } else {
       var elapsed_time = '';
     }
-    setResult(unescape(result_set.result_set.html) + elapsed_time);
+	showStatus(elapsed_time);
+    setResult(unescape(result_set.result_set.html));
     eval('_' + result_set.result_set.type + 'Callback')(status, result_set);
   } else {
     setStatus('Error.');
@@ -308,6 +307,7 @@ function hideAds() {
   // Remove entirely the container that holds the ads
   document.body.removeChild(el('ads')); 
   el('header').style.marginRight = '0px';
+  el('bar').style.marginRight = '0px';
   el('content').style.marginRight = '0px';
   // Set center back to original center
   resizeMap();
@@ -330,8 +330,10 @@ function setStatus(content, error) {
 
 function showStatus(content, error)
 {	      
-  if (content)
-    setResult('<div id="status">' + content + '</div>', error);
+  if (content) {
+	setElStyle('status', 'display', 'block');
+	el('status').innerHTML = content;
+  }
 }
 
 function hideStatus() {
@@ -378,7 +380,7 @@ function clearMap() {
   }
 }
 
-var bC_footer_height = 24;
+var bC_footer_height = 19;
 
 function resizeDisplay(dims) {
   dims = dims || getWindowDimensions();
