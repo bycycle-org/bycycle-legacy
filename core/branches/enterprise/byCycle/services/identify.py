@@ -18,6 +18,7 @@ Given a region (i.e., data source), a layer within that region, and a point, fin
 """
 from sqlalchemy.sql import select, func
 from sqlalchemy.exceptions import InvalidRequestError
+from byCycle.model import db
 from byCycle.model.domain import Point
 from byCycle import services
 from byCycle.services.exceptions import IdentifyError
@@ -54,7 +55,7 @@ class Service(services.Service):
         earth_circumference = reg.earth_circumference
         layer = 'layer_%s' % layer
         table = getattr(reg.tables, layer)
-        query = reg.dbh.session.query(getattr(reg.mappers, layer))
+        query = db.session.query(getattr(reg.mappers, layer))
         wkt = str(point)
         # Function to convert the input point to native geometry
         transform = func.transform(func.GeomFromText(wkt, 4326), SRID)

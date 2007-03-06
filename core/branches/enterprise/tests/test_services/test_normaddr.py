@@ -134,7 +134,7 @@ class TestPortlandOR(unittest.TestCase):
         self.assertEqual(oAddr.number, 633)
         self.assertEqual(oAddr.network_id, network_id)
 
-        session = create_session(bind_to=r.dbh.engine)
+        session = create_session(bind_to=db.engine)
         query = session.query(r.mappers.layer_edges)
         edge = query.get(network_id)
         self.assertEqual(str(edge.street_name), 'N Alberta St')

@@ -16,13 +16,6 @@
 Provides the ``DB`` class, which connects to the database and contains various
 generic (i.e., not region-specific) database functions.
 
-TODO: The ``DB`` class is a (poorly implemented) Singleton. Ian Bicking thinks
-Singletons are stupid. At the very least, we should use a better
-implementation. Perhaps the class and it's methods should be replaced with
-module-level functions, then we'd just import db and db.whatever(), which is
-basically what happens now anyway, except that there's an extra step to
-instantiate the class.
-
 """
 from __future__ import with_statement
 
@@ -34,83 +27,67 @@ from sqlalchemy.schema import BoundMetaData
 from sqlalchemy.orm import create_session
 
 
-class _DB(object):
-    """Global database connection handler."""
+def __init__(debug=False, echo=False):
+    """Create the global (Singleton) database handler."""
+    global model_path, engine, metadata, raw_metadata, session
+    model_path = os.path.abspath(os.path.dirname(__file__))
+    engine = create_engine(getConnectionUri())
+    metadata = BoundMetaData(engine)
+    raw_metadata = BoundMetaData(engine)
+    session = create_session(bind_to=engine)
 
-    def __init__(self, debug=False, echo=False):
-        """Create the global (Singleton) database handler."""
-        self.model_path = os.path.abspath(os.path.dirname(__file__))        
-        self.engine = create_engine(self.getConnectionUri())
-        self.metadata = BoundMetaData(self.engine)
-        self.raw_metadata = BoundMetaData(self.engine)
-        self.session = create_session(bind_to=self.engine)
-        if debug and echo:
-            self.turnSQLEchoOn()
+def getConnectionUri():
+    """Get database connection URI (DSN)."""
+    dburi = 'postgres://bycycle:%s@localhost/bycycle'
+    pw_path = os.path.join(model_path, '.pw')
+    with file(pw_path) as pw_file:
+        password = pw_file.read().strip()
+    return dburi % (password)
 
-    def getConnectionUri(self):
-        """Get database connection URI (DSN)."""
-        dburi = 'postgres://bycycle:%s@localhost/bycycle'
-        pw_path = os.path.join(self.model_path, '.pw')
-        with file(pw_path) as pw_file:
-            password = pw_file.read().strip()
-        return dburi % (password)
+def getById(mapper, table, *ids):
+    """Get objects from ``table`` using ``mapper`` and order by ``ids``.
 
-    def getById(self, mapper, table, *ids):
-        """Get objects from ``table`` using ``mapper`` and order by ``ids``.
+    ``ids`` One or more row IDs
+    ``mapper`` DB to object mapper
+    ``table`` Table to fetch from
 
-        ``ids`` One or more row IDs
-        ``mapper`` DB to object mapper
-        ``table`` Table to fetch from
-        
-        return `list`
-          A list of domain objects corresponding to the IDs passed via ``ids``.
-          Any ID in ``ids`` that doesn't correspond to a row in ``table`` will
-          be ignored (for now), so the list may not contain the same number of
-          objects as len(ids). If ``ids`` is empty, an empty list is returned.
+    return `list`
+      A list of domain objects corresponding to the IDs passed via ``ids``.
+      Any ID in ``ids`` that doesn't correspond to a row in ``table`` will
+      be ignored (for now), so the list may not contain the same number of
+      objects as len(ids). If ``ids`` is empty, an empty list is returned.
 
-        """
-        query = self.session.query(mapper)
-        objects = query.select(table.c.id.in_(*ids))
-        objects_by_id = dict(zip([object.id for object in objects], objects))
-        ordered_objects = []
-        for i in ids:
-            try:
-                ordered_objects.append(objects_by_id[i])
-            except KeyError:
-                # No row with ID==i in ``table``
-                # TODO: Should we insert None instead or raise???
-                pass
-        return ordered_objects
-
-    def turnSQLEchoOff(self):
-        """Turn off echoing of SQL statements."""
-        self.engine.echo = False
-
-    def turnSQLEchoOn(self):
-        """Turn on echoing of SQL statements."""
-        self.engine.echo = True
-
-    def vacuum(self, *tables):
-        """Vacuum ``tables`` or all tables if ``tables`` not given."""
-        self.connection.set_isolation_level(0)
-        if not tables:
-            self.cursor.execute('VACUUM FULL ANALYZE')
-        else:
-            for table in tables:
-                self.cursor.execute('VACUUM FULL ANALYZE %s' % table)
-        self.connection.set_isolation_level(2)
-
-    def __del__(self):
+    """
+    query = session.query(mapper)
+    objects = query.select(table.c.id.in_(*ids))
+    objects_by_id = dict(zip([object.id for object in objects], objects))
+    ordered_objects = []
+    for i in ids:
         try:
-            self.session.close()
-        except:
+            ordered_objects.append(objects_by_id[i])
+        except KeyError:
+            # No row with ID==i in ``table``
+            # TODO: Should we insert None instead or raise???
             pass
+    return ordered_objects
+
+def turnSQLEchoOff():
+    """Turn off echoing of SQL statements."""
+    engine.echo = False
+
+def turnSQLEchoOn():
+    """Turn on echoing of SQL statements."""
+    engine.echo = True
+
+def vacuum(*tables):
+    """Vacuum ``tables`` or all tables if ``tables`` not given."""
+    connection.set_isolation_level(0)
+    if not tables:
+        cursor.execute('VACUUM FULL ANALYZE')
+    else:
+        for table in tables:
+            cursor.execute('VACUUM FULL ANALYZE %s' % table)
+    connection.set_isolation_level(2)
 
 
-__db = None
-
-def DB(*args, **kwargs):
-    global __db
-    if __db is None:
-        __db = _DB(*args, **kwargs)
-    return __db
+__init__()
