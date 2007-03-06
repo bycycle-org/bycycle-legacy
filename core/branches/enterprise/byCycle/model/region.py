@@ -43,7 +43,14 @@ regions = {
         'title': 'Milwaukee, WI',
         'units': 'feet',
         'earth_circumference': 131484672
-    }
+    },
+    
+    'pittsburghpa': {
+        'SRID': 2913,
+        'title': 'Milwaukee, WI',
+        'units': 'feet',
+        'earth_circumference': 131484672
+    }    
 }
 
 
@@ -91,12 +98,9 @@ class Region(object):
 
         self.float_encode = float_encode
         self.float_decode = float_decode
-
-        # Get database handler
-        self.dbh = db.DB()
         
         # Set up path to data files for this region
-        self.data_path = os.path.join(self.dbh.model_path, key, 'data')
+        self.data_path = os.path.join(db.model_path, key, 'data')
         self.matrix_path = os.path.join(self.data_path, 'matrix.pyc')
 
     @property
@@ -107,7 +111,7 @@ class Region(object):
             imp_path = 'byCycle.model.%s.data.tables' % self.key
             tables_mod = __import__(imp_path, globals(), locals(), [''])
             self._tables = tables_mod.Tables(
-                self.key, self.SRID, self.dbh.metadata, self.dbh.raw_metadata
+                self.key, self.SRID, db.metadata, db.raw_metadata
             )
         return self._tables
 
@@ -195,7 +199,7 @@ class Region(object):
         ``ids`` One or more node IDs
 
         """
-        return self.dbh.getById(
+        return db.getById(
             self.mappers.layer_nodes, self.tables.layer_nodes, *ids
         )
 
@@ -205,7 +209,7 @@ class Region(object):
         ``id`` -- One or more edges IDs
 
         """
-        return self.dbh.getById(
+        return db.getById(
             self.mappers.layer_edges, self.tables.layer_edges, *ids
         )
     
@@ -256,7 +260,7 @@ class Region(object):
         cols = ['id', 'node_f_id', 'node_t_id', 'one_way', 'length(geom)']
         if len(self.edge_attrs) > 1:
             cols += self.edge_attrs[1:]
-        select_ = select(cols, engine=self.dbh.engine, from_obj=[layer_edges])
+        select_ = select(cols, engine=db.engine, from_obj=[layer_edges])
         code = layer_edges.c.code
         
         # TODO: Call region subclass to get the edge filter
@@ -334,7 +338,7 @@ class Region(object):
         marshal.dump(G, dumpfile)
         dumpfile.close()
         
-    def _adjustRowForMatrix(self, dbh, row):
+    def _adjustRowForMatrix(self, row):
         """Make changes to ``row`` before adding it to the adjacency matrix."""
         pass
 

@@ -33,6 +33,7 @@ the Address Normalization service (normaddr):
 from sqlalchemy import orm
 from sqlalchemy.sql import select, func, and_, or_
 from sqlalchemy.exceptions import InvalidRequestError
+from byCycle.model import db
 from byCycle.model.address import *
 from byCycle.model.geocode import *
 from byCycle.model.domain import Point
@@ -160,7 +161,7 @@ class Service(services.Service):
         tables = self.region.tables
         layer_edges = tables.layer_edges
         _c = layer_edges.c
-        query = self.region.dbh.session.query(self.region.mappers.layer_edges)
+        query = db.session.query(self.region.mappers.layer_edges)
 
         try:
             # Try to look up edge by network ID first
@@ -248,7 +249,7 @@ class Service(services.Service):
 
         # Get node rows matching common node IDs and map to `Node` objects
         layer_nodes = self.region.tables.layer_nodes
-        query = self.region.dbh.session.query(self.region.mappers.layer_nodes)
+        query = db.session.query(self.region.mappers.layer_nodes)
         select_nodes = layer_nodes.select(layer_nodes.c.id.in_(*node_ids))
         nodes = query.select(select_nodes)
 
@@ -301,7 +302,7 @@ class Service(services.Service):
             reg = self.region
             _c = reg.tables.layer_nodes.c
             sel = select(_c, _c.id == node_id)
-            query = reg.dbh.session.query(reg.mappers.layer_nodes)
+            query = db.session.query(reg.mappers.layer_nodes)
             try:
                 node = query.selectone(sel)
             except InvalidRequestError:

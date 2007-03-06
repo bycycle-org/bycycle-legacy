@@ -18,11 +18,7 @@ This file sets up the model API by exposing the database module & its engine
 and all of the model/domain/entity classes.
 
 """
-# TODO: I'd rather just import db and use it directly, which implies removing
-#       the DB class and moving its methods to db module functions
-#       [wlb 2/23/07]
 from byCycle.model import db
-_db = db.DB()
 
 # Expose domain/entity classes via model API
 from byCycle.model.domain import *
@@ -30,4 +26,4 @@ from byCycle.model.address import *
 
 
 # Expose ``engine`` via the model API
-engine = _db.engine
+engine = db.engine

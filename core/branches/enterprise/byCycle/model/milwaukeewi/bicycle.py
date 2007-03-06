@@ -1,44 +1,23 @@
-"""$Id$
+################################################################################
+# $Id$
+# Created 2005-11-07.
+#
+# Milwaukee, WI, Bicycle Travel Mode.
+#
+# Copyright (C) 2006 Wyatt Baldwin, byCycle.org <wyatt@bycycle.org>.
+# All rights reserved.
+# 
+# For terms of use and warranty details, please see the LICENSE file included
+# in the top level of this distribution. This software is provided AS IS with
+# NO WARRANTY OF ANY KIND.
+################################################################################
+"""Bicycle travel mode for Milwaukee, WI, region."""
+from byCycle.model import tmode
 
-Description goes here.
 
-Copyright (C) 2006 Wyatt Baldwin, byCycle.org <wyatt@bycycle.org>
-
-All rights reserved.
-
-TERMS AND CONDITIONS FOR USE, MODIFICATION, DISTRIBUTION
-
-1. The software may be used and modified by individuals for noncommercial, 
-private use.
-
-2. The software may not be used for any commercial purpose.
-
-3. The software may not be made available as a service to the public or within 
-any organization.
-
-4. The software may not be redistributed.
-
-THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND 
-ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED 
-WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE 
-DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR 
-ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES 
-(INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; 
-LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON 
-ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT 
-(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS 
-SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-
-"""
-# Milwaukee Bicycle Travel Mode
-# 11/07/2005
-
-from byCycle.model import milwaukeewi
-
-class Mode(milwaukeewi.Mode):
-    def __init__(self, **kwargs):
-        self.tmode = "bicycle"
-        milwaukeewi.Mode.__init__(self)
+class Mode(tmode.TravelMode):
+    def __init__(self, region):
+        tmode.TravelMode.__init__(self)
         self.mph = 10
 
     def getEdgeWeight(self, v, edge_attrs, prev_edge_attrs):
@@ -54,7 +33,7 @@ class Mode(milwaukeewi.Mode):
             # Malformed CFCC field in DB
             cl, cat = 'x', 0
             ma, mi = 0, 0
-            
+
         bikemode = edge_attrs[indices["bikemode"]]
         lanes = edge_attrs[indices["lanes"]]
         adt = edge_attrs[indices["adt"]]
@@ -87,12 +66,12 @@ class Mode(milwaukeewi.Mode):
             lanes_factor = lanes / 2.0
             if lanes_factor < 1: lanes_factor = 1
             hours *= lanes_factor
-            
+
             try:
                 # Penalize edge if it has different street name from previous edge
                 prev_ix_sn = prev_edge_attrs[indices["street_name_id"]]
                 if ix_sn != prev_ix_sn: hours += .0055555555555555
             except TypeError:
                 pass
-        
+
         return hours
