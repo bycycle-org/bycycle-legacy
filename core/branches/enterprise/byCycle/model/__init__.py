@@ -14,16 +14,12 @@
 """
 byCycle model package. 
 
-This file sets up the model API by exposing the database module & its engine
-and all of the model/domain/entity classes.
+This file sets up the model API by exposing the database module and all of the
+model/domain/entity classes.
 
 """
-from byCycle.model import db
+# We must connect before defining Entity classes, so this must be first
+from byCycle.model.db import *
 
-# Expose domain/entity classes via model API
 from byCycle.model.domain import *
 from byCycle.model.address import *
-
-
-# Expose ``engine`` via the model API
-engine = db.engine

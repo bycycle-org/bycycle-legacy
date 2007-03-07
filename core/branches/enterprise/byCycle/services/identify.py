@@ -29,8 +29,8 @@ class Service(services.Service):
 
     name = 'identify'
 
-    def __init__(self, region=None):
-        services.Service.__init__(self, region=region)
+    def __init__(self, region=None, session=None):
+        services.Service.__init__(self, region=region, session=session)
 
     def query(self, q, layer=None):
         """Find feature in layer closest to point represented by ``q``.
@@ -55,7 +55,7 @@ class Service(services.Service):
         earth_circumference = reg.earth_circumference
         layer = 'layer_%s' % layer
         table = getattr(reg.tables, layer)
-        query = db.session.query(getattr(reg.mappers, layer))
+        query = self.session.query(getattr(reg.mappers, layer))
         wkt = str(point)
         # Function to convert the input point to native geometry
         transform = func.transform(func.GeomFromText(wkt, 4326), SRID)

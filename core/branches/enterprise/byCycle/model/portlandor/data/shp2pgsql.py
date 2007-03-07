@@ -189,9 +189,6 @@ engine = None
 # Metadata for schema tables
 metadata = None
 
-# Metadata for just the raw table
-raw_metadata = None
-
 # Schema tables (dict of {table name => table object})
 tables = None
 
@@ -236,8 +233,8 @@ def createMetadata(engine):
     return metadata
 
 
-def getTables(metadata, raw_metadata, schema):
-    tables = Tables(schema, metadata, raw_metadata, add_geometry=False)
+def getTables(metadata, schema):
+    tables = Tables(schema, metadata, add_geometry=False)
     raw_table = tables.raw_table
     return tables, raw_table
 
@@ -865,8 +862,7 @@ def main(argv):
     connection = engine.raw_connection()
     cursor = connection.cursor()
     metadata = createMetadata(engine)
-    raw_metadata = createMetadata(engine)
-    tables, raw_table = getTables(metadata, raw_metadata, db_schema)
+    tables, raw_table = getTables(metadata, db_schema)
     # raw_data = ...
     timer = meter.Timer(start_now=False)
     # Enter event loop

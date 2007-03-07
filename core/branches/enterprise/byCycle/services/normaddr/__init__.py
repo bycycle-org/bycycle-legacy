@@ -55,14 +55,14 @@ class Service(services.Service):
 
     name = 'address'
 
-    def __init__(self, region=None):
+    def __init__(self, region=None, session=None):
         """
 
         ``region`` `Region` | `string`
             `Region` or region key
 
         """
-        services.Service.__init__(self, region=region)
+        services.Service.__init__(self, region=region, session=session)
 
     def query(self, q):
         """Get a normalized address for the input address.

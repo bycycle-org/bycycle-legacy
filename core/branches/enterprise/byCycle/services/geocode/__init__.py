@@ -66,8 +66,8 @@ class Service(services.Service):
 
     name = 'geocode'
 
-    def __init__(self, region=None):
-        services.Service.__init__(self, region=region)
+    def __init__(self, region=None, session=None):
+        services.Service.__init__(self, region=region, session=session)
 
     def query(self, q):
         """Find and return `Geocodes` in ``region`` matching the address ``q``.
@@ -161,7 +161,7 @@ class Service(services.Service):
         tables = self.region.tables
         layer_edges = tables.layer_edges
         _c = layer_edges.c
-        query = db.session.query(self.region.mappers.layer_edges)
+        query = self.session.query(self.region.mappers.layer_edges)
 
         try:
             # Try to look up edge by network ID first
@@ -249,7 +249,7 @@ class Service(services.Service):
 
         # Get node rows matching common node IDs and map to `Node` objects
         layer_nodes = self.region.tables.layer_nodes
-        query = db.session.query(self.region.mappers.layer_nodes)
+        query = self.session.query(self.region.mappers.layer_nodes)
         select_nodes = layer_nodes.select(layer_nodes.c.id.in_(*node_ids))
         nodes = query.select(select_nodes)
 
@@ -302,7 +302,7 @@ class Service(services.Service):
             reg = self.region
             _c = reg.tables.layer_nodes.c
             sel = select(_c, _c.id == node_id)
-            query = db.session.query(reg.mappers.layer_nodes)
+            query = self.session.query(reg.mappers.layer_nodes)
             try:
                 node = query.selectone(sel)
             except InvalidRequestError:

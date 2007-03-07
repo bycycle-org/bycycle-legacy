@@ -20,21 +20,21 @@ generic (i.e., not region-specific) database functions.
 from __future__ import with_statement
 
 import os
-import math
 
 from sqlalchemy.engine import create_engine
-from sqlalchemy.schema import BoundMetaData
 from sqlalchemy.orm import create_session
 
+import elixir
 
-def __init__(debug=False, echo=False):
-    """Create the global (Singleton) database handler."""
-    global model_path, engine, metadata, raw_metadata, session
-    model_path = os.path.abspath(os.path.dirname(__file__))
+from byCycle import install_path
+
+
+model_path = os.path.join(install_path, 'model')
+metadata = elixir.metadata
+
+def __init__():
+    global engine
     engine = create_engine(getConnectionUri())
-    metadata = BoundMetaData(engine)
-    raw_metadata = BoundMetaData(engine)
-    session = create_session(bind_to=engine)
 
 def getConnectionUri():
     """Get database connection URI (DSN)."""
@@ -44,12 +44,30 @@ def getConnectionUri():
         password = pw_file.read().strip()
     return dburi % (password)
 
-def getById(mapper, table, *ids):
-    """Get objects from ``table`` using ``mapper`` and order by ``ids``.
+def connectMetadata(metadata=elixir.metadata):
+    """Connect ``metadata`` to ``engine``."""
+    metadata.connect(engine)
 
+def makeSession():
+    connectMetadata()
+    return create_session(bind_to=engine)
+
+def createAll():
+    turnSQLEchoOn()
+    metadata.create_all()
+    turnSQLEchoOff()
+
+def dropAll():
+    turnSQLEchoOn()
+    metadata.drop_all()
+    turnSQLEchoOff()
+
+def getById(class_or_mapper, session, *ids):
+    """Get objects and order by ``ids``.
+
+    ``class_or_mapper`` Entity class or DB to object mapper
+    ``session`` DB session
     ``ids`` One or more row IDs
-    ``mapper`` DB to object mapper
-    ``table`` Table to fetch from
 
     return `list`
       A list of domain objects corresponding to the IDs passed via ``ids``.
@@ -58,8 +76,8 @@ def getById(mapper, table, *ids):
       objects as len(ids). If ``ids`` is empty, an empty list is returned.
 
     """
-    query = session.query(mapper)
-    objects = query.select(table.c.id.in_(*ids))
+    query = session.query(class_or_mapper)
+    objects = query.select(class_or_mapper.c.id.in_(*ids))
     objects_by_id = dict(zip([object.id for object in objects], objects))
     ordered_objects = []
     for i in ids:
