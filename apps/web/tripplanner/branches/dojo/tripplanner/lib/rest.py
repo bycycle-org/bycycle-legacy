@@ -28,9 +28,10 @@ Assumptions
       map.resource('animal', 'animals')
       map.resource('cow', 'cows', path_prefix='animals/:parent_id'))
 
-* lib.base imports your model under the name "model" and your model will...
-  * connect to your database using via SQLAlchemy.
-  * expose its underlying database SQLAlchemy ``engine`` via model.engine.
+* lib.base imports your model under the name ``model`` and your model will...
+  * connect to your database via SQLAlchemy,
+  * contain a function named ``connectMetadata`` that binds elixir.metadata to
+    your database engine,
   * expose your elixir.Entity classes, regardless of where they are
     actually defined.
 
@@ -54,9 +55,9 @@ Assumptions
 
 * Your controllers will inherit from RestController instead of BaseController:
 
-  This module is a drop in replacement for ``base``, so do this in your
+  This module is a drop in replacement for lib.base, so do this in your
   controllers (which will pull in everything that's defined or imported in
-  ``base``; you don't need to modify ``base`` except to import you model):
+  lib.base; you don't need to modify lib.base except to import you model):
 
     from tripplanner.lib.rest import *
 
@@ -65,7 +66,6 @@ Assumptions
     from tripplanner.lib.base import *
 
 """
-import elixir
 import simplejson
 
 from tripplanner.lib.base import *
@@ -75,7 +75,7 @@ class RestController(BaseController):
     """Base class for RESTful controllers."""
 
     def __init__(self):
-        """Set up REST Controller.
+        """Set up RESTful Controller.
 
         We assume the controller file is named after the resource's collection
         name and that there is a corresponding top level template directory.
@@ -83,8 +83,7 @@ class RestController(BaseController):
         hats.py and there will be a template directory at /templates/hats.
 
         """
-        # Connect dynamic metadata to database engine
-        elixir.metadata.connect(model.engine)
+        model.connectMetadata()
 
         route_info = request.environ['pylons.routes_dict']
         self.parent_id = route_info.get('parent_id', None)
@@ -396,13 +395,13 @@ class RestController(BaseController):
         """Get XML content."""
         html = render('%s.xml' % self.template)
         return html, 'text/xml'
-    
+
     def _wrap(self):
         """Whether to wrap a template in its parent template.
 
         Default is `True`. If wrap is set in query params, convert its value
         to bool and use that value; otherwise, return True.
-        
+
         """
         wrap = request.params.get('wrap', 'true')
         if wrap.lower() in ('0', 'n', 'no', 'false', 'nil'):
