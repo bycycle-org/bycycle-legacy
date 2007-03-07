@@ -81,7 +81,7 @@ class Service(services.Service):
         ``region`` `Region` | `string` -- Region key
 
         """
-        services.Service.__init__(self, region=region)
+        services.Service.__init__(self, region=region, session=None)
 
     #----------------------------------------------------------------------
     def query(self, q, tmode='bicycle', pref=''):
@@ -190,7 +190,7 @@ class Service(services.Service):
     #----------------------------------------------------------------------
     def _getGeocodes(self, waypoints):
         """Return a `list` of `Geocode`s associated with each ``waypoint``."""
-        geocode_service = geocode.Service(region=self.region)
+        geocode_service = geocode.Service(region=self.region, session=self.session)
         geocodes = []
         input_errors = []
         multiple_match_found = False
@@ -435,7 +435,7 @@ class Service(services.Service):
         distance = {units: None, 'blocks': None}
 
         # Get edges along path
-        edges = self.region.getEdgesById(*edge_ids)
+        edges = self.region.getEdgesById(self.session, *edge_ids)
 
         # Check if start and end are in edges
         edge_f_id = edge_ids[0]

@@ -13,27 +13,37 @@
 ################################################################################
 """Provides a base class for the byCycle core services."""
 from byCycle.model import regions
+from byCycle.model import db
 
 
 class Service(object):
     """Base class for byCycle services."""
 
-    def __init__(self, region=None):
-        """Connect to database, iff not alreay connected.
+    def __init__(self, region=None, session=None):
+        """Initialize service with ``region`` and database ``session``.
 
-        ``region`` `Region` | `string` | `None`
+        ``region`` string | ``Region`` | None
             Either a region key or a `Region` object. In the first case a new
-            `Region` will be instantiated to geocode the address; in the
-            second, the object will be used directly. ``region`` need not be
-            specified; if it isn't, a specific service can try to guess it
-            (most likely via the Address Normalization service).
+            ``Region`` will be instantiated; in the second, the object will be
+            used directly. ``region`` need not be specified; if it isn't, a
+            specific service can try to guess it (most likely via the address
+            normalization ``Service``).
 
-        raise `ValueError`
-            ``region`` is not a `Region` instance, a known region key or
-            alias, or None.
+        ``session``
+            Database session object. The same session must be used throughout
+            the lifetime of a ``Service``, including any composing
+            ``Service``s. For example, when using the route ``Service``, a new
+            session will be created if one is explicitly given. That session
+            should be passed along to the geocoding ``Service``, which should
+            pass it along to the address normalization ``Service``.
+
+        raise ValueError
+            ``region`` is not a known region key or alias, a ``Region``
+            instance, or None.
 
         """
         self.region = region
+        self.session = session or db.makeSession()
 
     def _get_region(self):
         try:
@@ -41,20 +51,16 @@ class Service(object):
         except AttributeError:
             return None
     def _set_region(self, region):
-        """Set `region` to ``region``
-
-        ``region`` `Region` | `str` | `None` -- See __init__ for details.
-
-        """
         self._region = regions.getRegion(region)
     region = property(_get_region, _set_region)
 
     def query(self, q):
-        """Query this service and return an object.
+        """Query this ``Service`` and return an object or objects.
 
-        ``q`` `object` -- The query object (string, list, etc)
+        ``q`` `object`
+            Query object that this ``Service`` understands
 
-        return `object`
+        return an object or a collection of objects
 
         """
         raise NotImplementedError

@@ -111,7 +111,7 @@ class Region(object):
             imp_path = 'byCycle.model.%s.data.tables' % self.key
             tables_mod = __import__(imp_path, globals(), locals(), [''])
             self._tables = tables_mod.Tables(
-                self.key, self.SRID, db.metadata, db.raw_metadata
+                self.key, self.SRID, db.metadata
             )
         return self._tables
 
@@ -193,25 +193,21 @@ class Region(object):
             self._mappers = mappers
         return self._mappers
 
-    def getNodesById(self, *ids):
+    def getNodesById(self, session, *ids):
         """Get nodes with specified IDs.
 
         ``ids`` One or more node IDs
 
         """
-        return db.getById(
-            self.mappers.layer_nodes, self.tables.layer_nodes, *ids
-        )
+        return db.getById(self.mappers.layer_nodes, session, *ids)
 
-    def getEdgesById(self, *ids):
+    def getEdgesById(self, session, *ids):
         """Get edges with specified IDs.
 
         ``id`` -- One or more edges IDs
 
         """
-        return db.getById(
-            self.mappers.layer_edges, self.tables.layer_edges, *ids
-        )
+        return db.getById(self.mappers.layer_edges, session, *ids)
     
     def getAdjacencyMatrix(self):
         """Return matrix. Prefer 1) existing 2) disk 3) newly created."""

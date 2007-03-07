@@ -44,11 +44,13 @@ class Service(Entity):
     has_field('title', Unicode)
     using_options(tablename='services')
 
-class Geocode(Service):
+class Geocode(Entity):
+    has_field('title', Unicode)
     has_field('geom', POINT(2913))
     using_options(tablename='geocodes')
 
-class Route(Service):
+class Route(Entity):
+    has_field('title', Unicode)
     has_field('geom', LINESTRING(2913))
     using_options(tablename='routes')
 

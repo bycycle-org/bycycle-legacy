@@ -19,7 +19,7 @@ from byCycle.model.data.sqltypes import *
 class Tables(object):
     """Tables for the Portland, OR, region."""
 
-    def __init__(self, schema, SRID, metadata, raw_metadata, add_geometry=True):
+    def __init__(self, schema, SRID, metadata, add_geometry=True):
         """Initialize tables for ``schema``, associating them with ``metadata``.
 
         ``metadata`` `object` -- SQLAlchemy `MetaData`
@@ -33,7 +33,6 @@ class Tables(object):
         self.schema = schema
         self.SRID = SRID
         self.metadata = metadata
-        self.raw_metadata = raw_metadata
         self.__initTables(add_geometry=add_geometry)
 
     def __getitem__(self, key):
@@ -164,7 +163,7 @@ class Tables(object):
         except AttributeError:
             self._raw_table = Table(
                 self.schema,
-                self.raw_metadata,
+                self.metadata,
                 Column('gid', Integer, primary_key=True),
 
                 # To edge table (core)
