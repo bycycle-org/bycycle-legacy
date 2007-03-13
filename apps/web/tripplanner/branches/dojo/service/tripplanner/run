@@ -1,0 +1,4 @@
+#!/bin/sh
+exec 2>&1
+exec setuidgid bycycle /usr/local/bin/python2.5 -u ./serve.py
+
