@@ -20,9 +20,8 @@ Assumptions
   map.resource('member_name', 'collection_name',
                path_prefix='parent_collection_name/:parent_id')
 
-  Note that you must use :parent_id and not any other name.
-  parent_collection_name is replaced with the plural name of the parent
-  resource.
+  Note that you must use :parent_id and not any other name. Replace
+  parent_collection_name with the plural name of your parent resource.
 
   Example:
       map.resource('animal', 'animals')
@@ -67,7 +66,7 @@ Assumptions
 
 """
 import simplejson
-
+from pylons.util import class_name_from_module_name
 from tripplanner.lib.base import *
 
 
@@ -85,7 +84,9 @@ class RestController(BaseController):
         """
         model.connectMetadata()
 
+        route = request.environ['routes.route']
         route_info = request.environ['pylons.routes_dict']
+
         self.parent_id = route_info.get('parent_id', None)
         self.controller = route_info['controller']
         self.action = route_info['action']
@@ -93,8 +94,7 @@ class RestController(BaseController):
         # Get parent name and parent Entity class for nested controller
         self.parent_name = getattr(self, 'parent_name', None)
         if self.parent_name is not None:
-            parent_entity_name = ''.join([word.title() for word in
-                                          self.parent_name.split('_')])
+            parent_entity_name = class_name_from_module_name(self.parent_name)
             self.ParentEntity = getattr(model, parent_entity_name)
         else:
             self.parent_name = 'parent'
@@ -102,19 +102,11 @@ class RestController(BaseController):
             self.ParentEntity = None
 
         # The collection name should be the same as the controller's file name
-        self.collection_name = self.controller
+        self.collection_name = route.collection_name
+        assert self.collection_name == self.controller
+        self.member_name = route.member_name
 
-        # If ``member_name`` is explicitly set, use it; else, guess that the
-        # member name is simply the collection name with an "s" hacked off.
-        # TODO: Find better way to get member name when it's not explicitly
-        # set.
-        self.member_name = getattr(self, 'member_name',
-                                   self.collection_name[0:-1])
-
-        # TODO: Is there a library in Paste/Pylons that will do this
-        # conversion from under_score to UnderScore?
-        entity_name = ''.join([word.title() for word in
-                               self.member_name.split('_')])
+        entity_name = class_name_from_module_name(self.member_name)
 
         # Import the entity class for the resource
         # This is sorta like ``from model import entity_name``
