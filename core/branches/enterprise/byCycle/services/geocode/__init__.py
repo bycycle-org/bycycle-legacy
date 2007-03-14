@@ -40,7 +40,7 @@ from byCycle.model.domain import Point
 from byCycle import services
 from byCycle.services import normaddr
 from byCycle.services import identify
-from byCycle.services.exceptions import ByCycleError, NotFoundError
+from byCycle.services.exceptions import * 
 
 
 class GeocodeError(ByCycleError):
