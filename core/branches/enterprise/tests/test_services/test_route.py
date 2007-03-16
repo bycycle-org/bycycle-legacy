@@ -26,24 +26,30 @@ class TestPortlandOR(unittest.TestCase):
         print '=========='
         timer.start()
         service = Service(region=region)
-        routes = service.query(q)
-        route = routes[0]
-        self.assert_(isinstance(route, Route))
-        print route
+        route_or_routes = service.query(q)
+        try:
+            route_or_routes[0]
+        except TypeError:
+            routes = [route_or_routes]
+        else:
+            routes = route_or_routes
+        for r in routes:
+            self.assert_(isinstance(r, Route))
+            print r
         print 'Took %.2f seconds' % timer.stop()
         print '=========='
-        return route
+        return routes
 
     def _queryRaises(self, q, exc):
         self.assertRaises(exc, self._query, q)
 
     def _test_no_place_on_first_address(self):
         q = ('4807 se kelly', '633 n alberta, portland, or')
-        route = self._query(q)
+        routes = self._query(q)
 
     def _test_no_place_on_second_address(self):
         q = ('4807 se kelly, portland, or', '633 n alberta')
-        route = self._query(q)
+        routes = self._query(q)
 
     def test_route(self):
         q = ('4807 se kelly, portland, or', '45th and division, portland, or')
@@ -51,14 +57,17 @@ class TestPortlandOR(unittest.TestCase):
         #q = ('250 ne going, portland, or', '350 n going, portland, or')
         #q = ('634 beech portland or','633 n alberta, portland or')
         try:
-            route = self._query(q)
+            routes = self._query(q)
         except MultipleMatchingAddressesError, exc:
             print exc.choices
+        else:
+            self.assert_(len(routes) == 1)
 
-    def _test_three_addresses(self):
+    def test_three_addresses(self):
         q = ('4807 se kelly, portland, or', '633 n alberta', '1500 ne alberta')
-        route = self._query(q)
-
+        routes = self._query(q)
+        self.assert_(len(routes) == 2)
+        
 
 if __name__ == '__main__':
     unittest.main()
