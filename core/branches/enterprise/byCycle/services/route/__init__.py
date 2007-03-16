@@ -152,7 +152,10 @@ class Service(services.Service):
             route_data = self._makeDirectionsForPath(*path_info)
             route = Route(self.region, start, end, *route_data)
             routes.append(route)
-        return routes
+        if len(routes) == 1:
+            return routes[0]
+        else:
+            return routes
 
     #----------------------------------------------------------------------
     def _getWaypoints(self, q):
