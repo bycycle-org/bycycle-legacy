@@ -47,8 +47,8 @@ class Route(object):
         for i in range(self.linestring_ll.numPoints()):
             points.append(self.linestring_ll.pointN(i))
         route = {
-            'start': self.start,
-            'end': self.end,
+            'start': self.start.__simplify__(),
+            'end': self.end__simplify__(),
             'linestring': [{'x': p.x, 'y': p.y} for p in points],
             'directions': self.directions,
             'distance': self.distance
