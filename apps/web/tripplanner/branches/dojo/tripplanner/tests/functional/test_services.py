@@ -1,6 +1,9 @@
 from tripplanner.tests import *
 
 class TestServiceController(TestController):
-    def test_index(self):
-        response = self.app.get(url_for(controller='service'))
-        # Test response...
+    def test_find_member(self):
+        url = url_for('services', parent_id='portlandor', action='find',
+                      q='633 n alberta')
+        assert url == '/regions/portlandor/services;find?q=633+n+alberta'
+        response = self.app.get(url)
+        assert response.status == 302
