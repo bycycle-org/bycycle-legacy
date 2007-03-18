@@ -1,6 +1,6 @@
 from tripplanner.tests import *
 
-class TestRegionController(TestController):
+class TestRegionsController(TestController):
     def test_index(self):
-        response = self.app.get(url_for(controller='region'))
-        # Test response...
+        url = url_for('regions')
+        response = self.app.get(url)
