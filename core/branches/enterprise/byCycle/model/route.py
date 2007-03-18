@@ -47,14 +47,16 @@ class Route(object):
         for i in range(self.linestring_ll.numPoints()):
             points.append(self.linestring_ll.pointN(i))
         route = {
-            'start': self.start.__simplify__(),
-            'end': self.end__simplify__(),
+            'start': dict(self.start),
+            'end': dict(self.end),
             'linestring': [{'x': p.x, 'y': p.y} for p in points],
             'directions': self.directions,
             'distance': self.distance
         }
+        route['start']['geocode'] = route['start']['geocode'].__simplify__()
+        route['end']['geocode'] = route['end']['geocode'].__simplify__()
         return route
-        
+
     #----------------------------------------------------------------------
     def __repr__(self):
         return repr(self.__simplify__())
