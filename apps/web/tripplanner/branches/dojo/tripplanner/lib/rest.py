@@ -8,29 +8,50 @@ and uses those assumptions to take action.
 Assumptions
 ===========
 
-* Routes are set up with map.resource like this:
+* Routes are set up with ``map.resource`` like this:
 
-  map.resource('member_name', 'collection_name')
+  map.resource(<member_name>, <collection_name>)
 
-  Example:
-      map.resource('cow', 'cows')
+  Example::
+
+      >>> from routes import *
+      >>> m = Mapper()
+      >>> m.resource('cow', 'cows')
+      >>> url_for('cow', id='bessy')
+      '/cows/bessy'
+      >>> url_for('new_cow')
+      '/cows/new'
+      >>> url_for('cows')
+      '/cows'
 
 * Nested resource routes are set up like this:
 
-  map.resource('member_name', 'collection_name',
-               path_prefix='parent_collection_name/:parent_id')
+  map.resource(<member_name>, <collection_name>,
+               parent_resource={'collection_name': <parent_collection_name>,
+                                'member_name': <parent_member_name>})
 
-  Note that you must use :parent_id and not any other name. Replace
-  parent_collection_name with the plural name of your parent resource.
+  Example::
 
-  Example:
-      map.resource('animal', 'animals')
-      map.resource('cow', 'cows', path_prefix='animals/:parent_id'))
+      >>> m = Mapper()
+      >>> m.resource('cow', 'cows',
+      ...            parent_resource={'collection_name': 'farmers',
+      ...                             'member_name': 'farmer'})
+      >>> url_for('farmer_cow', farmer_id='bob', id='bessy')
+      '/farmers/bob/cows/bessy'
+      >>> url_for('farmer_new_cow', farmer_id='bob')
+      '/farmers/bob/cows/new'
+      >>> url_for('farmer_cows', farmer_id='bob')
+      '/farmers/bob/cows'
 
 * lib.base imports your model under the name ``model`` and your model will...
   * connect to your database via SQLAlchemy,
   * contain a function named ``connectMetadata`` that binds elixir.metadata to
     your database engine,
+
+    >>> from base import *
+    >>> model.connectMetadata  # doctest: +ELLIPSIS
+    <function connectMetadata at ...>
+
   * expose your elixir.Entity classes, regardless of where they are
     actually defined.
 
@@ -56,18 +77,23 @@ Assumptions
 
   This module is a drop in replacement for lib.base, so do this in your
   controllers (which will pull in everything that's defined or imported in
-  lib.base; you don't need to modify lib.base except to import you model):
+  lib.base; you don't need to modify lib.base except possibly to import your
+  model):
 
-    from tripplanner.lib.rest import *
+      from <yourproject>.lib.rest import *
 
   instead of this:
 
-    from tripplanner.lib.base import *
+      from <yourproject>.lib.base import *
 
 """
 import simplejson
 from pylons.util import class_name_from_module_name
-from tripplanner.lib.base import *
+from base import *
+from base import __all__ as __base_all__
+
+
+__all__ = __base_all__ + ['RestController']
 
 
 class RestController(BaseController):
@@ -87,217 +113,174 @@ class RestController(BaseController):
         route = request.environ['routes.route']
         route_info = request.environ['pylons.routes_dict']
 
-        self.parent_id = route_info.get('parent_id', None)
+        self.parent_resource = route.parent_resource
         self.controller = route_info['controller']
         self.action = route_info['action']
 
-        # Get parent name and parent Entity class for nested controller
-        self.parent_name = getattr(self, 'parent_name', None)
-        if self.parent_name is not None:
-            parent_entity_name = class_name_from_module_name(self.parent_name)
-            self.ParentEntity = getattr(model, parent_entity_name)
+        name = getattr(self, 'parent_member_name', None)
+        if name is None and self.parent_resource is not None:
+            name = self.parent_resource['member_name']
+        self.parent_member_name = name
+        self.parent_id_name = '%s_id' % name
+        self.parent_id = route_info.get(self.parent_id_name, None)
+
+        name = getattr(self, 'parent_collection_name', None)
+        if name is None and self.parent_resource is not None:
+            name = self.parent_resource['collection_name']
+        self.parent_collection_name = name
+
+        # Get parent Entity class for nested controller
+        if self.parent_member_name is not None:
+            f = class_name_from_module_name
+            self.parent_entity_name = f(self.parent_member_name)
+            self.ParentEntity = getattr(model, self.parent_entity_name)
         else:
-            self.parent_name = 'parent'
-            parent_entity_name = None
-            self.ParentEntity = None
+            self.parent_entity_name, self.ParentEntity = None, None
 
-        # The collection name should be the same as the controller's file name
-        self.collection_name = route.collection_name
-        assert self.collection_name == self.controller
-        self.member_name = route.member_name
+        self.collection_name = (getattr(self, 'collection_name', None) or
+                                route.collection_name)
+        self.member_name = (getattr(self, 'member_name', None) or
+                            route.member_name)
 
-        entity_name = class_name_from_module_name(self.member_name)
+        self.entity_name = class_name_from_module_name(self.member_name)
 
         # Import the entity class for the resource
-        # This is sorta like ``from model import entity_name``
-        self.Entity = getattr(model, entity_name)
+        self.Entity = getattr(model, self.entity_name)
 
-        # Context:
-        # route
-        c.controller = self.controller
-        c.action = self.action
-        # parent
-        c.parent_name = self.parent_name
-        c.parent_entity_name = parent_entity_name
-        # member
-        c.collection_name = self.collection_name
-        c.member_name = self.member_name
-        c.entity_name = entity_name
-
-    def index(self, parent_id=None, format=None):
+    def index(self, format=None):
         """GET /
 
         Show all (or subset of) items in collection.
 
-        ``parent_id``
-            The ID of the parent resource, if this is a nested resource. This
-            is used to limit the collection to just those objects having a
-            parent with this ID.
-
         """
-        self._set_collection_by_id(parent_id)
+        self._set_collection_by_id()
         return self._render_response(format)
 
-    def new(self, parent_id=None, format=None):
+    def new(self, format=None):
         """GET /resource/new
 
         Show a form for creating a new item. The form should POST to
         /resource/create.
 
-        ``parent_id``
-            If given, the new item's parent will be the object of the
-            ``ParentEntity`` class having that ID.
-
         """
-        self._set_member_by_id(parent_id)
+        self._set_member_by_id()
         return self._render_response(format)
 
-    def show(self, parent_id=None, id=None, format=None):
+    def show(self, id=None, format=None):
         """GET /resource/id
 
-        Show existing item that has parent ID ``parent_id`` and ID ``id``.
+        Show existing item that has ID ``id``.
 
         """
-        self._set_member_by_id(parent_id, id)
+        self._set_member_by_id(id)
         return self._render_response(format)
 
-    def edit(self, parent_id=None, id=None, format=None):
+    def edit(self, id=None, format=None):
         """GET /resource/id;edit
 
-        Show a form for editing an existing item that has parent ID
-        ``parent_id`` and ID ``id``. The form should PUT to /resource/update.
+        Show a form for editing an existing item that has ID ``id``. The form
+        should PUT to /resource/update.
 
         """
-        self._set_member_by_id(parent_id, id)
+        self._set_member_by_id(id)
         return self._render_response(format)
 
-    def create(self, parent_id=None, format=None):
+    def create(self, format=None):
         """POST /resource
 
-        Create with POST data a new item that has parent ID ``parent_id``.
+        Create with POST data a new item.
 
         """
-        self._set_member_by_id(parent_id)
+        self._set_member_by_id()
 
         # TODO: Add POST data to self.member here.
 
         self.Entity.flush([self.member])
-        redirect_to(id=self.member.id, parent_id=parent_id, format=format,
-                    action='show')
+        args = {'id': self.member.id, self.parent_id_name: self.parent_id,
+                'format': format, 'action': 'show'}
+        redirect_to(**args)
 
-    def update(self, parent_id=None, id=None, format=None):
+    def update(self, id=None, format=None):
         """PUT /resource/id
 
-        Update with PUT data an existing item that has parent ID ``parent_id``
-        and ID ``id`` .
+        Update with PUT data an existing item that has ID ``id`` .
 
         """
-        self._set_member_by_id(parent_id, id)
+        self._set_member_by_id(id)
 
         # TODO: Update self.member with PUT data here.
 
         self.Entity.flush([self.member])
-        redirect_to(parent_id=parent_id, id=id, format=format, action='show')
+        args = {'id': id, self.parent_id_name: self.parent_id,
+                'format': format, 'action': 'show'}
+        redirect_to(**args)
 
-    def delete(self, parent_id=None, id=None, format=None):
+    def delete(self, id=None, format=None):
         """DELETE /resource/id
 
-        Delete the existing item that has parent_id ``parent_id`` ID ``id``.
+        Delete the existing item that has ID ``id``.
 
         """
-        self._set_member_by_id(parent_id, id)
+        self._set_member_by_id(id)
         self.Entity.delete(self.member)
         self.Entity.flush([self.member])
-        redirect_to(parent_id=parent_id, format=format, action='index')
+        args = {self.parent_id_name: self.parent_id, 'format': format,
+                'action': 'show'}
+        redirect_to(**args)
 
-    def _setattr(self, name, value):
-        """Set attribute on both ``c`` and ``self``.
-
-        ``name``
-            The name of the attribute (the specific resource name)
-
-        ``value``
-            The value of the attribute
-
-        """
-        setattr(self, name, value)
+    def __setattr__(self, name, value):
+        """Set attribute on both ``c`` and ``self``."""
+        if isinstance(getattr(self.__class__, name, None), property):
+            super(RestController, self).__setattr__(name, value)
+        else:
+            self.__dict__[name] = value
         setattr(c, name, value)
 
     def _get_parent(self):
-        return self._parent
+        return getattr(self, self.parent_member_name, None)
     def _set_parent(self, parent):
-        """Set the parent object to ``parent``."""
-        self._parent = parent
-        # 'parent' is the default parent name. If we don't check for this
-        # we'll end up in a nice recursively infinite loop when calling
-        # _setattr.
-        if self.parent_name != 'parent':
-            self._setattr(self.parent_name, parent)
-        else:
-            c.parent = parent
+        self.__dict__['parent'] = parent
+        setattr(self, self.parent_member_name, parent)
     parent = property(_get_parent, _set_parent)
 
-    def _get_member(self):
-        return self._member
-    def _set_member(self, member):
-        """Set the member object to ``member``."""
-        self._member = member
-        self._setattr(self.member_name, member)
-    member = property(_get_member, _set_member)
+    def _get_parent_id(self):
+        return getattr(self, self.parent_id_name, None)
+    def _set_parent_id(self, parent_id):
+        self.__dict__['parent_id'] = parent_id
+        setattr(self, self.parent_id_name, parent_id)
+    parent_id = property(_get_parent_id, _set_parent_id)
 
     def _get_collection(self):
-        return self._collection
+        return getattr(self, self.collection_name, None)
     def _set_collection(self, collection):
-        """Set the collection object to ``collection``."""
-        self._collection = collection
-        self._setattr(self.collection_name, collection)
+        self.__dict__['collection'] = collection
+        setattr(self, self.collection_name, collection)
     collection = property(_get_collection, _set_collection)
 
+    def _get_member(self):
+        return getattr(self, self.member_name, None)
+    def _set_member(self, member):
+        self.__dict__['member'] = member
+        setattr(self, self.member_name, member)
+    member = property(_get_member, _set_member)
+
     def _set_parent_by_id(self, parent_id=None):
-        """Set parent attribute on both ``self`` and ``c``.
-
-        The member is attached as parent_name, where parent_name is specified
-        in the child controller (defaults to "parent").
-
-        """
-        if self.ParentEntity and parent_id is not None:
+        if parent_id is None:
+            parent_id = self.parent_id
+        if parent_id is not None and self.ParentEntity:
             self.parent = self.ParentEntity.get(parent_id)
-        else:
-            self.parent = None
 
-    def _set_member_by_id(self, parent_id=None, id=None):
-        """Set member attribute on both ``self`` and ``c``.
-
-        The member is attached as member_name, where member_name is the
-        singular form of the resource.
-
-        ``parent_id``
-            The ID of the parent resource, if this is a nested resource
-
-        ``id``
-            The ID of the member to attach
-
-        """
+    def _set_member_by_id(self, id=None, parent_id=None):
         self._set_parent_by_id(parent_id)
-        self.member = self.Entity.get(id) if id is not None else self.Entity()
+        if id is not None:
+            entity = self.Entity.get(id)
+        else:
+            entity = self.Entity()
+        setattr(self, self.member_name, entity)
 
     def _set_collection_by_id(self, parent_id=None, page=0, num_items=10):
-        """Set collection (or subset) attribute on both ``self`` and ``c``.
-
-        The collection is attached as collection_name, where collection_name
-        is the plural form of the resource.
-
-        ``parent_id``
-            The ID of the parent resource, if this is a nested resource
-
-        ``page``
-        ``num_items``
-            Unimplemented for now
-            TODO: Is there something in WebHelpers that can handle pagination?
-
-        """
         self._set_parent_by_id(parent_id)
-        self.collection = self.Entity.select()
+        setattr(self, self.collection_name, self.Entity.select())
 
     def _render_response(self, format='html', template=None, **response_args):
         """Renders a response for those actions that return content.
@@ -358,7 +341,8 @@ class RestController(BaseController):
             try:
                 collection = getattr(self, self.collection_name)
             except AttributeError:
-                obj = None
+                raise ValueError('%s has no member or collection' %
+                                 self.__class__.name)
             else:
                 obj = [m.__simplify__() for m in collection]
         else:
