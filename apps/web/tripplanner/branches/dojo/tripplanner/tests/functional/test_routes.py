@@ -2,7 +2,7 @@ from tripplanner.tests import *
 
 class TestRouteController(TestController):
     def test_find_member(self):
-        url = url_for('routes', parent_id='portlandor', action='find',
+        url = url_for('routes', region_id='portlandor', action='find',
                       q='633 n alberta to 3950 ne 15th ave, portland')
         assert url == ('/regions/portlandor/routes;find?'
                        'q=633+n+alberta+to+3950+ne+15th+ave%2C+portland')
