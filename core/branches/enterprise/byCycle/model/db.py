@@ -38,6 +38,7 @@ def __init__():
     engine = create_engine(getConnectionUri())
     connection = engine.raw_connection()
     cursor = connection.cursor()
+    connectMetadata()
 
 def getConnectionUri():
     """Get database connection URI (DSN)."""
@@ -47,9 +48,9 @@ def getConnectionUri():
         password = pw_file.read().strip()
     return dburi % (password)
 
-def connectMetadata(metadata=elixir.metadata):
-    """Connect ``metadata`` to ``engine``."""
-    metadata.connect(engine)
+def connectMetadata(md=None):
+    """Connect metadata to ``engine``. Use ``md`` if specified."""
+    (md or metadata).connect(engine)
 
 def makeSession():
     connectMetadata()
