@@ -21,6 +21,7 @@ from __future__ import with_statement
 
 import os
 
+import sqlalchemy
 from sqlalchemy.engine import create_engine
 from sqlalchemy.orm import create_session
 
@@ -33,8 +34,10 @@ model_path = os.path.join(install_path, 'model')
 metadata = elixir.metadata
 
 def __init__():
-    global engine
+    global engine, connection, cursor
     engine = create_engine(getConnectionUri())
+    connection = engine.raw_connection()
+    cursor = connection.cursor()
 
 def getConnectionUri():
     """Get database connection URI (DSN)."""
@@ -54,13 +57,60 @@ def makeSession():
 
 def createAll():
     turnSQLEchoOn()
+    connectMetadata()
     metadata.create_all()
     turnSQLEchoOff()
 
 def dropAll():
     turnSQLEchoOn()
+    connectMetadata()
     metadata.drop_all()
     turnSQLEchoOff()
+
+def turnSQLEchoOff():
+    """Turn off echoing of SQL statements."""
+    engine.echo = False
+
+def turnSQLEchoOn():
+    """Turn on echoing of SQL statements."""
+    engine.echo = True
+
+def vacuum(*tables):
+    """Vacuum ``tables`` or all tables if ``tables`` not given."""
+    connection.set_isolation_level(0)
+    if not tables:
+        cursor.execute('VACUUM FULL ANALYZE')
+    else:
+        for table in tables:
+            cursor.execute('VACUUM FULL ANALYZE %s' % table)
+    connection.set_isolation_level(2)
+
+def execute(query):
+    cursor.execute(query)
+
+def commit():
+    connection.commit()
+
+def rollback():
+    connection.rollback()
+
+def dropTable(table):
+    # TODO: Try to make this work when the table has dependencies
+    try:
+        # FIXME: checkfirst doesn't seem to work
+        table.drop(checkfirst=True)
+    except sqlalchemy.exceptions.SQLError, e:
+        if not 'does not exist' in str(e):
+            raise
+
+def recreateTable(table):
+    """Drop ``table`` from database and then create it."""
+    dropTable(table)
+    table.create()
+
+def deleteAllFromTable(table):
+    """Delete all records from ``table``."""
+    table.delete().execute()
 
 def getById(class_or_mapper, session, *ids):
     """Get objects and order by ``ids``.
@@ -89,23 +139,34 @@ def getById(class_or_mapper, session, *ids):
             pass
     return ordered_objects
 
-def turnSQLEchoOff():
-    """Turn off echoing of SQL statements."""
-    engine.echo = False
 
-def turnSQLEchoOn():
-    """Turn on echoing of SQL statements."""
-    engine.echo = True
+def addGeometryColumn(table, srid, geom_type, name='geom'):
+    """Add a PostGIS geometry column to ``table``.
 
-def vacuum(*tables):
-    """Vacuum ``tables`` or all tables if ``tables`` not given."""
-    connection.set_isolation_level(0)
-    if not tables:
-        cursor.execute('VACUUM FULL ANALYZE')
-    else:
-        for table in tables:
-            cursor.execute('VACUUM FULL ANALYZE %s' % table)
-    connection.set_isolation_level(2)
+    ``table``
+        SQLAlchemy ``Table``
+
+    ``srid``
+
+    ``geom_type``
+        POINT, LINESTRING, etc
+
+    ``name``
+        Name to give the new geometry column
+
+    """
+    # Add geometry columns after tables are created and add gist INDEXes them
+    add_geom_col = "SELECT AddGeometryColumn('%s', '%s', '%s', %s, '%s', 2)"
+    create_gist_index = ('CREATE INDEX "%s_%s_gist"'
+                         'ON "%s"."%s"'
+                         'USING GIST ("%s" gist_geometry_ops)')
+    db_schema = table.schema
+    table_name = table.name
+    geom_type = geom_type.upper()
+    execute(add_geom_col % (db_schema, table_name, name, srid, geom_type))
+    execute(create_gist_index %
+            (table_name, name, db_schema, table_name, name))
+    commit()
 
 
 __init__()

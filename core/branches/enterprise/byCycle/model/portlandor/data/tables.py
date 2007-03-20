@@ -13,44 +13,36 @@
 ################################################################################
 from sqlalchemy.schema import Table, Column, ForeignKey
 from sqlalchemy.types import String, CHAR, Integer, Numeric, Float
+from byCycle.model import db
 from byCycle.model.data.sqltypes import *
 
 
 class Tables(object):
-    """Tables for the Portland, OR, region."""
 
-    def __init__(self, schema, SRID, metadata, add_geometry=True):
-        """Initialize tables for ``schema``, associating them with ``metadata``.
+    def __init__(self, schema, SRID, metadata, append_geometry_columns=True):
+        """Initialize tables for ``schema``, associating them with ``metadata``
 
-        ``metadata`` `object` -- SQLAlchemy `MetaData`
-        
-        ``schema`` `string` -- Database schema name (typically, the region name)
-        
-        ``add_geometry`` `bool` -- Whether of not to add the geometry columns.
-        Normally, we want to add the geometry columns, but not always.
-        
+        ``metadata``
+            SQLAlchemy ``MetaData``
+
+        ``schema``
+            Database schema name (typically, the region name)
+
+        ``append_geometry_columns``
+            Whether of not to add the geometry columns. Normally, we want to
+            add the geometry columns, but not always.
+
         """
         self.schema = schema
         self.SRID = SRID
         self.metadata = metadata
-        self.__initTables(add_geometry=add_geometry)
+        self.__init_tables__(append_geometry_columns)
 
-    def __getitem__(self, key):
-        """Allow access to tables using dict notation."""
-        try:
-            return self.__dict__[key]
-        except KeyError:
-            raise KeyError('%s is not a table in the %s schema.' % 
-                           (key, self.schema))
-
-    def __initTables(self, add_geometry=True):
-        """Create table definitions for region, adding them as attrs of self.
-
-        ``add_geometry`` `bool` -- See __init__.
-
-        """
+    def __init_tables__(self, append_geometry_columns):
+        """Create table definitions, adding them as attrs of self."""
         metadata = self.metadata
         schema = self.schema
+        # TODO: tables = self._table_defs(), then turn this into a base class
         tables = (
             Table(
                 'layer_edges',
@@ -132,30 +124,43 @@ class Tables(object):
                 schema=schema,
                 )
             )
-        self.__table_names = {}
-        for table in tables:            
-            name = table.name
-            self.__table_names[name] = 1
-            self.__dict__[name] = table
-        if add_geometry:
-            self._appendGeometryColumns()
+        for table in tables:
+            setattr(self, table.name, table)
+        if append_geometry_columns:
+            self.append_geometry_columns()
 
-    def _appendGeometryColumns(self):
-        """Add geometry columns to layer tables."""
+    def create_geometry_columns(self):
+        """Add geometry columns to database."""
         tables = (self.layer_edges, self.layer_nodes)
-        types = (LINESTRING, POINT)        
+        types = ('LINESTRING', 'POINT')
+        for table, type_ in zip(tables, types):
+            db.addGeometryColumn(table, self.SRID, type_)
+
+    def append_geometry_columns(self):
+        """Append geometry columns to table definition."""
+        tables = (self.layer_edges, self.layer_nodes)
+        types = (LINESTRING, POINT)
         for table, type_ in zip(tables, types):
             table.append_column(
                 Column('geom', type_(self.SRID), nullable=False)
             )
 
-    def _get_raw_table(self):
+    def __getitem__(self, key):
+        """Allow access to tables using dict notation."""
+        try:
+            return self.__dict__[key]
+        except KeyError:
+            raise KeyError('Unknown table: %s' % (key))
+
+    @property
+    def raw_table(self):
         """Return (creating if necessary) raw table definition for region.
 
         Raw tables are created in the raw schema, with the schema name as the
         table name. The raw table doesn't get created unless it's needed.
 
-        return `Table` -- The raw table
+        return ``Table``
+            The raw table
 
         """
         try:
@@ -167,7 +172,7 @@ class Tables(object):
                 Column('gid', Integer, primary_key=True),
 
                 # To edge table (core)
-                Column('the_geom', LINESTRING(self.SRID)),
+                Column('the_geom', MULTILINESTRING(self.SRID)),
                 Column('n0', Integer),
                 Column('n1', Integer),
                 Column('zipcolef', Integer),
@@ -202,4 +207,3 @@ class Tables(object):
                 schema='raw',
                 )
             return self._raw_table
-    raw_table = property(_get_raw_table)
