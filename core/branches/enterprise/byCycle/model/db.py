@@ -147,6 +147,7 @@ def addGeometryColumn(table, srid, geom_type, name='geom'):
         SQLAlchemy ``Table``
 
     ``srid``
+        Spatial reference ID
 
     ``geom_type``
         POINT, LINESTRING, etc
