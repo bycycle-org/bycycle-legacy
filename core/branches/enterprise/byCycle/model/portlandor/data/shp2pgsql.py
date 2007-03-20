@@ -1,4 +1,4 @@
-#!/usr/bin/env python2.4
+#!/usr/bin/env python2.5
 ################################################################################
 # $Id: shp2pgsql.py 187 2006-08-16 01:26:11Z bycycle $
 # Created 2006-09-07
@@ -17,20 +17,23 @@ Usage: shp2pgsql.py [various options]
 
 There are three forms for running this script:
 - This will run through all the actions, prompting you for each one:
+
   shp2pgsql.py
 
 - This will either prompt you to run the actions from indices i to j in the
-  actions list or just run all the actions from i to j if `no_prompt` is
+  actions list or just run all the actions from i to j if `no-prompt` is
   specified:
-  shp2pgsql.py [--start|-s <i>] [--end|-e <j>] [--no_prompt|-n]
+
+  shp2pgsql.py [--start|-s <i>] [--end|-e <j>] [--no-prompt|-n]
 
 - This will run only the action at index i without prompting:
+
   shp2pgsql.py --only|-o <i>
 
 Defaults:
     - start=0
     - end=n-1 where n is the number of actions
-    - no_prompt flag off
+    - no-prompt flag off
     - only not used
 
 If no args are supplied, you will be prompted to run all actions.
@@ -38,20 +41,11 @@ If no args are supplied, you will be prompted to run all actions.
 If either of ``start`` or ``end`` (or both) is present, the ``only`` option
 must not be present.
 
-If ``only`` is present, ``no_prompt`` is implied.
+If ``only`` is present, ``no-prompt`` is implied.
 
 """
 import os
-def __getbyCycleImportPath():
-    """Get path to dir containing the byCycle package this module is part of."""
-    path = os.path.abspath(__file__)
-    opd = os.path.dirname
-    for i in range(5):
-        path = opd(path)
-    return path
-
 import sys
-sys.path.insert(0, __getbyCycleImportPath())
 import getopt
 
 import psycopg2
@@ -62,17 +56,16 @@ from sqlalchemy.sql import func, select, bindparam
 from sqlalchemy.schema import Column
 from byCycle.model.data.sqltypes import Geometry
 
-from byCycle import install_path
 from byCycle.util import meter
-from byCycle.model.portlandor.data.tables import Tables, SRID
+from byCycle.model import db
+from byCycle.model import portlandor
 from byCycle.model.portlandor.data.cities import cities_atof
 
 
 ### Region Configuration
 ### Should be the only configuration that gets changed per-region
 
-region = 'portlandor'
-srid = 2913
+region = portlandor.Region()
 
 # Target format: /base/path/to/regional_data/specific_region/datasource/layer
 # Ex: /home/bycycle/byCycle/data/portlandor/pirate/str04aug
@@ -140,36 +133,34 @@ db_name = 'bycycle'
 ### Derived configuration
 ### Should also apply to all regions and should NOT be edited
 
-# Path to region package and region package data files
-region_path = os.path.join(install_path, 'model', region)
-region_data_path = os.path.join(region_path, 'data')
-
 # Path to regional shapefiles
-data_path = os.path.join(base_data_path, region, datasource)
+data_path = os.path.join(base_data_path, region.key, datasource)
 
 # Path to specific layer
 layer_path = os.path.join(data_path, layer)
 
 # Database config
-db_schema = region
-db_user = db_name
-db_pw_path = os.path.join(install_path, 'model/.pw')
-db_pass = open(db_pw_path).read().strip()
+db_schema = region.key
+
+# Region table definitions (without geom columns)
+tables = region._get_tables(append_geometry_columns=False)
+
 # Raw tables go in the raw schema using the schema name as the table name.
 # "This is the raw table for schema X." With the scheme, we can create and
 # drop the "real" schema tables without worrying about the raw table.
-raw_table = 'raw.%s' % db_schema
+raw_table_name = 'raw.%s' % tables.raw_table.name
 
 # Output file for SQL imported from shapefile
 # Ex: ~/byCycle/evil/byCycle/model/portlandor/data/portlandor.str04aug.raw.sql
-sql_file = '%s_%s_raw.sql' % (region, layer)
-sql_file_path = os.path.join(region_data_path, sql_file)
+sql_file = '%s_%s_raw.sql' % (db_schema, layer)
+sql_file_path = os.path.join(region.data_path, sql_file)
 
 # Complete command to convert shapefile to raw SQL
 # Ex: /usr/lib/postgresql/8.1/bin/shp2pgsql -c -i -I -s 2913 \
-#     str04aug raw.portlandor > /path/portlandor_str04aug_raw.sql
+#     str06oct raw.portlandor > /path/portlandor_str06oct_raw.sql
 shp2sql_cmd = ' '.join((shp2sql_exe, shp2sql_args))
-shp2sql_cmd = shp2sql_cmd % (srid, layer_path, raw_table, sql_file_path)
+shp2sql_cmd = shp2sql_cmd % (region.SRID, layer_path, raw_table_name,
+                             sql_file_path)
 
 # Command to import raw SQL into database
 # Ex: /usr/bin/psql --quiet -d bycycle -f /path/portlandor_str04aug_raw.sql
@@ -179,28 +170,6 @@ sql2db_cmd = sql2db_cmd % (db_name, sql_file_path)
 
 ### Globals
 
-# Underlying DBAPI database connection and cursor
-connection = None
-cursor = None
-
-# Database engine
-engine = None
-
-# Metadata for schema tables
-metadata = None
-
-# Schema tables (dict of {table name => table object})
-tables = None
-
-# Flat table the shapefile is imported into
-raw_table = None
-
-# All the rows in the raw table
-raw_data = None
-
-# Reused/reset for each action
-timer = None
-
 # Edge names {(prefix, name, type, suffix) => street name ID}
 # Created in `transferStreetNames`
 street_names = None
@@ -208,35 +177,6 @@ street_names = None
 # Cities {full city name => city ID}
 # Created in `transferCities`
 cities = None
-
-
-### Setup actions that always need to be done (or at least, they *can* always
-### be done, because they don't have any destructive side effects)
-
-def createConnection():
-    """Set up and return DB connection."""
-    return psycopg2.connect(#host='localhost',
-                            database=db_name,
-                            user=db_user,
-                            password=db_pass
-                            )
-
-
-def createDatabaseEngine(creator):
-    engine = sqlalchemy.engine.create_engine('postgres://', creator=creator)
-    return engine
-
-
-def createMetadata(engine):
-    metadata = sqlalchemy.schema.BoundMetaData(engine)
-    metadata.engine.echo = True
-    return metadata
-
-
-def getTables(metadata, schema):
-    tables = Tables(schema, metadata, add_geometry=False)
-    raw_table = tables.raw_table
-    return tables, raw_table
 
 
 ### Utilities used by the actions below
@@ -311,50 +251,6 @@ def prompt(msg='', prefix=None, default='no'):
             return False
 
 
-def dropTable(table):
-    # TODO: Try to make this work when the table has dependent tables
-    try:
-        # FIXME: checkfirst doesn't seem to work
-        table.drop(checkfirst=True)
-    except sqlalchemy.exceptions.SQLError, e:
-        if not 'does not exist' in str(e):
-            raise
-
-
-def recreateTable(table):
-    """Drop ``table`` from database and then create it."""
-    dropTable(table)
-    table.create()
-
-
-def deleteAllFromTable(table):
-    """Delete all records from ``table``."""
-    table.delete().execute()
-
-
-def turnSQLEchoOff(md):
-    """Turn echoing of SQL statements off for ``md``."""
-    md.engine.echo = False
-
-
-def turnSQLEchoOn(md):
-    """Turn echoing of SQL statements on for ``md``."""
-    md.engine.echo = True
-
-
-def vacuum(*tables):
-    """Vacuum all tables."""
-    connection.set_isolation_level(0)
-    if not tables:
-        print 'Vacuuming all tables...'
-        cursor.execute('VACUUM FULL ANALYZE')
-    else:
-        for table in tables:
-            print 'Vacuuming %s...' % table            
-            cursor.execute('VACUUM FULL ANALYZE %s' % table)            
-    connection.set_isolation_level(2)
-
-
 def getEvenSide(addr_f_l, addr_f_r, addr_t_l, addr_t_r):
     """Figure out which side of the edge even addresses are on."""
     if ((addr_f_l and addr_f_l % 2 == 0) or
@@ -395,48 +291,35 @@ def shp2db():
     """Read shapefile into database table (raw.region)."""
     Q = 'CREATE SCHEMA raw'
     try:
-        cursor.execute(Q)
+        db.execute(Q)
     except psycopg2.ProgrammingError:
-        connection.rollback()  # important!
+        db.rollback()  # important!
     else:
-        connection.commit()    
-    raw_table.drop(checkfirst=True)
+        db.commit()
+    db.dropTable(tables.raw_table)
     system(sql2db_cmd)
-    vacuum('raw.%s' % region)
+    db.vacuum('raw.%s' % db_schema)
 
 
 def dropTables():
     """Drop all schema tables (excluding raw)."""
-    metadata.drop_all()
+    for table in db.metadata.table_iterator():
+        if table.schema != 'raw':
+            db.dropTable(table)
 
 
 def createTables():
     """Create all tables. (Ignores existing tables.)"""
-    Q = 'CREATE SCHEMA %s' % region
+    Q = 'CREATE SCHEMA %s' % db_schema
     try:
-        cursor.execute(Q)
+        db.execute(Q)
     except psycopg2.ProgrammingError:
-        connection.rollback()  # important!
+        db.rollback()  # important!
     else:
-        connection.commit()
-    metadata.create_all()
-    # Add geometry columns after tables are created and add gist INDEXes them
-    add_geom_col = """
-    SELECT AddGeometryColumn('%s', '%s', 'geom', %s, '%s', 2)
-    """
-    create_gist_index = """
-    CREATE INDEX "%s_the_geom_gist" 
-    ON "%s"."%s" 
-    USING GIST ("geom" gist_geometry_ops)
-    """
-    table_names = ('layer_edges', 'layer_nodes')
-    geom_types = ('MULTILINESTRING', 'POINT')
-    for table, geom_type in zip(table_names, geom_types):
-        cursor.execute(add_geom_col % (db_schema, table, SRID, geom_type))
-        cursor.execute(create_gist_index % (table, db_schema, table))
-    connection.commit()
-    # The above added cols to the DB; this adds them to SQLAlchemy table defs
-    tables._appendGeometryColumns()
+        db.commit()
+    db.createAll()
+    tables.create_geometry_columns()
+    tables.append_geometry_columns()
 
 
 def transferStreetNames(modify=True):
@@ -458,8 +341,8 @@ def transferStreetNames(modify=True):
     street_names = {}
     table = tables.street_names
     # Get all distinct street names from raw (in lowercase)
-    cols = (raw_table.c.fdpre, raw_table.c.fname, raw_table.c.ftype,
-            raw_table.c.fdsuf)
+    cols = (tables.raw_table.c.fdpre, tables.raw_table.c.fname,
+            tables.raw_table.c.ftype, tables.raw_table.c.fdsuf)
     sel_cols = map(sqlalchemy.sql.func.lower, cols)
     result = sqlalchemy.sql.select(sel_cols, distinct=True).execute()
     # Transfer street names, creating sequential IDs for them
@@ -481,10 +364,10 @@ def transferStreetNames(modify=True):
     result.close()
     # Delete all the old street names and insert the new ones
     if modify:
-        deleteAllFromTable(table)
-        turnSQLEchoOff(metadata)
+        db.deleteAllFromTable(table)
+        db.turnSQLEchoOff()
         table.insert().execute(l)
-        turnSQLEchoOn(metadata)
+        db.turnSQLEchoOn()
 
 
 def transferCities(modify=True):
@@ -506,7 +389,8 @@ def transferCities(modify=True):
     cities = {}
     table = tables.cities
     # Get distinct cities from raw (in lowercase)
-    for col in (raw_table.c.lcity, raw_table.c.rcity):
+    for col in (tables.raw_table.c.lcity,
+                tables.raw_table.c.rcity):
         col = sqlalchemy.sql.func.lower(col)
         sel = sqlalchemy.sql.select([col], col != None, distinct=True)
         result = sel.execute()
@@ -530,22 +414,22 @@ def transferCities(modify=True):
     cities[None] = None
     # Delete all the old cities and insert the new ones
     if modify:
-        deleteAllFromTable(table)
-        turnSQLEchoOff(metadata)
+        db.deleteAllFromTable(table)
+        db.turnSQLEchoOff()
         table.insert().execute(l)
-        turnSQLEchoOn(metadata)
+        db.turnSQLEchoOn()
 
 
 def insertStates():
     table = tables.states
-    deleteAllFromTable(table)
+    db.deleteAllFromTable(table)
     table.insert().execute(states)
 
 
 def transferNodeIDs(modify=True):
     """Transfer node IDs from raw table to node table."""
     table = tables.layer_nodes
-    c = raw_table.c
+    c = tables.raw_table.c
     nodes = {}
     # Get distinct node IDs from raw table
     for node_id in (c.n0, c.n1):
@@ -563,15 +447,15 @@ def transferNodeIDs(modify=True):
         l.append(d)
     if modify:
         # Drop existing nodes and add all new nodes at once
-        deleteAllFromTable(table)
-        turnSQLEchoOff(metadata)
+        db.deleteAllFromTable(table)
+        db.turnSQLEchoOff()
         table.insert().execute(l)
-        turnSQLEchoOn(metadata)
+        db.turnSQLEchoOn()
 
 
 def transferEdges(modify=True):
     """Transfer edge geometry and attributes to streets table."""
-    tables._appendGeometryColumns()
+    tables.append_geometry_columns()
     table = tables.layer_edges
     if street_names is None:
         print 'Getting street names...'
@@ -580,7 +464,7 @@ def transferEdges(modify=True):
         print 'Getting cities...'
         transferCities(modify=False)
     # Get selected columns for all rows in raw
-    c = raw_table.c
+    c = tables.raw_table.c
     func_lower = sqlalchemy.sql.func.lower
     cols = [
         # Core attributes
@@ -604,9 +488,9 @@ def transferEdges(modify=True):
         c.upfrc, c.abslp, c.sscode, c.cpd
     ]
     result = select(cols).execute()
-    if modify: 
-        deleteAllFromTable(table)
-    turnSQLEchoOff(metadata)
+    if modify:
+        db.deleteAllFromTable(table)
+    db.turnSQLEchoOff()
     # Transfer streets
     l = []
     for i, row in enumerate(result):
@@ -632,7 +516,7 @@ def transferEdges(modify=True):
         bikemode = row.bikemode
         d = {}
         d['id'] = row.gid
-        d['geom'] = row.the_geom
+        d['geom'] = row.the_geom.geometryN(0)
         d['node_f_id'] = row.n0
         d['node_t_id'] = row.n1
         d['addr_f'] = addr_f
@@ -654,55 +538,20 @@ def transferEdges(modify=True):
         d['cpd'] = row.cpd
         d['sscode'] = row.sscode
         l.append(d)
-        if modify and len(l) >= 1000:
+        if modify and len(l) > 1000:
             table.insert().execute(l)
             l = []
     if modify and l:
         table.insert().execute(l)
         l = []
-    turnSQLEchoOn(metadata)
-    vacuum('%s.layer_edges' % region)
+    db.turnSQLEchoOn()
+    db.vacuum('%s.layer_edges' % db_schema)
     result.close()
-
-
-def convertEdgeGeometryToLINESTRING():
-    """Convert edge geometry from MULTILINESTRING to LINESTRING."""
-    Qs = (
-        # Drop the MULTILINESTRING constraint.
-        """
-        ALTER TABLE
-        %s.layer_edges
-        DROP CONSTRAINT
-        enforce_geotype_geom
-        """ % db_schema,
-
-        # Update geometries, converting MULTILINESTRING to LINESTRING.
-        # TODO: Check for MULTILINESTRINGs with more than one LINESTRING and
-        # try to merge those LINESTRINGs together.
-        """
-        UPDATE
-        %s.layer_edges
-        SET geom = GeometryN(geom, 1)
-        """ % db_schema,
-
-        # Add a LINESTRING constraint to the geometry column.
-        """
-        ALTER TABLE
-        %s.layer_edges
-        ADD CONSTRAINT
-        enforce_geotype_geom
-        CHECK
-        ((geometrytype(geom) = 'LINESTRING'::text OR geom IS NULL))
-        """ % db_schema
-    )
-    for Q in Qs:
-        cursor.execute(Q)
-    connection.commit()
 
 
 def transferNodeGeometry(modify=True):
     """Copy node geometry from edge table to node table."""
-    tables._appendGeometryColumns()
+    tables.append_geometry_columns()
     table = tables.layer_nodes
     layer_edges = tables.layer_edges
     c = layer_edges.c
@@ -724,9 +573,9 @@ def transferNodeGeometry(modify=True):
         l.append(d)
     if modify:
         # Transfer node geometries
-        turnSQLEchoOff(metadata)
+        db.turnSQLEchoOff()
         table.update(table.c.id==bindparam('id')).execute(l)
-        turnSQLEchoOn(metadata)
+        db.turnSQLEchoOn()
 
 
 ### Actions list, in the order they will be run
@@ -741,8 +590,8 @@ actions = (
     # 1
     (shp2db,
      'Drop existing raw table and insert raw SQL into database',
-     'Dropped existing raw table and inserted raw SQL from %s into %s.' % \
-     (sql_file_path, raw_table),
+     'Dropped existing raw table and inserted raw SQL from %s into %s.' %
+     (sql_file_path, raw_table_name),
      ),
 
     # 2
@@ -789,13 +638,6 @@ actions = (
      ),
 
     # 9
-    (convertEdgeGeometryToLINESTRING,
-     'Convert edge table geometry from MULTILINESTRING to LINESTRING',
-     'Converted edge table geometry to LINESTRING and'
-     'added LINESTRING check constraint',
-     ),
-
-    # 10
     (transferNodeGeometry,
      'Transfer node geometry from edge table',
      'Transferred node geometry from edge table to node table',
@@ -803,10 +645,12 @@ actions = (
 )
 
 
-def doActions(actions, start, end, no_prompt):
+def run(start=0, end=len(actions)-1, no_prompt=False, only=None):
+    if only is not None:
+        start = only
+        end = only
+        no_prompt = True
     do_prompt = not no_prompt
-    overall_timer = meter.Timer()
-    overall_timer.start()
     print
     for i, action in enumerate(actions):
         func = action[0]
@@ -826,48 +670,34 @@ def doActions(actions, start, end, no_prompt):
                                   default=default_response)
                 overall_timer.unpause()
             else:
-                print '%s...' % before_msg
+                print '%s: %s...' % (i, before_msg)
             if no_prompt or response:
                 # Yes, do this action
                 timer.start()
                 try:
                     apply(func)
                 except Exception, e:
-                    print '\n*** Errors encountered in action %s. ' \
-                          'See log. ***' % i
+                    print ('\n*** Errors encountered in action %s. '
+                           'See log. ***' % i)
                     raise
                 print after_msg, '\nTook %s.' % getTimeWithUnits(timer.stop())
             else:
                 # No, don't do this action
                 print 'Skipped'
         print
-    vacuum()
-    print 'Total time: %s' % getTimeWithUnits(overall_timer.stop())
-
-### Event loop (so to speak)
-
-def run(start=0, end=len(actions)-1, no_prompt=False, only=None):
-    if only is not None:
-        start = only
-        end = only
-        no_prompt = True
-    doActions(actions, start, end, no_prompt)
+    db.vacuum()
 
 
 def main(argv):
-    args_dict = getOpts(sys.argv[1:])
-    # Set up globals
-    global connection, cursor, engine, metadata, tables, raw_table, raw, timer
-    engine = createDatabaseEngine(createConnection)
-    connection = engine.raw_connection()
-    cursor = connection.cursor()
-    metadata = createMetadata(engine)
-    tables, raw_table = getTables(metadata, db_schema)
-    # raw_data = ...
+    overall_timer = meter.Timer()
+    overall_timer.start()
+    global timer
     timer = meter.Timer(start_now=False)
-    # Enter event loop
+    db.connectMetadata()
+    args_dict = getOpts(sys.argv[1:])
     sys.stderr = open('shp2pgsql.error.log', 'w')
     run(**args_dict)
+    print 'Total time: %s' % getTimeWithUnits(overall_timer.stop())
 
 
 def getOpts(argv):
@@ -905,6 +735,8 @@ def getOpts(argv):
         elif opt in ('--help', '-h'):
             usage()
             sys.exit()
+        else:
+            error(1, 'Unknown option: ``%s``' % opt)
     if args_dict['only'] is not None:
         if start_or_end_specified:
             error(2, '`only` must be the *only* argument or not specified.')

@@ -37,20 +37,20 @@ regions = {
         'units': 'feet',
         'earth_circumference': 131484672
     },
-    
+
     'milwaukeewi': {
         'SRID': 2913,
         'title': 'Milwaukee, WI',
         'units': 'feet',
         'earth_circumference': 131484672
     },
-    
+
     'pittsburghpa': {
         'SRID': 2913,
         'title': 'Milwaukee, WI',
         'units': 'feet',
         'earth_circumference': 131484672
-    }    
+    }
 }
 
 
@@ -72,7 +72,7 @@ class Region(object):
         ``key`` is a unique identifier for the region, suitable for use as a
         dictionary/hash/javascript key. It should be the same as the region's
         package name.
-        
+
         TODO: Get the geometry/spatial attrs from the DB (SRID, units, etc)
 
         """
@@ -98,22 +98,26 @@ class Region(object):
 
         self.float_encode = float_encode
         self.float_decode = float_decode
-        
+
         # Set up path to data files for this region
         self.data_path = os.path.join(db.model_path, key, 'data')
         self.matrix_path = os.path.join(self.data_path, 'matrix.pyc')
 
-    @property
-    def tables(self):
-        try: 
+    def _get_tables(self, append_geometry_columns=True):
+        """Get region tables.
+
+        Use non-property form to set ``append_geometry_columns``.
+
+        """
+        try:
             self._tables
         except AttributeError:
             imp_path = 'byCycle.model.%s.data.tables' % self.key
             tables_mod = __import__(imp_path, globals(), locals(), [''])
-            self._tables = tables_mod.Tables(
-                self.key, self.SRID, db.metadata
-            )
+            self._tables = tables_mod.Tables(self.key, self.SRID, db.metadata, 
+                                             append_geometry_columns)
         return self._tables
+    tables = property(_get_tables)
 
     @property
     def mappers(self):
@@ -208,7 +212,7 @@ class Region(object):
 
         """
         return db.getById(self.mappers.layer_edges, session, *ids)
-    
+
     def getAdjacencyMatrix(self):
         """Return matrix. Prefer 1) existing 2) disk 3) newly created."""
         if self.G is None:
@@ -258,7 +262,7 @@ class Region(object):
             cols += self.edge_attrs[1:]
         select_ = select(cols, engine=db.engine, from_obj=[layer_edges])
         code = layer_edges.c.code
-        
+
         # TODO: Call region subclass to get the edge filter
         select_.append_whereclause(
             ((code >= 1200) & (code < 1600)) |
@@ -328,12 +332,12 @@ class Region(object):
     def decodeFloat(self, i):
         """Decode the int ``i`` back to its original float value."""
         return i * self.float_decode
-    
+
     def _saveMatrix(self, G):
         dumpfile = open(self.matrix_path, 'wb')
         marshal.dump(G, dumpfile)
         dumpfile.close()
-        
+
     def _adjustRowForMatrix(self, row):
         """Make changes to ``row`` before adding it to the adjacency matrix."""
         pass
