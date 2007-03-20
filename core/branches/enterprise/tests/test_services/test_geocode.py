@@ -42,7 +42,7 @@ class TestPortlandOR(unittest.TestCase):
     ### Edge
 
     def test_EdgeAddress(self):
-        q = '633-11994'
+        q = '633-11993'
         geocode = self._query(q)
 
     def test_EdgeAddress_BadID(self):
