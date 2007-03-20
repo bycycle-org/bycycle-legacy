@@ -1,10 +1,7 @@
 #!/usr/bin/env python
 """Create adjacency matrix for region given as first arg on command line."""
 import sys
-from byCycle.model import db
 from byCycle.model import regions
-
-db.connectMetadata()
 
 no_region_msg = ('Specify a region name. Use "all" to create matrices for '
                  'all regions.')
