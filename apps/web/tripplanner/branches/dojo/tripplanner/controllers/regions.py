@@ -8,19 +8,37 @@ class RegionsController(RestController):
     def __before__(self):
         """Do stuff before main action is invoked."""
         self._set_default_context()
-    
+
+    def index(self):
+        try:
+            id = request.params['region']
+        except KeyError:
+            return super(RegionsController, self).index()
+        else:
+            id = id.replace(',', '')
+            redirect_to('region', id=id, **dict(request.params))
+
     def show(self, id, format=None):
         """Show the ``region`` with ID or name or key ``id``."""
         region_key = self._get_region_key(id)
         c.region_key = region_key
-        template = region_key if region_key != 'all' else 'index'
+        template = region_key or 'index'
         return self._render_response(format=format, template=template)
+
+    def find(self):
+        region = request.params['region']
+        region = region.replace(',', '')
+        params = dict(request.params)
+        if params.get('q').strip():
+            redirect_to('find_services', region_id=region, **params)
+        else:
+            redirect_to('region', id=region)
 
     @staticmethod
     def _set_default_context():
         """Set default template context."""
         c.service = 'services'
-        c.region_key = 'all'
+        c.region_key = ''
         c.region_options = RegionsController._makeRegionOptions()
 
     @staticmethod
