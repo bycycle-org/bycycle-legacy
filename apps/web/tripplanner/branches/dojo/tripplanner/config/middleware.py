@@ -50,9 +50,10 @@ def make_app(global_conf, full_stack=True, **app_conf):
         # Error Handling
         app = ErrorHandler(app, global_conf, error_template=error_template, **config.errorware)
     
-        # Display error documents for 401, 403, 404 status codes (if debug is disabled also
-        # intercepts 500)
-        app = ErrorDocuments(app, global_conf, mapper=error_mapper, **app_conf)
+        if asbool(global_conf.get('debug')):
+            # Display error documents for 401, 403, 404 status codes (if debug is disabled also
+            # intercepts 500)
+            app = ErrorDocuments(app, global_conf, mapper=error_mapper, **app_conf)
     
     # Establish the Registry for this application
     app = RegistryManager(app)
