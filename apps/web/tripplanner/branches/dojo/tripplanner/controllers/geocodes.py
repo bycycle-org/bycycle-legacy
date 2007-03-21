@@ -7,19 +7,17 @@ from tripplanner.controllers.services import ServicesController
 class GeocodesController(ServicesController):
     """Controller for interfacing with byCycle Geocode service."""
 
-    def find(self, parent_id=None):
+    def find(self):
         q = request.params.get('q', '')
-
+        c.q = q
         try:
             return super(GeocodesController, self)._find(
-                q, parent_id, service_class=Service
+                q, service_class=Service
             )
         except MultipleMatchingAddressesError, exc:
-            template = 'index'
+            template = '300'
             c.http_status = 300
-            c.title = 'Multiple Matches Found'
             self.collection = exc.geocodes
-
         # We'll get here only if there's an unhandled error in the superclass.
         # Otherwise, the superclass will handle rendering.
         return self._render_response(
