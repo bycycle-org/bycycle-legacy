@@ -45,14 +45,15 @@ byCycle.UI.Query.prototype = {
   doQuery: function() {
     // Done only if no errors in before()
     byCycle.logDebug('Entered doQuery...');
-    var path = ['regions', this.ui.region, this.service + ';find'].join('/')
+    var path = ['regions', this.ui.region_key, this.service + ';find'].join('/')
     var url = [byCycle.prefix, path].join('');
     var params = this.input ? this.input : this.form.serialize(true);
     params.format = 'json';
     var args = {
       method:'get',
       onLoading: this.onLoading.bind(this),
-      onSuccess: this.onSuccess.bind(this),
+      on200: this.on200.bind(this),
+      on300: this.on300.bind(this),
       onFailure: this.onFailure.bind(this),
       onComplete: this.onComplete.bind(this),
       parameters: params
@@ -65,41 +66,45 @@ byCycle.UI.Query.prototype = {
     this.ui.spinner.show();
   },
 
-  onSuccess: function(request) {
-    byCycle.logDebug('Entered onSuccess...');
-    this.successful = true;
+  on200: function(request) {
+    byCycle.logDebug('Entered on200...');
+    eval('var response = ' + request.responseText + ';');
     this.ui.showResultPane(this.result_list);
-    byCycle.logDebug('Left onSuccess.');
+    var results = this.makeResults(response);
+    // Process the results for ``service``
+    // I.e., recenter map, place markers, draw line, etc
+    this.processResults(response, results);
+    // Show widget in result list for ``service``
+    var li;
+    var result_list = this.result_list;
+    results.each(function (r) {
+      li = document.createElement('li');
+      li.appendChild.bind(li)(r.widget.dom_node);
+      result_list.appendChild(li);
+    });
+    byCycle.logDebug('Left on200.');
+  },
+
+  on300: function(request) {
+    byCycle.logDebug('Entered on300...');
+    eval('var response = ' + request.responseText + ';');
+    this.response = response;
+    this.ui.showMessagePane(this.ui.error_pane, response.fragment);
+    byCycle.logDebug('Left on300.');
   },
 
   onFailure: function(request) {
     byCycle.logDebug('Search failed. Status: ' + request.status);
-    this.ui.showMessagePane(this.ui.error_pane);
+    eval('var response = ' + request.responseText + ';');
+    this.ui.showMessagePane(this.ui.error_pane, response.message);
     byCycle.logDebug('Left onFailure.');
   },
 
   onComplete: function(request) {
     byCycle.logDebug('Entered onComplete...');
-    this.http_status = request.status;
-    eval('var response = ' + request.responseText + ';');
-    if (this.successful) {
-      var results = this.makeResults(response);
-
-      // Process the results
-      // I.e., recenter map, place markers, draw line, etc
-      this.processResults(response, results);
-
-      // Show widget in result list for ``service``
-      var li;
-      var result_list = this.result_list;
-      results.each(function (r) {
-        li = document.createElement('li');
-        li.appendChild.bind(li)(r.widget.dom_node);
-        result_list.appendChild(li);
-      });
-    }
-    this.ui.status.update(this.getElapsedTimeMessage());
     this.ui.spinner.hide();
+    this.http_status = request.status;
+    this.ui.status.update(this.getElapsedTimeMessage());
     byCycle.logDebug('Left onComplete. (Request processing complete.)');
   },
 
@@ -120,29 +125,40 @@ byCycle.UI.Query.prototype = {
     // can be transformed into widgets.
     var div = document.createElement('div');
     div.innerHTML = response.fragment;
-    var first_child = $(div.getElementsByTagName('div')[0])
-    var nodes = [first_child];
-    var siblings = first_child.siblings();
-    siblings && nodes.concat(siblings);
+    var nodes = $(div).immediateDescendants();
 
-    var service = this.service;
-    var Result = this.ui.Result;
-    var ui_results = this.ui.results;
-    var result, id, widget, dom_node;
-    response.results.each(function (r, i) {
-      id = [service, 'result', new Date().getTime()].join('_');
+    var result, dom_node;
+    response.results.each((function (r, i) {
       dom_node = nodes[i];
-      dom_node.id = id;
-      widget = new byCycle.widget.FixedPane(dom_node);
-      result = new Result(id, r, service, widget);
-      widget.register_listeners('close', result.remove.bind(result));
+      result = this.makeResult(r, dom_node);
       results.push(result);
-      ui_results[service][id] = result;
-    });
+    }).bind(this));
 
     this.ui.is_first_result = false;
     byCycle.logDebug('Left makeResults.');
     return results;
+  },
+
+  /**
+   * Make a ``Result`` for the given (JSON) ``result`` and ``dom_node``.
+   * The ``Result`` will contain an ID, JSON result object, associated map
+   * overlays, widget reference, etc.
+   *
+   * @param result A simple object from the evaled JSON response
+   * @param dom_node A DOM node that contains the necessary elements to create
+   *        a ``FixedPane`` widget.
+   * @return ``Result``
+   */
+  makeResult: function (result, dom_node) {
+    byCycle.logDebug('Entered makeResult...');
+    var id = [this.service, 'result', new Date().getTime()].join('_');
+    dom_node.id = id;
+    var widget = new byCycle.widget.FixedPane(dom_node, {destroy_on_close: true});
+    var result_obj = new this.ui.Result(id, result, this.service, widget);
+    widget.register_listeners('close', result_obj.remove.bind(result_obj));
+    this.ui.results[this.service][id] = result_obj;
+    byCycle.logDebug('Left makeResult.');
+    return result_obj;
   },
 
   processResults: function(response, results) {},
@@ -151,11 +167,16 @@ byCycle.UI.Query.prototype = {
     var elapsed_time_msg = '';
     if (this.http_status < 400 && this.start_ms) {
       elapsed_time = (new Date().getTime() - this.start_ms) / 1000.0;
-      var s = (elapsed_time != 1 ? 's' : '');
-      elapsed_time_msg = ['Took ', elapsed_time, ' second', s, '.'].join('');
+      var s = '';
+      if (elapsed_time < 1) {
+        elapsed_time = ' less than 1 ';
+      } else if (elapsed_time > 1) {
+        s = 's';
+      }
+      elapsed_time_msg = ['in ', elapsed_time, ' second', s, '.'].join('');
     }
     var status_message = this.ui.status_messages[this.http_status || 200];
-    elapsed_time_msg = [status_message, '. ', elapsed_time_msg].join('');
+    elapsed_time_msg = [status_message, elapsed_time_msg].join(' ');
     return elapsed_time_msg;
   }
 };
@@ -223,7 +244,6 @@ byCycle.UI.GeocodeQuery.prototype = Object.extend(new byCycle.UI.Query(), {
  * Route Query
  */
 byCycle.UI.RouteQuery = Class.create();
-byCycle.UI.RouteQuery.superclass = byCycle.UI.Query.prototype;
 byCycle.UI.RouteQuery.prototype = Object.extend(new byCycle.UI.Query(), {
   // Kludge.
   superclass: byCycle.UI.Query.prototype,
@@ -286,38 +306,46 @@ byCycle.UI.RouteQuery.prototype = Object.extend(new byCycle.UI.Query(), {
     }
   },
 
-  processResults: function(response, results, widget) {
+  processResults: function(response, results) {
     byCycle.logDebug('Entered RouteQuery.processResults()...');
-    var route = result.result[0];
     var map = this.ui.map;
-    var ls = route.linestring;
 
-    // Zoom to linestring
-    map.centerAndZoomToBounds(map.getBoundsForPoints(ls));
+    var route, ls, s_e_markers, s_marker, e_marker, line;
+    var ui = this.ui;
+    var map = ui.map;
+    var getBoundsForPoints = map.getBoundsForPoints.bind(map);
+    var centerAndZoomToBounds = map.centerAndZoomToBounds.bind(map);
+    var placeMarkers = map.placeMarkers.bind(map);
+    var addListener = map.addListener.bind(map);
+    var showMapBlowup = map.showMapBlowup.bind(map);
+    var drawPolyLine = map.drawPolyLine.bind(map);
+    results.each(function (r) {
+      route = r.result;
+      ls = route.linestring;
 
-    // Place from and to markers
-    var s_e_markers = map.placeMarkers([ls[0], ls[ls.length - 1]],
-                                       [map.start_icon, map.end_icon]);
+      // Zoom to linestring
+      centerAndZoomToBounds(getBoundsForPoints(ls));
 
-    // Add listeners to from and to markers
-    var s_marker = s_e_markers[0];
-    var e_marker = s_e_markers[1];
-    map.addListener(s_marker, 'click', function() {
-      map.showMapBlowup(ls[0]);
+      // Place from and to markers
+      s_e_markers = placeMarkers([ls[0], ls[ls.length - 1]],
+                                 [map.start_icon, map.end_icon]);
+
+      // Add listeners to start and end markers
+      s_marker = s_e_markers[0];
+      e_marker = s_e_markers[1];
+      addListener(s_marker, 'click', function() {
+        showMapBlowup(ls[0]);
+      });
+      addListener(e_marker, 'click', function() {
+        showMapBlowup(ls[ls.length - 1]);
+      });
+      
+      // Draw linestring
+      line = drawPolyLine(ls, ui.colors[ui.color_index]);
+      ui.color_index += 1;
+      if (ui.color_index == ui.colors_len) { ui.color_index = 0; }
+      r.overlays.push(s_marker, e_marker, line);      
     });
-    map.addListener(e_marker, 'click', function() {
-      map.showMapBlowup(ls[ls.length - 1]);
-    });
-
-    // Draw linestring
-    var color_index = this.ui.color_index;
-    var line = map.drawPolyLine(ls, this.ui.colors[color_index]);
-    color_index += 1;
-    if (color_index == this.ui.colors_len) {
-      color_index = 0;
-    }
-    this.ui.color_index = color_index;
-    result.overlays.push(s_marker, e_marker, line);
-    byCycle.logDebug('Left routeprocessResults.');
+    byCycle.logDebug('Left RouteQuery.processResults().');
   }
 });
