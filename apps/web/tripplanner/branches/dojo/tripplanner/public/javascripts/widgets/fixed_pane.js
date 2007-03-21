@@ -10,11 +10,13 @@ byCycle.widget.FixedPane.prototype = {
   open: true,
   collapsible: true,
   closeable: true,
+  destroy_on_close: false,
 
   /**
    * @param dom_node The DOM container for this control
    */
   initialize: function (dom_node, opts) {
+    $H(opts).each((function (item) {this[item.key] = item.value}).bind(this));
     this.dom_node = $(dom_node);
     this.title_bar = this.dom_node.getElementsByClassName('title-bar')[0];
     this.title = this.title_bar.getElementsByClassName('title')[0].innerHTML;
@@ -34,12 +36,13 @@ byCycle.widget.FixedPane.prototype = {
 
     if (this.collapsible) {
       byCycle.logDebug('Creating _ control...');
-      this._add_button('toggle', 'Hide window content', '_', this.on_collapse);
+      this._add_button('#toggle-window-contents', 'Hide window content', '_', 
+                       this.on_collapse);
     }
     
     if (this.closeable) {
       byCycle.logDebug('Creating X control...');
-      this._add_button('close', 'Close window', 'X', this.on_close);
+      this._add_button('#close-window', 'Close window', 'X', this.on_close);
     }
   },
 
@@ -61,8 +64,13 @@ byCycle.widget.FixedPane.prototype = {
 
   on_close: function (event) {
     event && Event.stop(event);
+    this.dom_node.hide();
     this._run_listeners('close');
-    this.dom_node.remove();
+    this.destroy_on_close && this.destroy();
+  },
+
+  destroy: function() {
+    this.dom_node.remove();  
   },
 
   /**
@@ -91,8 +99,7 @@ byCycle.widget.FixedPane.prototype = {
   _run_listeners: function (event_name) {
     var listeners = this._get_listeners(event_name);
     if (listeners.length) {
-      var self = this;
-      listeners.each(function (h) { h(self); });
+      listeners.each(function (h) { h(); });
     }
   }
 };
