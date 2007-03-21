@@ -6,7 +6,6 @@
   position: relative;
   background: #99b3cc;
   padding: 2px;
-  border: 1px solid gray;
 }
 
 .fixed-pane .title-bar .title {
@@ -36,8 +35,8 @@
 }
 
 .fixed-pane .content-pane {
-  padding: 2px;
+  padding: 5px;
   background: white;
-  border: 1px solid gray;
+  border: 1px solid #99b3cc;
   border-top: none;
 }
