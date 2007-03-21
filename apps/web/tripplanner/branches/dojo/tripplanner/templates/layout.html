@@ -18,10 +18,9 @@
 
     <title>byCycle.org - Bicycle Trip Planner - ${self.region_title()}</title>
 
-    ${h.stylesheet_link_tag('base.css')}
+    ${h.stylesheet_link_tag('base.css', 'fixed-pane.css')}
     ${h.if_ie(h.stylesheet_link_tag('base_ie.css'))}
-    ${h.stylesheet_link_tag('tab-control.css')}
-    ${h.stylesheet_link_tag('fixed-pane.css')}
+    ${self.stylesheet_links()}
 
     <script type="text/javascript">
       //<![CDATA[
@@ -31,7 +30,7 @@
       //]]>
     </script>
 
-    ${h.javascript_include_tag(builtins=True)}
+    ${h.javascript_include_tag('prototype')}
     ${h.javascript_include_tag('bycycle', 'util')}
   </head>
 
@@ -39,118 +38,16 @@
   <body>
 
 
-    <!-- Header -->
-    <div id="header">
-
-
-      <!-- Masthead -->
-      <div id="masthead">
-        <div id="logo">
-          <a href="http://bycycle.org/" title="byCycle.org Home Page">
-            ${h.image_tag('http://tripplanner.bycycle.org/static/images/logo.png', title='byCycle.org Home Page', width=150, height=40, alt='byCycle.org')}
-          </a>
-        </div>
-        <div id="app_name">
-          ${h.link_to('Bicycle Trip Planner', h.url_for('/'), title='byCycle.org Bicycle Trip Planner')}
-        </div>
-        <div id="version">
-          <a href="http://en.wikipedia.org/wiki/Development_stage#Beta" title="Beta?">beta</a>
-        </div>
-      </div>
-      <!-- End Masthead -->
-
-
-      <!-- Input Container -->
-      <div id="input_container" class="tab-control">
-
-
-        <!-- Input Tab Buttons -->
-        <ul id="input_tab_buttons" class="tab-buttons">
-          <!-- <li>s have class `tab-button` -->
-          ${self.make_tab_buttons('search-the-map', 'find-a-route')}
-        </ul>
-        <!-- End Input Tab Buttons -->
-
-
-        <!-- End Input Tab Contents -->
-        <div id="input_tab_contents" class="tab-contents">
-
-
-          <!-- Query Pane -->
-          <div id="search-the-map" class="tab-content">
-            ${h.form(h.url_for('/regions/%s/services;find' % c.region_key), method='get', id='query_form')}
-              <div>
-                ${h.text_field('q', id='q', value=c.q, title='Enter an address or route', tabindex='1')}
-                ${h.submit(value='Search Map', title='Click to search the map', tabindex='2')}
-              </div>
-              <div class="input_label">
-                Enter an address or intersection -OR- pick a location from the map.
-              </div>
-            ${h.end_form()}
-          </div>
-          <!-- Query Pane -->
-
-
-          <!-- Route Pane -->
-          <div id="find-a-route" class="tab-content">
-            ${h.form(h.url_for('/regions/%s/routes;find' % c.region_key), method='get', id='route_form')}
-              <div>
-                ${h.text_field('s', id='s', value=c.s, title='Enter start address', tabindex='3')}<a
-                  id="swap_s_and_e"
-                  href="#swap-start-and-end"
-                  onclick="return false;"
-                  title="Swap start and end addresses"
-                  tabindex="4"
-                >${h.image_tag('swapfrto.png', alt='&lt;&rt;', width='24', height=14)}</a>${h.text_field('e', id='e', value=c.e, title='Enter end address', tabindex='5')}
-
-                ${self.route_pref()}
-                ${h.submit(value='Find Route', title='Click to find a route', tabindex='9')}
-              </div>
-
-              <div class="input_label">
-                Enter your start and end addresses and, optionally, select a route type.
-              </div>
-            ${h.end_form()}
-          </div>
-          <!-- End Route Pane -->
-
-
-        </div>
-        <!-- End Input Tab Contents -->
-
-
-      </div>
-      <!-- End Input Container -->
-
-
-      <div class="clear"></div>
-    </div>
-    <!-- End Header -->
-
-
-    <!-- Bar -->
-    <div id="bar">
-
-
-      <div id="status">
-        % if c.status:
-          ${c.status}
-        % else:
-          Welcome to the
-          <a href="http://bycycle.org/"
-             title="byCycle Home Page (opens in new window)"
-             target="byCyle_window"
-             >byCycle</a> bicycle trip planner.
+    <div id="meta">
+      <div id="current-region">
+        Region:
+        ${self.region_title()}
+        % if not (c.controller == 'regions' and c.action == 'index'):
+          ${h.link_to('change', h.url_for('regions'))}
         % endif
       </div>
 
-
-      <!-- Links -->
-      <div id="links">
-        <a id="bookmark" href="${h.url_for('/')}"
-          title="Link to the current result &amp; view"
-          >Link to this page</a>
-        |
+      <div id="meta-links">
         <a href="http://bycycle.org/projects/trip-planner/help"
            title="Trip Planner help page (opens in new window)"
            target="byCyle_window"
@@ -161,190 +58,221 @@
            target="byCyle_window"
            >Feedback</a>
       </div>
-      <!-- End Links -->
+    </div>
+    <!-- /#meta -->
+
+
+    <div id="wrapper">
+
+      <!-- Masthead -->
+      <div id="masthead">
+        <h1 id="logo">
+          <a href="http://bycycle.org/" title="byCycle.org Home Page">
+          ${h.image_tag('/images/logo.png', title='byCycle.org Home Page', width=150, height=25, alt='byCycle.org')}
+          </a>
+        </h1>
+
+        <h2 id="app-name">
+          ${h.link_to('Bicycle Trip Planner', h.url_for('/'), title='byCycle.org Bicycle Trip Planner')}
+        </h2>
+
+        <h3 id="app-version">
+          <a href="http://en.wikipedia.org/wiki/Development_stage#Beta"
+             title="Beta?"
+             >beta</a>
+        </h3>
+      </div>
+      <!-- /Masthead -->
+
+
+      <%call expr="self.input_container()" />
 
 
       <div class="clear"></div>
-    </div>
-    <!-- End Bar -->
 
 
-    <!-- Content -->
-    <div id="content">
+
+      <!-- Bar -->
+      <div id="bar">
 
 
-      <!-- Column A -->
-      <div id="col-a">
-
-
-        <div id="spinner" class="spinner" style="display: none;">
-          ${h.image_tag('spinner.gif', width=16, height=16)}
+        <div id="status">
+          % if c.status:
+            ${c.status}
+          % else:
+            Welcome to the
+            <a href="http://bycycle.org/"
+               title="byCycle Home Page (opens in new window)"
+               target="byCyle_window"
+               >byCycle.org</a> bicycle trip planner.
+          % endif
         </div>
 
 
-        <!-- Message Pane -->
-        <div id="message_pane" style="${'display: none;' if c.service else ''}">
-          <div id="info_pane">
-            % if c.info:
-              ${c.info}
-            % else:
-              <p class="first_p">
-                The trip planner is under active development. Please
-                <a href="http://www.bycycle.org/contact"
-                   title="Send us problems, comments, questions, &amp; suggestions (opens in new window)"
-                   target="byCyle_window"
-                   >contact us</a>
-                   with any problems, comments, questions, or suggestions.
-              </p>
-
-              <p>
-                If you find this application useful or would like to contribute to its improvement, please consider
-                <a href="http://bycycle.org/support/donate"
-                   title="Support byCycle (opens in new window)"
-                   target="byCyle_window">donating</a>,
-                <a href="http://bycycle.org/support/buy-stuff"
-                   title="Buy byCycle stuff"
-                   target="byCyle_window">buying byCycle apparel or other items</a>, or
-                <a href="http://bycycle.org/support/get-involved"
-                   title="Get Involved"
-                   target="byCyclewindow">getting involved</a>.
-              </p>
-
-              <p>
-                Users should independently verify all information presented here. This
-                service is provided <b>AS IS</b> with <b>NO WARRANTY</b> of any kind.
-                <em>Please be careful out there.</em>
-              </p>
-            % endif
-          </div>
-          <div id="error_pane">${c.errors}</div>
+        <!-- Links -->
+        <div id="links">
+          ${self.links()}
         </div>
-        <!-- End Message Pane -->
+        <!-- /Links -->
 
 
-        <!-- Result Pane -->
-        <div id="result_pane" class="tab-control"
-             style="${'display: none;' if not c.service else ''}">
-          <ul id="result_tab_buttons" class="tab-buttons">
-            ${self.make_tab_buttons('locations', 'routes')}
-          </ul>
-
-          <div class="tab-contents">
-            <div id="locations" class="tab-content">
-              <ul id="location_list" class="result_list">
-                % if c.service == 'geocodes':
-                  <li>${self.body()}</li>
-                % endif
-              </ul>
-            </div>
-
-            <div id="routes" class="tab-content">
-              <ul id="route_list" class="result_list">
-                % if c.service == 'routes':
-                  <li>${self.body()}</li>
-                % endif
-              </ul>
-            </div>
-          </div>
-        </div>
-        <!-- End Result Pane -->
-
-
+        <div class="clear"></div>
       </div>
-      <!-- End Column A -->
+      <!-- /Bar -->
 
 
-      <!-- Column B -->
-      <div id="col-b">
+      <!-- Content -->
+      <div id="content">
 
 
-        <!-- Map Menu -->
-        <div id="map_menu">
-          Region:
-          <select id="regions" name="region">
-            <option value="all">All Regions</option>
-            ${h.options_for_select(c.region_options, selected=c.region_key)}
-          </select>
-          Map Mode:
-          <select id="map_mode">
-            <option value="">Default</option>
-            <option value="identifyIntersection">Identify Intersection</option>
-            <option value="identifyStreet">Identify Street</option>
-          </select>
-          <a href="#clear-map-and-results"
-             title="Clear all results and map"
-             onclick="byCycle.UI.clearResults(); return false;"
-             >Clear All</a>
-        </div>
-        <!-- End Map Menu -->
+        <!-- Column A -->
+        <div id="col-a">
 
 
-        <!-- Map -->
-        <div id="map_pane">
-          <div id="map_message" style="display: none; padding: 5px;">
-            You will need to update to a recent version of Internet Explorer, Firefox, or Safari to view the map.
+          <div id="spinner" class="spinner" style="display: none;">
+            ${h.image_tag('spinner.gif', width=16, height=16)}
           </div>
+
+
+          <!-- Message Pane -->
+          <div id="message_pane" class="display-pane fixed-pane">
+            <div class="title-bar"><div class="title">&nbsp;</div></div>
+            <div class="content-pane">
+              <div id="info_pane">
+                % if c.info:
+                  ${c.info}
+                % else:
+                  <p class="no-top-margin">
+                    The trip planner is under active development. Please
+                    <a href="http://bycycle.org/contact"
+                       title="Send us problems, comments, questions, &amp; suggestions (opens in new window)"
+                       target="byCyle_window"
+                       >contact us</a>
+                       with any problems, comments, questions, or suggestions.
+                  </p>
+  
+                  <p>
+                    If you find this application useful or would like to contribute to its improvement, please consider
+                    <a href="http://bycycle.org/support/donate"
+                       title="Support byCycle (opens in new window)"
+                       target="byCyle_window">donating</a>,
+                    <a href="http://bycycle.org/support/buy-stuff"
+                       title="Buy byCycle stuff"
+                       target="byCyle_window">buying our apparel and other items</a>, or
+                    <a href="http://bycycle.org/support/get-involved"
+                       title="Get Involved"
+                       target="byCyclewindow">getting involved</a>.
+                  </p>
+  
+                  <p class="no-bottom-margin">
+                    Users should independently verify all information presented here. This
+                    service is provided <b>AS IS</b> with <b>NO WARRANTY</b> of any kind.
+                    <em>Please be careful out there.</em>
+                  </p>
+                % endif
+              </div>
+  
+              <div id="error_pane">${c.errors}</div>
+            </div>
+          </div>
+          <!-- /Message Pane -->
+
+
+          <%call expr="self.result_pane()" />
+
+
         </div>
-        <!-- End Map -->
+        <!-- /Column A -->
 
 
+        <!-- Column B -->
+        <div id="col-b">
+
+
+          ${self.map_controls()}
+
+
+          <!-- Map -->
+          <div id="map_pane">
+            <div id="map_message" style="display: none; padding: 5px;">
+              You will need to update to a recent version of Internet Explorer, Firefox, or Safari to view the map.
+            </div>
+          </div>
+          <!-- /Map -->
+
+
+        </div>
+        <!-- /Column B -->
+
+
+        <div class="clear"></div>
       </div>
-      <!-- End Column B -->
+      <!-- /Content -->
 
 
-      <div class="clear"></div>
+      <!-- Ads -->
+      <div id="ads" class="fixed-pane">
+        <div class="title-bar">
+          <div class="title">&nbsp;</div>
+        </div>
+        <div class="content-pane">
+          ${self.ads()}
+          ${h.javascript_include_tag('ads')}
+        </div>
+      </div>
+      <!-- /Ads -->
+
     </div>
-    <!-- End Content -->
+    <!-- /Wrapper -->
 
 
     <!-- Footer -->
     <div id="footer">
-      &nbsp;&copy; 2004 - 2007 <a href="http://byCycle.org/" title="byCycle Home Page">byCycle.org</a>
-      &middot;
+      &copy; 2007 <a href="http://byCycle.org/" title="byCycle Home Page">byCycle.org</a>
+      |
       Hosted by <a href="http://www.metro-region.org/">Metro</a>
+      |
+      <a href="http://trac.bycycle.org/" title="Information for Developers (Trac)">Developers</a>
+      |
+      Powered by <a href="http://www.python.org/">Python</a> and 
+      <a href="http://pylonshq.com/">Pylons</a>
     </div>
-    <!-- End Footer -->
+    <!-- /Footer -->
 
 
     <!-- Loading -->
     <div id="loading" style="display: none;">
-      <div class="spinner">
-        ${h.image_tag('spinner.gif', width=16, height=16)}
+      <div id="loading-masthead">
+        <a href="http://bycycle.org/" title="byCycle.org Home Page">
+          ${h.image_tag('http://tripplanner.bycycle.org/public/images/logo.png', title='byCycle.org Home Page', width=150, height=40, alt='byCycle.org')}
+        </a>
       </div>
-      <h2>
-        Loading. Please wait...
-      </h2>
-      <p id="loading_status"></p>
-    </div>
-    <!-- End Loading -->
 
+      <h2>Bicycle Trip Planner</h2>
 
-    <!-- Ads -->
-    <div id="ads">
-      <div id="ad_title_bar">
-        <a href="" id="hide_ads_button" title="Hide Ads">Hide Ads</a>
+      <div>
+        <div class="spinner">
+          ${h.image_tag('spinner.gif', width=16, height=16)}
+        </div>
+        <h2>
+          Loading. Please wait...
+        </h2>
+        <p id="loading_status"></p>
       </div>
-      ${h.javascript_include_tag('ads')}
     </div>
-    <!-- End Ads -->
+    <!-- /Loading -->
 
 
-    <% js_files = (
-         'regions', 'map', 'gmap', 'ui', 'query', 'result',
-         'widgets/tab_control', 'widgets/fixed_pane'
-    ) %>
-    ${h.javascript_include_tag(*js_files)}
+    ${h.javascript_include_tag('map', 'gmap', 'widgets/fixed_pane', 'ui', 'regions')}
+    ${self.javascript_includes()}
+
 
     <script type="text/javascript">
       //<![CDATA[
       // Set up for initialization
       byCycle.UI.beforeLoad();
-      // Values calculated in the controller
-      // Only set status when there's a result
-      byCycle.UI.http_status ${'= %i;' % c.http_status if c.http_status else ''};
-      byCycle.UI.region = '${c.region_key}';
-      byCycle.UI.service = '${c.service}';
-      byCycle.UI.query = '${c.q}';
+      byCycle.UI.region_key = '${c.region_key}';
+      ${self.javascript()}
       //]]>
     </script>
 
@@ -357,14 +285,50 @@
 </html>
 
 
+<%def name="region_title()">
+  ${c.region or 'Select a region'}
+</%def>
+
+
+## Layout Methods
+
+<%def name="stylesheet_links()"></%def>
+
+<%def name="input_container(classes=[])">
+  <!-- Input Container -->
+  <div id="input_container" class="${' '.join(classes)}">
+    ${caller.body()}
+  </div>
+  <!-- /Input Container -->
+</%def>
+
+<%def name="links()"></%def>
+
+<%def name="result_pane(classes=[])">
+  <!-- Result Pane -->
+  <div id="result_pane" class="display-pane ${' '.join(classes)}">
+    ${caller.body()}
+  </div>
+  <!-- /Result Pane -->
+</%def>
+
+<%def name="map_controls()"></%def>
+<%def name="javascript_includes()"></%def>
+<%def name="javascript()"></%def>
+<%def name="ads()"></%def>
+
+
+## End Layout Methods
+
+
 <%def name="make_tab_buttons(*tab_ids)">
-<!--
-  Make the 'tab buttons' for a tab control (a set of LIs)
-  ``tab_ids`` is one or more strings suitable for a URL hash (like tab-id-13)
-  Each generated LI has class 'tab-button'
-  Each LI has an A element that has href='#tab-id'
-  The A element's link text and title attribute are 'Tab Id'
--->
+  <%doc>
+    Make the 'tab buttons' for a tab control (a set of LIs)
+    ``tab_ids`` is one or more strings suitable for a URL hash (like tab-id-13)
+    Each generated LI has class 'tab-button'
+    Each LI has an A element that has href='#tab-id'
+    The A element's link text and title attribute are 'Tab Id'
+  </%doc>
   % for t in tab_ids:
 <% link_text = t.replace('-', ' ').capitalize() %>\
 <li class="tab-button">${h.link_to(link_text, '#%s' % t, title=link_text)}</li>\
@@ -372,12 +336,4 @@
 </%def>
 
 
-<%def name='region_title()'>
-  All Regions
-</%def>
-
-
-<!-- Route preference form control -->
-<%def name='route_pref()'></%def>
-
-% endif
+% endif # if not c.wrap
