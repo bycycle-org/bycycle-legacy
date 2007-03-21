@@ -16,18 +16,16 @@ class ServicesController(RestController):
         RegionsController._set_default_context()
 
         # Override default region context
-        c.region_key = RegionsController._get_region_key(self.parent_id)
+        c.region_key = RegionsController._get_region_key(self.region_id)
         c.service = self.controller
 
-    def find(self, parent_id=None):
+    def find(self):
         """Generic find method. Expects a ``q`` query parameter.
 
-        All this does is see if the value of ``q`` looks like a route (something
-        like A to B); if it does, redirect to the route controller's find; 
-        otherwise, redirect to the geocode controller's find.
-
-        ``region_id``
-            Region key or ID
+        All this does is see if the value of ``q`` looks like a route
+        (something like A to B); if it does, redirect to the route
+        controller's find; otherwise, redirect to the geocode controller's
+        find.
 
         raise `ValueError`
             - Query is empty
@@ -47,10 +45,10 @@ class ServicesController(RestController):
             controller = 'geocodes'
         else:
             controller = 'routes'
-        redirect_to('/regions/%s/%s;find' % (parent_id, controller),
+        redirect_to('/regions/%s/%s;find' % (self.region_id, controller),
                     **dict(request.params))
 
-    def _find(self, query, region_id, service_class, **params):
+    def _find(self, query, service_class, **params):
         """Show the result of ``query``ing a service.
 
         Subclasses should return this method. In other words, they should
@@ -61,9 +59,6 @@ class ServicesController(RestController):
         ``query``
             Query in form that back end service understands
 
-        ``region``
-            Name of region to perform query in
-
         ``service_class``
             Back end service subclass (e.g., route.Service)
 
@@ -72,7 +67,6 @@ class ServicesController(RestController):
             E.g., for route, tmode=bike, pref=safer
 
         """
-        c.q = query
         service = service_class(region=c.region_key)
         format = request.params.get('format', 'html')
 
@@ -129,7 +123,7 @@ class ServicesController(RestController):
         object.
 
         """
-        def f(obj):
+        def block(obj):
             c.wrap = False
             return {
                 'type': self.member_name,
@@ -137,7 +131,7 @@ class ServicesController(RestController):
                 'results': (obj if isinstance(obj, list) else [obj]),
                 'fragment': self._get_html_content()[0]
             }
-        return super(ServicesController, self)._get_json_content(obj_func=f)
+        return super(ServicesController, self)._get_json_content(block=block)
 
     def _makeRouteList(self, q):
         """Try to parse a route list from the given query, ``q``.
