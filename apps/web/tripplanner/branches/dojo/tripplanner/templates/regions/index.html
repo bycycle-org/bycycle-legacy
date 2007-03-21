@@ -1,1 +1,44 @@
 <%inherit file="layout.html"/>
+
+
+<%def name="input_container()">
+  <%call expr="parent.input_container()">
+
+    <div id="region-search">
+      ${h.form(h.url_for('/regions;find'), method='get', id='query_form')}
+        <p class="no-top-margin">
+          Select a region from the list or click one of the
+          ${h.image_tag('x.png', alt='X marks the spot')}s
+          on the map.
+        </p>
+
+        <p>
+          <select id="regions" name="region">
+            <%
+              values = {
+                '- Select a region -': '',
+                'Portland, OR, metro region': 'portlandor',
+                'Milwaukee, WI, metro region': 'milwaukeewi',
+              }
+            %>
+            ${h.options_for_select(values)}
+          </select>
+          ${h.submit(value='Go to region', title='Go to the selected region', tabindex='2')}
+        </p>
+
+        <p>
+          You can also <em>optionally</em> enter an address, intersection, or route:
+        </p>
+
+        <p>
+          ${h.text_field('q', id='q', value=c.q, title='Enter an address or route', tabindex='1')}
+        </p>
+
+        <div class="input_label">
+          Example: "NE 15th and Alberta" or "301 W Burnside to SE 34th &amp; Hawthorne"
+        </div>
+      ${h.end_form()}
+    </div>
+
+  </%call>
+</%def>
