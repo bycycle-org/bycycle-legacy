@@ -320,19 +320,19 @@ class RestController(BaseController):
         return text, 'text/plain'
     _get_txt_content = _get_text_content
 
-    def _get_json_content(self, obj_func=None):
+    def _get_json_content(self, block=None):
         """Get a JSON string and mimetype "text/javascript".
 
         Assumes members have a __simplify__ method that returns an object
         that can be JSONified by the simplejson module. That object is
         JSONified and returned unless the ``obj_fun`` arg is supplied.
 
-        ``obj_func``
+        ``block``
             This method creates the simplest possible object to be JSONified
             (``obj``) by calling __simplify__ on a member or members. If a
-            function is passed function via ``obj_func``, that function will
-            be called with ``obj``, and ``obj`` can be modified there before
-            being JSONified here.
+            function is passed via ``block``, that function will be called
+            with ``obj``, and ``obj`` can be modified there before being
+            JSONified here.
 
         """
         try:
@@ -347,8 +347,8 @@ class RestController(BaseController):
                 obj = [m.__simplify__() for m in collection]
         else:
             obj = member.__simplify__()
-        if obj_func is not None:
-            obj = obj_func(obj)
+        if block is not None:
+            obj = block(obj)
         json = self._jsonify(obj)
         return json, 'text/javascript'
 
