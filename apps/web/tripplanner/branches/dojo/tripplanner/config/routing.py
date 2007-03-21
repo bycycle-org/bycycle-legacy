@@ -12,14 +12,16 @@ def make_map(global_conf={}, app_conf={}):
     mapper.connect('error/:action/:id', controller='error')
 
     # Default route => Show list of regions
-    mapper.connect('', controller='regions')
-    
-    mapper.resource('region', 'regions')
+    mapper.connect('', controller='regions', _collection_name='regions',
+                   _member_name='region')
+
+    mapper.resource('region', 'regions', collection=dict(find='GET'))
 
     # Service routes
     options = dict(
         collection=dict(find='GET'),
-        path_prefix='regions/:parent_id'
+        parent_resource=dict(member_name='region', collection_name='regions'),
+        name_prefix='',
     )
     mapper.resource('service', 'services', **options)
     mapper.resource('geocode', 'geocodes', **options)
