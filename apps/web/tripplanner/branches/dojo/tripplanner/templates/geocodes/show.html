@@ -2,13 +2,12 @@
 
 
 <%
-from urllib import unquote_plus
-code = c.geocode
-x = code.xy_ll.x
-y = code.xy_ll.y
-str_addr = str(code.address)
-html_addr = str_addr.replace('\n', '<br />')
-field_addr = unquote_plus(code.urlStr())
+   from urllib import unquote_plus
+   code = c.geocode
+   x, y = code.xy_ll.x, code.xy_ll.y
+   str_addr = str(code.address)
+   html_addr = str_addr.replace('\n', '<br />')
+   field_addr = unquote_plus(code.urlStr())
 %>
 
 
