@@ -341,8 +341,7 @@ class RestController(BaseController):
             try:
                 collection = getattr(self, self.collection_name)
             except AttributeError:
-                raise ValueError('%s has no member or collection' %
-                                 self.__class__.name)
+                obj = None
             else:
                 obj = [m.__simplify__() for m in collection]
         else:
