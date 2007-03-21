@@ -242,7 +242,7 @@ byCycle.Map.google.Map.prototype = Object.extend(new byCycle.Map.base.Map(), {
     var self = this;
     GEvent.addListener(marker, 'click', function() {
       // TODO: Get active params and send those too
-      window.location = region.id + '?map_type=google';
+      window.location = '/regions/' + region.key;
     });
     return marker;
   },
