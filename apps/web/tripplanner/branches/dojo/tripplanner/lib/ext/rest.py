@@ -193,9 +193,11 @@ class RestController(BaseController):
         """
         self._set_member_by_id()
 
-        # TODO: Add POST data to self.member here.
+        params = request.params
+        for name in params:
+            setattr(self.member, name, params[name])
 
-        self.Entity.flush([self.member])
+        self.Entity.flush(self.member)
         args = {'id': self.member.id, self.parent_id_name: self.parent_id,
                 'format': format, 'action': 'show'}
         redirect_to(**args)
