@@ -52,16 +52,16 @@ Assumptions
     >>> model.connectMetadata  # doctest: +ELLIPSIS
     <function connectMetadata at ...>
 
-  * expose your elixir.Entity classes, regardless of where they are
+  * expose your ``elixir.Entity`` classes, regardless of where they are
     actually defined.
 
-* Templates for a resource are in project/templates/collection_name.
+* Templates for a resource are in <yourproject>/templates/collection_name.
 
   Template file names correspond to controller action names, so there should
   be new, show, edit, and index templates.
 
   The default is to render templates with an HTML extension. If ``format`` is
-  supplied to an action, that format will override the default.
+  in ``request.params``, that format will override the default.
 
   There are built-in methods to return HTML, HTML fragment, plain text, and
   JSON content. All except the last use templates with a corresponding
@@ -73,12 +73,13 @@ Assumptions
    But then that means they needs to know about JSON... which they are already
    sort-of aware of via their __simplify__ method.]
 
-* Your controllers will inherit from RestController instead of BaseController:
+* Your controllers will inherit from ``RestController`` instead of
+  ``BaseController``:
 
-  This module is a drop in replacement for lib.base, so do this in your
+  This module is a drop in replacement for ``lib.base``, so do this in your
   controllers (which will pull in everything that's defined or imported in
-  lib.base; you don't need to modify lib.base except possibly to import your
-  model):
+  ``lib.base``; you don't need to modify ``lib.base`` except possibly to
+  import your model):
 
       from <yourproject>.lib.rest import *
 
@@ -113,121 +114,149 @@ class RestController(BaseController):
         route = request.environ['routes.route']
         route_info = request.environ['pylons.routes_dict']
 
-        self.parent_resource = route.parent_resource
         self.controller = route_info['controller']
         self.action = route_info['action']
 
-        name = getattr(self, 'parent_member_name', None)
-        if name is None and self.parent_resource is not None:
-            name = self.parent_resource['member_name']
-        self.parent_member_name = name
-        self.parent_id_name = '%s_id' % name
-        self.parent_id = route_info.get(self.parent_id_name, None)
-
-        name = getattr(self, 'parent_collection_name', None)
-        if name is None and self.parent_resource is not None:
-            name = self.parent_resource['collection_name']
-        self.parent_collection_name = name
-
-        # Get parent Entity class for nested controller
-        if self.parent_member_name is not None:
-            f = class_name_from_module_name
-            self.parent_entity_name = f(self.parent_member_name)
-            self.ParentEntity = getattr(model, self.parent_entity_name)
-        else:
-            self.parent_entity_name, self.ParentEntity = None, None
+        self.format = request.params.get('format', None)
 
         self.collection_name = (getattr(self, 'collection_name', None) or
                                 route.collection_name)
         self.member_name = (getattr(self, 'member_name', None) or
                             route.member_name)
 
+        # Import entity class for resource
         self.entity_name = class_name_from_module_name(self.member_name)
-
-        # Import the entity class for the resource
         self.Entity = getattr(model, self.entity_name)
 
-    def index(self, format=None):
+        # Do setup for parent resource, if this resource is nested
+        self.parent_resource = route.parent_resource
+        if self.parent_resource is not None:
+            self.is_nested = True
+
+            name = (getattr(self, 'parent_member_name', None) or
+                    self.parent_resource['member_name'])
+            self.parent_member_name = name
+            self.parent_id_name = '%s_id' % name
+            self.parent_id = route_info.get(self.parent_id_name, None)
+
+            name = (getattr(self, 'parent_collection_name', None) or
+                    self.parent_resource['collection_name'])
+            self.parent_collection_name = name
+
+            # Import entity class for parent resource
+            f = class_name_from_module_name
+            self.parent_entity_name = f(self.parent_member_name)
+            self.ParentEntity = getattr(model, self.parent_entity_name)
+        else:
+            self.is_nested = False
+
+    def index(self):
         """GET /
 
         Show all (or subset of) items in collection.
 
         """
         self._set_collection_by_id()
-        return self._render_response(format)
+        return self._render_response()
 
-    def new(self, format=None):
+    def new(self):
         """GET /resource/new
 
         Show a form for creating a new item. The form should POST to
         /resource/create.
 
+        Example using WebHelpers::
+
+            >>> import webhelpers as h
+            >>> h.form(h.url_for('sites'))
+            '<form action="sites" method="POST">'
+            >>> h.text_field('whatever')
+            '<input id="whatever" name="whatever" type="text" />'
+            >>> h.end_form()
+            '</form>'
+
         """
         self._set_member_by_id()
-        return self._render_response(format)
+        return self._render_response()
 
-    def show(self, id=None, format=None):
+    def show(self, id=None):
         """GET /resource/id
 
         Show existing item that has ID ``id``.
 
         """
         self._set_member_by_id(id)
-        return self._render_response(format)
+        return self._render_response()
 
-    def edit(self, id=None, format=None):
+    def edit(self, id=None):
         """GET /resource/id;edit
 
         Show a form for editing an existing item that has ID ``id``. The form
-        should PUT to /resource/update.
+        should PUT to /resource/update (but since is not well-supported, we
+        use POST with a hidden input field to indicate it's really a PUT).
+
+        Example using WebHelpers::
+
+            >>> import webhelpers as h
+            >>> h.form(h.url_for('sites/13'), method='PUT')
+            '<form action="sites/13" method="POST"><input id="_method" name="_method" type="hidden" value="PUT" />'
+            >>> h.text_field('whatever')
+            '<input id="whatever" name="whatever" type="text" />'
+            >>> h.end_form()
+            '</form>'
 
         """
         self._set_member_by_id(id)
-        return self._render_response(format)
+        return self._render_response()
 
-    def create(self, format=None):
+    def create(self):
         """POST /resource
 
-        Create with POST data a new item.
+        Create a new member using POST data.
 
         """
         self._set_member_by_id()
+        self._update_member_with_params()
+        self._redirect_to_member()
 
-        params = request.params
-        for name in params:
-            setattr(self.member, name, params[name])
-
-        self.Entity.flush(self.member)
-        args = {'id': self.member.id, self.parent_id_name: self.parent_id,
-                'format': format, 'action': 'show'}
-        redirect_to(**args)
-
-    def update(self, id=None, format=None):
+    def update(self, id=None):
         """PUT /resource/id
 
         Update with PUT data an existing item that has ID ``id`` .
 
         """
         self._set_member_by_id(id)
+        self._update_member_with_params()
+        self._redirect_to_member()
 
-        # TODO: Update self.member with PUT data here.
+    def _update_member_with_params(self):
+        params = request.params
+        for name in params:
+            setattr(self.member, name, params[name])
+        self.Entity.flush(self.member)
 
-        self.Entity.flush([self.member])
-        args = {'id': id, self.parent_id_name: self.parent_id,
-                'format': format, 'action': 'show'}
+    def _redirect_to_member(self):
+        args = {'id': self.member.id, 'action': 'show', 'format': self.format}
+        if self.is_nested:
+            args[self.parent_id_name] = self.parent_id
         redirect_to(**args)
 
-    def delete(self, id=None, format=None):
+    def delete(self, id=None):
         """DELETE /resource/id
 
-        Delete the existing item that has ID ``id``.
+        Delete the existing item that has ID ``id``. Redirect to resource
+        ``index`` after deletion.
 
         """
         self._set_member_by_id(id)
         self.Entity.delete(self.member)
-        self.Entity.flush([self.member])
-        args = {self.parent_id_name: self.parent_id, 'format': format,
-                'action': 'show'}
+        self.Entity.flush(self.member)
+        self._redirect_to_collection()
+
+    def _redirect_to_collection(self):
+        args = {'action': 'index', 'format': self.format}
+        if self.is_nested:
+            args[self.parent_id_name] = self.parent_id
         redirect_to(**args)
 
     def __setattr__(self, name, value):
@@ -270,25 +299,33 @@ class RestController(BaseController):
         if parent_id is None:
             parent_id = self.parent_id
         if parent_id is not None and self.ParentEntity:
-            self.parent = self.ParentEntity.get(parent_id)
+            self.parent = self._get_entity_or_404(self.ParentEntity, parent_id)
 
     def _set_member_by_id(self, id=None, parent_id=None):
         self._set_parent_by_id(parent_id)
         if id is not None:
-            entity = self.Entity.get(id)
+            entity = self._get_entity_or_404(self.Entity, id)
         else:
             entity = self.Entity()
         setattr(self, self.member_name, entity)
+
+    def _get_entity_or_404(self, Entity, id):
+        entity = Entity.get_by(slug=id) or Entity.get(id)
+        if not entity:
+            abort(404)
+        return entity
 
     def _set_collection_by_id(self, parent_id=None, page=0, num_items=10):
         self._set_parent_by_id(parent_id)
         setattr(self, self.collection_name, self.Entity.select())
 
-    def _render_response(self, format='html', template=None, **response_args):
+    def _render_response(self, format=None, template=None, **response_args):
         """Renders a response for those actions that return content.
 
         ``format``
-            The format of the response content
+            An alternative format for the response content; by default,
+            ``format`` from ``request.params`` is used
+
 
         ``template``
             An alternative template; by default, a template named after the
@@ -302,10 +339,10 @@ class RestController(BaseController):
 
         """
         # Dynamically determine the content method
-        format = str(format or 'html').strip().lower()
+        format = (format or self.format or 'html').strip().lower()
         _get_content = getattr(self, '_get_%s_content' % (format))
 
-        # _get_*_content methods need to add the file extension (if needed)
+        # _get_<format>_content methods need to add file extension (if needed)
         tmpl = (template or self.action)
         self.template = '/%s/%s' % (self.collection_name, tmpl)
 
@@ -376,8 +413,8 @@ class RestController(BaseController):
     def _wrap(self):
         """Whether to wrap a template in its parent template.
 
-        Default is `True`. If wrap is set in query params, convert its value
-        to bool and use that value; otherwise, return True.
+        Default is ``True``. If ``wrap`` is set in ``request.params``, convert
+        its value to ``bool`` and use that value; otherwise, return ``True``.
 
         """
         wrap = request.params.get('wrap', 'true')
