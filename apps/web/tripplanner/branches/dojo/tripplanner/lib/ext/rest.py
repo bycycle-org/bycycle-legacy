@@ -100,7 +100,7 @@ __all__ = __base_all__ + ['RestController']
 class RestController(BaseController):
     """Base class for RESTful controllers."""
 
-    def __init__(self):
+    def __before__(self):
         """Set up RESTful Controller.
 
         We assume the controller file is named after the resource's collection
@@ -109,8 +109,6 @@ class RestController(BaseController):
         hats.py and there will be a template directory at /templates/hats.
 
         """
-        model.connectMetadata()
-
         route = request.environ['routes.route']
         route_info = request.environ['pylons.routes_dict']
 
@@ -233,10 +231,13 @@ class RestController(BaseController):
         params = request.params
         for name in params:
             setattr(self.member, name, params[name])
+        if self.is_nested:
+            setattr(self.member, self.parent_id_name, self.parent_id)
         self.Entity.flush(self.member)
 
     def _redirect_to_member(self):
-        args = {'id': self.member.id, 'action': 'show', 'format': self.format}
+        args = {'id': self.member.id, 'action': 'show', 
+                'format': self.format}
         if self.is_nested:
             args[self.parent_id_name] = self.parent_id
         redirect_to(**args)
@@ -296,9 +297,9 @@ class RestController(BaseController):
     member = property(_get_member, _set_member)
 
     def _set_parent_by_id(self, parent_id=None):
-        if parent_id is None:
-            parent_id = self.parent_id
-        if parent_id is not None and self.ParentEntity:
+        if self.is_nested:
+            if parent_id is None:
+                parent_id = self.parent_id
             self.parent = self._get_entity_or_404(self.ParentEntity, parent_id)
 
     def _set_member_by_id(self, id=None, parent_id=None):
