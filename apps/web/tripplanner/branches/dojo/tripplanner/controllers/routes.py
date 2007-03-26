@@ -21,16 +21,14 @@ class RoutesController(ServicesController):
         for p in ('pref', 'tmode'):
             if p in request.params:
                 params[p] = request.params[p]
-        try:
-            return super(RoutesController, self)._find(
-                q, service_class=Service, **params
-            )
-        except MultipleMatchingAddressesError, exc:
-            template = '300'
-            c.http_status = 300
-            self.collection = exc.choices
-        # We'll get here only if there's an unhandled error in the superclass.
-        # Otherwise, the superclass will handle rendering.
-        return self._render_response(
-            format=self.format, template=template, code=c.http_status
-        )
+        def block(exc):
+            try:
+                raise exc
+            except MultipleMatchingAddressesError, exc:
+                template = '300'
+                c.http_status = 300
+                c.title = 'Multiple Matches Found'
+                self.routes = exc.choices
+            return template
+        return super(RoutesController, self)._find(q, service_class=Service,
+                                                   block=block)
