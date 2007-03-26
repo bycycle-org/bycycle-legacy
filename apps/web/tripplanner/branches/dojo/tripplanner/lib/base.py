@@ -12,11 +12,8 @@ import tripplanner.lib.helpers as h
 
 class BaseController(WSGIController):
     def __call__(self, environ, start_response):
-        # Insert any code to be run per request here. The Routes match
-        # is under environ['pylons.routes_dict'] should you want to check
-        # the action or route vars here
         return WSGIController.__call__(self, environ, start_response)
 
 # Include the '_' function in the public names
-__all__ = [__name for __name in locals().keys() if not __name.startswith('_') \
+__all__ = [__name for __name in locals().keys() if not __name.startswith('_')
            or __name == '_']

@@ -1,7 +1,6 @@
 from byCycle.services.route import Service, MultipleMatchingAddressesError
 
-from tripplanner.lib.base import *
-from tripplanner.controllers.services import ServicesController
+from tripplanner.controllers.services import *
 
 
 class RoutesController(ServicesController):
