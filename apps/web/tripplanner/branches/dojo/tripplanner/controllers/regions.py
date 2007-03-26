@@ -1,12 +1,11 @@
 from byCycle.model import regions
 
-from tripplanner.lib.rest import *
+from tripplanner.lib.restler import *
 
 
 class RegionsController(RestController):
 
     def __before__(self):
-        """Do stuff before main action is invoked."""
         self._set_default_context()
 
     def index(self):

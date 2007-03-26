@@ -2,16 +2,18 @@ import re
 
 from byCycle.services.exceptions import *
 
-from tripplanner.lib.rest import *
+from tripplanner.lib.restler import *
+from tripplanner.lib.restler import __all__ as restler__all__
+
 from tripplanner.controllers.regions import RegionsController
+
+__all__ = restler__all__ + ['ServicesController']
 
 
 class ServicesController(RestController):
     """Base class for controllers that interact with back end services."""
 
     def __before__(self):
-        """Do stuff before main action is invoked."""
-
         # Set default region context
         RegionsController._set_default_context()
 

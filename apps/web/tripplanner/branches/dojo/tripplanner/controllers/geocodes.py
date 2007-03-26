@@ -1,7 +1,6 @@
 from byCycle.services.geocode import Service, MultipleMatchingAddressesError
 
-from tripplanner.lib.base import *
-from tripplanner.controllers.services import ServicesController
+from tripplanner.controllers.services import *
 
 
 class GeocodesController(ServicesController):
