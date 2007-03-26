@@ -9,16 +9,14 @@ class GeocodesController(ServicesController):
     def find(self):
         q = request.params.get('q', '')
         c.q = q
-        try:
-            return super(GeocodesController, self)._find(
-                q, service_class=Service
-            )
-        except MultipleMatchingAddressesError, exc:
-            template = '300'
-            c.http_status = 300
-            self.collection = exc.geocodes
-        # We'll get here only if there's an unhandled error in the superclass.
-        # Otherwise, the superclass will handle rendering.
-        return self._render_response(
-            format=self.format, template=template, code=c.http_status
-        )
+        def block(exc):
+            try:
+                raise exc
+            except MultipleMatchingAddressesError, exc:
+                template = '300'
+                c.http_status = 300
+                c.title = 'Multiple Matches Found'
+                self.geocodes = exc.geocodes
+            return template
+        return super(GeocodesController, self)._find(q, service_class=Service,
+                                                     block=block)

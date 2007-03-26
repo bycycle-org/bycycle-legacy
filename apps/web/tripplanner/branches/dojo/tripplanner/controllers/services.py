@@ -50,7 +50,7 @@ class ServicesController(RestController):
         redirect_to('/regions/%s/%s;find' % (self.region_id, controller),
                     **dict(request.params))
 
-    def _find(self, query, service_class, **params):
+    def _find(self, query, service_class, block=None, **params):
         """Show the result of ``query``ing a service.
 
         Subclasses should return this method. In other words, they should
@@ -70,7 +70,6 @@ class ServicesController(RestController):
 
         """
         service = service_class(region=c.region_key)
-        format = request.params.get('format', 'html')
 
         try:
             result = service.query(query, **params)
@@ -80,10 +79,14 @@ class ServicesController(RestController):
         except NotFoundError, exc:
             c.http_status = 404
             c.title = 'Not Found'
-        except ByCycleError:
-            # Let subclass deal with any other `ByCycleError`s
-            self.format = format
-            raise
+        except ByCycleError, bc_exc:
+            # Let subclass deal with any other `ByCycleError`s. The ``block``
+            # function should set ``c.http_status`` and ``c.title`` and return
+            # the name of a template.
+            if block: 
+                template = block(bc_exc)
+            else:
+                raise
         except Exception, exc:
             c.http_status = 500
             c.title = 'Error'
@@ -113,16 +116,14 @@ class ServicesController(RestController):
             template = 'error'
             c.message = exc.description
 
-        return self._render_response(
-            format=format, template=template, code=c.http_status
-        )
+        return self._render_response(template=template, code=c.http_status)
 
     def _get_json_content(self):
         """Get a JSON string.
 
-        Assumes members have a __simplify__ method. Modifies the base simple
-        object before JSONification by "wrapping" it in a result container
-        object.
+        Assumes members have a ``__simplify__`` method. Modifies the base
+        simple object before JSONification by "wrapping" it in a result
+        container object.
 
         """
         def block(obj):
