@@ -2,12 +2,12 @@ import re
 
 from byCycle.services.exceptions import *
 
-from tripplanner.lib.restler import *
-from tripplanner.lib.restler import __all__ as restler__all__
+from tripplanner.lib.base import *
+from tripplanner.lib.base import __all__ as base__all__
 
 from tripplanner.controllers.regions import RegionsController
 
-__all__ = restler__all__ + ['ServicesController']
+__all__ = base__all__ + ['ServicesController']
 
 
 class ServicesController(RestController):
