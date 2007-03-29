@@ -1,6 +1,6 @@
 from byCycle.model import regions
 
-from tripplanner.lib.restler import *
+from tripplanner.lib.base import *
 
 
 class RegionsController(RestController):

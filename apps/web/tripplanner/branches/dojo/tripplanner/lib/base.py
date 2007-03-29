@@ -14,6 +14,11 @@ class BaseController(WSGIController):
     def __call__(self, environ, start_response):
         return WSGIController.__call__(self, environ, start_response)
 
+
+import restler as __restler
+execfile(__restler.include_path)
+
+
 # Include the '_' function in the public names
 __all__ = [__name for __name in locals().keys() if not __name.startswith('_')
            or __name == '_']
