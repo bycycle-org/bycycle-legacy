@@ -192,7 +192,8 @@ a:hover { color: orange; }
   margin-top: 0;
 }
 #message_pane, #result_pane {
-  padding: 5px 0 0 5px;
+  padding: 5px;
+  padding-bottom: 0;
   overflow: auto;
 }
 #result_pane .tab-contents {
@@ -270,7 +271,6 @@ a:hover { color: orange; }
   font-size: 14px;
 }
 .directions {
-  width: 100%;
   border-collapse: collapse;
 }
 .directions td {
