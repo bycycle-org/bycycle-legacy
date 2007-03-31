@@ -4,9 +4,8 @@ from tripplanner.controllers.services import *
 
 
 class RoutesController(ServicesController):
-    """Controller for handling route queries."""
+    """Controller for interfacing with byCycle Route service."""
 
-    #----------------------------------------------------------------------
     def find(self):
         q = request.params.get('q', None)
         if q is not None:

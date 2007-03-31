@@ -15,8 +15,9 @@ class BaseController(WSGIController):
         return WSGIController.__call__(self, environ, start_response)
 
 
-import restler as __restler
-execfile(__restler.include_path)
+# This includes restler/base.py as if it contents had been written directly
+# in this file.
+execfile(__import__('restler').include_path)
 
 
 # Include the '_' function in the public names
