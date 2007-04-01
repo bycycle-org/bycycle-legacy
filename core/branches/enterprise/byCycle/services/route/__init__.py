@@ -51,10 +51,9 @@ from byCycle.model.route import *
 from byCycle.model.domain import Node
 from byCycle import services
 from byCycle.services import geocode
-from byCycle.services.route import sssp
+import dijkstar
 
 
-###########################################################################
 class RouteError(ByCycleError):
     def __init__(self, desc='Route Error'):
         ByCycleError.__init__(self, desc)
@@ -69,12 +68,10 @@ class MultipleMatchingAddressesError(RouteError):
         RouteError.__init__(self, desc=desc)
 
 
-###########################################################################
 class Service(services.Service):
     """Route-finding Service."""
     name = 'route'
 
-    #----------------------------------------------------------------------
     def __init__(self, region=None):
         """
 
@@ -83,7 +80,6 @@ class Service(services.Service):
         """
         services.Service.__init__(self, region=region, session=None)
 
-    #----------------------------------------------------------------------
     def query(self, q, tmode='bicycle', pref=''):
         """Get a route for all the addresses in ``q`` [0 ==> 1 ==> 2 ...].
 
@@ -157,7 +153,6 @@ class Service(services.Service):
         else:
             return routes
 
-    #----------------------------------------------------------------------
     def _getWaypoints(self, q):
         """Check the waypoints in ``q`` and return a new list of waypoints.
 
@@ -190,7 +185,6 @@ class Service(services.Service):
             raise InputError(errors)
         return waypoints
 
-    #----------------------------------------------------------------------
     def _getGeocodes(self, waypoints):
         """Return a `list` of `Geocode`s associated with each ``waypoint``."""
         geocode_service = geocode.Service(region=self.region, session=self.session)
@@ -217,7 +211,6 @@ class Service(services.Service):
             raise MultipleMatchingAddressesError(choices=choices)
         return geocodes
 
-    #----------------------------------------------------------------------
     def _getPathBetweenGeocodes(self,
                                 start_geocode, end_geocode,
                                 G, nodes, edges,
@@ -273,13 +266,13 @@ class Service(services.Service):
 
         ### All set up--try to find a path in G between the start and end nodes
         try:
-            node_ids, edge_ids, weights, total_weight = sssp.findPath(
+            node_ids, edge_ids, weights, total_weight = dijkstar.find_path(
                 G, self.H,
                 start_node.id, end_node.id,
-                weightFunction=getEdgeWeight,
-                heuristicFunction=getHeuristicWeight
+                weight_func=getEdgeWeight,
+                heuristic_func=getHeuristicWeight
             )
-        except sssp.SingleSourceShortestPathsNoPathError:
+        except dijkstar.NoPathError:
             raise NoRouteError(
                 'Unable to find a route from "%s" to "%s" in region "%s"' % (
                     str(start_geocode).replace('\n', ', '),
@@ -290,7 +283,6 @@ class Service(services.Service):
 
         return node_ids, edge_ids, start_node, end_node, split_edges
 
-    #----------------------------------------------------------------------
     def _getNodeForGeocode(self,
                            geocode_,
                            nodes, edges,
@@ -332,7 +324,6 @@ class Service(services.Service):
             )
         return node
 
-    #----------------------------------------------------------------------
     def _updateMatrixAfterSplit(self,
                                 nodes, edges,
                                 node_at_split,
@@ -350,7 +341,6 @@ class Service(services.Service):
         self.H['edges'][edge_f.id] = [len(edge_f)] + list(edges[edge_id][1:])
         self.H['edges'][edge_t.id] = [len(edge_t)] + list(edges[edge_id][1:])
 
-    #----------------------------------------------------------------------
     def _updateNodesAfterSplit(self, nodes, node, edge_1, edge_2):
         """
 
@@ -392,7 +382,6 @@ class Service(services.Service):
         edge_1_id, edge_2_id = edge_2_id, edge_1_id
         updateOneNode(node_1_id, node_2_id, edge_1_id, edge_2_id)
 
-    #----------------------------------------------------------------------
     def _makeDirectionsForPath(self,
                                node_ids, edge_ids,
                                start_node, end_node,
@@ -598,7 +587,6 @@ class Service(services.Service):
 
         return directions, linestring, distance
 
-    #----------------------------------------------------------------------
     def _getNameAndType(self, street_name):
         try:
             name, sttype = street_name.name, street_name.sttype
@@ -606,7 +594,6 @@ class Service(services.Service):
             return None
         return name, sttype
 
-    #----------------------------------------------------------------------
     def _getDifferentStreetNameFromNode(self, street_name, node):
         """Get different street name from ``node``."""
         name_type = self._getNameAndType(street_name)
@@ -617,7 +604,6 @@ class Service(services.Service):
                 return str(sn or '[No Name]')
         return ''
 
-    #----------------------------------------------------------------------
     def _calculateWayToTurn(self, old_bearing, new_bearing):
         """Given two bearings in [0, 360], gives the turn to go from old to new.
 
@@ -645,7 +631,6 @@ class Service(services.Service):
             )
         return way
 
-    #----------------------------------------------------------------------
     def _getDirectionFromBearing(self, bearing):
         """Translate ``bearing`` to a cardinal direction."""
         arc = 45
