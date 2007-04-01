@@ -36,7 +36,6 @@ byCycle.Map.base.Map.prototype = {
     var map = document.createElement('div');
     map.style.height = '100%';
     map.style.overflow = 'auto';
-    map.style.padding = '5px';
     container.appendChild(map);
     this.map = map;
     this.put('Default byCycle Map Interface');

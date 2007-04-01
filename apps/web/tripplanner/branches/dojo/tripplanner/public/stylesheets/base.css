@@ -63,7 +63,8 @@ a:hover { color: orange; }
   right: 0;
   width: 120px;
   height: 100%;
-  background: #a7cc95;
+  background: white;
+  border-left: 1px solid #99b3cc;
 }
 #ads.fixed-pane .content-pane {
   padding: 0;
@@ -71,8 +72,6 @@ a:hover { color: orange; }
   border: none;
 }
 #bike-portland {
-  border: solid #a7cc95;
-  border-width: 0 1px;
   font-size: 85%;
   padding: 2px;
   background: white;

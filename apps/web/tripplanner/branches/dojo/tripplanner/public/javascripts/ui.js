@@ -82,13 +82,12 @@ byCycle.UI = (function () {
 	
 	_createWidgets: function () {
 	  // Message fixed pane
-	  self.message_fixed_pane = new byCycle.widget.FixedPane(self.message_pane, 
-		{collapsible: false});
+	  var w = byCycle.widget.FixedPane;
+	  self.message_fixed_pane = new w(self.message_pane, {collapsible: false});
 	  self.message_fixed_pane.register_listeners('close', self.showResultPane);
 	  
 	  // Ads fixed pane
-	  var ad_pane = new byCycle.widget.FixedPane('ads', 
-		{collapsible: false, destroy_on_close: true});
+	  var ad_pane = new w('ads', {collapsible: false, destroy_on_close: true});
 	  ad_pane.register_listeners('close', self.onHideAds);	
 	},
 
@@ -97,7 +96,8 @@ byCycle.UI = (function () {
     _createEventHandlers: function() {
       Event.observe(window, 'resize', self.onResize);
       Event.observe(document.body, 'unload', self.onUnload);
-	  self.region_el && Event.observe(self.region_el, 'change', self.setRegionFromSelectBox);
+	  self.region_el && Event.observe(self.region_el, 'change', 
+	                                  self.setRegionFromSelectBox);
     },
 
     onResize: function(event) {
