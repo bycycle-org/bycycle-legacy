@@ -241,8 +241,8 @@ byCycle.Map.google.Map.prototype = Object.extend(new byCycle.Map.base.Map(), {
     var marker = this.placeMarker(region.center, icon);
     var self = this;
     GEvent.addListener(marker, 'click', function() {
-      // TODO: Get active params and send those too
-      window.location = '/regions/' + region.key;
+      window.location = [byCycle.prefix, 'regions/', region.key, '?',
+                         byCycle.request_params.toQueryString()].join('');
     });
     return marker;
   },
