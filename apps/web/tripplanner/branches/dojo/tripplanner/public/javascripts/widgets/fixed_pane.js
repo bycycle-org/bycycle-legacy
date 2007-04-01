@@ -58,15 +58,15 @@ byCycle.widget.FixedPane.prototype = {
 
   on_collapse: function (event) {
     event && Event.stop(event);
-    this._run_listeners('collapse');
     this.content_pane.toggle();
+    this._run_listeners('collapse');
   },
 
   on_close: function (event) {
     event && Event.stop(event);
     this.dom_node.hide();
-    this._run_listeners('close');
     this.destroy_on_close && this.destroy();
+    this._run_listeners('close');
   },
 
   destroy: function() {
