@@ -25,13 +25,35 @@ import sqlalchemy
 from sqlalchemy.engine import create_engine
 from sqlalchemy.orm import create_session
 
-import elixir
+from elixir import metadata, objectstore
 
 from byCycle import install_path
 
+__all__ = [
+    'metadata',
+    'session_context',
+    'getConnectionUri',
+    'connectMetadata',
+    'makeSession',
+    'createAll',
+    'dropAll',
+    'turnSQLEchoOff',
+    'turnSQLEchoOn',
+    'vacuum',
+    'execute',
+    'commit',
+    'rollback',
+    'dropTable',
+    'recreateTable',
+    'deleteAllFromTable',
+    'getById',
+    'addGeometryColumn',
+    ]
 
+
+session_context = objectstore.context
 model_path = os.path.join(install_path, 'model')
-metadata = elixir.metadata
+
 
 def __init__():
     global engine, connection, cursor
