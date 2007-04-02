@@ -19,9 +19,9 @@ class RegionsController(RestController):
 
     def show(self, id, format=None):
         """Show the ``region`` with ID or name or key ``id``."""
-        region_key = self._get_region_key(id)
-        c.region_key = region_key
-        template = region_key or 'index'
+        region_id = self._get_region_id(id)
+        c.region_id = region_id
+        template = region_id or 'index'
         return self._render_response(format=format, template=template)
 
     def find(self):
@@ -37,11 +37,11 @@ class RegionsController(RestController):
     def _set_default_context():
         """Set default template context."""
         c.service = 'services'
-        c.region_key = ''
+        c.region_id = ''
         c.region_options = RegionsController._makeRegionOptions()
 
     @staticmethod
-    def _get_region_key(region_id):
+    def _get_region_id(region_id):
         try:
             return regions.getRegionKey(region_id)
         except ValueError:

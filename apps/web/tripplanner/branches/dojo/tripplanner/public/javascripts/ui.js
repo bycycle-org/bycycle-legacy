@@ -16,7 +16,7 @@ byCycle.UI = (function () {
 
   // public:
   return {
-    region_key: null,
+    region_id: null,
     map: null,
     map_state: map_state,
     map_type: map_type,
@@ -51,7 +51,7 @@ byCycle.UI = (function () {
       }
       self.map = new self.map_type.Map(self, self.map_pane);
       self.onResize();
-      self.setRegion(self.region_key);
+      self.setRegion(self.region_id);
       self._createEventHandlers();
       Element.remove('loading');
       self.onResize();
@@ -157,10 +157,10 @@ byCycle.UI = (function () {
       self.setRegion($F(self.region_el));
     },
 
-    setRegion: function(region_key) {
-      self.region_key = region_key;
+    setRegion: function(region_id) {
+      self.region_id = region_id;
       var regions = byCycle.regions.regions;
-      var region = regions[region_key];
+      var region = regions[region_id];
       if (region) {
         // Zoom to a specific region
         self.map.centerAndZoomToBounds(region.bounds, region.center);
@@ -178,7 +178,7 @@ byCycle.UI = (function () {
 	// Show map overlays for a region, creating and caching them first if
 	// necessary
     _showRegionOverlays: function(region, use_cached) {
-      if (!self.region_key && !region.marker) {
+      if (!self.region_id && !region.marker) {
         region.marker = self.map.makeRegionMarker(region);
       } else if (use_cached) {
         self.map.addOverlay(region.marker);
