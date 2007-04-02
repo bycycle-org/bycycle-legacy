@@ -292,7 +292,7 @@
       byCycle.logDebug('Entered setBookmark...');
       var path_info = [];
       var query_args = $H();
-      path_info.push(self.region_key, self.service, self.q_el.value);
+      path_info.push(self.region_id, self.service, self.q_el.value);
       if (self.service == 'route') {
         var pref = self.pref_el.value;
         if (pref) {

@@ -18,7 +18,7 @@ class ServicesController(RestController):
         RegionsController._set_default_context()
 
         # Override default region context
-        c.region_key = RegionsController._get_region_key(self.region_id)
+        c.region_id = RegionsController._get_region_id(self.region_id)
         c.service = self.controller
 
     def find(self):
@@ -69,7 +69,7 @@ class ServicesController(RestController):
             E.g., for route, tmode=bike, pref=safer
 
         """
-        service = service_class(region=c.region_key)
+        service = service_class(region=c.region_id)
 
         try:
             result = service.query(query, **params)

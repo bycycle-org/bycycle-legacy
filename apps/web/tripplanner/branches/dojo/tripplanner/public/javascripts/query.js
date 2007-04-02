@@ -45,7 +45,7 @@ byCycle.UI.Query.prototype = {
   doQuery: function() {
     // Done only if no errors in before()
     byCycle.logDebug('Entered doQuery...');
-    var path = ['regions', this.ui.region_key, this.service + ';find'].join('/')
+    var path = ['regions', this.ui.region_id, this.service + ';find'].join('/')
     var url = [byCycle.prefix, path].join('');
     var params = this.input ? this.input : this.form.serialize(true);
     params.format = 'json';
