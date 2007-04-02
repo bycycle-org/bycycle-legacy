@@ -285,30 +285,7 @@
       self.e_el.value = e;
       new self.RouteQuery(self.route_form).run();
     },
-
-    /* Links *****************************************************************/
-
-    setBookmark: function(form) {
-      byCycle.logDebug('Entered setBookmark...');
-      var path_info = [];
-      var query_args = $H();
-      path_info.push(self.region_id, self.service, self.q_el.value);
-      if (self.service == 'route') {
-        var pref = self.pref_el.value;
-        if (pref) {
-          query_args.pref = pref;
-        }
-      }
-      var url = ['http://', byCycle.domain, byCycle.prefix,
-                 path_info.join('/')].join('');
-      var query_string = query_args.toQueryString();
-      if (query_string) {
-        self.bookmark_el.href = [url, query_args.toQueryString()].join('?');
-      } else {
-        self.bookmark_el.href = url;
-      }
-      byCycle.logDebug('Bookmark:', self.bookmark_el.href);
-    },
+    
 
     /* Map *******************************************************************/
 

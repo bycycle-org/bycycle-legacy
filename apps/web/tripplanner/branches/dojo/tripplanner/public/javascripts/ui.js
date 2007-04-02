@@ -61,7 +61,7 @@ byCycle.UI = (function () {
       // Bar
       self.status = $('status');
       self.spinner = $('spinner');
-      self.bookmark_el = $('bookmark');
+      self.bookmark_link = $('bookmark');
 
 	  // Display panes
 	  self.display_panes = $('col-a').getElementsByClassName('display-pane');
