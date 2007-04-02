@@ -48,6 +48,13 @@ byCycle.UI.Query.prototype = {
     var path = ['regions', this.ui.region_id, this.service + ';find'].join('/')
     var url = [byCycle.prefix, path].join('');
     var params = this.input ? this.input : this.form.serialize(true);
+
+    // Make bookmark
+    var bookmark_params = Object.extend({}, params);
+    delete bookmark_params.commit;
+    var q_str = Hash.toQueryString(bookmark_params);
+    this.ui.bookmark_link.href = [url, q_str].join('?');
+
     params.format = 'json';
     var args = {
       method:'get',
@@ -339,12 +346,12 @@ byCycle.UI.RouteQuery.prototype = Object.extend(new byCycle.UI.Query(), {
       addListener(e_marker, 'click', function() {
         showMapBlowup(ls[ls.length - 1]);
       });
-      
+
       // Draw linestring
       line = drawPolyLine(ls, ui.colors[ui.color_index]);
       ui.color_index += 1;
       if (ui.color_index == ui.colors_len) { ui.color_index = 0; }
-      r.overlays.push(s_marker, e_marker, line);      
+      r.overlays.push(s_marker, e_marker, line);
     });
     byCycle.logDebug('Left RouteQuery.processResults().');
   }
