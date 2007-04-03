@@ -1,8 +1,12 @@
 <%inherit file="layout.html"/>
 
 
-<%
+<%!
    from urllib import unquote_plus
+%>
+
+
+<%
    code = c.geocode
    x, y = code.xy_ll.x, code.xy_ll.y
    str_addr = str(code.address)
