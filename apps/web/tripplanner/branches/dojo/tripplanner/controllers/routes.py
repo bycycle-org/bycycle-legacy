@@ -12,6 +12,7 @@ class RoutesController(ServicesController):
             try:
                 q = self._makeRouteList(q)
             except ValueError:
+                c.q = q
                 c.title = 'Whoops!'
                 c.errors = "That doesn't look like a route"
                 self.template = 'index'
@@ -24,8 +25,10 @@ class RoutesController(ServicesController):
             else:
                 c.title = 'Whoops!'
                 if s:
+                    c.s = s
                     c.errors = 'Please enter an end address'
                 elif e:
+                    c.e = e
                     c.errors = 'Please enter a start address'
                 else:
                     c.errors = 'Please enter something to search for'
