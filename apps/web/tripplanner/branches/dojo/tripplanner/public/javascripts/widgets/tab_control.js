@@ -6,10 +6,14 @@ byCycle.widget.TabControl.prototype = {
   /**
    * @param dom_node The DOM container (or its ID) for this Tab control
    */
-  initialize: function(dom_node) {
+  initialize: function(dom_node, initial_tab_id) {
     this.dom_node = $(dom_node);
     this.create_tabs();
-    this.show(this.get_initial_tab());
+    if (initial_tab_id) {
+      this.select_by_id(initial_tab_id);
+    } else {
+      this.show(this.get_initial_tab());
+    }
   },
 
   create_tabs: function() {
@@ -41,7 +45,8 @@ byCycle.widget.TabControl.prototype = {
         tab.content = $(tab_id);
         tabs[tab_id] = tab;
         tab_ids_in_order.push(tab_id);
-        Event.observe(tab_link, 'click', this.on_click.bindAsEventListener(this));
+        Event.observe(tab_link, 'click',
+                      this.on_click.bindAsEventListener(this));
         if (!this.first_tab) {
           this.first_tab = tab;
         }
@@ -76,11 +81,13 @@ byCycle.widget.TabControl.prototype = {
   hide: function(tab) {
     tab.button.removeClassName('selected-tab-button');
     tab.content.removeClassName('selected-tab-content');
+    tab.content.addClassName('tab-content');
   },
 
   show: function(tab) {
     tab.button.addClassName('selected-tab-button');
     tab.content.addClassName('selected-tab-content');
+    tab.content.removeClassName('tab-content');
   },
 
   /**

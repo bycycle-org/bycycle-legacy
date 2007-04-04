@@ -41,8 +41,15 @@
 
     onLoad: function () {
       onLoad();
-      self.input_tab_control = new byCycle.widget.TabControl(self.input_container);
-      self.result_tab_control = new byCycle.widget.TabControl(self.result_pane);
+      var w = byCycle.widget.TabControl;
+      var initial_tab_id = (self.service == 'routes' ?
+                            'find-a-route' :
+                            'search-the-map');
+      self.input_tab_control = new w(self.input_container, initial_tab_id);
+      initial_tab_id = (self.service == 'routes' ? 'routes' : 'locations');
+      self.result_tab_control = new w(self.result_pane, initial_tab_id,
+                                      initial_tab_id);
+      self.handleQuery();
       self.onResize();
     },
 
@@ -67,7 +74,6 @@
       Event.observe(self.query_form, 'submit', self.runGenericQuery);
       Event.observe(self.route_form, 'submit', self.runRouteQuery);
       Event.observe($('clear-map-link'), 'click', self.clearResults);
-
     },
 
     showResultPane: function(list_pane) {
@@ -87,7 +93,7 @@
     },
 
     selectInputTab: function(service) {
-      self.input_tab_control.select(service == 'route' ? 1 : 0);
+      self.input_tab_control.select(service == 'routes' ? 1 : 0);
     },
 
     swapStartAndEnd: function() {
@@ -98,49 +104,37 @@
 
     setAsStart: function(addr) {
       self.s_el.value = addr;
-      self.selectInputTab('route');
+      self.selectInputTab('routes');
       self.s_el.focus();
     },
 
     setAsEnd: function(addr) {
       self.e_el.value = addr;
-      self.selectInputTab('route');
+      self.selectInputTab('routes');
       self.e_el.focus();
     },
 
     /* Query-related *********************************************************/
 
     handleQuery: function() {
-      // TODO: Do async call after load, if there's a query in the URL (use a
-      // query param or maybe hidden var to indicate this)
-      // - Split URL into parts (/region/query type/query)
-      // - Run an async query just as if the input form had been used (based
-      //   on the URL parts)
-      if (!self.http_status) {
-        return;
-      }
-      self.setLoadingStatus('Processing query...');
-      var s = self.service;
-      // E.g., query_class := GeocodeQuery
-      var query_class = [s.charAt(0).toUpperCase(), s.substr(1), 'Query'];
-      self.simulateQuery(query_class.join(''), self.http_status);
-    },
+      if (!self.http_status) { return; }
+      var res = self.member_name;
 
-    simulateQuery: function(query_class, http_status, response_text) {
+      // E.g., query_class := GeocodeQuery
+      var query_class = [res.charAt(0).toUpperCase(), res.substr(1),
+                         'Query'].join('');
       query_class = self[query_class];
-      if (!query_class) {
-        return;
+
+      var query_obj = new query_class();
+      if (self.http_status == 200) {
+        var pane = $(self.collection_name == 'routes' ? 'routes' : 'locations');
+        var fragment = pane.getElementsByClassName('fragment')[0];
+        var json = fragment.getElementsByClassName('json')[0];
+        var request = {status: self.http_status, responseText: $F(json)};
+        Element.remove(fragment);
+        Element.remove(json);
+        query_obj.on200(request);
       }
-      http_status = http_status || 200;
-      response_text = response_text || '';
-      var query_obj = new query_class(null);
-      var request = {status: http_status, responseText: response_text};
-      if (http_status == 200) {
-        query_obj.onLoad(request);
-      } else {
-        query_obj.onError(request);
-      }
-      query_obj.after(request);
     },
 
     runGenericQuery: function(event, input /* =undefined */) {
@@ -168,8 +162,8 @@
     },
 
     /* Run all queries through here for consistency. */
-    runQuery: function(query_class, 
-                       event /* =undefined */, 
+    runQuery: function(query_class,
+                       event /* =undefined */,
                        input /* =undefined */) {
       event && Event.stop(event);
       self.query = new query_class({input: input});
@@ -205,7 +199,8 @@
       var response = self.query.response;
       var dom_node = $(select_link).up('.fixed-pane');
       var result = self.query.makeResult(response.results[i], dom_node);
-      
+      self.query.processResults('', [result])
+
       // Remove the selected result's selection links ("show on map" & "select")
       Element.remove(select_link.parentNode);
 
@@ -217,7 +212,7 @@
       var li = document.createElement('li');
       li.appendChild(dom_node);
       this.location_list.appendChild(li);
-      
+
       self.showResultPane(self.location_list);
       self.status.update('Added location to locations list.');
       byCycle.logDebug('Left selectGeocode.');
@@ -285,7 +280,7 @@
       self.e_el.value = e;
       new self.RouteQuery(self.route_form).run();
     },
-    
+
 
     /* Map *******************************************************************/
 

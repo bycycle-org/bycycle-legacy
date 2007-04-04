@@ -1,9 +1,9 @@
-<%inherit file="/layout.html"/>
+<%inherit file="/layout.html" />
 
 
 <%def name="stylesheet_links()">
-    ${h.stylesheet_link_tag('tab-control.css')}
-    ${h.stylesheet_link_tag('fixed-pane.css')}
+  ${h.stylesheet_link_tag('tab-control.css')}
+  ${h.stylesheet_link_tag('fixed-pane.css')}
 </%def>
 
 
@@ -13,7 +13,7 @@
     <!-- Input Tab Buttons -->
     <ul id="input_tab_buttons" class="tab-buttons">
       <!-- <li>s have class `tab-button` -->
-      ${self.make_tab_buttons('search-the-map', 'find-a-route')}
+      ${self.make_tab_buttons(('search-the-map', 'find-a-route'))}
     </ul>
     <!-- /Input Tab Buttons -->
 
@@ -22,7 +22,7 @@
 
       <!-- Query Pane -->
       <div id="search-the-map" class="tab-content">
-        ${h.form(h.url_for('/regions/%s/services;find' % c.region_id), method='get', id='query_form')}
+        ${h.form(h.url_for('/regions/%s/services;find' % c.region.slug), method='get', id='query_form')}
           <div>
             ${h.text_field('q', id='q', value=c.q, title='Enter an address or route', tabindex='1')}
             ${h.submit(value='Search Map', title='Click to search the map', tabindex='2')}
@@ -36,7 +36,7 @@
 
       <!-- Route Pane -->
       <div id="find-a-route" class="tab-content">
-        ${h.form(h.url_for('/regions/%s/routes;find' % c.region_id), method='get', id='route_form')}
+        ${h.form(h.url_for('/regions/%s/routes;find' % c.region.slug), method='get', id='route_form')}
           <div>
             ${h.text_field('s', id='s', value=c.s, title='Enter start address', tabindex='3')}<a
               id="swap_s_and_e"
@@ -44,8 +44,7 @@
               onclick="return false;"
               title="Swap start and end addresses"
               tabindex="4"
-            >${h.image_tag('swapfrto.png', alt='&lt;&rt;', width='24', height=14)}</a>${h.text_field('e', id='e', value=c.e, title='Enter end address', tabindex='5')}
-
+            >${h.image_tag('swapfrto.png', alt='&lt;&gt;', width='24', height=14)}</a>${h.text_field('e', id='e', value=c.e, title='Enter end address', tabindex='5')}
             ${self.route_pref()}
             ${h.submit(value='Find Route', title='Click to find a route', tabindex='9')}
           </div>
@@ -65,12 +64,15 @@
 
 
 <!-- Route preference form control -->
-<%def name='route_pref()'></%def>
+<%def name='route_pref()'>
+  <% region_ns = self.get_namespace('/regions/%s.html' % c.region.slug) %>
+  ${region_ns.route_pref()}
+</%def>
 
 
 <!-- Bar links -->
 <%def name="links()">
-  <a id="bookmark" href=""
+  <a id="bookmark" href="."
      title="Link to the current result &amp; view"
      >Link to this page</a>
 </%def>
@@ -79,24 +81,31 @@
 <%def name="result_pane()">
   <%call expr="parent.result_pane(classes=['tab-control'])">
     <ul id="result_tab_buttons" class="tab-buttons">
-      ${self.make_tab_buttons('locations', 'routes')}
+      <% selected = 'routes' if c.service == 'routes' else 'locations' %>
+      ${self.make_tab_buttons(('locations', 'routes'), selected=selected)}
     </ul>
 
     <div class="tab-contents">
-      <div id="locations" class="tab-content">
-        <ul id="location_list" class="result_list">
-          % if c.service == 'geocodes':
-            <li>${self.body()}</li>
-          % endif
-        </ul>
+      <div id="locations"
+           class="${'selected-' if c.service == 'geocodes' else ''}tab-content">
+        % if c.service == 'geocodes' and c.http_status == 200:
+          <div class="fragment">
+            ${self.json()}
+            ${self.body()}
+          </div>
+        % endif
+        <ul id="location_list" class="result_list"></ul>
       </div>
 
-      <div id="routes" class="tab-content">
-        <ul id="route_list" class="result_list">
-          % if c.service == 'routes':
-            <li>${self.body()}</li>
-          % endif
-        </ul>
+      <div id="routes"
+           class="${'selected-' if c.service == 'routes' else ''}tab-content">
+        % if c.service == 'routes' and c.http_status == 200:
+          <div class="fragment">
+            ${self.json()}
+            ${self.body()}
+          </div>
+        % endif
+        <ul id="route_list" class="result_list"></ul>
         <p>
           <b>Disclaimer</b>: As you are riding, please keep in mind that you
           don't <i>have</i> to follow the suggested route. <i>It may not be
@@ -117,12 +126,25 @@
 
 <%def name="map_controls()">
   <!-- Map Menu -->
-  <div id="map_controls">
-    <select id="map_mode">
-      <option value="">- Map Mode -</option>
-      <option value="identifyIntersection">Identify Intersection</option>
-      <option value="identifyStreet">Identify Street</option>
-    </select>
+  <div id="map-controls">
+    <!--<select id="map_mode">-->
+      <!--<option value="">- Map Mode -</option>-->
+      <!--<option value="">Normal</option>-->
+      <!--<option value="identifyIntersection">Identify Intersection</option>-->
+      <!--<option value="identifyStreet">Identify Street</option>-->
+    <!--</select>-->
+    <a id="find-at-center-link"
+      href="#find-address-at-center-of-map"
+      title="Find address nearest to red dot at center of map"
+      >Find address at center</a>
+
+    <% region_ns = self.get_namespace('/regions/%s.html' % c.region.slug) %>
+    % if hasattr(region_ns, 'map_controls'):
+      &middot;
+      ${region_ns.map_controls()}
+    % endif
+
+    &middot;
     <a id="clear-map-link"
        href="#clear-map-and-results"
        title="Clear all results and map"
@@ -140,6 +162,16 @@
 
 <%def name="javascript()">
   byCycle.UI.service = '${c.service}';
-  byCycle.UI.http_status${' = %i' % c.http_status if c.http_status else ''};
+  byCycle.UI.member_name = '${c.member_name}';
+  byCycle.UI.collection_name = '${c.collection_name}';
+  byCycle.UI.region_id = '${c.region.slug if c.region else ""}';
+  byCycle.UI.http_status = ${'%i' % c.http_status if c.http_status else 'undefined'};
   byCycle.UI.query = '${c.q}';
+</%def>
+
+
+<%def name="json()">
+  % if c.format != 'json':
+    ${h.hidden_field('', value=c.json, class_='json')}
+  % endif
 </%def>

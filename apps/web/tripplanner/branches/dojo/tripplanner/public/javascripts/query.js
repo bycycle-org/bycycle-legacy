@@ -76,6 +76,7 @@ byCycle.UI.Query.prototype = {
   on200: function(request) {
     byCycle.logDebug('Entered on200...');
     eval('var response = ' + request.responseText + ';');
+    byCycle.logDebug(response);
     this.ui.showResultPane(this.result_list);
     var results = this.makeResults(response);
     // Process the results for ``service``
@@ -132,7 +133,7 @@ byCycle.UI.Query.prototype = {
     // can be transformed into widgets.
     var div = document.createElement('div');
     div.innerHTML = response.fragment;
-    var nodes = $(div).immediateDescendants();
+    var nodes = $(div).getElementsByClassName('fixed-pane');
 
     var result, dom_node;
     response.results.each((function (r, i) {
@@ -202,15 +203,10 @@ byCycle.UI.GeocodeQuery.prototype = Object.extend(new byCycle.UI.Query(), {
                                processing_message='Locating address...',
                                input=undefined */) {
     byCycle.logDebug('GQ initialize');
-
-    // Arguments for superclass
+    opts = opts || {};
     var ui = byCycle.UI;
-
-    if (opts) {
-      var form = opts.form || ui.query_form;
-      var result_list = opts.result_list || ui.location_list;
-    }
-
+    var form = opts.form || ui.query_form;
+    var result_list = opts.result_list || ui.location_list;
     this.superclass.initialize.call(this, 'geocodes', form, result_list, opts);
   },
 
@@ -260,17 +256,13 @@ byCycle.UI.RouteQuery.prototype = Object.extend(new byCycle.UI.Query(), {
                                processing_message='Finding route...',
                                input=undefined */) {
     byCycle.logDebug('RQ initialize');
+    opts = opts || {};
     var ui = byCycle.UI;
-
-    // Arguments for superclass
-    if (opts) {
-      var form = opts.form || ui.route_form;
-      var result_list = opts.result_list || ui.route_list;
-    }
-
-    this.superclass.initialize.call(this, 'routes', form, result_list, opts);
-
-    // this.ui.selectInputTab(service);
+    var form = opts.form || ui.route_form;
+    var result_list = opts.result_list || ui.route_list;
+    var service = 'routes';
+    this.superclass.initialize.call(this, service, form, result_list, opts);
+    this.ui.selectInputTab(service);
   },
 
   before: function() {
