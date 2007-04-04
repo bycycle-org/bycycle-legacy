@@ -104,7 +104,7 @@ byCycle.UI.Query.prototype = {
   onFailure: function(request) {
     byCycle.logDebug('Search failed. Status: ' + request.status);
     eval('var response = ' + request.responseText + ';');
-    this.ui.showMessagePane(this.ui.error_pane, response.message);
+    this.ui.showMessagePane(this.ui.error_pane, response.errors);
     byCycle.logDebug('Left onFailure.');
   },
 

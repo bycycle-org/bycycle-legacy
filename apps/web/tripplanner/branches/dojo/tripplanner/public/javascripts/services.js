@@ -180,7 +180,6 @@
 
     showErrors: function(errors) {
       self.status.innerHTML = 'Oops!';
-      self.showMessagePane(self.error_pane);
       // FIXME: Why?
       errors = errors.split('\n');
       var content = ['<b>Error', (errors.length == 1 ? '' : 's'), '</b>',
@@ -188,7 +187,7 @@
                        '<div class="error">',
                           errors.join('</div><div class="error">'),
                      '</div>'].join('');
-      self.error_pane.innerHTML = content;
+      self.showMessagePane(self.error_pane, content);
     },
 
     /**
