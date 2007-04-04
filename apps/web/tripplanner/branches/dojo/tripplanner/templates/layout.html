@@ -298,9 +298,6 @@
   ${c.region.title if c.region else 'Select a region'}
 </%def>
 
-
-## Layout Methods
-
 <%def name="stylesheet_links()"></%def>
 
 <%def name="input_container(classes=[])">
@@ -328,24 +325,30 @@
 <%def name="map_controls()"></%def>
 <%def name="javascript_includes()"></%def>
 <%def name="javascript()"></%def>
+
 <%def name="ads()">
-  % if c.region:
-    <% region_ns = self.get_namespace('/regions/%s.html' % c.region.slug) %>
-    ${region_ns.ads()}
+  <% region = c.region %>
+  % if region and region.ads:
+    <div id="region-ads">
+      % for ad in region.ads:
+        <div class="region-ad">
+          <a href="${ad.href}"
+             title="${ad.title}"
+             target="byCycle-ad-link"
+             >${ad.text}</a>          
+        </div>
+      % endfor
+    </div>
   % endif
 </%def>
 
-
-## End Layout Methods
-
-
 <%def name="make_tab_buttons(tab_ids, selected='')">
   <%doc>
-    Make the 'tab buttons' for a tab control (a set of LIs)
-    ``tab_ids`` is one or more strings suitable for a URL hash (like tab-id-13)
-    Each generated LI has class 'tab-button'
-    Each LI has an A element that has href='#tab-id'
-    The A element's link text and title attribute are 'Tab Id'
+    Make the 'tab buttons' for a tab control (a set of LIs). ``tab_ids`` is a
+    list of one or more strings suitable for a URL hash (like
+    tab-id-thirteen). Each generated LI has class 'tab-button'. Each LI has an
+    A element that has href='#tab-id'. The A element's link text and title
+    attribute are 'Tab Id'.    
   </%doc>
   % for t in tab_ids:
     <%

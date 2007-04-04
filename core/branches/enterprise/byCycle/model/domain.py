@@ -27,7 +27,7 @@ Classes:
 from sqlalchemy.sql import func, select
 
 from elixir import Entity, Unicode
-from elixir import has_field, using_options
+from elixir import has_field, belongs_to, has_many, using_options
 
 from cartography import geometry
 from cartography.proj import SpatialReference
@@ -39,7 +39,15 @@ from byCycle.model.data.sqltypes import *
 class Region(Entity):
     has_field('title', Unicode)
     has_field('slug', Unicode)
+    has_many('ads', of_kind='Ad')
     using_options(tablename='regions')
+
+class Ad(Entity):
+    has_field('title', Unicode)
+    has_field('href', Unicode)
+    has_field('text', Unicode)
+    belongs_to('region', of_kind='Region')
+    using_options(tablename='ads')
 
 class Service(Entity):
     has_field('title', Unicode)
