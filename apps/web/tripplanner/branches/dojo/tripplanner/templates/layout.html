@@ -136,15 +136,20 @@
 
 
           <!-- Message Pane -->
-          <div id="message_pane" class="display-pane fixed-pane"
-               ${'style="display: none;"' if (c.http_status and not c.errors) else ''}>
+          <%
+            show_msg_pane = (not c.http_status or c.info or c.errors or
+                             (c.http_status and c.http_status > 299))
+            show_error_pane = (c.errors or
+                               (c.http_status and c.http_status > 299))
+            show_info_pane = not show_error_pane
+          %>
+          <div id="message_pane" class="display-pane fixed-pane" ${self.hide_element(not show_msg_pane)}>
 
             <div class="title-bar"><div class="title">&nbsp;</div></div>
 
             <div class="content-pane">
 
-              <div id="info_pane"
-                   ${'style="display: none;"' if c.errors else ''}>
+              <div id="info_pane" ${self.hide_element(not show_info_pane)}>
 
                 % if c.info:
                   ${c.info}
@@ -168,7 +173,7 @@
                        target="byCyle_window">buying our apparel and other items</a>, or
                     <a href="http://bycycle.org/support/get-involved"
                        title="Get Involved"
-                       target="byCyclewindow">getting involved</a>.
+                       target="byCycle_window">getting involved</a>.
                   </p>
 
                   <p class="no-bottom-margin">
@@ -179,15 +184,26 @@
                 % endif
               </div>
 
-              <div id="error_pane" ${'style="display: none;"' if not c.errors else ''}>
+              <div id="error_pane" ${self.hide_element(not show_error_pane)}>
                 % if c.errors:
                   <h2>${c.title}</h2>
-                  <ul>
-                    % for e in c.errors.splitlines():
-                      <li>${e}</li>
-                    % endfor
-                  </ul>
+                  <%
+                    try:
+                      lines = c.errors.splitlines()
+                    except AttributeError:
+                      lines = None
+                  %>
+                  % if lines:
+                    <ul>
+                      % for e in lines:
+                        <li>${e}</li>
+                      % endfor
+                    </ul>
+                  % else:
+                    ${c.errors}
+                  % endif
                 % endif
+                ${self.body()}
               </div>
             </div>
           </div>
@@ -364,6 +380,12 @@
     %>
 <li class="tab-button ${css_class}">${h.link_to(link_text, '#%s' % t, title=link_text)}</li>\
   % endfor
+</%def>
+
+<%def name="hide_element(cond=True)">
+  % if cond:
+    style="display: none;"
+  % endif
 </%def>
 
 

@@ -51,6 +51,10 @@ class ServicesController(RestController):
             e = request.params.get('e', '').strip()
             if s or e:
                 controller = 'routes'
+            else:
+                c.errors = 'Please enter something to search for'
+                self.template = 'index'
+                return self.index()
         redirect_to('/regions/%s/%s;find' % (self.region.slug, controller),
                     **dict(request.params))
 
@@ -139,7 +143,9 @@ class ServicesController(RestController):
         def block(obj):
             result = {
                 'type': self.member.__class__.__name__,
+                'title': c.title,
                 'message': c.message,
+                'errors': c.errors,
                 'results': (obj if isinstance(obj, list) else [obj]),
             }
             if fragment:

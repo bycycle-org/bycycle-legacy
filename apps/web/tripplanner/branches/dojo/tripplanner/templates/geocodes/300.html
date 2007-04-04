@@ -1,17 +1,35 @@
 <%inherit file="layout.html"/>
 
 
-<strong>Select a location:</strong>
+<%!
+   from urllib import unquote_plus
+%>
+
+
+<h2>${c.title}</h2>
+
+
+<h3>Select a location</h3>
+
+
 <ul class="result_list multi-list">
+   <% last = len(c.geocodes) - 1 %>
    % for i, code in enumerate(c.geocodes):
-      <li class="${h.cycle('b', 'a')}">${self.geocode(code, i)}</li>
+      <%
+         if i == last:
+            style = ' style="margin-bottom: 0;"'
+         else:
+            style = ''
+      %>
+      <li class="${h.cycle('b', 'a')}"${style}>
+         ${self.geocode(code, i)}
+      </li>
    % endfor
 </ul>
 
 
 <%def name="geocode(geocode, i)">
    <%
-      from urllib import unquote_plus
       str_addr = str(geocode.address)
       xy_ll = geocode.xy_ll
       x, y = xy_ll.x, xy_ll.y
@@ -30,7 +48,7 @@
                   >show on map</a>
             </span>
          </div>
-      </div>   
+      </div>
       <div class="content-pane">
          <div class="address">${html_addr}</div>
          <div class="multi-select-links">
@@ -39,7 +57,7 @@
                title="Show this location on the map"
                onclick="byCycle.UI.map.setCenter({x: ${x}, y: ${y}}); return false;"
                >Show on map</a>
-            | 
+            |
             <a class="select-geocode-link"
                href="#select-this-location"
                title="Select this location"
@@ -59,5 +77,5 @@
                onclick='byCycle.UI.setAsEnd("${field_addr}"); return false;'
                ><i>end</i></a>
             of route
-         </div>   
+         </div>
 </%def>
