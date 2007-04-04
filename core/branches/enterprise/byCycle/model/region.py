@@ -29,7 +29,7 @@ float_encode = 10 ** float_exp
 float_decode = 10 ** -float_exp
 
 
-# TODO: Get this from the DB somehow
+# TODO: Create DB table with this data
 regions = {
     'portlandor': {
         'SRID': 2913,
@@ -236,9 +236,9 @@ class Region(object):
 
         return `dict`
             Adjacency matrix for this region
-            Matrix: [nodes: {}, edges: {}]
+            Matrix: {nodes: {}, edges: {}}
             Nodes: {v: {v: e, v: e, ...}, v: {v: e, v: e, ...}, ...}
-            streets: {e: (attrs), e: (attrs), ...}
+            Edges: {e: (attrs), e: (attrs), ...}
 
         """
         import sqlalchemy

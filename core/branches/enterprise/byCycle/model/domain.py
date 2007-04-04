@@ -38,6 +38,7 @@ from byCycle.model.data.sqltypes import *
 
 class Region(Entity):
     has_field('title', Unicode)
+    has_field('slug', Unicode)
     using_options(tablename='regions')
 
 class Service(Entity):
