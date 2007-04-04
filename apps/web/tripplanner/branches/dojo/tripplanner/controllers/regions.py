@@ -17,7 +17,11 @@ class RegionsController(RestController):
                 params[k.lstrip(prefix)] = params.pop(k)
         id = params.pop('region', '')
         if id:
-            if 'q' in params or 'fr' in params or 'to' in params:
+            if 'fr' in params:
+                params['s'] = params.pop('fr')
+            if 'to' in params:
+                params['e'] = params.pop('to')
+            if 'q' in params or 's' in params or 'e' in params:
                 redirect_to('find_services', region_id=id, **params)
             else:
                 redirect_to('region', id=id, **params)
