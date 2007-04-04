@@ -212,6 +212,13 @@ a:hover { color: orange; }
 .multi-list li {
   border-top: 1px solid #99b3cc;
 }
+#route_list .fixed-pane .content-pane {
+  padding: 0;
+  border: none;
+}
+#route_list .fixed-pane {
+  border-left: 1px solid #99b3cc;
+}
 .disclaimer {
   font-size: 85%;
   font-style: italic;
@@ -274,13 +281,14 @@ a:hover { color: orange; }
   border-collapse: collapse;
 }
 .directions td {
-  border: 1px solid gray;
+  border: 1px solid #99b3cc;
   padding: 4px;
   vertical-align: middle;
 }
 .directions div {
   padding: 2px;
 }
+.count { text-align: right; }
 .a { background: #ddd; }
 .b { background: #fff; }
 
