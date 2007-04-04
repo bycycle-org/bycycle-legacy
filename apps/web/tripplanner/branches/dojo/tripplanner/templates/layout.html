@@ -180,7 +180,14 @@
               </div>
 
               <div id="error_pane" ${'style="display: none;"' if not c.errors else ''}>
-                ${c.errors}
+                % if c.errors:
+                  <h2>${c.title}</h2>
+                  <ul>
+                    % for e in c.errors.splitlines():
+                      <li>${e}</li>
+                    % endfor
+                  </ul>
+                % endif
               </div>
             </div>
           </div>
@@ -335,7 +342,7 @@
           <a href="${ad.href}"
              title="${ad.title}"
              target="byCycle-ad-link"
-             >${ad.text}</a>          
+             >${ad.text}</a>
         </div>
       % endfor
     </div>
@@ -348,7 +355,7 @@
     list of one or more strings suitable for a URL hash (like
     tab-id-thirteen). Each generated LI has class 'tab-button'. Each LI has an
     A element that has href='#tab-id'. The A element's link text and title
-    attribute are 'Tab Id'.    
+    attribute are 'Tab Id'.
   </%doc>
   % for t in tab_ids:
     <%

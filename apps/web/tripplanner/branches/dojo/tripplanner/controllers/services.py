@@ -35,18 +35,31 @@ class ServicesController(RestController):
         return `Response`
 
         """
-        query = ' '.join(request.params.get('q', '').split())
-        if not query:
-            raise ValueError('Please enter an address, intersection, or'
-                             'route')
-        try:
-            # See if query looks like a route
-            request.params['q'] = self._makeRouteList(query)
-        except ValueError:
-            # Doesn't look like a route; assume it's a geocode
-            controller = 'geocodes'
+        q = request.params.get('q', '').strip()
+        if q:
+            try:
+                # See if query looks like a route
+                request.params['q'] = self._makeRouteList(q)
+            except ValueError:
+                # Doesn't look like a route; assume it's a geocode
+                controller = 'geocodes'
+            else:
+                controller = 'routes'
         else:
-            controller = 'routes'
+            s = request.params.get('s', '').strip()
+            e = request.params.get('e', '').strip()
+            if s and e:
+                controller = 'routes'
+            else:
+                c.title = 'Whoops!'
+                if s:
+                    c.errors = 'Please enter an end address'
+                elif e:
+                    c.errors = 'Please enter a start address'
+                else:
+                    c.errors = 'Please enter something to search for'
+                self.template = 'index'
+                return self.index()
         redirect_to('/regions/%s/%s;find' % (self.region.slug, controller),
                     **dict(request.params))
 
@@ -113,7 +126,7 @@ class ServicesController(RestController):
         except UnboundLocalError:
             pass
         else:
-            template = 'error'
+            template = 'index'
             c.errors = exc.description
 
         return self._render_response(template=template, code=c.http_status)
