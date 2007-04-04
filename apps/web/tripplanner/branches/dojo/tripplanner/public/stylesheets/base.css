@@ -71,12 +71,14 @@ a:hover { color: orange; }
   margin: 0;
   border: none;
 }
-#bike-portland {
+div#region-ads {
   font-size: 85%;
-  padding: 2px;
-  background: white;
 }
-#bike-portland a {
+div.region-ad {
+  padding: 2px;
+  border-bottom: 1px solid #99b3cc;
+}
+div#region-ads a {
   text-decoration: none;
 }
 #footer {
