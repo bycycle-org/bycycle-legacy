@@ -36,10 +36,10 @@ byCycle.widget.FixedPane.prototype = {
 
     if (this.collapsible) {
       byCycle.logDebug('Creating _ control...');
-      this._add_button('#toggle-window-contents', 'Hide window content', '_', 
+      this._add_button('#toggle-window-contents', 'Hide window content', '_',
                        this.on_collapse);
     }
-    
+
     if (this.closeable) {
       byCycle.logDebug('Creating X control...');
       this._add_button('#close-window', 'Close window', 'X', this.on_close);
@@ -58,19 +58,19 @@ byCycle.widget.FixedPane.prototype = {
 
   on_collapse: function (event) {
     event && Event.stop(event);
-    this.content_pane.toggle();
     this._run_listeners('collapse');
+    this.content_pane.toggle();
   },
 
   on_close: function (event) {
     event && Event.stop(event);
+    this._run_listeners('close');
     this.dom_node.hide();
     this.destroy_on_close && this.destroy();
-    this._run_listeners('close');
   },
 
   destroy: function() {
-    this.dom_node.remove();  
+    this.dom_node.remove();
   },
 
   /**

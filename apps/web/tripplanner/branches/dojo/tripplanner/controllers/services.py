@@ -18,8 +18,7 @@ class ServicesController(RestController):
         RegionsController._set_default_context()
 
         # Override default region context
-        c.region_id = RegionsController._get_region_id(self.region_id)
-        c.service = self.controller
+        c.service = self.collection_name
 
     def find(self):
         """Generic find method. Expects a ``q`` query parameter.
@@ -38,7 +37,8 @@ class ServicesController(RestController):
         """
         query = ' '.join(request.params.get('q', '').split())
         if not query:
-            raise ValueError('Please enter an address, intersection, or route')
+            raise ValueError('Please enter an address, intersection, or'
+                             'route')
         try:
             # See if query looks like a route
             request.params['q'] = self._makeRouteList(query)
@@ -47,16 +47,16 @@ class ServicesController(RestController):
             controller = 'geocodes'
         else:
             controller = 'routes'
-        redirect_to('/regions/%s/%s;find' % (self.region_id, controller),
+        redirect_to('/regions/%s/%s;find' % (self.region.slug, controller),
                     **dict(request.params))
 
     def _find(self, query, service_class, block=None, **params):
         """Show the result of ``query``ing a service.
 
-        Subclasses should return this method. In other words, they should
-        call this and return the result... unless a service-specific
-        ByCycleError is encountered, in which case control should return to
-        the subclass to handle the error and render the result.
+        Subclasses should return this method. In other words, they should call
+        this and return the result... unless a service-specific ByCycleError
+        is encountered, in which case control should return to the subclass to
+        handle the error and render the result.
 
         ``query``
             Query in form that back end service understands
@@ -69,7 +69,7 @@ class ServicesController(RestController):
             E.g., for route, tmode=bike, pref=safer
 
         """
-        service = service_class(region=c.region_id)
+        service = service_class(region=self.region.slug)
 
         try:
             result = service.query(query, **params)
@@ -83,7 +83,7 @@ class ServicesController(RestController):
             # Let subclass deal with any other `ByCycleError`s. The ``block``
             # function should set ``c.http_status`` and ``c.title`` and return
             # the name of a template.
-            if block: 
+            if block:
                 template = block(bc_exc)
             else:
                 raise
@@ -114,11 +114,17 @@ class ServicesController(RestController):
             pass
         else:
             template = 'error'
-            c.message = exc.description
+            c.errors = exc.description
 
         return self._render_response(template=template, code=c.http_status)
 
-    def _get_json_content(self):
+    def _get_html_content(self):
+        wrap = c.wrap
+        c.json = self._get_json_content()[0]
+        c.wrap = wrap
+        return super(ServicesController, self)._get_html_content()
+
+    def _get_json_content(self, fragment=True):
         """Get a JSON string.
 
         Assumes members have a ``__simplify__`` method. Modifies the base
@@ -127,13 +133,16 @@ class ServicesController(RestController):
 
         """
         def block(obj):
-            c.wrap = False
-            return {
-                'type': self.member_name,
+            result = {
+                'type': self.member.__class__.__name__,
                 'message': c.message,
                 'results': (obj if isinstance(obj, list) else [obj]),
-                'fragment': self._get_html_content()[0]
             }
+            if fragment:
+                c.wrap = False
+                f = super(ServicesController, self)._get_html_content()[0]
+                result['fragment'] = f
+            return result
         return super(ServicesController, self)._get_json_content(block=block)
 
     def _makeRouteList(self, q):

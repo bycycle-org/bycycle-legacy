@@ -9,26 +9,34 @@ class RegionsController(RestController):
         self._set_default_context()
 
     def index(self):
-        try:
-            id = request.params['region']
-        except KeyError:
-            return super(RegionsController, self).index()
+        # legacy support
+        params = dict(request.params)
+        prefix = 'bycycle_'
+        for k in params:
+            if k.startswith(prefix):
+                params[k.lstrip(prefix)] = params.pop(k)
+        id = params.pop('region', '')
+        if id:
+            if 'q' in params or 'fr' in params or 'to' in params:
+                redirect_to('find_services', region_id=id, **params)
+            else:
+                redirect_to('region', id=id, **params)
         else:
-            id = id.replace(',', '')
-            redirect_to('region', id=id, **dict(request.params))
+            return super(RegionsController, self).index()
 
-    def show(self, id, format=None):
+    def show(self, id):
         """Show the ``region`` with ID or name or key ``id``."""
-        region_id = self._get_region_id(id)
-        c.region_id = region_id
-        template = region_id or 'index'
-        return self._render_response(format=format, template=template)
+        id = self._get_region_id(id)
+        return super(RegionsController, self).show(id)
 
     def find(self):
-        region = request.params['region']
-        region = region.replace(',', '')
         params = dict(request.params)
-        if params.get('q').strip():
+        region = params.pop('region', None)
+        if not region:
+            self.action = 'index'
+            c.q = params.get('q', '')
+            return self.index()
+        elif params.get('q').strip():
             redirect_to('find_services', region_id=region, **params)
         else:
             redirect_to('region', id=region)
@@ -37,16 +45,18 @@ class RegionsController(RestController):
     def _set_default_context():
         """Set default template context."""
         c.service = 'services'
-        c.region_id = ''
         c.region_options = RegionsController._makeRegionOptions()
 
     @staticmethod
     def _get_region_id(region_id):
         try:
-            return regions.getRegionKey(region_id)
-        except ValueError:
-            c.errors = 'Unknown region: %s' % region_id
-            redirect_to('/regions')
+            return long(region_id)
+        except (ValueError, TypeError):
+            try:
+                return regions.getRegionKey(region_id)
+            except ValueError:
+                c.errors = 'Unknown region: %s' % region_id
+                redirect_to('/regions')
 
     @staticmethod
     def _makeRegionOptions():

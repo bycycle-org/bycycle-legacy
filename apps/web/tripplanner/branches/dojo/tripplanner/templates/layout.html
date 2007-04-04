@@ -7,6 +7,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml">
   ${h.if_ie('<xml:namespace ns="urn:schemas-microsoft-com:vml" prefix="v"/>')}
 
+
   <head>
     <meta http-equiv="Content-Type" content="application/xhtml+xml; charset=utf-8" />
 
@@ -42,7 +43,7 @@
       <div id="current-region">
         Region:
         ${self.region_title()}
-        % if not (c.controller == 'regions' and c.action == 'index'):
+        % if c.region:
           ${h.link_to('change', h.url_for('regions'))}
         % endif
       </div>
@@ -52,7 +53,7 @@
            title="Trip Planner help page (opens in new window)"
            target="byCyle_window"
            >Help</a>
-        |
+        &middot;
         <a href="http://bycycle.org/contact"
            title="Send us your comments, questions, suggestions, etc (opens in new window)"
            target="byCyle_window"
@@ -63,6 +64,7 @@
 
 
     <div id="wrapper">
+
 
       <!-- Masthead -->
       <div id="masthead">
@@ -89,7 +91,6 @@
 
 
       <div class="clear"></div>
-
 
 
       <!-- Bar -->
@@ -135,10 +136,16 @@
 
 
           <!-- Message Pane -->
-          <div id="message_pane" class="display-pane fixed-pane">
+          <div id="message_pane" class="display-pane fixed-pane"
+               ${'style="display: none;"' if (c.http_status and not c.errors) else ''}>
+
             <div class="title-bar"><div class="title">&nbsp;</div></div>
+
             <div class="content-pane">
-              <div id="info_pane">
+
+              <div id="info_pane"
+                   ${'style="display: none;"' if c.errors else ''}>
+
                 % if c.info:
                   ${c.info}
                 % else:
@@ -150,7 +157,7 @@
                        >contact us</a>
                        with any problems, comments, questions, or suggestions.
                   </p>
-  
+
                   <p>
                     If you find this application useful or would like to contribute to its improvement, please consider
                     <a href="http://bycycle.org/support/donate"
@@ -163,7 +170,7 @@
                        title="Get Involved"
                        target="byCyclewindow">getting involved</a>.
                   </p>
-  
+
                   <p class="no-bottom-margin">
                     Users should independently verify all information presented here. This
                     service is provided <b>AS IS</b> with <b>NO WARRANTY</b> of any kind.
@@ -171,8 +178,10 @@
                   </p>
                 % endif
               </div>
-  
-              <div id="error_pane">${c.errors}</div>
+
+              <div id="error_pane" ${'style="display: none;"' if not c.errors else ''}>
+                ${c.errors}
+              </div>
             </div>
           </div>
           <!-- /Message Pane -->
@@ -189,7 +198,7 @@
         <div id="col-b">
 
 
-          ${self.map_controls()}
+          <%call expr="self.map_controls()" />
 
 
           <!-- Map -->
@@ -222,6 +231,7 @@
       </div>
       <!-- /Ads -->
 
+
     </div>
     <!-- /Wrapper -->
 
@@ -229,12 +239,12 @@
     <!-- Footer -->
     <div id="footer">
       &copy; 2007 <a href="http://byCycle.org/" title="byCycle Home Page">byCycle.org</a>
-      |
+      &middot;
       Hosted by <a href="http://www.metro-region.org/">Metro</a>
-      |
+      &middot;
       <a href="http://trac.bycycle.org/" title="Information for Developers (Trac)">Developers</a>
-      |
-      Powered by <a href="http://www.python.org/">Python</a> and 
+      &middot;
+      Powered by <a href="http://www.python.org/">Python</a> and
       <a href="http://pylonshq.com/">Pylons</a>
     </div>
     <!-- /Footer -->
@@ -271,7 +281,6 @@
       //<![CDATA[
       // Set up for initialization
       byCycle.UI.beforeLoad();
-      byCycle.UI.region_id = '${c.region_id}';
       ${self.javascript()}
       //]]>
     </script>
@@ -286,7 +295,7 @@
 
 
 <%def name="region_title()">
-  ${c.region or 'Select a region'}
+  ${c.region.title if c.region else 'Select a region'}
 </%def>
 
 
@@ -297,7 +306,9 @@
 <%def name="input_container(classes=[])">
   <!-- Input Container -->
   <div id="input_container" class="${' '.join(classes)}">
-    ${caller.body()}
+    % if caller:
+      ${caller.body()}
+    % endif
   </div>
   <!-- /Input Container -->
 </%def>
@@ -307,7 +318,9 @@
 <%def name="result_pane(classes=[])">
   <!-- Result Pane -->
   <div id="result_pane" class="display-pane ${' '.join(classes)}">
-    ${caller.body()}
+    % if caller:
+      ${caller.body()}
+    % endif
   </div>
   <!-- /Result Pane -->
 </%def>
@@ -315,13 +328,18 @@
 <%def name="map_controls()"></%def>
 <%def name="javascript_includes()"></%def>
 <%def name="javascript()"></%def>
-<%def name="ads()"></%def>
+<%def name="ads()">
+  % if c.region:
+    <% region_ns = self.get_namespace('/regions/%s.html' % c.region.slug) %>
+    ${region_ns.ads()}
+  % endif
+</%def>
 
 
 ## End Layout Methods
 
 
-<%def name="make_tab_buttons(*tab_ids)">
+<%def name="make_tab_buttons(tab_ids, selected='')">
   <%doc>
     Make the 'tab buttons' for a tab control (a set of LIs)
     ``tab_ids`` is one or more strings suitable for a URL hash (like tab-id-13)
@@ -330,10 +348,13 @@
     The A element's link text and title attribute are 'Tab Id'
   </%doc>
   % for t in tab_ids:
-<% link_text = t.replace('-', ' ').capitalize() %>\
-<li class="tab-button">${h.link_to(link_text, '#%s' % t, title=link_text)}</li>\
+    <%
+      link_text = t.replace('-', ' ').capitalize()
+      css_class = 'selected-tab-button' if t == selected else ''
+    %>
+<li class="tab-button ${css_class}">${h.link_to(link_text, '#%s' % t, title=link_text)}</li>\
   % endfor
 </%def>
 
 
-% endif # if not c.wrap
+% endif ## if not c.wrap

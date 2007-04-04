@@ -203,7 +203,7 @@ a:hover { color: orange; }
   padding: 0;
   margin: 0;
 }
-.result_list li {
+.result_list li, .fragment div.fixed-pane {
   margin-bottom: 5px;
 }
 .multi-list {
@@ -230,7 +230,7 @@ a:hover { color: orange; }
 
 
 /* Column B -- Map, map controls, and any other map-related stuff */
-#map_controls {
+#map-controls {
   border-bottom: 1px solid #a7cc95;
   padding: 5px;
 }
@@ -270,6 +270,7 @@ a:hover { color: orange; }
   font-size: 14px;
 }
 .directions {
+  width: 100%;
   border-collapse: collapse;
 }
 .directions td {
