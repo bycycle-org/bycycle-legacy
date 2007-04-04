@@ -42,24 +42,15 @@ class ServicesController(RestController):
                 request.params['q'] = self._makeRouteList(q)
             except ValueError:
                 # Doesn't look like a route; assume it's a geocode
+                c.q = q
                 controller = 'geocodes'
             else:
                 controller = 'routes'
         else:
             s = request.params.get('s', '').strip()
             e = request.params.get('e', '').strip()
-            if s and e:
+            if s or e:
                 controller = 'routes'
-            else:
-                c.title = 'Whoops!'
-                if s:
-                    c.errors = 'Please enter an end address'
-                elif e:
-                    c.errors = 'Please enter a start address'
-                else:
-                    c.errors = 'Please enter something to search for'
-                self.template = 'index'
-                return self.index()
         redirect_to('/regions/%s/%s;find' % (self.region.slug, controller),
                     **dict(request.params))
 
