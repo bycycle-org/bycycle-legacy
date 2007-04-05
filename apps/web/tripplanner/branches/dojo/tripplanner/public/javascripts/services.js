@@ -14,7 +14,7 @@
   var _assignUIElements = self._assignUIElements;
   var _createEventHandlers = self._createEventHandlers;
 
-  $H({
+  Object.extend(self, {
     service: 'services',
     query: null,
     is_first_result: true,
@@ -42,8 +42,7 @@
     onLoad: function () {
       onLoad();
       var w = byCycle.widget.TabControl;
-      var initial_tab_id = (self.service == 'routes' ?
-                            'find-a-route' :
+      var initial_tab_id = (self.service == 'routes' ? 'find-a-route' :
                             'search-the-map');
       self.input_tab_control = new w(self.input_container, initial_tab_id);
       initial_tab_id = (self.service == 'routes' ? 'routes' : 'locations');
@@ -74,6 +73,18 @@
       Event.observe(self.query_form, 'submit', self.runGenericQuery);
       Event.observe(self.route_form, 'submit', self.runRouteQuery);
       Event.observe($('clear-map-link'), 'click', self.clearResults);
+      Event.observe($('find-at-center-link'), 'click',
+                    self.identifyIntersectionAtCenter);
+      Event.observe($('cm-find-at-center-link'), 'click',
+                    self.identifyIntersectionAtCenter);
+      Event.observe($('cm-set-as-start'), 'click', function (event) {
+        Event.stop(event);
+        self.setAsStart(byCycle.UI.map.getCenterString());
+      });
+      Event.observe($('cm-set-as-end'), 'click', function (event) {
+        Event.stop(event);
+        self.setAsEnd(byCycle.UI.map.getCenterString());
+      });
     },
 
     showResultPane: function(list_pane) {
@@ -96,7 +107,8 @@
       self.input_tab_control.select(service == 'routes' ? 1 : 0);
     },
 
-    swapStartAndEnd: function() {
+    swapStartAndEnd: function(event) {
+      event && Event.stop(event);
       var s = self.s_el.value;
       self.s_el.value = self.e_el.value;
       self.e_el.value = s;
@@ -283,28 +295,26 @@
 
     /* Map *******************************************************************/
 
-    findAddressAtCenter: function() {
-      var center = self.map.getCenterString();
-      self.q_el.value = center;
-      new byCycle.UI.GeocodeQuery(null).run();
+    identifyIntersectionAtCenter: function(event) {
+      byCycle.logDebug('In find-intersection-at-center callback');
+      var center = self.map.getCenter();
+      self.q_el.value = self.map.getCenterString();
+      self.identifyIntersection(center, event);
     },
 
-    handleMapClick: function(point) {
+    handleMapClick: function(point, event) {
       var handler = self[$('map_mode').value];
       if (typeof(handler) != 'undefined') {
         handler(point);
       }
     },
 
-    identifyIntersection: function(point) {
-      var q = [point.x, point.y].join(',');
-      new byCycle.UI.GeocodeQuery(null, q).run();
+    identifyIntersection: function(point, event) {
+      self.runGeocodeQuery(event, {q: [point.x, point.y].join()});
     },
 
-    identifyStreet: function(point) {
+    identifyStreet: function(point, event) {
       self.status.innerHTML = '"Identify Street" feature not implemented yet.';
     }
-
-  }).each(function (item) { self[item.key] = item.value; });
-
+  });
 })();
