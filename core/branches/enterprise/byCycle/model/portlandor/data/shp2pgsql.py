@@ -352,6 +352,8 @@ def transferStreetNames(modify=True):
         p, n, s, t = row[0], row[1], row[2], row[3]
         if (p or n or s or t or None) is not None:
             street_names[(p, n, s, t)] = street_name_id
+            if s == 'pky':
+                s = 'pkwy'
             d = {}
             d['id'] = street_name_id
             d['prefix'] = p
