@@ -48,7 +48,8 @@ byCycle.Map.google = {
     } else {
       $('map_message').show();
       if (!this.api_loaded) {
-        $('map_message').update('No Google Maps API key found for ' + byCycle.domain);
+        $('map_message').update('No Google Maps API key found for ' +
+		                        byCycle.domain);
       }
     }
     return is_loadable;
@@ -170,6 +171,10 @@ byCycle.Map.google.Map.prototype = Object.extend(new byCycle.Map.base.Map(), {
     }
   },
 
+  getZoom: function() {
+    return this.map.getZoom();
+  },
+  
   setZoom: function(zoom) {
     this.map.setZoom(zoom);
   },
@@ -242,8 +247,10 @@ byCycle.Map.google.Map.prototype = Object.extend(new byCycle.Map.base.Map(), {
     var marker = this.placeMarker(region.center, icon);
     var self = this;
     GEvent.addListener(marker, 'click', function() {
-      window.location = [byCycle.prefix, 'regions/', region.key, '?',
-                         byCycle.request_params.toQueryString()].join('');
+	  var params = byCycle.request_params.toQueryString();
+      var location = [byCycle.prefix, 'regions/', region.key];
+	  if (params) { location.push('?', params); }
+	  window.location = location.join('');
     });
     return marker;
   },
@@ -294,91 +301,70 @@ byCycle.Map.google.Map.prototype = Object.extend(new byCycle.Map.base.Map(), {
     self.map.openInfoWindowHtml(point, html);
   },
 
-  /**
-   * Factory for creating Mercator map types (or at least it will be; right
-   * now it's Metro-specific).
-   */
-  makeMercatorMapType: function(base_type, name, zoom_levels) {
-    var domain = 'mica.metro-region.org';
-    var transparent_png = 'http://' + domain +
-    '/bycycle/images/transparent.png';
-    var copyrights = new GCopyrightCollection("&copy; Metro");
-    var wms_url = 'http://' + domain +
-    '/cgi-bin/mapserv-postgis?map=/var/www/html/bycycle/bycycle.map&';
-    var layers = 'pirate_network,county_lines';
-    var tile_size = 256;
-    var tile_size_less_one = tile_size - 1;
-    var img_format = 'image/png';
-    var srs = "EPSG:4326";
-    var se, nw;
-    var min_zoom = 9;
-    var url = [wms_url,
-               "SERVICE=WMS",
-               "&VERSION=1.1.1",
-               "&REQUEST=GetMap",
-               "&LAYERS=", layers,
-               "&STYLES=",
-               "&FORMAT=", img_format,
-               "&BGCOLOR=0xFFFFFF",
-               "&TRANSPARENT=TRUE",
-               "&SRS=", srs,
-               "&WIDTH=", tile_size,
-               "&HEIGHT=", tile_size].join('');
+  makeBikeTileOverlay: function (zoom_levels) {
+	var domain = 'mica.metro-region.org';
+	var transparent_png = ['http://', domain,
+	                       '/bycycle/images/transparent.png'].join('');
+	var c = '&copy; <a href="http://www.metro-region.org/">Metro</a>';
+	var copyrights = new GCopyrightCollection(c);
+	var wms_url = ['http://', domain, '/cgi-bin/mapserv-postgis',
+				   '?map=/var/www/html/bycycle/bycycle.map&'].join('');
+	var layers = 'bike_rte,county_lines';
+	var tile_size = 256;
+	var tile_size_less_one = tile_size - 1;
+	var img_format = 'image/png';
+	var srs = "EPSG:4326";
+	var min_zoom = 9;
+	var url = [wms_url,
+	           "SERVICE=WMS",
+			   "&VERSION=1.1.1",
+			   "&REQUEST=GetMap",
+			   "&LAYERS=", layers,
+			   "&STYLES=",
+			   "&FORMAT=", img_format,
+			   "&BGCOLOR=0xFFFFFF",
+			   "&TRANSPARENT=TRUE",
+			   "&SRS=", srs,
+			   "&WIDTH=", tile_size,
+			   "&HEIGHT=", tile_size].join('');
+	var sw, ne;
 
-    var pdx_bounds = byCycle.regions.portlandor.bounds;
-    var pdx_sw = pdx_bounds.sw;
-    var pdx_ne = pdx_bounds.ne;
-    var bounds = new GLatLngBounds(new GLatLng(pdx_sw.y, pdx_sw.x),
-                                   new GLatLng(pdx_ne.y, pdx_ne.x));
+	var pdx_bounds = byCycle.regions.regions.portlandor.bounds;
+	var pdx_sw = pdx_bounds.sw;
+	var pdx_ne = pdx_bounds.ne;
+	var bounds = new GLatLngBounds(new GLatLng(pdx_sw.lat, pdx_sw.lng),
+								   new GLatLng(pdx_ne.lat, pdx_ne.lng));
 
-    var projection = new GMercatorProjection(zoom_levels);
-    projection.XXXtileCheckRange = function(tile, zoom, tile_size) {
-      var x = tile.x * tile_size;
-      var y = tile.y * tile_size;
-      var sw_point = new GPoint(x, y + tile_size_less_one);
-      var ne_point = new GPoint(x + tile_size_less_one, y);
-      sw = this.fromPixelToLatLng(sw_point, zoom);
-      ne = this.fromPixelToLatLng(ne_point, zoom );
-      var tile_bounds = new GLatLngBounds(sw, ne);
-      if (tile_bounds.intersects(bounds)) {
-        return true;
-      } else {
-        return false;
-      }
-    };
+	var projection = new GMercatorProjection(zoom_levels);
+	projection.tileCheckRange = function(tile,  zoom,  tile_size) {
+	  var x = tile.x * tile_size;
+	  var y = tile.y * tile_size;
+	  var sw_point = new GPoint(x, y + tile_size_less_one);
+	  var ne_point = new GPoint(x + tile_size_less_one, y);
+	  sw = this.fromPixelToLatLng(sw_point, zoom);
+	  ne = this.fromPixelToLatLng(ne_point, zoom );
+	  var tile_bounds = new GLatLngBounds(sw, ne);
+	  if (tile_bounds.intersects(bounds)) {
+		return true;
+	  } else {
+		return false;
+	  }
+	};
 
-    var layer = new GTileLayer(copyrights, 0, zoom_levels - 1);
-    layer.getTileUrl = function(tile, zoom) {
-      projection.XXXtileCheckRange(tile, zoom, tile_size);
-      if (zoom < min_zoom) {
-        var tile_url = transparent_png;
-      } else {
-        var bbox = [sw.lng(), sw.lat(), ne.lng(), ne.lat()].join(',');
-        var tile_url = [url, "&BBOX=", bbox].join('');
-      }
-      return tile_url;
-    };
-
-    layer.isPng = function() {
-      return true;
-    };
-
-    layer.getOpacity = function() {
-      return 0.625;
-    };
-
-    var layers = [base_type.getTileLayers()[0], layer];
-    var opts = {errorMessage: 'Here Be Dragons'};
-    var map_type = new GMapType(layers, projection, name, opts);
-
-    map_type.onChangeTo = function() {
-      if (map.getZoom() < min_zoom) {
-        map.setZoom(min_zoom);
-      }
-      if (!bounds.intersects(map.getBounds())) {
-        selectRegion('portlandor');
-      }
-    };
-    return map_type;
+	var layer = new GTileLayer(copyrights, 0, zoom_levels - 1);
+	layer.getTileUrl = function(tile, zoom) {
+	  projection.tileCheckRange(tile, zoom, tile_size);
+	  if (zoom < min_zoom) {
+		var tile_url = transparent_png;
+	  } else {
+		var bbox = [sw.lng(), sw.lat(), ne.lng(), ne.lat()].join(',');
+		var tile_url = [url, "&BBOX=", bbox].join('');
+	  }
+	  return tile_url;
+	};
+	layer.isPng = function() { return true;	};
+	layer.getOpacity = function() { return .625; };
+	
+	return new GTileLayerOverlay(layer);
   }
 });

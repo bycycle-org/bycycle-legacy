@@ -23,6 +23,8 @@
     route_choices: null,
     http_status: null,
     response_text: null,
+	bike_overlay: null,
+	bike_overlay_state: false,
 
     status_messages: {
       200: 'One result was found',
@@ -65,6 +67,8 @@
       self.pref_el = $('pref');
       self.location_list = $('location_list');
       self.route_list = $('route_list');
+	  self.bike_overlay_link = $('bike-overlay-link');
+	  self.toggle_bike_overlay = $('toggle-bike-overlay');
     },
 
     _createEventHandlers: function () {
@@ -85,6 +89,8 @@
         Event.stop(event);
         self.setAsEnd(byCycle.UI.map.getCenterString());
       });
+	  Event.observe(self.bike_overlay_link, 'click',
+	                self.toggleBikeTileOverlay);
     },
 
     showResultPane: function(list_pane) {
@@ -315,6 +321,33 @@
 
     identifyStreet: function(point, event) {
       self.status.innerHTML = '"Identify Street" feature not implemented yet.';
-    }
+    },
+
+	toggleBikeTileOverlay: function (event) {
+	  event && Event.stop(event);
+	  if (self.bike_overlay_state) {
+		// Bike layer was on; turn it off
+		self.bike_overlay.hide();
+		self.bike_overlay_link.href = '#show-bike-map';
+		self.toggle_bike_overlay.update('Show');
+	  } else {
+		// Bike layer was off; turn it on
+		if (!self.bike_overlay) {
+		  // First time turning bike layer on, create it
+		  self.bike_overlay = self.map.makeBikeTileOverlay(20);
+		  self.map.addOverlay(self.bike_overlay);
+		  GEvent.addListener(self.map.map, 'maptypechanged', function () {
+			if (!self.bike_overlay_state) {
+			  self.bike_overlay.hide();
+			}
+		  });
+		}
+		self.bike_overlay_link.href = '#hide-bike-map';
+		self.toggle_bike_overlay.update('Hide');
+		if (self.map.getZoom() < 9) { self.map.setZoom(9); }
+		self.bike_overlay.show();
+	  }
+	  self.bike_overlay_state = !self.bike_overlay_state;
+	}
   });
 })();
