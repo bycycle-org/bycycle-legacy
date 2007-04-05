@@ -30,10 +30,6 @@ ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 """
-
-import sys
-sys.path.insert(0, '/home/dacc/byCycle')
-
 import math
 from byCycle.model import mode
  
