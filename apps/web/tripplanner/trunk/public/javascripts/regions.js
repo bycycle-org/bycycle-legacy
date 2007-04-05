@@ -71,5 +71,19 @@ var regions = {
 		sw: {lat: 42.842059, lng: -88.069888}, 
 		ne: {lat: 43.192647, lng: -87.828241}
 	}
+  },
+  
+  seattlewa: {
+    id: 'seattlewa',
+    
+    heading: 'Seattle, WA',
+    
+    subheading: 'Developed in cooperation with Daniel Carleton.',
+        
+    bounds: {
+		sw: {lat: 47.453598, lng: -122.419091},
+		ne: {lat: 47.734137, lng: -122.217088}
+	}
   }
+  
 };
