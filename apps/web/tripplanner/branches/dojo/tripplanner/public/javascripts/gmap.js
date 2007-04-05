@@ -16,7 +16,7 @@ byCycle.Map.google = {
     var api_url = 'http://maps.google.com/maps?file=api&amp;v=2&amp;key=';
     var api_keys = {
       'tripplanner.bycycle.org': 'ABQIAAAAd_4WmZlgvQzchd_BQM0MPhQ8y5tnWrQRsyOlME1eHkOS3wQveBSeFCpOUAfP10H6ec-HcFWPgiJOCA',
-      
+
       'satellite.bycycle.org:5000':
 'ABQIAAAAd_4WmZlgvQzchd_BQM0MPhRY_I4CLwGh95qVWYjrRjsuZNzP3BSOxRXLsVSuuatyFhv0hQfFohQxBQ',
 
@@ -43,7 +43,7 @@ byCycle.Map.google = {
 
   isLoadable: function() {
     var is_loadable = false;
-    if (this.api_loaded && GBrowserIsCompatible()) {   
+    if (this.api_loaded && GBrowserIsCompatible()) {
         is_loadable = true;
     } else {
       $('map_message').show();
@@ -67,7 +67,7 @@ byCycle.Map.google.Map.prototype = Object.extend(new byCycle.Map.base.Map(), {
     this.createIcons();
     this.createListeners();
   },
-  
+
   createMap: function(container) {
     var map = new GMap2(container);
     map.setCenter(new GLatLng(0, 0), 7);
@@ -108,22 +108,23 @@ byCycle.Map.google.Map.prototype = Object.extend(new byCycle.Map.base.Map(), {
 
   createListeners: function() {
     var self = this;
-    GEvent.addListener(self.map, 'moveend', function() {
+    GEvent.addListener(self.map, 'moveend', function () {
       self.center = self.map.getCenter();
       if (typeof(self.center_marker) == 'undefined') {
         self.center_marker = new GMarker(self.center, self.center_icon);
         self.map.addOverlay(self.center_marker);
-        GEvent.addListener(self.center_marker, 'click', function() {
-          self.map.openInfoWindowHtml(self.center, $('center_marker').innerHTML);
+        var cm_node = document.getElementById('center-marker-contents');
+        GEvent.addListener(self.center_marker, 'click', function () {
+          self.map.openInfoWindow(self.center, cm_node);
         });
       }
       self.center_marker.setPoint(self.center);
     });
-    GEvent.addListener(self.map, 'click', function(overlay, point) {
+    GEvent.addListener(self.map, 'click', function (overlay, point) {
       self.map.closeInfoWindow();
-      if (point) {
-        self.ui.handleMapClick({x: point.lng(), y: point.lat()});
-      }
+      //if (point) {
+        //self.ui.handleMapClick({x: point.lng(), y: point.lat()});
+      //}
     });
   },
 
@@ -204,10 +205,10 @@ byCycle.Map.google.Map.prototype = Object.extend(new byCycle.Map.base.Map(), {
     var self = this;
     GEvent.addListener(marker, "click", function() {
       self.map.openInfoWindow(g_lat_lng, node);
-    });    
+    });
     return marker;
   },
-  
+
   placeMarkers: function(points, icons) {
     var markers = [];
     var len = points.length;
@@ -381,5 +382,3 @@ byCycle.Map.google.Map.prototype = Object.extend(new byCycle.Map.base.Map(), {
     return map_type;
   }
 });
-
-
