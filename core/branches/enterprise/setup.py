@@ -43,9 +43,10 @@ GPL.""",
     zip_safe=False,
     install_requires=(
     'psycopg2==2.0.5.1',
-    'SQLAlchemy==0.3.6',
-    'Elixir==0.3.0',
+    'SQLAlchemy',
+    'Elixir',
     'zope.interface',
     'Dijkstar',
     ),
 )
+
