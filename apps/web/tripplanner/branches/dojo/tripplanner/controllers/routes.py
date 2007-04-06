@@ -12,9 +12,9 @@ class RoutesController(ServicesController):
             try:
                 q = self._makeRouteList(q)
             except ValueError:
-                c.q = q
-                c.title = 'Whoops!'
-                c.errors = "That doesn't look like a route"
+                self.q = q
+                self.title = 'Whoops!'
+                self.errors = "That doesn't look like a route"
                 self.template = 'index'
                 return self.index()
         else:
@@ -23,19 +23,19 @@ class RoutesController(ServicesController):
             if s and e:
                 q = [s, e]
             else:
-                c.title = 'Whoops!'
+                self.title = 'Whoops!'
                 if s:
-                    c.s = s
-                    c.errors = 'Please enter an end address'
+                    self.s = s
+                    self.errors = 'Please enter an end address'
                 elif e:
-                    c.e = e
-                    c.errors = 'Please enter a start address'
+                    self.e = e
+                    self.errors = 'Please enter a start address'
                 else:
-                    c.errors = 'Please enter something to search for'
+                    self.errors = 'Please enter something to search for'
                 self.template = 'index'
                 return self.index()
-        c.s, c.e = q[0], q[1]
-        c.q = '%s to %s' % (q[0], q[1])
+        self.s, self.e = q[0], q[1]
+        self.q = '%s to %s' % (q[0], q[1])
         params = {}
         for p in ('pref', 'tmode'):
             if p in request.params:
@@ -45,9 +45,9 @@ class RoutesController(ServicesController):
                 raise exc
             except MultipleMatchingAddressesError, exc:
                 template = '300'
-                c.http_status = 300
-                c.title = 'Multiple Matches Found'
-                self.routes = exc.choices
+                self.http_status = 300
+                self.title = 'Multiple Matches'
+                self.choices = exc.choices
             return template
         return super(RoutesController, self)._find(q, service_class=Service,
                                                    block=block)

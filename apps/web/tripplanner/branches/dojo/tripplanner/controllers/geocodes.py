@@ -8,14 +8,14 @@ class GeocodesController(ServicesController):
 
     def find(self):
         q = request.params.get('q', '')
-        c.q = q
+        self.q = q
         def block(exc):
             try:
                 raise exc
             except MultipleMatchingAddressesError, exc:
                 template = '300'
-                c.http_status = 300
-                c.title = 'Multiple Matches Found'
+                self.http_status = 300
+                self.title = 'Multiple Matches'
                 self.geocodes = exc.geocodes
             return template
         return super(GeocodesController, self)._find(q, service_class=Service,

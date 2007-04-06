@@ -65,21 +65,20 @@ a:hover { color: orange; }
   height: 100%;
   background: white;
   border-left: 1px solid #99b3cc;
+  overflow: hidden;
 }
 #ads.fixed-pane .content-pane {
   padding: 0;
   margin: 0;
   border: none;
+  border-bottom: 2px solid #99b3cc;
 }
 div#region-ads {
-  font-size: 85%;
+  font-weight: bold;
+  border-bottom: 2px solid #99b3cc;
 }
 div.region-ad {
   padding: 2px;
-  border-bottom: 1px solid #99b3cc;
-}
-div#region-ads a {
-  text-decoration: none;
 }
 #footer {
   position: absolute;

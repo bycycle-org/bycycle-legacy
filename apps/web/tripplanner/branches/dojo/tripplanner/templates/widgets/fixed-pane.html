@@ -1,0 +1,18 @@
+<%def name="fixed_pane(id='', style='', title_bar_style='', title_style='', content_pane_style='')">
+   <%
+      if id:
+         id = 'id="${id}"'
+      else:
+         id = ''
+   %>
+   <div ${id} class="fixed-pane" ${h.make_inline_style(style)}>
+      <div class="title-bar" ${h.make_inline_style(title_bar_style)}>
+         <div class="title" ${h.make_inline_style(title_style)}>
+            ${caller.title()}
+         </div>
+      </div>
+      <div class="content-pane" ${h.make_inline_style(content_pane_style)}>
+         ${caller.content()}
+      </div>
+   </div>
+</%def>

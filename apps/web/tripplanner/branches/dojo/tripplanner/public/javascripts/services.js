@@ -16,11 +16,10 @@
 
   Object.extend(self, {
     service: 'services',
-    query: null,
+    query: null,  // query.Query object (not query string)
     is_first_result: true,
     result: null,
     results: $H({'geocodes': $H({}), 'routes': $H({})}),
-    route_choices: null,
     http_status: null,
     response_text: null,
 	bike_overlay: null,
@@ -152,7 +151,13 @@
         Element.remove(fragment);
         Element.remove(json);
         query_obj.on200(request);
-      }
+      } else if (self.http_status == 300) {
+		var json = self.error_pane.getElementsByClassName('json')[0];
+        var request = {status: self.http_status, responseText: $F(json)};
+        Element.remove(json);
+		query_obj.on300(request);
+	  }
+	  self.query = query_obj;
     },
 
     runGenericQuery: function(event, input /* =undefined */) {
@@ -161,17 +166,20 @@
       if (q) {
         var query_class;
         // Is the query a route?
-        var i = q.toLowerCase().indexOf(' to ');
-        if (i != -1) {
+        var waypoints = q.toLowerCase().split(' to ');
+		byCycle.logDebug(waypoints);
+        if (waypoints.length > 1) {
           // Query looks like a route
-          self.s_el.value = q.substring(0, i);
-          self.e_el.value = q.substring(i + 4);
+          self.s_el.value = waypoints[0];
+          self.e_el.value = waypoints[1];
+		  // Override using ``s`` and ``e``
+		  var input = {q: q};
           query_class = self.RouteQuery;
         } else {
           // Query doesn't look like a route; default to geocode query
           query_class = self.GeocodeQuery;
         }
-        self.runQuery(query_class, event);
+        self.runQuery(query_class, event, input);
       } else {
         self.q_el.focus();
         self.showErrors('Please enter something to search for!');
@@ -238,31 +246,23 @@
     /**
      * Select from multiple matching geocodes for a route
      */
-    selectRouteGeocode: function(select_link, i) {
+    selectRouteGeocode: function(select_link, i, j) {
       byCycle.logDebug('Entered selectRouteGeocode...');
-
-      var geocodes = select_link.parentNode.parentNode.parentNode.parentNode.parentNode;
-
-      var multi = geocodes.parentNode;
-      Element.remove(geocodes);
-
-      var parts = select_link.href.split('/');
-      var last_i = parts.length - 1;
-      if (parts[last_i] == '') {
-        last_i -= 1;
-      }
-      var addr = parts[last_i];
-      self.route_choices[i] = addr;
-
-      var next_multi = multi.getElementsByClassName('geocodes')[0];
-
-      if (next_multi) {
-        Element.show(next_multi);
-        self.status.innerHTML = 'Way to go!';
+      var dom_node = $(select_link).up('ul');
+	  var next = dom_node.next();
+	  var choice = self.query.response.choices[i][j];
+	  var addr;
+	  if (choice.number) {
+		addr = [choice.number, choice.network_id].join('-');
+	  } else {
+	    addr = choice.network_id
+	  }
+      self.query.route_choices[i] = addr;
+	  dom_node.remove();
+      if (next) {
+        next.show();
       } else {
-        self.error_pane.innerHTML = '';
-        Element.hide(self.error_pane);
-        new self.RouteQuery(null, self.route_choices).run();
+        self.runRouteQuery(null, {q: self.query.route_choices.join(' to ')});
       }
     },
 

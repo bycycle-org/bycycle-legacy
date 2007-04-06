@@ -13,7 +13,7 @@
     <!-- Input Tab Buttons -->
     <ul id="input_tab_buttons" class="tab-buttons">
       <!-- <li>s have class `tab-button` -->
-      ${self.make_tab_buttons(('search-the-map', 'find-a-route'))}
+      ${h.make_tab_buttons(('search-the-map', 'find-a-route'))}
     </ul>
     <!-- /Input Tab Buttons -->
 
@@ -65,14 +65,14 @@
 
 <!-- Route preference form control -->
 <%def name='route_pref()'>
-  <% region_ns = self.get_namespace('/regions/%s.html' % c.region.slug) %>
-  ${region_ns.route_pref()}
+  ##<% region_ns = self.get_namespace('/regions/%s.html' % c.region.slug) %>
+  ##${region_ns.route_pref()}
 </%def>
 
 
 <!-- Bar links -->
 <%def name="links()">
-  <a id="bookmark" href="."
+  <a id="bookmark" href=""
      title="Link to the current result &amp; view"
      >Link to this page</a>
 </%def>
@@ -82,7 +82,7 @@
   <%call expr="parent.result_pane(classes=['tab-control'])">
     <ul id="result_tab_buttons" class="tab-buttons">
       <% selected = 'routes' if c.service == 'routes' else 'locations' %>
-      ${self.make_tab_buttons(('locations', 'routes'), selected=selected)}
+      ${h.make_tab_buttons(('locations', 'routes'), selected=selected)}
     </ul>
 
     <div class="tab-contents">
@@ -166,7 +166,7 @@
   byCycle.UI.collection_name = '${c.collection_name}';
   byCycle.UI.region_id = '${c.region.slug if c.region else ""}';
   byCycle.UI.http_status = ${'%i' % c.http_status if c.http_status else 'undefined'};
-  byCycle.UI.query = '${c.q}';
+  byCycle.UI.q = '${c.q}';
 </%def>
 
 

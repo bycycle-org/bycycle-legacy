@@ -76,6 +76,7 @@ byCycle.UI.Query.prototype = {
   on200: function(request) {
     byCycle.logDebug('Entered on200...');
     eval('var response = ' + request.responseText + ';');
+    this.response = response;
     byCycle.logDebug(response);
     this.ui.showResultPane(this.result_list);
     var results = this.makeResults(response);
@@ -220,10 +221,7 @@ byCycle.UI.GeocodeQuery.prototype = Object.extend(new byCycle.UI.Query(), {
         this.ui.q_el.focus();
         throw new Error('Please enter an address!');
       }
-    } else {
-      q = this.input;
     }
-    this.q = q;
   },
 
   processResults: function(response, results) {
@@ -273,9 +271,7 @@ byCycle.UI.RouteQuery.prototype = Object.extend(new byCycle.UI.Query(), {
       // Use form fields for input
       var s = this.ui.s_el.value;
       var e = this.ui.e_el.value;
-      if (s && e) {
-        this.q = ['["', s, '", "', e, '"]'].join('');
-      } else {
+      if (!(s && e)) {
         if (!s) {
           errors.push('Please enter a start address');
           this.ui.s_el.focus();
@@ -288,21 +284,26 @@ byCycle.UI.RouteQuery.prototype = Object.extend(new byCycle.UI.Query(), {
         }
         throw new Error(errors.join('\n'));
       }
-    } else {
-      // Use passed-in input
-      if (this.input.length > 1) {
-        this.q = ['["', this.input.join('", "'), '"]'].join('');
-      } else {
-        throw new Error('Not enough addresses for Route Query.');
-      }
     }
   },
 
-  onLoad: function(request) {
-    this.inherited('onLoad', arguments);
-    if (this.request.status == 300) {
-      this.ui.route_choices = this.getAndRemoveJSON();
-    }
+  on300: function(request) {
+    this.superclass.on300.call(this, request);
+    var route_choices = [];
+    var addr;
+    this.response.choices.each(function (c, i) {
+      if (typeof c == 'Array') {
+        addr = null;
+      } else {
+		if (c.number) {
+		  addr = [c.number, c.network_id].join('-');
+		} else {
+		  addr = c.network_id
+		}
+      }
+      route_choices[i] = addr;
+    });
+    this.route_choices = route_choices;
   },
 
   processResults: function(response, results) {
