@@ -40,7 +40,7 @@ class RegionsController(RestController):
         params.pop('commit', '')        
         if not region:
             self.action = 'index'
-            c.q = q
+            self.q = q
             return self.index()
         elif q:
             redirect_to('find_services', region_id=region, **params)

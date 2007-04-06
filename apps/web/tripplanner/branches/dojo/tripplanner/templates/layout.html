@@ -70,7 +70,7 @@
       <div id="masthead">
         <h1 id="logo">
           <a href="http://bycycle.org/" title="byCycle.org Home Page">
-          ${h.image_tag('/images/logo.png', title='byCycle.org Home Page', width=150, height=25, alt='byCycle.org')}
+          ${h.image_tag('logo.png', title='byCycle.org Home Page', width=150, height=25, alt='byCycle.org')}
           </a>
         </h1>
 
@@ -143,13 +143,13 @@
                                (c.http_status and c.http_status > 299))
             show_info_pane = not show_error_pane
           %>
-          <div id="message_pane" class="display-pane fixed-pane" ${self.hide_element(not show_msg_pane)}>
+          <div id="message_pane" class="display-pane fixed-pane" ${h.hide_element(not show_msg_pane)}>
 
             <div class="title-bar"><div class="title">&nbsp;</div></div>
 
             <div class="content-pane">
 
-              <div id="info_pane" ${self.hide_element(not show_info_pane)}>
+              <div id="info_pane" ${h.hide_element(not show_info_pane)}>
 
                 % if c.info:
                   ${c.info}
@@ -184,7 +184,7 @@
                 % endif
               </div>
 
-              <div id="error_pane" ${self.hide_element(not show_error_pane)}>
+              <div id="error_pane" ${h.hide_element(not show_error_pane)}>
                 % if c.errors:
                   <h2>${c.title}</h2>
                   <%
@@ -277,7 +277,7 @@
     <div id="loading" style="display: none;">
       <div id="loading-masthead">
         <a href="http://bycycle.org/" title="byCycle.org Home Page">
-          ${h.image_tag('http://tripplanner.bycycle.org/public/images/logo.png', title='byCycle.org Home Page', width=150, height=40, alt='byCycle.org')}
+          ${h.image_tag('logo.png', title='byCycle.org Home Page', width=150, height=40, alt='byCycle.org')}
         </a>
       </div>
 
@@ -310,7 +310,7 @@
 
 
     <!-- TODO: Maybe we could get this dynamically the first time it's needed? -->
-    <%include file="/_center_marker.html" />
+    <%include file="/widgets/center_marker.html" />
 
 
   </body>
@@ -353,6 +353,7 @@
   <% region = c.region %>
   % if region and region.ads:
     <div id="region-ads">
+      <div class="region-ad"><b>Local Ads</b></div>
       % for ad in region.ads:
         <div class="region-ad">
           <a href="${ad.href}"
@@ -362,29 +363,6 @@
         </div>
       % endfor
     </div>
-  % endif
-</%def>
-
-<%def name="make_tab_buttons(tab_ids, selected='')">
-  <%doc>
-    Make the 'tab buttons' for a tab control (a set of LIs). ``tab_ids`` is a
-    list of one or more strings suitable for a URL hash (like
-    tab-id-thirteen). Each generated LI has class 'tab-button'. Each LI has an
-    A element that has href='#tab-id'. The A element's link text and title
-    attribute are 'Tab Id'.
-  </%doc>
-  % for t in tab_ids:
-    <%
-      link_text = t.replace('-', ' ').capitalize()
-      css_class = 'selected-tab-button' if t == selected else ''
-    %>
-<li class="tab-button ${css_class}">${h.link_to(link_text, '#%s' % t, title=link_text)}</li>\
-  % endfor
-</%def>
-
-<%def name="hide_element(cond=True)">
-  % if cond:
-    style="display: none;"
   % endif
 </%def>
 

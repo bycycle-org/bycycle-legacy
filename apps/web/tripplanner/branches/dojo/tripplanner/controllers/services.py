@@ -1,6 +1,7 @@
 import re
 
 from byCycle.services.exceptions import *
+from byCycle.model.geocode import Geocode
 
 from tripplanner.lib.base import *
 from tripplanner.lib.base import __all__ as base__all__
@@ -18,7 +19,7 @@ class ServicesController(RestController):
         RegionsController._set_default_context()
 
         # Override default region context
-        c.service = self.collection_name
+        self.service = self.collection_name
 
     def find(self):
         """Generic find method. Expects a ``q`` query parameter.
@@ -42,7 +43,7 @@ class ServicesController(RestController):
                 request.params['q'] = self._makeRouteList(q)
             except ValueError:
                 # Doesn't look like a route; assume it's a geocode
-                c.q = q
+                self.q = q
                 controller = 'geocodes'
             else:
                 controller = 'routes'
@@ -52,7 +53,7 @@ class ServicesController(RestController):
             if s or e:
                 controller = 'routes'
             else:
-                c.errors = 'Please enter something to search for'
+                self.errors = 'Please enter something to search for'
                 self.template = 'index'
                 return self.index()
         redirect_to('/regions/%s/%s;find' % (self.region.slug, controller),
@@ -82,26 +83,26 @@ class ServicesController(RestController):
         try:
             result = service.query(query, **params)
         except InputError, exc:
-            c.http_status = 400
-            c.title = 'Error%s' % ('s' if len(exc.errors) != 1 else '')
+            self.http_status = 400
+            self.title = 'Error%s' % ('s' if len(exc.errors) != 1 else '')
         except NotFoundError, exc:
-            c.http_status = 404
-            c.title = 'Not Found'
+            self.http_status = 404
+            self.title = 'Not Found'
         except ByCycleError, bc_exc:
             # Let subclass deal with any other `ByCycleError`s. The ``block``
-            # function should set ``c.http_status`` and ``c.title`` and return
-            # the name of a template.
+            # function should set ``self.http_status`` and ``self.title`` and
+            # return the name of a template.
             if block:
                 template = block(bc_exc)
             else:
                 raise
         except Exception, exc:
-            c.http_status = 500
-            c.title = 'Error'
+            self.http_status = 500
+            self.title = 'Error'
             exc.description = str(exc)
         else:
-            c.http_status = 200
-            c.title = service.name.title()
+            self.http_status = 200
+            self.title = service.name.title()
             try:
                 # Is the result a collection? Note that member objects should
                 # not be iterable!
@@ -122,14 +123,14 @@ class ServicesController(RestController):
             pass
         else:
             template = 'index'
-            c.errors = exc.description
+            self.errors = exc.description
 
-        return self._render_response(template=template, code=c.http_status)
+        return self._render_response(template=template, code=self.http_status)
 
     def _get_html_content(self):
-        wrap = c.wrap
-        c.json = self._get_json_content()[0]
-        c.wrap = wrap
+        wrap = self.wrap
+        self.json = self._get_json_content()[0]
+        self.wrap = wrap
         return super(ServicesController, self)._get_html_content()
 
     def _get_json_content(self, fragment=True):
@@ -141,15 +142,24 @@ class ServicesController(RestController):
 
         """
         def block(obj):
+            choices = getattr(self, 'choices', [])
+            json_choices = []
+            for _c in choices:
+                if isinstance(_c, Geocode):
+                    json_choices.append(_c.__simplify__())
+                else:
+                    json_choices.append([m.__simplify__() for m in _c])
+            print json_choices
             result = {
                 'type': self.member.__class__.__name__,
-                'title': c.title,
-                'message': c.message,
-                'errors': c.errors,
+                'title': getattr(self, 'title', ''),
+                'message': getattr(self, 'message', ''),
+                'errors': getattr(self, 'errors', ''),
                 'results': (obj if isinstance(obj, list) else [obj]),
+                'choices': json_choices,
             }
             if fragment:
-                c.wrap = False
+                self.wrap = False
                 f = super(ServicesController, self)._get_html_content()[0]
                 result['fragment'] = f
             return result
