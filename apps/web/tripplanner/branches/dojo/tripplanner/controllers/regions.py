@@ -35,18 +35,20 @@ class RegionsController(RestController):
 
     def find(self):
         params = dict(request.params)
-        region = params.pop('region', None)
+        region_id = params.pop('region', None)
+        if region_id is not None:
+            region_id = self._get_region_id(region_id)
         q = params.get('q', '').strip()
-        params.pop('commit', '')        
-        if not region:
+        params.pop('commit', '')
+        if not region_id:
             self.action = 'index'
             self.q = q
             return self.index()
         elif q:
-            redirect_to('find_services', region_id=region, **params)
+            redirect_to('find_services', region_id=region_id, **params)
         else:
             params.pop('q', '')
-            redirect_to('region', id=region, **params)
+            redirect_to('region', id=region_id, **params)
 
     @staticmethod
     def _set_default_context():
