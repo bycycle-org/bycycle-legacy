@@ -83,7 +83,7 @@ class Service(services.Service):
     def query(self, q, tmode='bicycle', pref=''):
         """Get a route for all the addresses in ``q`` [0 ==> 1 ==> 2 ...].
 
-        ``q`` `list`
+        ``q`` list<string>
             A list of addresses to be normalized, geocoded, and routed
             between.
 
@@ -94,23 +94,24 @@ class Service(services.Service):
             Less than 2 addresses given or an address is blank.
 
         raise `InputError`, `ValueError`
-            Raised in the normaddr and geocode queryS. Look there for details.
+            Raised in the normaddr and geocode queries. Look there for details.
 
         raise `AddressNotFoundError`
-            Any of the addresses in ``q`` can't be geocoded.
+            Any of the addresses in ``q`` can't be geocoded
 
         raise `MultipleMatchingAddressesError`
-            Multiple address found that match any of the addresses in ``q``
+            Multiple addresses found for any of the addresses in ``q``
 
         raise `NoRouteError`
-            No route found between start and end addresses.
+            No route found between start and end addresses
 
         """
-        # Process input waypoints (basic error checking)
+        # Process input waypoints (does basic error checking)
         waypoints = self._getWaypoints(q)
 
         # Get geocodes matching waypoints
-        # NOTE: This may also initialize self.region
+        #   * Might raise ``MultipleMatchingAddressesError``
+        #   * Might initialize ``self.region``
         geocodes = self._getGeocodes(waypoints)
 
         # Get weight function for specified travel mode
@@ -167,19 +168,24 @@ class Service(services.Service):
         """
         errors = []
         waypoints = [(w or '').strip() for w in q]
-        if len(waypoints) < 2:
+        num_waypoints = len(waypoints)
+        if num_waypoints == 0:
+            errors.append('Please enter start and end addresses')        
+        if num_waypoints == 1:
             # Make sure there are at least two waypoints
-            errors.append('Please enter start and end addresses')
+            errors.append('Please enter an end addresses')
         else:
             # Make sure waypoints are not blank
-            if not waypoints[0]:
-                errors.append('Please enter a start address')
-            if not waypoints[-1]:
-                errors.append('Please enter an end address')
-            for w in waypoints:
-                if not w:
-                    errors.append('Addresses cannot be blank')
-                    break
+            if num_waypoints == 2:
+                if not waypoints[0]:
+                    errors.append('Please enter a start address')
+                if not waypoints[-1]:
+                    errors.append('Please enter an end address')
+            else:
+                for w in waypoints:
+                    if not w:
+                        errors.append('Addresses cannot be blank')
+                        break
         # Let multiple input errors fall through to here
         if errors:
             raise InputError(errors)
@@ -187,7 +193,8 @@ class Service(services.Service):
 
     def _getGeocodes(self, waypoints):
         """Return a `list` of `Geocode`s associated with each ``waypoint``."""
-        geocode_service = geocode.Service(region=self.region, session=self.session)
+        geocode_service = geocode.Service(region=self.region,
+                                          session=self.session)
         geocodes = []
         input_errors = []
         multiple_match_found = False
@@ -238,8 +245,6 @@ class Service(services.Service):
         ``getHeuristicWeight``
 
         return `tuple` -- Node IDs, Edge IDs, Start node, End Node, Split Edges
-
-        TODO: Revert G to original state after each run
 
         """
         if start_geocode == end_geocode:
