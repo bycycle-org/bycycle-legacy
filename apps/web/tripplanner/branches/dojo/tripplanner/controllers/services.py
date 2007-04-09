@@ -19,21 +19,15 @@ class ServicesController(RestController):
         RegionsController._set_default_context()
 
         # Override default region context
-        self.service = self.collection_name
+        c.service = self.collection_name
 
     def find(self):
-        """Generic find method. Expects a ``q`` query parameter.
+        """Generic find method. Expects ``q`` to be set in GET params.
 
         All this does is see if the value of ``q`` looks like a route
-        (something like A to B); if it does, redirect to the route
-        controller's find; otherwise, redirect to the geocode controller's
-        find.
-
-        raise `ValueError`
-            - Query is empty
-            - Service is unknown
-
-        return `Response`
+        (something like "123 Main St to 616 SW Pants Ave"); if it does,
+        redirect to the route controller's ``find``; otherwise, redirect to
+        the geocode controller's ``find``.
 
         """
         q = request.params.get('q', '').strip()
@@ -54,7 +48,7 @@ class ServicesController(RestController):
                 controller = 'routes'
             else:
                 self.errors = 'Please enter something to search for'
-                self.template = 'index'
+                self.action = 'index'
                 return self.index()
         redirect_to('/regions/%s/%s;find' % (self.region.slug, controller),
                     **dict(request.params))
@@ -89,13 +83,13 @@ class ServicesController(RestController):
             self.http_status = 404
             self.title = 'Not Found'
         except ByCycleError, bc_exc:
-            # Let subclass deal with any other `ByCycleError`s. The ``block``
+            # Let subclass deal with any other `ByCycleError`. The ``block``
             # function should set ``self.http_status`` and ``self.title`` and
-            # return the name of a template.
-            if block:
-                template = block(bc_exc)
-            else:
+            # pass back the name of a template by setting ``self._template``.
+            if not block:
                 raise
+            block(bc_exc)
+            template = self._template
         except Exception, exc:
             self.http_status = 500
             self.title = 'Error'
@@ -127,10 +121,9 @@ class ServicesController(RestController):
 
         return self._render_response(template=template, code=self.http_status)
 
-    def _get_html_content(self):
-        wrap = self.wrap
-        self.json = self._get_json_content()[0]
-        self.wrap = wrap
+    def _get_html_content(self, json=True):
+        if json:
+            self.json = self._get_json_content()[0]
         return super(ServicesController, self)._get_html_content()
 
     def _get_json_content(self, fragment=True):
@@ -142,26 +135,28 @@ class ServicesController(RestController):
 
         """
         def block(obj):
-            choices = getattr(self, 'choices', [])
-            json_choices = []
-            for _c in choices:
-                if isinstance(_c, Geocode):
-                    json_choices.append(_c.__simplify__())
-                else:
-                    json_choices.append([m.__simplify__() for m in _c])
-            print json_choices
             result = {
-                'type': self.member.__class__.__name__,
+                'type': self.Entity.__class__.__name__,
                 'title': getattr(self, 'title', ''),
                 'message': getattr(self, 'message', ''),
                 'errors': getattr(self, 'errors', ''),
                 'results': (obj if isinstance(obj, list) else [obj]),
-                'choices': json_choices,
             }
             if fragment:
+                wrap = self.wrap
                 self.wrap = False
                 f = super(ServicesController, self)._get_html_content()[0]
+                self.wrap = wrap
                 result['fragment'] = f
+            # ``choices`` may be set when HTTP status is 300
+            choices = []
+            for choice in getattr(self, 'choices', []):
+                if isinstance(choice, Geocode):
+                    choices.append(choice.__simplify__())
+                else:
+                    choices.append([m.__simplify__() for m in choice])
+            if choices:
+                result['choices'] = choices
             return result
         return super(ServicesController, self)._get_json_content(block=block)
 

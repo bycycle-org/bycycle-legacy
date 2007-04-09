@@ -13,10 +13,9 @@ class GeocodesController(ServicesController):
             try:
                 raise exc
             except MultipleMatchingAddressesError, exc:
-                template = '300'
+                self._template = '300'
                 self.http_status = 300
                 self.title = 'Multiple Matches'
                 self.geocodes = exc.geocodes
-            return template
         return super(GeocodesController, self)._find(q, service_class=Service,
                                                      block=block)
