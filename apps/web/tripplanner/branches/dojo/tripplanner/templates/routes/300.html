@@ -63,8 +63,7 @@ ${self.json()}
            >Show on map</a>
         |
         <a class="select-geocode-link"
-           href="#"
-           ##${h.url_for('find_geocodes', region_id=c.region.slug, q=field_addr)}#select-this-location"
+           href="${h.url_for('find_geocodes', region_id=c.region.slug, q=field_addr)}#select-this-location"
            title="Select this location"
            onclick="byCycle.UI.selectRouteGeocode(this, ${i}, ${j}); return false;"
            >Select</a>

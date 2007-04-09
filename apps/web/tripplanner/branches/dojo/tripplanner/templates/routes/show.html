@@ -92,10 +92,11 @@
         street = d['street']
         point = linestring.pointN(d['linestring_index'])
         if turn == 'straight':
-            turn = 'continue'
+            turn = 'cont.'
             street = street[1]
         if street == 'None':
             street = '[No name]'
+        street = ' - '.join([s.strip() for s in street.split('-') if s])
         if i == 0:
             street = street #'%s toward %s' % (street, d['toward'])
         jogs = d['jogs']
