@@ -58,13 +58,14 @@ class RegionsController(RestController):
 
     @staticmethod
     def _get_region_id(region_id):
+        """Normalize ``region_id``."""
         try:
             return long(region_id)
         except (ValueError, TypeError):
             try:
                 return regions.getRegionKey(region_id)
             except ValueError:
-                c.errors = 'Unknown region: %s' % region_id
+                self.errors = 'Unknown region: %s' % region_id
                 redirect_to('/regions')
 
     @staticmethod

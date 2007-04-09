@@ -15,7 +15,7 @@ class RoutesController(ServicesController):
                 self.q = q
                 self.title = 'Whoops!'
                 self.errors = "That doesn't look like a route"
-                self.template = 'index'
+                self.action = 'index'
                 return self.index()
         else:
             s = request.params.get('s', '').strip()
@@ -32,7 +32,7 @@ class RoutesController(ServicesController):
                     self.errors = 'Please enter a start address'
                 else:
                     self.errors = 'Please enter something to search for'
-                self.template = 'index'
+                self.action = 'index'
                 return self.index()
         self.s, self.e = q[0], q[1]
         self.q = '%s to %s' % (q[0], q[1])
@@ -44,10 +44,9 @@ class RoutesController(ServicesController):
             try:
                 raise exc
             except MultipleMatchingAddressesError, exc:
-                template = '300'
+                self._template = '300'
                 self.http_status = 300
                 self.title = 'Multiple Matches'
                 self.choices = exc.choices
-            return template
         return super(RoutesController, self)._find(q, service_class=Service,
                                                    block=block)
