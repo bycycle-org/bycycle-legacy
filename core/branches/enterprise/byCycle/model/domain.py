@@ -40,6 +40,8 @@ class Region(Entity):
     has_field('title', Unicode)
     has_field('slug', Unicode)
     has_many('ads', of_kind='Ad')
+    has_many('geocodes', of_kind='Geocode')
+    has_many('routes', of_kind='Route')
     using_options(tablename='regions')
 
 class Ad(Entity):
@@ -48,6 +50,8 @@ class Ad(Entity):
     has_field('text', Unicode)
     belongs_to('region', of_kind='Region')
     using_options(tablename='ads')
+    def __str__(self):
+        return ' '.join([self.title, self.href, self.text])
 
 class Service(Entity):
     has_field('title', Unicode)
@@ -56,11 +60,14 @@ class Service(Entity):
 class Geocode(Entity):
     has_field('title', Unicode)
     has_field('geom', POINT(2913))
+    belongs_to('region', of_kind='Region')
     using_options(tablename='geocodes')
 
 class Route(Entity):
     has_field('title', Unicode)
+    has_field('title', Unicode)
     has_field('geom', LINESTRING(2913))
+    belongs_to('region', of_kind='Region')
     using_options(tablename='routes')
 
 
@@ -206,7 +213,7 @@ class Edge(object):
             point, location, node_id, edge_f_id, edge_t_id
         )
 
-    def splitAtLocation(self, point, location, 
+    def splitAtLocation(self, point, location,
                         node_id=-1, edge_f_id=-1, edge_t_id=-2):
         """Split this edge at ``location`` and return two new edges.
 
@@ -291,7 +298,7 @@ class Edge(object):
             ),
         ]
         return joinAttrs(stuff, join_string='\n')
-    
+
     def __simplify__(self):
         attrs = [col.name for col in self.c]
         vals = [getattr(self, a) for a in attrs]
@@ -301,10 +308,10 @@ class Edge(object):
         linestring.transform(src_proj=str(self.geom.srs), dst_proj=str(srs))
         points = []
         for i in range(linestring.numPoints()):
-            points.append(linestring.pointN(i))        
+            points.append(linestring.pointN(i))
         simple['geom'] = [{'x': p.x, 'y': p.y} for p in points]
         return simple
-        
+
     def __repr__(self):
         return repr(self.__simplify__())
 
@@ -332,7 +339,7 @@ class StreetName(object):
             'sttype': (self.sttype or '').title(),
             'suffix': (self.suffix or '').upper()
         }
-        
+
     def __repr__(self):
         return repr(self.__simplify__())
 
@@ -402,10 +409,10 @@ class City(object):
             'id': self.id,
             'city': str(self)
         }
-        
+
     def __repr__(self):
         return repr(self.__simplify__())
-        
+
     def __nonzero__(self):
         """A `City` must have at least a `city` (i.e., a city name)."""
         return bool(self.city)
@@ -435,7 +442,7 @@ class State(object):
             'id': str(self),
             'state': str(self.state or '[No State]').title()
         }
-        
+
     def __repr__(self):
         return repr(self.__simplify__())
 
@@ -501,7 +508,7 @@ class Place(object):
             'state': self.state.__simplify__(),
             'zip_code': str(self.zip_code or '')
         }
-        
+
     def __repr__(self):
         return repr(self.__simplify__())
 
