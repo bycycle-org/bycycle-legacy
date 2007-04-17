@@ -65,8 +65,8 @@
 
 <!-- Route preference form control -->
 <%def name='route_pref()'>
-  ##<% region_ns = self.get_namespace('/regions/%s.html' % c.region.slug) %>
-  ##${region_ns.route_pref()}
+  <% region_ns = self.get_namespace('/regions/%s.html' % c.region.slug) %>
+  ${region_ns.route_pref()}
 </%def>
 
 
