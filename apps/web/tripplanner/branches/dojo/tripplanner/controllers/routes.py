@@ -16,7 +16,7 @@ class RoutesController(ServicesController):
                 self.title = 'Whoops!'
                 self.errors = "That doesn't look like a route"
                 self.action = 'index'
-                return self.index()
+                return self._render_response(template='index')
         else:
             s = request.params.get('s', '').strip()
             e = request.params.get('e', '').strip()
@@ -33,7 +33,7 @@ class RoutesController(ServicesController):
                 else:
                     self.errors = 'Please enter something to search for'
                 self.action = 'index'
-                return self.index()
+                return self._render_response(template='index')
         self.s, self.e = q[0], q[1]
         self.q = '%s to %s' % (q[0], q[1])
         params = {}
