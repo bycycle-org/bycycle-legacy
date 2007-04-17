@@ -15,7 +15,7 @@ class RegionsController(RestController):
         for k in params:
             if k.startswith(prefix):
                 params[k.lstrip(prefix)] = params.pop(k)
-        id = params.pop('region', '')
+        id = self._get_region_id(params.pop('region', ''))
         if id:
             if 'fr' in params:
                 params['s'] = params.pop('fr')
