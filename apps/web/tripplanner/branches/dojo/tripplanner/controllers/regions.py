@@ -15,7 +15,7 @@ class RegionsController(RestController):
         for k in params:
             if k.startswith(prefix):
                 params[k.lstrip(prefix)] = params.pop(k)
-        id = self._get_region_id(params.pop('region', ''))
+        id = self._get_region_id(params.pop('region', ''), params)
         # KLUDGE: _get_region_id shouldn't return "all" by default
         id = None if id == 'all' else id
         if id:
@@ -53,7 +53,7 @@ class RegionsController(RestController):
             redirect_to('region', id=region_id, **params)
 
     @staticmethod
-    def _get_region_id(region_id):
+    def _get_region_id(region_id, params=None):
         """Normalize ``region_id``."""
         try:
             return long(region_id)
@@ -61,5 +61,8 @@ class RegionsController(RestController):
             try:
                 return regions.getRegionKey(region_id)
             except ValueError:
-                self.errors = 'Unknown region: %s' % region_id
-                redirect_to('/regions')
+                c.errors = 'Unknown region: %s' % region_id
+                params = params or dict(request.params)
+                params.pop('region', '')
+                params.pop('bycycle_region', '')
+                redirect_to('/regions', **dict(params))
