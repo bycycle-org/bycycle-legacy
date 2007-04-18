@@ -15,10 +15,6 @@ class ServicesController(RestController):
     """Base class for controllers that interact with back end services."""
 
     def __before__(self):
-        # Set default region context
-        RegionsController._set_default_context()
-
-        # Override default region context
         c.service = self.collection_name
 
     def find(self):
