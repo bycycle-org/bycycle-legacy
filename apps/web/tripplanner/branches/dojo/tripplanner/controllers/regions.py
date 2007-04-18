@@ -16,6 +16,8 @@ class RegionsController(RestController):
             if k.startswith(prefix):
                 params[k.lstrip(prefix)] = params.pop(k)
         id = self._get_region_id(params.pop('region', ''))
+        # KLUDGE: _get_region_id shouldn't return "all" by default
+        id = None if id == 'all' else id
         if id:
             if 'fr' in params:
                 params['s'] = params.pop('fr')
@@ -43,7 +45,7 @@ class RegionsController(RestController):
         if not region_id:
             self.action = 'index'
             self.q = q
-            return self.index()
+            return self._render_response(template='index')
         elif q:
             redirect_to('find_services', region_id=region_id, **params)
         else:
