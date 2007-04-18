@@ -49,7 +49,7 @@ class ServicesController(RestController):
             else:
                 self.errors = 'Please enter something to search for'
                 self.action = 'index'
-                return self.index()
+                return self._render_response(template='index')
         redirect_to('/regions/%s/%s;find' % (self.region.slug, controller),
                     **dict(request.params))
 
