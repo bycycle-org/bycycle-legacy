@@ -19,11 +19,8 @@
         <p>
           <select id="regions" name="region">
             <%
-              values = {
-                '- Select a region -': '',
-                'Portland, OR, metro region': 'portlandor',
-                'Milwaukee, WI, metro region': 'milwaukeewi',
-              }
+              values = [(r.title, r.slug) for r in c.regions if c.regions]
+              values = [('- Select a region -', '')] + values
             %>
             ${h.options_for_select(values)}
           </select>
