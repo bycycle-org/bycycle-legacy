@@ -16,7 +16,7 @@
 TODO: This should really be dynamically created from info in the database.
 
 """
-from byCycle.model.region import Region
+from byCycle.model import Region
 
 
 unknown_region = None

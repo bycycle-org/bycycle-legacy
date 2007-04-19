@@ -21,54 +21,35 @@ from __future__ import with_statement
 
 import os
 
+import psycopg2
+
 import sqlalchemy
 from sqlalchemy.engine import create_engine
 from sqlalchemy.orm import create_session
 
 from elixir import metadata, objectstore
 
-from byCycle import install_path
-
-__all__ = [
-    'metadata',
-    'session_context',
-    'getConnectionUri',
-    'connectMetadata',
-    'makeSession',
-    'createAll',
-    'dropAll',
-    'turnSQLEchoOff',
-    'turnSQLEchoOn',
-    'vacuum',
-    'execute',
-    'commit',
-    'rollback',
-    'dropTable',
-    'recreateTable',
-    'deleteAllFromTable',
-    'getById',
-    'addGeometryColumn',
-    ]
+from byCycle import model_path
 
 
 session_context = objectstore.context
-model_path = os.path.join(install_path, 'model')
 
-
-def __init__():
+def init():
     global engine, connection, cursor
     engine = create_engine(getConnectionUri())
     connection = engine.raw_connection()
     cursor = connection.cursor()
     connectMetadata()
 
-def getConnectionUri():
+def getConnectionUri(db_type='postgres', user='bycycle', password=None,
+                     host='localhost', database='bycycle'):
     """Get database connection URI (DSN)."""
-    dburi = 'postgres://bycycle:%s@localhost/bycycle'
-    pw_path = os.path.join(model_path, '.pw')
-    with file(pw_path) as pw_file:
-        password = pw_file.read().strip()
-    return dburi % (password)
+    if password is None:
+        pw_path = os.path.join(model_path, '.pw')
+        with file(pw_path) as pw_file:
+            password = pw_file.read().strip()
+    dburi = '%s://%s:%s@%s/%s' % (db_type, user, password, host, database)
+    return dburi
 
 def connectMetadata(md=None):
     """Connect metadata to ``engine``. Use ``md`` if specified."""
@@ -77,6 +58,9 @@ def connectMetadata(md=None):
 def makeSession():
     connectMetadata()
     return create_session(bind_to=engine)
+
+def clearSession():
+    del session_context.current
 
 def createAll():
     turnSQLEchoOn()
@@ -117,14 +101,23 @@ def commit():
 def rollback():
     connection.rollback()
 
-def dropTable(table):
+def flush():
+    objectstore.flush()
+
+def dropTable(table, cascade=False):
     # TODO: Try to make this work when the table has dependencies
     try:
         # FIXME: checkfirst doesn't seem to work
-        table.drop(checkfirst=True)
-    except sqlalchemy.exceptions.SQLError, e:
-        if not 'does not exist' in str(e):
-            raise
+        if not cascade:
+            table.drop(checkfirst=True)
+        else:
+            execute('DROP TABLE %s CASCADE' % table.name)
+            commit()
+    except (psycopg2.ProgrammingError, sqlalchemy.exceptions.SQLError), e:
+        if 'does not exist' in str(e):
+            rollback()
+        else:
+            raise e
 
 def recreateTable(table):
     """Drop ``table`` from database and then create it."""
@@ -133,7 +126,32 @@ def recreateTable(table):
 
 def deleteAllFromTable(table):
     """Delete all records from ``table``."""
-    table.delete().execute()
+    try:
+        table.delete().execute()
+    except (psycopg2.ProgrammingError, sqlalchemy.exceptions.SQLError), e:
+        if 'does not exist' in str(e):
+            rollback()
+        else:
+            raise e
+
+def addColumn(table_name, column_name, column_type):
+    try:
+        execute('ALTER TABLE %s ADD COLUMN %s %s' %
+                   (table_name, column_name, column_type))
+    except psycopg2.ProgrammingError, e:
+        if 'already exists' not in e:
+            raise e
+    else:
+        commit()
+
+def dropColumn(table_name, column_name):
+    try:
+        execute('ALTER TABLE %s DROP COLUMN %s' % (table_name, column_name))
+    except psycopg2.ProgrammingError, e:
+        if 'already exists' not in e:
+            raise e
+    else:
+        commit()
 
 def getById(class_or_mapper, session, *ids):
     """Get objects and order by ``ids``.
@@ -180,17 +198,36 @@ def addGeometryColumn(table, srid, geom_type, name='geom'):
 
     """
     # Add geometry columns after tables are created and add gist INDEXes them
+    drop_col = 'ALTER TABLE "%s"."%s" DROP COLUMN %s'
     add_geom_col = "SELECT AddGeometryColumn('%s', '%s', '%s', %s, '%s', 2)"
     create_gist_index = ('CREATE INDEX "%s_%s_gist"'
                          'ON "%s"."%s"'
                          'USING GIST ("%s" gist_geometry_ops)')
-    db_schema = table.schema
+    db_schema = table.schema or 'public'
     table_name = table.name
     geom_type = geom_type.upper()
+
+    try:
+        execute(drop_col % (db_schema, table_name, name))
+    except psycopg2.ProgrammingError:
+        rollback()  # important!
     execute(add_geom_col % (db_schema, table_name, name, srid, geom_type))
     execute(create_gist_index %
             (table_name, name, db_schema, table_name, name))
     commit()
 
+init()
 
-__init__()
+
+if __name__ == '__main__':
+    import sys
+    from byCycle import model
+    try:
+        action = sys.argv[1]
+    except IndexError:
+        print 'No action'
+    else:
+        print 'Action: %s' % action
+        try: args = sys.argv[2:]
+        except IndexError: args = []
+        getattr(model.db, action)(*args)

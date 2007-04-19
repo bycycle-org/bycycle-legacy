@@ -87,11 +87,11 @@ class PostalAddress(Address):
         self.place.state = new_state
     state = property(_get_state, _set_state)
 
-    def _get_state_id(self):
-        return self.place.state_id
-    def _set_state_id(self, id_):
-        self.place.state_id = id_   
-    state_id = property(_get_state_id, _set_state_id)
+    def _get_state_code(self):
+        return self.place.state_code
+    def _set_state_code(self, code):
+        self.place.state_code = code   
+    state_code = property(_get_state_code, _set_state_code)
     
     def _get_state_name(self):
         return self.place.state_name
@@ -110,7 +110,7 @@ class PostalAddress(Address):
         result = joinAttrs([result, self.place], '\n')
         return result
 
-    def __simplify__(self):
+    def to_builtin(self):
         return {
             'type': self.__class__.__name__,
             'number': self.number,
@@ -119,7 +119,7 @@ class PostalAddress(Address):
         }
         
     def __repr__(self):
-        return repr(self.__simplify__())
+        return repr(self.to_builtin())
 
 
 class EdgeAddress(PostalAddress):
@@ -254,7 +254,7 @@ class IntersectionAddress(Address):
     def __str__(self):
         return joinAttrs((self.street_name, self.place), '\n')
 
-    def __simplify__(self):
+    def to_builtin(self):
         return {
             'type': self.__class__.__name__,
             'street_name1': self.street_name1,
@@ -264,7 +264,7 @@ class IntersectionAddress(Address):
         }
         
     def __repr__(self):
-        return repr(self.__simplify__())
+        return repr(self.to_builtin())
 
 
 class PointAddress(IntersectionAddress):

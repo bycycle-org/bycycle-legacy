@@ -11,5 +11,6 @@
 # in the top level of this distribution. This software is provided AS IS with
 # NO WARRANTY OF ANY KIND.
 ###############################################################################
-from os.path import abspath, dirname
+from os.path import abspath, dirname, join
 install_path = dirname(abspath(__file__))
+model_path = join(install_path, 'model')

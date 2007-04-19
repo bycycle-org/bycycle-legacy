@@ -17,11 +17,9 @@ Route class.
 from cartography.proj import SpatialReference
 
 
-###########################################################################
 class Route(object):
     """Represents a route between two addresses."""
 
-    #----------------------------------------------------------------------
     def __init__(self,
                  region,
                  start, end,
@@ -41,8 +39,7 @@ class Route(object):
                                 dst_proj=str(ll_srs))
         self.linestring_ll = linestring_ll
 
-    #----------------------------------------------------------------------
-    def __simplify__(self):
+    def to_builtin(self):
         points = []
         for i in range(self.linestring_ll.numPoints()):
             points.append(self.linestring_ll.pointN(i))
@@ -53,15 +50,13 @@ class Route(object):
             'directions': self.directions,
             'distance': self.distance
         }
-        route['start']['geocode'] = route['start']['geocode'].__simplify__()
-        route['end']['geocode'] = route['end']['geocode'].__simplify__()
+        route['start']['geocode'] = route['start']['geocode'].to_builtin()
+        route['end']['geocode'] = route['end']['geocode'].to_builtin()
         return route
 
-    #----------------------------------------------------------------------
     def __repr__(self):
-        return repr(self.__simplify__())
+        return repr(self.to_builtin())
 
-    #----------------------------------------------------------------------
     def __str__(self):
         directions = []
         for d in self.directions:

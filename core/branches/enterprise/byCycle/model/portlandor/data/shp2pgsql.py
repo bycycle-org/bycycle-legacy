@@ -53,19 +53,31 @@ import psycopg2.extensions
 
 import sqlalchemy
 from sqlalchemy.sql import func, select, bindparam
+from sqlalchemy.sql import and_, or_
 from sqlalchemy.schema import Column
+from sqlalchemy.types import Integer
+
+from cartography import geometry
+
 from byCycle.model.data.sqltypes import Geometry
 
 from byCycle.util import meter
+from byCycle import model
 from byCycle.model import db
-from byCycle.model import portlandor
+
+from byCycle.model.sttypes import street_types_ftoa
+from byCycle.model import Region, Node, Edge, StreetName, City, State, Place
+from byCycle.model import EdgeAttr
+from byCycle.model import PortlandOR_Edge as RegionEdge
+from byCycle.model import PortlandOR_Node as RegionNode
+from byCycle.model.portlandor.data import (title, slug, SRID, units,
+                                           edge_attrs, earth_circumference,
+                                           Raw)
 from byCycle.model.portlandor.data.cities import cities_atof
 
 
 ### Region Configuration
 ### Should be the only configuration that gets changed per-region
-
-region = portlandor.Region()
 
 # Target format: /base/path/to/regional_data/specific_region/datasource/layer
 # Ex: /home/bycycle/byCycle/data/portlandor/pirate/str04aug
@@ -74,20 +86,11 @@ layer = 'str06oct'     # layer within datasource
 
 cities_atof[None] = None
 
-# States to insert into states table in insertStates()
-states = [
-    {'id': 'or', 'state': 'oregon'},
-    {'id': 'wa', 'state': 'seattle'}
-]
+# States to insert into states table in insert_states()
+states = {'or': 'oregon', 'wa': 'washington'}
 
 # dbf value => database value
-one_ways = {
-    'n': 0,
-    'f': 1,
-    't': 2,
-    '':  3,
-    None: 3
-}
+one_ways = {'n': 0, 'f': 1, 't': 2, '':  3, None: 3}
 
 # dbf value => database value
 bikemodes = {
@@ -133,50 +136,36 @@ db_name = 'bycycle'
 ### Derived configuration
 ### Should also apply to all regions and should NOT be edited
 
+# Database config
+db_schema = slug
+
 # Path to regional shapefiles
-data_path = os.path.join(base_data_path, region.key, datasource)
+data_path = os.path.join(base_data_path, db_schema, datasource)
 
 # Path to specific layer
 layer_path = os.path.join(data_path, layer)
 
-# Database config
-db_schema = region.key
-
-# Region table definitions (without geom columns)
-tables = region._get_tables(append_geometry_columns=False)
-
 # Raw tables go in the raw schema using the schema name as the table name.
-# "This is the raw table for schema X." With the scheme, we can create and
+# "This is the raw table for schema X." With the schema, we can create and
 # drop the "real" schema tables without worrying about the raw table.
-raw_table_name = 'raw.%s' % tables.raw_table.name
+raw_table_name = 'raw.%s' % db_schema
 
 # Output file for SQL imported from shapefile
 # Ex: ~/byCycle/evil/byCycle/model/portlandor/data/portlandor.str04aug.raw.sql
 sql_file = '%s_%s_raw.sql' % (db_schema, layer)
-sql_file_path = os.path.join(region.data_path, sql_file)
+sql_file_path = os.path.join(os.path.dirname(__file__), sql_file)
 
 # Complete command to convert shapefile to raw SQL
 # Ex: /usr/lib/postgresql/8.1/bin/shp2pgsql -c -i -I -s 2913 \
 #     str06oct raw.portlandor > /path/portlandor_str06oct_raw.sql
 shp2sql_cmd = ' '.join((shp2sql_exe, shp2sql_args))
-shp2sql_cmd = shp2sql_cmd % (region.SRID, layer_path, raw_table_name,
+shp2sql_cmd = shp2sql_cmd % (SRID, layer_path, raw_table_name,
                              sql_file_path)
 
 # Command to import raw SQL into database
 # Ex: /usr/bin/psql --quiet -d bycycle -f /path/portlandor_str04aug_raw.sql
 sql2db_cmd = ' '.join((sql_exe, sql_args))
 sql2db_cmd = sql2db_cmd % (db_name, sql_file_path)
-
-
-### Globals
-
-# Edge names {(prefix, name, type, suffix) => street name ID}
-# Created in `transferStreetNames`
-street_names = None
-
-# Cities {full city name => city ID}
-# Created in `transferCities`
-cities = None
 
 
 ### Utilities used by the actions below
@@ -193,7 +182,7 @@ def wait(msg='Continue or skip'):
     if no_prompt:
         return False
     timer.pause()
-    resp = raw_input(msg + '? ')
+    resp = raw_input(msg.strip() + ' ')
     timer.unpause()
     return resp
 
@@ -280,6 +269,61 @@ def getTimeWithUnits(seconds):
     return '%.2f %s' % (time, units)
 
 
+def any_not_none(sequence):
+    """Return ``True`` if any item in ``sequence`` is not ``None``."""
+    return any([e is not None for e in sequence])
+
+
+def delete_edges():
+    col = Edge.c['%s_edge_id' % db_schema]
+    map(Edge.delete, Edge.select(col != None))
+    db.flush()
+    #db.deleteAllFromTable(RegionEdge.table)
+
+
+def delete_nodes():
+    col = Node.c['%s_node_id' % db_schema]
+    map(Node.delete, Node.select(col != None))
+    db.flush()
+    #db.deleteAllFromTable(RegionNode.table)
+
+
+def get_records(cols):
+    """Get distinct records.
+
+    ``cols``
+        The list of cols to select
+
+    return
+        A ``set`` of ``tuple``s of column values, in the same order as
+        ``cols``
+
+    """
+    result = select(cols, distinct=True).execute()
+    records = set([tuple([v for v in row])
+                   for row in result
+                   if any_not_none(row)])
+    result.close()
+    return records
+
+
+def insert_records(table, records, kind='records'):
+    """Insert ``records`` into ``table``.
+
+    ``table``
+        SQLAlchemy table object
+
+    ``records``
+        A ``list`` of ``dict``s representing the records
+
+    """
+    if records:
+        table.insert().execute(records)
+        echo('%i new %s added' % (len(records), kind))
+    else:
+        echo('No new %s added' % kind)
+
+
 ### Actions the user may or may not want to take
 
 def shp2sql():
@@ -288,7 +332,7 @@ def shp2sql():
 
 
 def shp2db():
-    """Read shapefile into database table (raw.region)."""
+    """Read shapefile into database table (raw.``db_schema``)."""
     Q = 'CREATE SCHEMA raw'
     try:
         db.execute(Q)
@@ -296,288 +340,364 @@ def shp2db():
         db.rollback()  # important!
     else:
         db.commit()
-    db.dropTable(tables.raw_table)
+    db.dropTable(Raw.table)
     system(sql2db_cmd)
     db.vacuum('raw.%s' % db_schema)
 
 
-def dropTables():
-    """Drop all schema tables (excluding raw)."""
+def drop_tables():
+    """Drop all regional tables (excluding raw) and rows.
+
+    Should cascade and delete all dependent records in other tables.
+
+    """
+    delete_region()
     for table in db.metadata.table_iterator():
-        if table.schema != 'raw':
-            db.dropTable(table)
+        if table.schema != 'raw' and table.name.startswith(db_schema):
+            db.dropTable(table, cascade=True)
+            echo('Dropped %s' % table.name)
 
 
-def createTables():
-    """Create all tables. (Ignores existing tables.)"""
-    Q = 'CREATE SCHEMA %s' % db_schema
-    try:
+def create_tables():
+    """Create all tables (including non-regional). Ignore existing tables."""
+    db.metadata.create_all()
+    db.addGeometryColumn(RegionEdge.table, SRID, 'LINESTRING')
+    db.addGeometryColumn(RegionNode.table, SRID, 'POINT')
+
+
+def delete_region():
+    """Delete all regional records from database.
+
+    Deleting records in the "top most" tables (edge, node) should cascade and
+    delete all child records in other tables.
+
+    """
+    region = get_or_create_region()
+    region_id = region.id
+    slug = region.slug
+    Qs = (
+        'DELETE FROM streetname_regions__region_street_names WHERE '
+        'region_id = %s' % region_id,
+        'DELETE FROM region_cities__city_regions WHERE '
+        'region_id = %s' % region_id,
+        'DELETE FROM state_regions__region_states WHERE '
+        'region_id = %s' % region_id,
+        'DELETE FROM streetname WHERE id NOT IN '
+        '(SELECT DISTINCT street_name_id FROM edge)',
+        'DELETE FROM edge WHERE region_id = %s' % region_id,
+        'DELETE FROM node WHERE region_id = %s' % region_id,
+        'DELETE FROM %s_edge' % slug,
+        'DELETE FROM %s_node' % slug,
+        'DELETE FROM place WHERE region_id = %s' % region_id,
+        'DELETE FROM region WHERE id = %s' % region_id,
+    )
+    for Q in Qs:
+        echo(Q)
         db.execute(Q)
-    except psycopg2.ProgrammingError:
-        db.rollback()  # important!
-    else:
         db.commit()
-    db.createAll()
-    tables.create_geometry_columns()
-    tables.append_geometry_columns()
+    echo('VACUUMing all tables')
+    db.vacuum()
 
 
-def transferStreetNames(modify=True):
-    """Transfer street names from raw table to schema table.
-
-    This also has the side effect of setting the global `street_names`, which
-    is a dict of {(prefix, name, type, suffix) => street name ID} that
-    gets used in `transferStreets`.
-
-    ``modify`` `bool`
-        If this is set the street names table won't be modified in any way
-        (i.e., rows won't be deleted and inserted), but the global
-        `street_names` will still be created.
-
-    TODO: Convert all street types to USPS standard
-
-    """
-    global street_names
-    street_names = {}
-    table = tables.street_names
-    # Get all distinct street names from raw (in lowercase)
-    cols = (tables.raw_table.c.fdpre, tables.raw_table.c.fname,
-            tables.raw_table.c.ftype, tables.raw_table.c.fdsuf)
-    sel_cols = map(sqlalchemy.sql.func.lower, cols)
-    result = sqlalchemy.sql.select(sel_cols, distinct=True).execute()
-    # Transfer street names, creating sequential IDs for them
-    l = []
-    street_name_id = 1
-    for row in result:
-        p, n, s, t = row[0], row[1], row[2], row[3]
-        if (p or n or s or t or None) is not None:
-            street_names[(p, n, s, t)] = street_name_id
-            if s == 'pky':
-                s = 'pkwy'
-            d = {}
-            d['id'] = street_name_id
-            d['prefix'] = p
-            d['name'] = n or '[No Name]'
-            d['sttype'] = s
-            d['suffix'] = t
-            l.append(d)
-            street_name_id += 1
-    street_names[(None, None, None, None)] = None
-    result.close()
-    # Delete all the old street names and insert the new ones
-    if modify:
-        db.deleteAllFromTable(table)
-        db.turnSQLEchoOff()
-        table.insert().execute(l)
-        db.turnSQLEchoOn()
+def get_or_create_region():
+    Region.table.create(checkfirst=True)
+    try:
+        region = Region.get_by(slug=slug)
+    except sqlalchemy.exceptions.SQLError, e:
+        echo(e)
+        region = None
+    if region is None:
+        record = dict(
+            title=title,
+            slug=slug,
+            srid=SRID,
+            units=units,
+            earth_circumference=earth_circumference,
+        )
+        insert_records(Region.table, [record], 'region')
+        region = Region.get_by(slug=slug)
+        region.edge_attrs = []
+        region.flush()
+        attrs = [dict(name=a, region_id=region.id) for a in edge_attrs]
+        insert_records(EdgeAttr.table, attrs, 'edge attributes')
+    return region
 
 
-def transferCities(modify=True):
-    """Transfer cities from raw table to schema cities table.
+def transfer_street_names():
+    region = get_or_create_region()
+    region_id = region.id
+    c = Raw.c
+    cols = map(func.lower, (c.prefix, c.name, c.sttype, c.suffix))
+    raw_records = get_records(cols)
+    c = StreetName.c
+    cols = map(func.lower, (c.prefix, c.name, c.sttype, c.suffix))
+    existing_records = get_records(cols)
+    new_records = raw_records.difference(existing_records)
 
-    The city names are abbreviated in the raw table; they are looked up and
-    converted to their (lowercase) full names after being transferred.
-
-    This also has the side effect of setting the global `cities`, which is a
-    dict of {full city name => city ID} that gets used in `transferStreets`.
-
-    ``modify`` `bool`
-        If this is set the cities table won't be modified in any way (i.e.,
-        rows won't be deleted and inserted), but the global `cities` will
-        still be created.
-
-    """
-    global cities
-    cities = {}
-    table = tables.cities
-    # Get distinct cities from raw (in lowercase)
-    for col in (tables.raw_table.c.lcity,
-                tables.raw_table.c.rcity):
-        col = sqlalchemy.sql.func.lower(col)
-        sel = sqlalchemy.sql.select([col], col != None, distinct=True)
-        result = sel.execute()
-        for row in result:
-            city = row[0]
-            cities[cities_atof[city]] = 1
-        result.close()
-    # Transfer cities, creating sequential IDs for them
-    l = []
-    city_names = cities.keys()
-    city_names.sort()
-    city_id = 1
-    for city in city_names:
-        if city is not None:
-            cities[city] = city_id
-            d = {}
-            d['id'] = city_id
-            d['city'] = city
-            l.append(d)
-            city_id += 1
-    cities[None] = None
-    # Delete all the old cities and insert the new ones
-    if modify:
-        db.deleteAllFromTable(table)
-        db.turnSQLEchoOff()
-        table.insert().execute(l)
-        db.turnSQLEchoOn()
+    StreetName.table.append_column(Column('region_id', Integer))
+    db.addColumn('streetname', 'region_id', 'INTEGER')
+    records = []
+    for record in new_records:
+        p, n, t, s = record
+        t = street_types_ftoa.get(t, t)
+        records.append(dict(prefix=p, name=n, sttype=t, suffix=s,
+                            region_id=region_id))
+    echo('Inserting street names...')
+    insert_records(StreetName.table, records, 'street names')
+    if records:
+        echo('Associating street names with region...')
+        table_name = 'streetname_regions__region_street_names'
+        db.execute('DELETE FROM %s WHERE region_id = %s' %
+                   (table_name, region_id))
+        db.commit()
+        c = StreetName.table.c
+        where = [(c.region_id == region_id)]
+        result = select([c.id], *where).execute()
+        records = [(dict(streetname_id=r[0], region_id=region_id))
+                   for r in result]
+        insert_records(db.metadata.tables[table_name], records,
+                       '"nodes => edges"')
+    db.dropColumn('streetname', 'region_id')
+    db.vacuum('streetname')
 
 
-def insertStates():
-    table = tables.states
-    db.deleteAllFromTable(table)
-    table.insert().execute(states)
+def transfer_cities():
+    c = Raw.c
+    raw_records_l = get_records([func.lower(c.city_l)])
+    raw_records_r = get_records([func.lower(c.city_r)])
+    raw_records = raw_records_l.union(raw_records_r)
+    raw_records = set([(cities_atof[r[0]],) for r in raw_records])
+    existing_records = get_records([City.c.city])
+    new_records = raw_records.difference(existing_records)
+    records = []
+    city_names = []
+    for r in new_records:
+        city_name = r[0]
+        city_names.append(city_name)
+        records.append(dict(city=city_name))
+    insert_records(City.table, records, 'cities')
+    for city in City.select(City.c.city.in_(*city_names)):
+        city.regions.append(get_or_create_region())
+        city.regions = set(city.regions)
+        city.save()
+    db.flush()
+    db.vacuum('city')
 
 
-def transferNodeIDs(modify=True):
-    """Transfer node IDs from raw table to node table."""
-    table = tables.layer_nodes
-    c = tables.raw_table.c
-    nodes = {}
-    # Get distinct node IDs from raw table
-    for node_id in (c.n0, c.n1):
-        cols = [node_id.label('node_id')]
-        result = select(cols, distinct=True).execute()
-        for row in result:
-            nodes[row.node_id] = 1
-        result.close()
-    l = []
-    for node_id in nodes:
-        # Collect all the row data so all the rows can be inserted at once
-        d = {}
-        d['id'] = node_id
-        #d['geom'] = None
-        l.append(d)
-    if modify:
-        # Drop existing nodes and add all new nodes at once
-        db.deleteAllFromTable(table)
-        db.turnSQLEchoOff()
-        table.insert().execute(l)
-        db.turnSQLEchoOn()
+def insert_states():
+    raw_records = set(states.items())
+    existing_records = get_records([State.c.code, State.c.state])
+    new_records = raw_records.difference(existing_records)
+    records = []
+    codes = []
+    for r in new_records:
+        code, state = r[0], r[1]
+        codes.append(code)
+        records.append(dict(code=code, state=state))
+    insert_records(State.table, records, 'states')
+    for state in State.select(State.c.code.in_(*codes)):
+        state.regions.append(get_or_create_region())
+        state.regions = set(state.regions)
+        state.save()
+    db.flush()
+    db.vacuum('state')
 
 
-def transferEdges(modify=True):
+def transfer_places():
+    c = Raw.c
+    cols = (func.lower(c.city_l), c.zip_code_l)
+    raw_records_l = get_records(cols)
+    cols = (func.lower(c.city_r), c.zip_code_r)
+    raw_records_r = get_records(cols)
+    raw_records = raw_records_l.union(raw_records_r)
+    def get_city_state_and_zip(r):
+        city = cities_atof[r[0]]
+        state = 'or' if city != 'vancouver' else 'wa'
+        return city, state, r[1]
+    raw_records = set([get_city_state_and_zip(r) for r in raw_records])
+    places = Place.select()
+    existing_records = set([(None if p.city is None else p.city.city,
+                             None if p.state is None else p.state.code,
+                             p.zip_code)
+                            for p in places])
+    new_records = raw_records.difference(existing_records)
+    region_id = get_or_create_region().id
+    records = []
+    for r in new_records:
+        city_name, state_code, zip_code = r[0], r[1], r[2]
+        city = City.get_by(city=city_name)
+        state = State.get_by(code=state_code, state=states[state_code])
+        city_id = None if city is None else city.id
+        state_id = None if state is None else state.id
+        records.append(dict(city_id=city_id, state_id=state_id,
+                            zip_code=zip_code, region_id=region_id))
+    insert_records(Place.table, records, 'places')
+    db.vacuum('place')
+
+
+def transfer_nodes():
+    """Transfer nodes from raw table to node table."""
+    region = get_or_create_region()
+    echo('Getting columns from raw table...')
+    c = Raw.c
+    raw_records_f = get_records([c.node_f_id,
+                                 func.startPoint(func.GeometryN(c.geom, 0))])
+    raw_records_t = get_records([c.node_t_id,
+                                 func.endPoint(func.GeometryN(c.geom, 0))])
+    new_records = raw_records_f.union(raw_records_t)
+    records = []
+    region_records = []
+    region_id = region.id
+    for r in new_records:
+        node_id = r[0]
+        geom = r[1]
+        region_records.append(dict(id=node_id, geom=geom))
+        records.append(dict(portlandor_node_id=node_id, region_id=region_id))
+    echo('Inserting records into regional node table...')
+    insert_records(RegionNode.table, region_records, '"%s" nodes' % title)
+    echo('Inserting records into node table...')
+    insert_records(Node.table, records, 'nodes')
+    echo('Vacuuming node tables...')
+    db.vacuum('node', '%s_node' % db_schema)
+
+
+def transfer_edges():
     """Transfer edge geometry and attributes to streets table."""
-    tables.append_geometry_columns()
-    table = tables.layer_edges
-    if street_names is None:
-        print 'Getting street names...'
-        transferStreetNames(modify=False)
-    if cities is None:
-        print 'Getting cities...'
-        transferCities(modify=False)
-    # Get selected columns for all rows in raw
-    c = tables.raw_table.c
-    func_lower = sqlalchemy.sql.func.lower
+    region = get_or_create_region()
+    echo('Getting columns from raw table...')
+    c = Raw.c
     cols = [
-        # Core attributes
-        c.gid,
-        c.the_geom, c.n0, c.n1,
-
-        # Core address attributes
-        c.leftadd1, c.leftadd2, c.rgtadd1, c.rgtadd2,
-        func_lower(c.fdpre).label('prefix'),
-        func_lower(c.fname).label('name'),
-        func_lower(c.ftype).label('sttype'),
-        func_lower(c.fdsuf).label('suffix'),
-        func_lower(c.lcity).label('city_l'),
-        func_lower(c.rcity).label('city_r'),
-        c.zipcolef, c.zipcorgt,
-
-        # Additional attributes
-        func_lower(c.one_way).label('one_way'),
-        c.localid, c.type,
-        func_lower(c.bikemode).label('bikemode'),
-        c.upfrc, c.abslp, c.sscode, c.cpd
+        c.id, c.geom, c.node_f_id, c.node_t_id,
+        c.addr_f_l, c.addr_t_l, c.addr_f_r, c.addr_t_r,
+        c.zip_code_l, c.zip_code_r,
+        c.localid, c.code, c.up_frac, c.abs_slope, c.sscode, c.cpd
     ]
-    result = select(cols).execute()
-    if modify:
-        db.deleteAllFromTable(table)
-    db.turnSQLEchoOff()
-    # Transfer streets
-    l = []
-    for i, row in enumerate(result):
-        addr_f_l, addr_f_r = row.leftadd1, row.rgtadd1
-        addr_t_l, addr_t_r = row.leftadd2, row.rgtadd2
+    lower_cols = [
+        c.prefix, c.name, c.sttype, c.suffix,
+        c.city_l, c.city_r, c.one_way, c.bikemode
+    ]
+    for i, col in enumerate(lower_cols):
+        lower_cols[i] = func.lower(col).label(col.key)
+    cols += lower_cols
+    raw_records = select(cols).execute()
+
+    echo('Getting street names...')
+    c = StreetName.c
+    street_names = get_records((c.prefix, c.name, c.sttype, c.suffix, c.id))
+    street_names = dict([((r[0], r[1], r[2], r[3]), r[4]) for r in
+                         street_names])
+    street_names[(None, None, None, None)] = None
+
+    echo('Getting places...')
+    places = Place.select_by(region_id=region.id)
+    places = dict([((None if p.city is None else p.city.city,
+                     None if p.state is None else p.state.code,
+                     p.zip_code), p.id)
+                     for p in places])
+    places[(None, None, None)] = None
+
+    echo('Getting nodes...')
+    c = Node.c
+    where = [c.region_id == region.id]
+    result = select((c['%s_node_id' % slug], c.id), *where).execute()
+    nodes = dict([(r[0], r[1]) for r in result])
+
+    echo('Transferring edges...')
+    records = []
+    region_records = []
+    region_id = region.id
+    edge_id_name = '%s_edge_id' % region.slug
+    i = 1
+    step = 2500
+    num_records = raw_records.rowcount
+    for r in raw_records:
+        addr_f_l, addr_f_r = r.addr_f_l, r.addr_f_r
+        addr_t_l, addr_t_r = r.addr_t_l, r.addr_t_r
         # Unify "from" addresses
-        if addr_f_l is not None or addr_f_r is not None:
+        if any_not_none((addr_f_l, addr_f_r)):
             addr_f = int(round((addr_f_l or addr_f_r) / 10.0) * 10) + 1
         else:
             addr_f = None
         # Unify "to" addresses
-        if addr_t_l is not None or addr_t_r is not None:
+        if any_not_none((addr_t_l, addr_t_r)):
             addr_t = int(round((addr_t_l or addr_t_r) / 10.0) * 10)
         else:
             addr_t = None
-        # Street name: prefix, name, type, suffix
-        street_name_parts = (
-            row.prefix, row.name, row.sttype, row.suffix
-        )
-        lcity = row.city_l
-        rcity = row.city_r
-        one_way = row.one_way
-        bikemode = row.bikemode
-        d = {}
-        d['id'] = row.gid
-        d['geom'] = row.the_geom.geometryN(0)
-        d['node_f_id'] = row.n0
-        d['node_t_id'] = row.n1
-        d['addr_f'] = addr_f
-        d['addr_t'] = addr_t
-        d['even_side'] = getEvenSide(addr_f_l, addr_f_r, addr_t_l, addr_t_r)
-        d['street_name_id'] = street_names[street_name_parts]
-        d['city_l_id'] = cities[cities_atof[lcity]]
-        d['city_r_id'] = cities[cities_atof[rcity]]
-        d['state_l_id'] = ['or', 'wa'][lcity == 'van']
-        d['state_r_id'] = ['or', 'wa'][rcity == 'van']
-        d['zip_code_l'] = row.zipcolef
-        d['zip_code_r'] = row.zipcorgt
-        d['localid'] = row.localid
-        d['one_way'] = one_ways[one_way]
-        d['bikemode'] = bikemodes[bikemode]
-        d['code'] = row.type
-        d['up_frac'] = row.upfrc
-        d['abs_slp'] = row.abslp
-        d['cpd'] = row.cpd
-        d['sscode'] = row.sscode
-        l.append(d)
-        if modify and len(l) > 1000:
-            table.insert().execute(l)
-            l = []
-    if modify and l:
-        table.insert().execute(l)
-        l = []
-    db.turnSQLEchoOn()
-    db.vacuum('%s.layer_edges' % db_schema)
-    result.close()
+        even_side = getEvenSide(addr_f_l, addr_f_r, addr_t_l, addr_t_r)
+        t = r.sttype
+        st_name_id = street_names[(r.prefix, r.name,
+                                   street_types_ftoa.get(t, t), r.suffix)]
+        city_l = cities_atof[r.city_l]
+        city_r = cities_atof[r.city_r]
+        state_l = 'or' if city_l != 'vancouver' else 'wa'
+        state_r = 'or' if city_r != 'vancouver' else 'wa'
+        place_l_id = places[(city_l, state_l, r.zip_code_l)]
+        place_r_id = places[(city_r, state_r, r.zip_code_r)]
+        region_records.append(dict(
+            id=i,
+            geom=r.geom.geometryN(0),
+            localid=r.localid,
+            bikemode=bikemodes[r.bikemode],
+            code=r.code,
+            up_frac=r.up_frac,
+            abs_slope=r.abs_slope,
+            cpd=r.cpd,
+            sscode=r.sscode
+        ))
+        records.append(dict(
+            addr_f=addr_f,
+            addr_t=addr_t,
+            even_side=even_side,
+            one_way=one_ways[r.one_way],
+            node_f_id=nodes[r.node_f_id],
+            node_t_id=nodes[r.node_t_id],
+            street_name_id=st_name_id,
+            place_l_id=place_l_id,
+            place_r_id=place_r_id,
+            region_id=region_id,
+        ))
+        records[-1][edge_id_name] = i
+        if (i % step) == 0:
+            echo('Inserting %s records into regional edge table...' % step)
+            insert_records(RegionEdge.table, region_records,
+                           '"%s" nodes' % title)
+            echo('Inserting %s records into edge table...' % step)
+            insert_records(Edge.table, records, 'nodes')
+            echo('%i down, %i to go' % (i, num_records - i))
+            records, region_records = [], []
+        i += 1
+    if records:
+        echo('Inserting remaining records into regional edge table...')
+        insert_records(RegionEdge.table, region_records, '"%s" nodes' % title)
+        echo('Inserting remaining records into edge table...')
+        insert_records(Edge.table, records, 'nodes')
+    echo('Vacuuming edge tables...')
+    db.vacuum('edge', '%s_edge' % db_schema)
 
 
-def transferNodeGeometry(modify=True):
-    """Copy node geometry from edge table to node table."""
-    tables.append_geometry_columns()
-    table = tables.layer_nodes
-    layer_edges = tables.layer_edges
-    c = layer_edges.c
-    nodes = {}
-    # Get distinct node IDs from raw table
-    cols = [c.node_f_id, c.node_t_id, c.geom]
-    result = select(cols).execute()
-    for row in result:
-        line = row.geom
-        nodes[row.node_f_id] = line.startPoint()
-        nodes[row.node_t_id] = line.endPoint()
-    result.close()
-    l = []
-    for node_id in nodes:
-        # Collect all the row data so all the rows can be updated at once
-        d = {}
-        d['id'] = node_id
-        d['geom'] = nodes[node_id]
-        l.append(d)
-    if modify:
-        # Transfer node geometries
-        db.turnSQLEchoOff()
-        table.update(table.c.id==bindparam('id')).execute(l)
-        db.turnSQLEchoOn()
+def associate_edges_with_nodes():
+    table_name = 'node_edges__edge'
+    table = db.metadata.tables[table_name]
+    region = get_or_create_region()
+    echo('Removing existing associations...')
+    db.execute('DELETE FROM %s WHERE node_id IN '
+               '(SELECT id FROM node WHERE region_id = %i)' %
+               (table_name, region.id))
+    db.commit()
+    echo('Getting Edge records...')
+    c = Edge.c
+    edges_f = get_records([c.id, c.node_f_id])
+    edges_t = get_records([c.id, c.node_t_id])
+    edges = edges_f.union(edges_t)
+    records = [(dict(edge_id=e[0], node_id=e[1])) for e in edges]
+    def _insert(records):
+        echo('Inserting %i records...' % len(records))
+        insert_records(table, records, '"nodes => edges"')
+    while len(records) > 1000:
+        _insert(records[:1000])
+        records = records[1000:]
+    if records:
+        _insert(records)
 
 
 ### Actions list, in the order they will be run
@@ -592,60 +712,77 @@ actions = (
     # 1
     (shp2db,
      'Drop existing raw table and insert raw SQL into database',
-     'Dropped existing raw table and inserted raw SQL from %s into %s.' %
+     'Dropped existing raw table\nInserted raw SQL from %s into %s' %
      (sql_file_path, raw_table_name),
      ),
 
     # 2
-    (dropTables,
+    (drop_tables,
      'Drop schema tables (not including raw table)',
      'Dropped schema tables, except raw.',
      ),
 
     # 3
-    (createTables,
-     'Create schema tables (ignoring existing tables)',
-     'Created schema tables that didn\'t already exist.',
+    (create_tables,
+     'Create ALL tables (ignoring existing tables)',
+     'Created all tables that didn\'t already exist.',
      ),
 
     # 4
-    (transferStreetNames,
+    (delete_region,
+     'Delete region "%s" (including all dependent records!)' % slug,
+     'Deleted region "%s"' % slug,
+     ),
+
+    # 5
+    (get_or_create_region,
+     'Create region "%s"' % slug,
+     'Created region "%s"' % slug,
+     ),
+
+    # 6
+    (transfer_street_names,
      'Transfer street names from raw table',
      'Transferred street names from raw table to street name table',
     ),
 
-    # 5
-    (transferCities,
+    # 7
+    (transfer_cities,
      'Transfer cities from raw table',
      'Transferred cities from raw table to city table',
-     ),
+    ),
 
-    # 6
-    (insertStates,
+    # 8
+    (insert_states,
      'Insert states',
-     'States inserted into state table'
+     'Inserted states'
      ),
 
-    # 7
-    (transferNodeIDs,
-     'Transfer node IDs from raw table',
+    # 9
+    (transfer_places,
+     'Create places',
+     'Places created',
+     ),
+
+    # 10
+    (transfer_nodes,
+     'Transfer nodes from raw table',
      'Transferred node IDs from raw table to node table'
      ),
 
-    # 8
-    (transferEdges,
+    # 11
+    (transfer_edges,
      'Transfer edges from raw table',
      'Transferred edge geometry and attributes from raw table to edge '
      'table',
      ),
 
-    # 9
-    (transferNodeGeometry,
-     'Transfer node geometry from edge table',
-     'Transferred node geometry from edge table to node table',
-     ),
+    ## 12
+    #(associate_edges_with_nodes,
+     #'Associate edges with nodes',
+     #'Associated edges with nodes',
+     #),
 )
-
 
 def run(start=0, end=len(actions)-1, no_prompt=False, only=None):
     if only is not None:
@@ -682,25 +819,26 @@ def run(start=0, end=len(actions)-1, no_prompt=False, only=None):
                     print ('\n*** Errors encountered in action %s. '
                            'See log. ***' % i)
                     raise
-                print after_msg, '\nTook %s.' % getTimeWithUnits(timer.stop())
+                msgs = after_msg.strip().split('\n')
+                for m in msgs:
+                    print m
+                print 'Took %s' % getTimeWithUnits(timer.stop())
             else:
                 # No, don't do this action
                 print 'Skipped'
         print
     db.vacuum()
 
-
 def main(argv):
+    global overall_timer, timer, no_prompt
     overall_timer = meter.Timer()
     overall_timer.start()
-    global timer
     timer = meter.Timer(start_now=False)
-    db.connectMetadata()
     args_dict = getOpts(sys.argv[1:])
+    no_prompt = bool(args_dict.get('no_prompt', args_dict.get('only', False)))
     sys.stderr = open('shp2pgsql.error.log', 'w')
     run(**args_dict)
     print 'Total time: %s' % getTimeWithUnits(overall_timer.stop())
-
 
 def getOpts(argv):
     args_dict = {
@@ -715,7 +853,8 @@ def getOpts(argv):
         long_opts = ['start=', 'end=', 'no-prompt', 'only=', 'help']
         opts, args = getopt.gnu_getopt(argv, short_opts, long_opts)
     except getopt.GetoptError, e:
-        error(2, str(e))
+        usage()
+        die(2, str(e))
     start_or_end_specified = False
     # See what args were given and put them in the args dict
     for opt, val in opts:
@@ -723,7 +862,7 @@ def getOpts(argv):
             try:
                 val = int(val)
             except ValueError:
-                error(2, 'All option values must be integers.')
+                die(2, 'All option values must be integers.')
         if opt in ('--start', '-s'):
             start_or_end_specified = True
             args_dict['start'] = val
@@ -738,19 +877,24 @@ def getOpts(argv):
             usage()
             sys.exit()
         else:
-            error(1, 'Unknown option: ``%s``' % opt)
+            usage()
+            die(1, 'Unknown option: ``%s``' % opt)
     if args_dict['only'] is not None:
         if start_or_end_specified:
-            error(2, '`only` must be the *only* argument or not specified.')
+            usage()
+            die(2, '`only` must be the *only* argument or not specified.')
         else:
             args_dict['no_prompt'] = True
     return args_dict
 
+def echo(*args):
+    for msg in args:
+        print '    - %s' % msg
 
-def error(code, msg):
-    usage(msg='Error: %s' % msg)
+def die(code=1, msg=''):
+    print 'ERROR: %s' % msg
+    print '(shp2pgsql.error.log may contain details.)'
     sys.exit(code)
-
 
 def usage(msg=''):
     if msg:

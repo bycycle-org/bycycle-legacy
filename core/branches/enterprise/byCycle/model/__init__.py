@@ -12,14 +12,14 @@
 # NO WARRANTY OF ANY KIND.
 ################################################################################
 """
-byCycle model package. 
+byCycle model package.
 
-This file sets up the model API by exposing the database module and all of the
-model/domain/entity classes.
+This file sets up the model API by exposing all of the model/domain/entity
+classes.
 
 """
-# We must connect before defining Entity classes, so this must be first
-from byCycle.model.db import *
-
+from byCycle import model_path
+from byCycle.model.db import engine, connection, cursor, metadata
+from byCycle.model.db import objectstore, session_context
 from byCycle.model.domain import *
 from byCycle.model.address import *

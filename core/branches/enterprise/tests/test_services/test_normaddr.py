@@ -245,7 +245,7 @@ class TestPortlandOR(unittest.TestCase):
         self.assertEqual(oAddr.name, 'kelly')
         self.assertEqual(oAddr.sttype, 'st')
         self.assertEqual(oAddr.city_name, 'portland')
-        self.assertEqual(oAddr.state_id, 'or')
+        self.assertEqual(oAddr.state_code, 'or')
         self.assertEqual(oAddr.zip_code, 97206)
 
     def test_PortlandOR_PostalAddress_MultiWordCity_Region(self):
@@ -257,7 +257,7 @@ class TestPortlandOR(unittest.TestCase):
         self.assertEqual(oAddr.name, 'kelly')
         self.assertEqual(oAddr.sttype, 'st')
         self.assertEqual(oAddr.city_name, 'oregon city')
-        self.assertEqual(oAddr.state_id, 'or')
+        self.assertEqual(oAddr.state_code, 'or')
         self.assertEqual(oAddr.zip_code, 97206)
         
     def test_PortlandOR_PostalAddress_MultiWordName_Region(self):
@@ -269,7 +269,7 @@ class TestPortlandOR(unittest.TestCase):
         self.assertEqual(oAddr.name, 'martin luther king jr')
         self.assertEqual(oAddr.sttype, 'blvd')
         self.assertEqual(oAddr.city_name, 'oregon city')
-        self.assertEqual(oAddr.state_id, 'or')
+        self.assertEqual(oAddr.state_code, 'or')
         self.assertEqual(oAddr.zip_code, 97206)
 
     def test_PortlandOR_PostalAddress_MultiWordState_Region(self):
@@ -281,7 +281,7 @@ class TestPortlandOR(unittest.TestCase):
         self.assertEqual(oAddr.name, 'kelly pants')
         self.assertEqual(oAddr.sttype, 'st')
         self.assertEqual(oAddr.city_name, 'oregon city')
-        self.assertEqual(oAddr.state_id, 'sd')
+        self.assertEqual(oAddr.state_code, 'sd')
         self.assertEqual(oAddr.zip_code, 97206)
 
     def test_PortlandOR_PostalAddress_NameEndsWithStreetType_Region(self):
@@ -293,7 +293,7 @@ class TestPortlandOR(unittest.TestCase):
         self.assertEqual(oAddr.name, 'johnson creek')
         self.assertEqual(oAddr.sttype, '')
         self.assertEqual(oAddr.city_name, 'oregon city')
-        self.assertEqual(oAddr.state_id, 'or')
+        self.assertEqual(oAddr.state_code, 'or')
         self.assertEqual(oAddr.zip_code, 97206)
 
 

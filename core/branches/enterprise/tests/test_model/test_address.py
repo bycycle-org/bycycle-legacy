@@ -32,7 +32,7 @@ class TestPostalAddress(unittest.TestCase):
             ),
             place=Place(
                 city=City(city='Portland'),
-                state=State(id_='OR'),
+                state=State(code='OR'),
                 zip_code=97206
             )
         )
@@ -63,7 +63,7 @@ class TestIntersectionAddress(unittest.TestCase):
             ),
             place1=Place(
                 city=City(city='Portland'),
-                state=State(id_='OR'),
+                state=State(code='OR'),
                 zip_code=97206
             ),
             street_name2=StreetName(
@@ -73,7 +73,7 @@ class TestIntersectionAddress(unittest.TestCase):
             ),
             place2=Place(
                 city=City(city='Portland'),
-                state=State(id_='OR'),
+                state=State(code='OR'),
                 zip_code=97206
             )
         )

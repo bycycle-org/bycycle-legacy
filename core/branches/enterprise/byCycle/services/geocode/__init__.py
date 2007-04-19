@@ -357,8 +357,8 @@ class Service(services.Service):
         clause = []
         if place.city_name:
             clause.append(tables.cities.c.city == place.city_name)
-        if place.state_id:
-            clause.append(tables.states.c.id == place.state_id)
+        if place.state_code:
+            clause.append(tables.states.c.id == place.state_code)
         if place.zip_code:
             _c = tables.layer_edges.c
             clause.append(or_(

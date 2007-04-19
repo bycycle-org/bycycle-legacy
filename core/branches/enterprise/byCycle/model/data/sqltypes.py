@@ -53,8 +53,15 @@ class Geometry(sqlalchemy.types.TypeEngine):
         hex string representing a WKB geometry.
 
         """
-        #v = super(Geometry, self).convert_bind_param(v, engine)
-        return 'SRID=%s;%s' % (self.SRID, b2a_hex(value.toWKB()))
+        if value is None:
+            return None
+        else:
+            try:
+                return 'SRID=%s;%s' % (self.SRID, b2a_hex(value.toWKB()))
+            except AttributeError:
+                # If ``value`` is a string, assume it's already a proper
+                # hex-encoded value
+                return value
 
     def convert_result_value(self, value, engine):
         """Convert ``value`` from database ==> Python.
@@ -63,9 +70,11 @@ class Geometry(sqlalchemy.types.TypeEngine):
         a hex string representing a WKB geometry.
 
         """
-        #v = super(Geometry, self).convert_result_value(value, engine)
-        g = geometry.Geometry.fromWKB(a2b_hex(value), srs=self.srs)
-        return g
+        if value is None:
+            return None
+        else:
+            g = geometry.Geometry.fromWKB(a2b_hex(value), srs=self.srs)
+            return g
 
 
 class MULTILINESTRING(Geometry):
