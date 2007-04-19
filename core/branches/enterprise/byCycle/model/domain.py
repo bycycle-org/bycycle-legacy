@@ -2,7 +2,7 @@
 # $Id$
 # Created 2006-09-14.
 #
-# Domain objects.
+# Entity classes.
 #
 # Copyright (C) 2006 Wyatt Baldwin, byCycle.org <wyatt@bycycle.org>.
 # All rights reserved.
@@ -11,84 +11,315 @@
 # in the top level of this distribution. This software is provided AS IS with
 # NO WARRANTY OF ANY KIND.
 ###############################################################################
-"""
-A collection of domain object definitions (AKA classes).
+"""Entity classes."""
+import os
+import marshal
+import math
 
-Some domain classes have been split out into other modules. This is usually
-done when there are a set of related classes (such as the various address
-classes) and exceptions.
-
-Classes:
-
-``Region``, ``Service``, ``Geocode``, ``Route``, ``Node``, ``Edge``,
-``StreetName``, ``City``, ``Place``, ``Point``
-
-"""
 from sqlalchemy.sql import func, select
 
-from elixir import Entity, Unicode
-from elixir import has_field, belongs_to, has_many, using_options
+from elixir import Entity
+from elixir import options_defaults, using_options, using_table_options
+from elixir import has_field
+from elixir import belongs_to, has_one, has_many, has_and_belongs_to_many
+from elixir import Unicode, Integer, String, CHAR, Integer, Numeric, Float
+
+import simplejson
 
 from cartography import geometry
 from cartography.proj import SpatialReference
 
+from byCycle import model_path
 from byCycle.util import joinAttrs
-from byCycle.model.data.sqltypes import *
+from byCycle.model.data.sqltypes import POINT, LINESTRING
+
+from byCycle.model.portlandor import data as portlandor_data
+
+
+options_defaults['shortnames'] = True
+
+cascade_args = dict(
+    constraint_kwargs={'ondelete': 'cascade'},
+    cascade='all, delete-orphan'
+)
+
+
+def __to_builtin(self):
+    return dict([(col.key, getattr(self, col.key)) for col in self.c])
+Entity.to_builtin = __to_builtin
+def __to_json(self):
+    return simplejson.dumps(self.to_builtin())
+Entity.to_json = __to_json
+def __repr(self):
+    return repr(self.to_builtin())
+Entity.__repr__ = __repr
+
+
+# These "constants" are used when creating the adjacency matrix for a region
+# The number of digits to save when encoding a float as an int
+float_exp = 6
+# Multiplier to create int-encoded float
+float_encode = 10 ** float_exp
+# Multiplier to get original float value back
+float_decode = 10 ** -float_exp
+
+def encodeFloat(f):
+    """Encode the float ``f`` as an integer."""
+    return int(math.floor(f * float_encode))
+
+def decodeFloat(i):
+    """Decode the int ``i`` back to its original float value."""
+    return i * float_decode
 
 
 class Region(Entity):
-    has_field('title', Unicode)
-    has_field('slug', Unicode)
-    has_many('ads', of_kind='Ad')
+    has_field('title', String)
+    has_field('slug', String)
+    has_field('srid', Integer)
+    has_field('units', String)
+    has_field('earth_circumference', Integer)
+    has_many('edges', of_kind='Edge')
+    has_many('nodes', of_kind='Node')
+    has_many('edge_attrs', of_kind='EdgeAttr', order_by='id')
     has_many('geocodes', of_kind='Geocode')
     has_many('routes', of_kind='Route')
-    using_options(tablename='regions')
+    has_many('ads', of_kind='Ad')
+    has_many('places', of_kind='Place')
+    has_and_belongs_to_many('street_names', of_kind='StreetName',
+                            cascade='all, delete-orphan')
+    has_and_belongs_to_many('cities', of_kind='City',
+                            cascade='all, delete-orphan')
+    has_and_belongs_to_many('states', of_kind='State',
+                            cascade='all, delete-orphan')
+
+    @property
+    def data_path(self):
+        return os.path.join(model_path, self.slug, 'data')
+
+    @property
+    def matrix_path(self):
+        return os.path.join(self.data_path, 'matrix.pyc')
+
+    @property
+    def edge_attrs_index(self):
+        """Create an index of adjacency matrix street attributes.
+
+        In the ``matrix``, there is an (ordered) of edge attributes for each
+        edge. ``edge_attrs_index`` gives us a way to access those attributes
+        by name while keeping the size of the matrix smaller. We require that
+        edges for all regions have at least a length, street name ID, and
+        from-node ID.
+
+        """
+        edge_attrs = ['length', 'streetname_id', 'node_f_id']
+        edge_attrs += [a.name for a in self.edge_attrs]
+        edge_attrs_index = {}
+        for i, attr in enumerate(edge_attrs):
+            edge_attrs_index[attr] = i
+        return edge_attrs_index
+
+    def _get_adjacency_matrix(self):
+        """Return matrix. Prefer 1) existing 2) disk 3) newly created."""
+        matrix = getattr(self, '_matrix', None)
+        if matrix is None:
+            try:
+                loadfile = open(self.matrix_path, 'rb')
+            except IOError:
+                matrix = self.createAdjacencyMatrix()
+            else:
+                try:
+                    matrix = marshal.load(loadfile)
+                except (EOFError, ValueError, TypeError):
+                    matrix = self.createAdjacencyMatrix()
+                loadfile.close()
+            self._matrix = matrix
+        return matrix
+
+    def _set_adjacency_matrix(self, matrix):
+        self._matrix = matrix
+        dumpfile = open(self.matrix_path, 'wb')
+        marshal.dump(matrix, dumpfile)
+        dumpfile.close()
+
+    matrix = G = property(_get_adjacency_matrix, _set_adjacency_matrix)
+
+    def createAdjacencyMatrix(self):
+        """Create the adjacency matrix for this DB's region.
+
+        Build a matrix suitable for use with the route service. The structure
+        of the matrix is defined by/in the Dijkstar package.
+
+        return
+            Adjacency matrix for this region:
+                {nodes: {}, edges: {}}
+                    nodes: {v: {v: e, v: e, ...}, v: {v: e, v: e, ...}, ...}
+                    edges: {e: (attrs), e: (attrs), ...}
+
+        """
+        from byCycle.util.meter import Meter, Timer
+
+        timer = Timer()
+
+        def took():
+            print 'Took %s seconds.' % timer.stop()
+
+        num_nodes = Node.count_by(region=self)
+
+        timer.start()
+        edge_id_name = '%s_edge_id' % self.slug
+        print 'Fetching edge attributes...'
+        c = Edge.c
+        cols = [c.id, c.node_f_id, c.node_t_id, c.one_way, c.street_name_id,
+                c[edge_id_name]]
+        select_ = select(cols)
+        select_.append_whereclause((c.region_id == self.id))
+        rows = select_.execute()
+        bases = dict([(r[edge_id_name], r) for r in rows])
+        took()
+
+        timer.start()
+        print 'Fetching regional edge attributes...'
+        region_rows = self._getEdgeRowsForMatrix()
+        num_edges = region_rows.rowcount
+        took()
+
+        timer.start()
+        print 'Total number of edges in region: %s' % len(bases)
+        print 'Number of filtered edges: %s' % num_edges
+        print 'Number of nodes in region: %s' % num_nodes
+        print 'Creating adjacency matrix...'
+        matrix = {'nodes': {}, 'edges': {}}
+        nodes = matrix['nodes']
+        edges = matrix['edges']
+        meter = Meter(num_items=num_edges, start_now=True)
+        meter_i = 1
+        for row in region_rows:
+            adjustments = self._adjustEdgeRowForMatrix(row)
+            ix = row.id
+            base = bases[ix]
+            node_f_id, node_t_id = base.node_f_id, base.node_t_id
+            one_way = base.one_way
+            # 0: no travel in either direction
+            # 1: travel from => to only
+            # 2: travel to => from only
+            # 3: travel in both directions
+            ft = one_way & 1
+            tf = one_way & 2
+            entry = [encodeFloat(row.geom.length()), base.street_name_id,
+                     base.node_f_id]
+            entry += [row[a.name] for a in self.edge_attrs]
+            for k in adjustments:
+                entry[self.edge_attrs_index[k]] = adjustments[k]
+            edges[ix] = tuple(entry)
+            if ft:
+                if not node_f_id in nodes:
+                    nodes[node_f_id] = {}
+                nodes[node_f_id][node_t_id] = ix
+            if tf:
+                if not node_t_id in nodes:
+                    nodes[node_t_id] = {}
+                nodes[node_t_id][node_f_id] = ix
+            meter.update(meter_i)
+            meter_i += 1
+        rows.close()
+        region_rows.close()
+        print
+        took()
+
+        timer.start()
+        print 'Saving adjacency matrix...'
+        self.matrix = matrix
+        took()
+
+    @property
+    def edge_entity(self):
+        return self._get_entity('edge')
+
+    @property
+    def node_entity(self):
+        return self._get_entity('node')
+
+    def _get_entity(self, name):
+        entity = getattr(self, '_%s_entity' % name, None)
+        if entity is None:
+            entity_name = '%s_%s' % (self.slug, name)
+            for name, obj in globals().items():
+                if hasattr(obj, '__class__') and name.lower() == entity_name:
+                    entity = obj
+                    break
+            setattr(self, '_%s_entity' % name, entity)
+        return entity
+
+    def _getEdgeRowsForMatrix(self):
+        return self.edge_entity._getRowsForMatrix()
+
+    def _adjustEdgeRowForMatrix(self, row):
+        return self.edge_entity._adjustRowForMatrix(row)
+
+    def __str__(self):
+        return '%s: %s' % (self.slug, self.title)
+
+
+class EdgeAttr(Entity):
+    using_options(tablename='edge_attrs')
+    has_field('name', String)
+    belongs_to('region', of_kind='Region', **cascade_args)
+    def __repr__(self):
+        return str(self.name)
+
 
 class Ad(Entity):
-    has_field('title', Unicode)
-    has_field('href', Unicode)
-    has_field('text', Unicode)
-    belongs_to('region', of_kind='Region')
-    using_options(tablename='ads')
+    has_field('title', String)
+    has_field('href', String)
+    has_field('text', String)
+    belongs_to('region', of_kind='Region', **cascade_args)
     def __str__(self):
         return ' '.join([self.title, self.href, self.text])
 
+
 class Service(Entity):
-    has_field('title', Unicode)
-    using_options(tablename='services')
+    has_field('title', String)
+    belongs_to('region', of_kind='Region', inverse='geocodes', **cascade_args)
+
 
 class Geocode(Entity):
-    has_field('title', Unicode)
-    has_field('geom', POINT(2913))
-    belongs_to('region', of_kind='Region')
-    using_options(tablename='geocodes')
+    has_field('title', String)
+    belongs_to('region', of_kind='Region', inverse='geocodes', **cascade_args)
+
 
 class Route(Entity):
-    has_field('title', Unicode)
-    has_field('title', Unicode)
-    has_field('geom', LINESTRING(2913))
-    belongs_to('region', of_kind='Region')
-    using_options(tablename='routes')
+    has_field('title', String)
+    belongs_to('region', of_kind='Region', **cascade_args)
 
 
-class Node(object):
-    """Represents point features."""
+class Node(Entity):
+    belongs_to('region', of_kind='Region', **cascade_args)
+    belongs_to('portlandor_node', of_kind='PortlandOR_Node', **cascade_args)
+    has_many('edges_f', of_kind='Edge', inverse='node_f')
+    has_many('edges_t', of_kind='Edge', inverse='node_t')
 
-    def __init__(self, id_, geom, edges=[]):
-        self.id = id_
-        self.geom = geom
-        self.edges = edges
-
-    def __str__(self):
-        edges = '\n\n'.join([str(e) for e in self.edges])
-        return 'NODE %s\n%s\n\n%s' % (self.id, self.geom, edges)
+    @property
+    def edges(self):
+        return list(self.edges_f) + list(self.edges_t)
 
 
-class Edge(object):
-    """Represents line features."""
+class PortlandOR_Node(Entity):
+    has_field('geom', POINT(portlandor_data.SRID))
+    has_one('base', of_kind='Node')
+    
 
-    def __init__(self, **attrs):
-        self.__dict__.update(attrs)
+class Edge(Entity):
+    has_field('addr_f', Integer)
+    has_field('addr_t', Integer)
+    has_field('even_side', CHAR(1)),
+    has_field('one_way', Integer)
+    belongs_to('node_f', of_kind='Node', **cascade_args)
+    belongs_to('node_t', of_kind='Node', **cascade_args)
+    belongs_to('street_name', of_kind='StreetName', **cascade_args)
+    belongs_to('place_l', of_kind='Place', **cascade_args)
+    belongs_to('place_r', of_kind='Place', **cascade_args)
+    belongs_to('region', of_kind='Region', **cascade_args)
+    belongs_to('portlandor_edge', of_kind='PortlandOR_Edge', **cascade_args)
 
     def getSideNumberIsOn(self, num):
         """Determine which side of the edge, "l" or "r", ``num`` is on."""
@@ -299,29 +530,56 @@ class Edge(object):
         ]
         return joinAttrs(stuff, join_string='\n')
 
-    def __simplify__(self):
-        attrs = [col.name for col in self.c]
+    def to_builtin(self):
+        attrs = [col.key for col in self.c]
         vals = [getattr(self, a) for a in attrs]
         simple = dict(zip(attrs, vals))
-        linestring = self.geom.copy()
-        srs = SpatialReference(epsg=4326)
-        linestring.transform(src_proj=str(self.geom.srs), dst_proj=str(srs))
-        points = []
-        for i in range(linestring.numPoints()):
-            points.append(linestring.pointN(i))
-        simple['geom'] = [{'x': p.x, 'y': p.y} for p in points]
+        #linestring = self.geom.copy()
+        #srs = SpatialReference(epsg=4326)
+        #linestring.transform(src_proj=str(self.geom.srs), dst_proj=str(srs))
+        #points = []
+        #for i in range(linestring.numPoints()):
+            #points.append(linestring.pointN(i))
+        #simple['geom'] = [{'x': p.x, 'y': p.y} for p in points]
         return simple
 
-    def __repr__(self):
-        return repr(self.__simplify__())
+
+class PortlandOR_Edge(Entity):
+    has_field('geom', LINESTRING(2913))
+    has_field('localid', Numeric(11, 2) )
+    has_field('code', Integer)
+    has_field('bikemode', CHAR(1))  # enum('','p','t','b','l','m','h','c','x')
+    has_field('up_frac', Float)
+    has_field('abs_slope', Float)
+    has_field('cpd', Integer)
+    has_field('sscode', Integer)
+    has_one('base', of_kind='Edge', inverse='portlandor_edge')
+
+    @classmethod
+    def _getRowsForMatrix(cls):
+        code = cls.c.code
+        region_rows = cls.table.select((
+            ((code >= 1200) & (code < 1600)) |
+            ((code >= 3200) & (code < 3300))
+        )).execute()
+        return region_rows
+
+    @classmethod
+    def _adjustRowForMatrix(cls, row):
+        adjustments = {
+            'abs_slope': encodeFloat(row.abs_slope),
+            'up_frac': encodeFloat(row.up_frac),
+        }
+        return adjustments
 
 
-class StreetName(object):
-    def __init__(self, prefix=None, name=None, sttype=None, suffix=None):
-        self.prefix = prefix
-        self.name = name
-        self.sttype = sttype
-        self.suffix = suffix
+class StreetName(Entity):
+    has_field('prefix', String(2))
+    has_field('name', String)
+    has_field('sttype', String(4))
+    has_field('suffix', String(2))
+    has_and_belongs_to_many('regions', of_kind='Region',
+                            cascade='all, delete-orphan')
 
     def __str__(self):
         attrs = (
@@ -332,16 +590,13 @@ class StreetName(object):
         )
         return joinAttrs(attrs)
 
-    def __simplify__(self):
+    def to_builtin(self):
         return {
             'prefix': (self.prefix or '').upper(),
             'name': self._name_for_str(),
             'sttype': (self.sttype or '').title(),
             'suffix': (self.suffix or '').upper()
         }
-
-    def __repr__(self):
-        return repr(self.__simplify__())
 
     def _name_for_str(self):
         """Return lower case name if name starts with int, else title case."""
@@ -385,18 +640,10 @@ class StreetName(object):
         return (self_attrs == other_attrs)
 
 
-class City(object):
-    """City.
-
-    ``id`` `int` -- Unique ID
-    ``city`` `string` -- City name
-
-    """
-
-    def __init__(self, id_=None, city=None):
-        """See attributes list for description parameters."""
-        self.id = id_
-        self.city = city
+class City(Entity):
+    has_field('city', String)
+    has_and_belongs_to_many('regions', of_kind='Region',
+                            cascade='all, delete-orphan')
 
     def __str__(self):
         if self.city:
@@ -404,75 +651,45 @@ class City(object):
         else:
             return '[No City]'
 
-    def __simplify__(self):
+    def to_builtin(self):
         return {
             'id': self.id,
             'city': str(self)
         }
 
-    def __repr__(self):
-        return repr(self.__simplify__())
-
     def __nonzero__(self):
-        """A `City` must have at least a `city` (i.e., a city name)."""
         return bool(self.city)
 
 
-class State(object):
-    """State.
-
-    ``id`` `int` -- Unique ID
-    ``state`` `string` -- State name
-
-    """
-
-    def __init__(self, id_=None, state=None):
-        """See attributes list for description parameters."""
-        self.id = id_
-        self.state = state
+class State(Entity):
+    has_field('code', CHAR(2))  # Two-letter state code
+    has_field('state', String)
+    has_and_belongs_to_many('regions', of_kind='Region',
+                            cascade='all, delete-orphan')
 
     def __str__(self):
-        if self.id:
-            return self.id.upper()
+        if self.code:
+            return self.code.upper()
         else:
             return '[No State]'
 
-    def __simplify__(self):
+    def to_builtin(self):
         return {
-            'id': str(self),
+            'id': self.id,
+            'code': str(self),
             'state': str(self.state or '[No State]').title()
         }
 
-    def __repr__(self):
-        return repr(self.__simplify__())
-
     def __nonzero__(self):
-        """A `State` can have either an id (two-letter abbrev.) or state."""
-        return bool(self.id or self.state)
+        return bool(self.code or self.state)
 
 
-class Place(object):
-    """City, state, and zip code.
 
-    ``city`` `City` -- City ID and city name
-    ``state`` `State` -- State ID (two letter abbreviation) and state name
-    ``zip_code`` `int`
-
-    """
-
-    def __init__(self, city=None, state=None, zip_code=None):
-        """See attributes list for description parameters.
-
-        Any or all of the parameters can be None.
-
-        """
-        if city is None:
-            city = City()
-        self.city = city
-        if state is None:
-            state = State()
-        self.state = state
-        self.zip_code = zip_code
+class Place(Entity):
+    has_field('zip_code', Integer)
+    belongs_to('city', of_kind='City', **cascade_args)
+    belongs_to('state', of_kind='State', **cascade_args)
+    belongs_to('region', of_kind='Region', **cascade_args)
 
     def _get_city_id(self):
         return self.city.id
@@ -486,11 +703,11 @@ class Place(object):
         self.city.city = name
     city_name = property(_get_city_name, _set_city_name)
 
-    def _get_state_id(self):
-        return self.state.id
-    def _set_state_id(self, id_):
-        self.state.id = id_
-    state_id = property(_get_state_id, _set_state_id)
+    def _get_state_code(self):
+        return self.state.code
+    def _set_state_code(self, code):
+        self.state.code = code
+    state_code = property(_get_state_code, _set_state_code)
 
     def _get_state_name(self):
         return self.state.state
@@ -502,27 +719,22 @@ class Place(object):
         city_state = joinAttrs([self.city, self.state], ', ')
         return joinAttrs([city_state, str(self.zip_code or '')])
 
-    def __simplify__(self):
+    def to_builtin(self):
         return {
-            'city': self.city.__simplify__(),
-            'state': self.state.__simplify__(),
+            'city': self.city.to_builtin(),
+            'state': self.state.to_builtin(),
             'zip_code': str(self.zip_code or '')
         }
-
-    def __repr__(self):
-        return repr(self.__simplify__())
 
     def __nonzero__(self):
         return bool(self.city or self.state or self.zip_code)
 
 
-###########################################################################
 class InitCoordinatesException(Exception):
     def __init__(self, msg):
         self.msg = msg
 
 
-###########################################################################
 class Point(object):
     """Simple point. Currently supports only X and Y (and not Z)."""
 

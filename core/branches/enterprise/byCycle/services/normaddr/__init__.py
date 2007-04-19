@@ -252,21 +252,21 @@ class Service(services.Service):
 
             # state
             for i in (-1, -2, -3, -4):
-                state_id = ' '.join(tokens[i:])
-                if (state_id in states_atof or state_id in states_ftoa):
-                    if state_id in states_ftoa:
-                        state = state_id
-                        state_id = states_ftoa[state_id]
+                state_code = ' '.join(tokens[i:])
+                if (state_code in states_atof or state_code in states_ftoa):
+                    if state_code in states_ftoa:
+                        state = state_code
+                        state_code = states_ftoa[state_code]
                     else:
-                        state = states_atof[state_id]
-                    place.state_id = state_id
+                        state = states_atof[state_code]
+                    place.state_code = state_code
                     place.state_name = state
                     del tokens[i:]
                     break
 
             # Get cities for state if state; else use list of all cities
             try:
-                cities = regions.states_cities[place.state_id]
+                cities = regions.states_cities[place.state_code]
             except KeyError:
                 cities = regions.cities
 

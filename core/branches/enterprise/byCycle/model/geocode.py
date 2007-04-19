@@ -64,11 +64,11 @@ class Geocode(object):
         return quote_plus(s)
 
     #----------------------------------------------------------------------
-    def __simplify__(self):
+    def to_builtin(self):
         return {
             'type': self.__class__.__name__,
-            'street_name': self.address.street_name.__simplify__(),
-            'place': self.address.place.__simplify__(),
+            'street_name': self.address.street_name.to_builtin(),
+            'place': self.address.place.to_builtin(),
             'address': str(self.address),
             'point': self.xy_ll,
             'network_id': self.network_id
@@ -76,7 +76,7 @@ class Geocode(object):
         
     #----------------------------------------------------------------------
     def __repr__(self):
-        return repr(self.__simplify__())
+        return repr(self.to_builtin())
 
 
 ###########################################################################
@@ -107,12 +107,12 @@ class PostalGeocode(Geocode):
         self.edge = edge
 
     #----------------------------------------------------------------------
-    def __simplify__(self):
+    def to_builtin(self):
         return {
             'type': self.__class__.__name__,
             'number': self.address.number,
-            'street_name': self.address.street_name.__simplify__(),
-            'place': self.address.place.__simplify__(),
+            'street_name': self.address.street_name.to_builtin(),
+            'place': self.address.place.to_builtin(),
             'address': str(self.address),
             'point': {'x': self.xy_ll.x, 'y': self.xy_ll.y},
             'network_id': self.network_id
@@ -120,7 +120,7 @@ class PostalGeocode(Geocode):
         
     #----------------------------------------------------------------------
     def __repr__(self):
-        return repr(self.__simplify__())
+        return repr(self.to_builtin())
 
     #----------------------------------------------------------------------
     def __eq__(self, other):
@@ -156,13 +156,13 @@ class IntersectionGeocode(Geocode):
         self.node = node
 
     #----------------------------------------------------------------------
-    def __simplify__(self):
+    def to_builtin(self):
         return {
             'type': self.__class__.__name__,
-            'street_name1': self.address.street_name1.__simplify__(),
-            'street_name2': self.address.street_name2.__simplify__(),
-            'place1': self.address.place1.__simplify__(),
-            'place2': self.address.place2.__simplify__(),
+            'street_name1': self.address.street_name1.to_builtin(),
+            'street_name2': self.address.street_name2.to_builtin(),
+            'place1': self.address.place1.to_builtin(),
+            'place2': self.address.place2.to_builtin(),
             'address': str(self.address),
             'point': {'x': self.xy_ll.x, 'y': self.xy_ll.y},
             'network_id': self.network_id
@@ -170,7 +170,7 @@ class IntersectionGeocode(Geocode):
         
     #----------------------------------------------------------------------
     def __repr__(self):
-        return repr(self.__simplify__())
+        return repr(self.to_builtin())
 
     #----------------------------------------------------------------------
     def __eq__(self, other):
