@@ -29,7 +29,7 @@ setup(
     
     url='http://bycycle.org/',
     # This, in effect, creates an alias to the latest 0.4 dev version
-    download_url='http://guest:guest@svn.bycycle.org/apps/web/tripplanner/branches/dojo#egg=byCycleTripPlanner-dev',
+    download_url='http://guest:guest@svn.bycycle.org/apps/web/tripplanner/trunk#egg=byCycleTripPlanner-dev',
 
     classifiers=[
     'Development Status :: 3 - Alpha',
