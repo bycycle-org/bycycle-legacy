@@ -13,7 +13,7 @@ byCycle.Map.google = {
  * inline because it does a document.write to load the actual API.
  */
   beforeLoad: function() {
-    var api_url = 'http://maps.google.com/maps?file=api&amp;v=2&amp;key=';
+    var api_url = 'http://maps.google.com/maps?file=api&amp;v=2.x&amp;key=';
     var api_keys = {
       'tripplanner.bycycle.org': 'ABQIAAAAd_4WmZlgvQzchd_BQM0MPhQ8y5tnWrQRsyOlME1eHkOS3wQveBSeFCpOUAfP10H6ec-HcFWPgiJOCA',
 
@@ -77,6 +77,7 @@ byCycle.Map.google.Map.prototype = Object.extend(new byCycle.Map.base.Map(), {
     map.addControl(new GScaleControl());
     map.addControl(new GOverviewMapControl());
     map.enableContinuousZoom();
+    map.enableScrollWheelZoom();
     new GKeyboardHandler(map);
     this.map = map;
   },
