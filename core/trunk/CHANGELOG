@@ -2,3 +2,5 @@ SVN
 * 2007-04-24:
     * Made changes necessary to get normaddr service tests to pass
     * Made changes necessary to get all but one geocode service tests to pass
+* 2007-04-25
+    * Made changes necessary to get ALL geocode service tests to pass

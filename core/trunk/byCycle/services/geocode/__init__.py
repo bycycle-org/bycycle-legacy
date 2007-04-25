@@ -43,7 +43,7 @@ from byCycle.model.domain import Edge, Node, Point
 from byCycle import services
 from byCycle.services import normaddr
 from byCycle.services import identify
-from byCycle.services.exceptions import * 
+from byCycle.services.exceptions import *
 
 
 class GeocodeError(ByCycleError):
@@ -154,7 +154,7 @@ class Service(services.Service):
 
         ``oAddr``
             A `PostalAddress` (e.g., 123 Main St, Portland) OR an
-            `EdgeAddress`. An edge "address" contains just street number and 
+            `EdgeAddress`. An edge "address" contains just street number and
             ID of some edge.
 
         return `list`
@@ -169,29 +169,22 @@ class Service(services.Service):
         table = Edge.table
         c = Edge.c
 
+        clause = [
+            (func.least(c.addr_f, c.addr_t) <= num),
+            (num <= func.greatest(c.addr_f, c.addr_t))
+        ]
+
         try:
             # Try to look up edge by network ID first
             network_id = oAddr.network_id
         except AttributeError:
-            # No network ID, so look up addr by other attrs (street name & place)
-            select_ = table.select(and_(
-                Edge.join_to('street_name'),
-                func.least(c.addr_f, c.addr_t) <= num,
-                num <= func.greatest(c.addr_f, c.addr_t)
-            ))
-            self._appendWhereClausesToSelect(
-                select_,
-                self._getStreetNameWhereClause(oAddr.street_name),
-                self._getPlaceWhereClause(oAddr.place)
-            )
-            # Get rows and map to Edge objects
-            edges = Edge.select(select_)
+            # No network ID, so look up address by street name and place
+            self.append_street_name_where_clause(clause, oAddr.street_name)
+            self.append_place_where_clause(clause, oAddr.place)
+            edges = Edge.select(and_(*clause))
         else:
-            edges = Edge.select_by(
-                c.id == network_id,
-                func.least(c.addr_f, c.addr_t) <= num,
-                num <= func.greatest(c.addr_f, c.addr_t)
-            )
+            clause.append(c.id == network_id)
+            edges = Edge.select(and_(*clause))
 
         if not edges:
             raise AddressNotFoundError(address=oAddr, region=self.region)
@@ -216,37 +209,22 @@ class Service(services.Service):
         """
         layer_edges = Edge.table
 
-        def getNodeIDs(street_name, place):
+        def get_node_ids(street_name, place):
             node_ids = {}
-            # Get street name IDs
-            select_ = select([StreetName.c.id])
-            self._appendWhereClausesToSelect(
-                select_,
-                self._getStreetNameWhereClause(street_name),
-            )
+            c = Edge.c
+            select_ = select([c.node_f_id, c.node_t_id])
+            self.append_street_name_where_clause(select_, street_name)
+            self.append_place_where_clause(select_, place)
             result = select_.execute()
-            if result.rowcount:
-                street_name_ids = [row.id for row in result]
-                # Get node IDs
-                c = Edge.c
-                select_ = select(
-                    [c.node_f_id, c.node_t_id],
-                    c.street_name_id.in_(*street_name_ids)
-                )
-                self._appendWhereClausesToSelect(
-                    select_,
-                    self._getPlaceWhereClause(place),
-                )
-                result = select_.execute()
-                for row in result:
-                    node_ids[row.node_f_id] = 1
-                    node_ids[row.node_t_id] = 1
+            for row in result:
+                node_ids[row.node_f_id] = 1
+                node_ids[row.node_t_id] = 1
             result.close()
             return node_ids
 
-        ids_A = getNodeIDs(oAddr.street_name1, oAddr.place1)
+        ids_A = get_node_ids(oAddr.street_name1, oAddr.place1)
         if ids_A:
-            ids_B = getNodeIDs(oAddr.street_name2, oAddr.place2)
+            ids_B = get_node_ids(oAddr.street_name2, oAddr.place2)
         else:
             ids_B = []
 
@@ -324,7 +302,7 @@ class Service(services.Service):
                 street_name1=edge1.street_name, place1=edge1.place_l,
                 street_name2=edge2.street_name, place2=edge2.place_l
             )
-            _g = IntersectionGeocode(self.region, addr, node)
+            g = IntersectionGeocode(self.region, addr, node)
         else:
             # `node` is at a dead end
             edge = edges[0]
@@ -334,13 +312,13 @@ class Service(services.Service):
             else:
                 num = edge.addr_t
             addr = PostalAddress(num, edge.street_name, edge.place_l)
-            _g = PostalGeocode(self.region, addr, edge)
-            _g.node = node
-        return [_g]
+            g = PostalGeocode(self.region, addr, edge)
+            g.node = node
+        return [g]
 
     ### Utilities
 
-    def _getStreetNameWhereClause(self, street_name):
+    def get_street_name_ids(self, street_name):
         """Get a WHERE clause for ``street_name``."""
         clause = []
         for name in ('prefix', 'name', 'sttype', 'suffix'):
@@ -348,23 +326,46 @@ class Service(services.Service):
             if val:
                 clause.append(StreetName.c[name] == val)
         if clause:
-            return and_(*clause)
-        return None
+            result = select([StreetName.c.id], and_(*clause)).execute()
+            return [r.id for r in result]
+        return []
 
-    def _getPlaceWhereClause(self, place):
-        """Get a WHERE clause for ``place``."""
+    def append_street_name_where_clause(self, append_to, street_name):
+        if street_name:
+            st_name_ids = self.get_street_name_ids(street_name)
+            clause = Edge.c.street_name_id.in_(*st_name_ids)
+            if isinstance(append_to, (list, tuple)):
+                append_to.append(clause)
+            else:
+                append_to.append_whereclause(clause)
+
+    def get_place_ids(self, place):
+        """Get ``Place`` ``place``."""
         clause = []
         if place.city_name:
-            clause.append(City.c.city == place.city_name)
+            r = select([City.c.id], (City.c.city == place.city_name)).execute()
+            city_id = r.fetchone().id if r else None
+            clause.append(Place.c.city_id == city_id)
         if place.state_code:
-            clause.append(State.c.code == place.state_code)
+            r = select([State.c.id], (State.c.code == place.state_code)).execute()
+            state_id = r.fetchone().id if r else None
+            clause.append(Place.c.state_id == state_id)
         if place.zip_code:
             clause.append(Place.c.zip_code == place.zip_code)
         if clause:
-            return and_(*clause)
-        return None
+            result = select([Place.c.id], and_(*clause)).execute()
+            return [r.id for r in result]
+        return []
 
-    def _appendWhereClausesToSelect(self, select_, *where_clauses):
-        for where_clause in where_clauses:
-            if where_clause is not None:
-                select_.append_whereclause(where_clause)
+    def append_place_where_clause(self, append_to, place):
+        if place:
+            place_ids = self.get_place_ids(place)
+            c = Edge.c
+            clause = or_(
+                c.place_l_id.in_(*place_ids),
+                c.place_r_id.in_(*place_ids)
+            )
+            if isinstance(append_to, (list, tuple)):
+                append_to.append(clause)
+            else:
+                append_to.append_whereclause(clause)
