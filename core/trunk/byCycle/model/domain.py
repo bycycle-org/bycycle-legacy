@@ -691,27 +691,27 @@ class Place(Entity):
     belongs_to('state', of_kind='State', **cascade_args)
     belongs_to('region', of_kind='Region', **cascade_args)
 
-    def _get_city_id(self):
-        return self.city.id
-    def _set_city_id(self, id_):
-        self.city.id = id_
-    city_id = property(_get_city_id, _set_city_id)
-
     def _get_city_name(self):
-        return self.city.city
+        return (None if self.city is None else self.city.city)
     def _set_city_name(self, name):
+        if self.city is None:
+            self.city = City() 
         self.city.city = name
     city_name = property(_get_city_name, _set_city_name)
 
     def _get_state_code(self):
-        return self.state.code
+        return (None if self.state is None else self.state.code)
     def _set_state_code(self, code):
+        if self.state is None:
+            self.state = State()
         self.state.code = code
     state_code = property(_get_state_code, _set_state_code)
 
     def _get_state_name(self):
-        return self.state.state
+        return (None if self.state is None else self.state.state)
     def _set_state_name(self, name):
+        if self.state is None:
+            self.state = State()
         self.state.state = name
     state_name = property(_get_state_name, _set_state_name)
 
