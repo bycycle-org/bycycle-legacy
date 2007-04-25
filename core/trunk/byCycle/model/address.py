@@ -148,8 +148,8 @@ class IntersectionAddress(Address):
                  street_name2=None, place2=None):
         self.street_name1 = [street_name1, StreetName()][street_name1 is None]
         self.street_name2 = [street_name2, StreetName()][street_name2 is None]
-        place1 = [place1, StreetName()][place1 is None]
-        place2 = [place2, StreetName()][place2 is None]
+        place1 = place1 if place1 is not None else Place()
+        place2 = place2 if place2 is not None else Place()
         if not place1:
             place1 = place2
         if not place2:

@@ -536,14 +536,19 @@ def transfer_places():
 
 
 def transfer_nodes():
-    """Transfer nodes from raw table to node table."""
+    """Transfer nodes from raw table to node table."""\
+    # This might be easier: 
+    # UPDATE portlandor_node
+    #     SET geom = startPoint(the_geom) 
+    #     FROM raw.portlandor WHERE raw.portlandor.n0 = id;
+    # UPDATE portlandor_node
+    #     SET geom = endPoint(the_geom)
+    #     FROM raw.portlandor WHERE raw.portlandor.n1 = id;
     region = get_or_create_region()
     echo('Getting columns from raw table...')
     c = Raw.c
-    raw_records_f = get_records([c.node_f_id,
-                                 func.startPoint(func.GeometryN(c.geom, 0))])
-    raw_records_t = get_records([c.node_t_id,
-                                 func.endPoint(func.GeometryN(c.geom, 0))])
+    raw_records_f = get_records([c.node_f_id, func.startPoint(c.geom)])
+    raw_records_t = get_records([c.node_t_id, func.endPoint(c.geom)])
     new_records = raw_records_f.union(raw_records_t)
     records = []
     region_records = []

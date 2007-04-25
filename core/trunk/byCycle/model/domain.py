@@ -299,14 +299,31 @@ class Node(Entity):
     has_many('edges_t', of_kind='Edge', inverse='node_t')
 
     @property
+    def sub_node(self):
+        n = getattr(self, '_sub_node', None)
+        if n is None:
+            for name in self.__dict__:
+                if name.endswith('_node_id'):
+                    val = getattr(self, name)
+                    if val is not None:
+                        n = getattr(self, name.rstrip('_id'))
+                        self._sub_node = n
+                        break
+        return n
+
+    @property
     def edges(self):
         return list(self.edges_f) + list(self.edges_t)
+    
+    @property
+    def geom(self):
+        return self.sub_node.geom
 
 
 class PortlandOR_Node(Entity):
     has_field('geom', POINT(portlandor_data.SRID))
     has_one('base', of_kind='Node')
-    
+
 
 class Edge(Entity):
     has_field('addr_f', Integer)
@@ -320,6 +337,19 @@ class Edge(Entity):
     belongs_to('place_r', of_kind='Place', **cascade_args)
     belongs_to('region', of_kind='Region', **cascade_args)
     belongs_to('portlandor_edge', of_kind='PortlandOR_Edge', **cascade_args)
+
+    @property
+    def sub_edge(self):
+        e = getattr(self, '_sub_edge', None)
+        if e is None:
+            for name in self.__dict__:
+                if name.endswith('_edge_id'):
+                    val = getattr(self, name)
+                    if val is not None:
+                        e = getattr(self, name.rstrip('_id'))
+                        self._sub_edge = e
+                        break
+        return e
 
     def getSideNumberIsOn(self, num):
         """Determine which side of the edge, "l" or "r", ``num`` is on."""
@@ -399,15 +429,15 @@ class Edge(Entity):
                 dist_from_min_addr = num - min_addr
                 location = float(dist_from_min_addr) / edge_len
 
-        _c = self.c
+        c = self.sub_edge.c
 
         # Function to get interpolated point
-        _f = func.line_interpolate_point(_c.geom, location)
+        f = func.line_interpolate_point(c.geom, location)
         # Function to get WKB version of lat/long point
-        _f = func.asbinary(_f)
+        f = func.asbinary(f)
 
         # Query DB and get WKB POINT
-        select_ = select([_f.label('wkb_point')], _c.id == self.id)
+        select_ = select([f.label('wkb_point')], c.id == self.sub_edge.id)
         result = select_.execute()
         wkb_point = result.fetchone().wkb_point
 
@@ -695,7 +725,7 @@ class Place(Entity):
         return (None if self.city is None else self.city.city)
     def _set_city_name(self, name):
         if self.city is None:
-            self.city = City() 
+            self.city = City()
         self.city.city = name
     city_name = property(_get_city_name, _set_city_name)
 

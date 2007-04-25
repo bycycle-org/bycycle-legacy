@@ -14,6 +14,7 @@
 import unittest
 from byCycle.util import meter
 from byCycle.services.geocode import *
+from byCycle.model.domain import Edge, StreetName
 from byCycle.model.geocode import Geocode, PostalGeocode, IntersectionGeocode
 
 
@@ -42,7 +43,20 @@ class TestPortlandOR(unittest.TestCase):
     ### Edge
 
     def test_EdgeAddress(self):
-        q = '633-11993'
+        # Get street name ID for n alberta st
+        c = StreetName.c
+        street_name = StreetName.selectfirst((c.prefix == 'n') &
+                                             (c.name == 'alberta') & 
+                                             (c.sttype == 'st'))
+        street_name_id = street_name.id
+
+        # Get edge matching 633 n alberta st        
+        c = Edge.c
+        edge = Edge.selectfirst((c.addr_f <= 633) & (c.addr_t >= 633) &
+                                (c.street_name_id == street_name_id))
+        network_id = edge.id
+        
+        q = '633-%s' % network_id
         geocode = self._query(q)
 
     def test_EdgeAddress_BadID(self):
@@ -86,11 +100,11 @@ class TestPortlandOR(unittest.TestCase):
     ### Node
 
     def test_NodeAddress(self):
-        q = '1651'
+        q = '84700'
         geocode = self._query(q)
 
     def test_NodeAddress_BadID(self):
-        q = '84700'
+        q = '8474400'
         self._queryRaises(q, AddressNotFoundError)
 
     ### Point
