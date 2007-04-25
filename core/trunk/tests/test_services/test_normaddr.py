@@ -13,7 +13,8 @@
 ################################################################################
 import unittest
 from byCycle.services.normaddr import *
-from byCycle.model import address, db, portlandor
+from byCycle.model import address, db
+from byCycle.model.domain import Region, StreetName, Edge
 from sqlalchemy import *
 
 
@@ -97,6 +98,8 @@ class TestGetNumberAndStreet(unittest.TestCase):
 
 class TestPortlandOR(unittest.TestCase):
 
+    region = Region.get_by(slug='portlandor')
+
     def _query(self, q, region=None):
         service = Service(region=region)
         oAddr = service.query(q)
@@ -105,27 +108,20 @@ class TestPortlandOR(unittest.TestCase):
     ### Edge
 
     def test_PortlandOR_EdgeAddress(self):
-        r = portlandor.Region()
-
+        r = self.region
+        
         # Get street name ID for n alberta st
-        t = r.tables.street_names
-        select = t.select(and_(
-            t.c.prefix == 'n',
-            t.c.name == 'alberta',
-            t.c.sttype == 'st'
-        ))
-        result = select.execute()
-        street_name_id = result.fetchone().id
+        c = StreetName.c
+        street_name = StreetName.selectfirst((c.prefix == 'n') &
+                                             (c.name == 'alberta') & 
+                                             (c.sttype == 'st'))
+        street_name_id = street_name.id
 
-        # Get edge matching 633 n alberta st
-        t = r.tables.layer_edges
-        select = t.select(and_(
-            t.c.addr_f <= 633,
-            t.c.addr_t >= 633,
-            t.c.street_name_id == street_name_id
-        ))
-        result = select.execute()
-        network_id = result.fetchone().id
+        # Get edge matching 633 n alberta st        
+        c = Edge.c
+        edge = Edge.selectfirst((c.addr_f <= 633) & (c.addr_t >= 633) &
+                                (c.street_name_id == street_name_id))
+        network_id = edge.id
 
         q = '633-%s' % network_id
         oAddr = self._query(q, region='portlandor')
@@ -134,11 +130,8 @@ class TestPortlandOR(unittest.TestCase):
         self.assertEqual(oAddr.number, 633)
         self.assertEqual(oAddr.network_id, network_id)
 
-        session = create_session(bind_to=db.engine)
-        query = session.query(r.mappers.layer_edges)
-        edge = query.get(network_id)
+        edge = Edge.get(network_id)
         self.assertEqual(str(edge.street_name), 'N Alberta St')
-        session.close()
 
     ### Intersection
 
@@ -291,7 +284,7 @@ class TestPortlandOR(unittest.TestCase):
         self.assertEqual(oAddr.number, 4807)
         self.assertEqual(oAddr.prefix, 'se')
         self.assertEqual(oAddr.name, 'johnson creek')
-        self.assertEqual(oAddr.sttype, '')
+        self.assertEqual(oAddr.sttype, None)
         self.assertEqual(oAddr.city_name, 'oregon city')
         self.assertEqual(oAddr.state_code, 'or')
         self.assertEqual(oAddr.zip_code, 97206)

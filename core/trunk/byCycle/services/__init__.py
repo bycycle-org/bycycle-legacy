@@ -19,7 +19,7 @@ from byCycle.model import db
 class Service(object):
     """Base class for byCycle services."""
 
-    def __init__(self, region=None, session=None):
+    def __init__(self, region=None):
         """Initialize service with ``region`` and database ``session``.
 
         ``region`` string | ``Region`` | None
@@ -29,21 +29,12 @@ class Service(object):
             specific service can try to guess it (most likely via the address
             normalization ``Service``).
 
-        ``session``
-            Database session object. The same session must be used throughout
-            the lifetime of a ``Service``, including any composing
-            ``Service``s. For example, when using the route ``Service``, a new
-            session will be created if one is explicitly given. That session
-            should be passed along to the geocoding ``Service``, which should
-            pass it along to the address normalization ``Service``.
-
         raise ValueError
             ``region`` is not a known region key or alias, a ``Region``
             instance, or None.
 
         """
         self.region = region
-        self.session = session or db.makeSession()
 
     def _get_region(self):
         try:

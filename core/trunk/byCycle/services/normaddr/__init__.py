@@ -55,14 +55,14 @@ class Service(services.Service):
 
     name = 'address'
 
-    def __init__(self, region=None, session=None):
+    def __init__(self, region=None):
         """
 
         ``region`` `Region` | `string`
             `Region` or region key
 
         """
-        services.Service.__init__(self, region=region, session=session)
+        services.Service.__init__(self, region=region)
 
     def query(self, q):
         """Get a normalized address for the input address.
@@ -111,7 +111,7 @@ class Service(services.Service):
                     self.region = lAddr[2]
                 except IndexError:
                     raise InputError(no_region_msg)
-            return address.EdgeAddress(num, network_id, self.region.key)
+            return address.EdgeAddress(num, network_id, self.region.slug)
 
         # Node?
         try:
@@ -124,7 +124,7 @@ class Service(services.Service):
                     self.region = lAddr[1]
                 except IndexError:
                     raise InputError(no_region_msg)
-            return address.NodeAddress(network_id, self.region.key)
+            return address.NodeAddress(network_id, self.region.slug)
 
         # Intersection?
         try:
@@ -348,16 +348,14 @@ class Service(services.Service):
         if sttype in sttypes_ftoa:
             # If a full street type was entered...
             # E.g., street name is 'johnson' and street type is 'creek'
-            t = self.region.tables.street_names
-            c = t.c
-            q = t.count((c.name == num_name) & (c.sttype == sttype))
-            count1 = q.execute().fetchone()[0]
+            c = StreetName.c
+            count1 = StreetName.count((c.name == num_name) &
+                                      (c.sttype == sttype))
             if not count1:
                 # ...and there is no street in the DB with the name & type...
                 # i.e., there's no street named 'johnson' with type 'creek'
                 name_type = '%s %s' % (name, sttype)
-                q = t.count(c.name == name_type)
-                count2 = q.execute().fetchone()[0]
+                count2 = StreetName.count(c.name == name_type)
                 if count2:
                     # ...but there is one with that looks like 'name type'...
                     # i.e., there's a street named 'johnson creek' with type x
@@ -365,7 +363,7 @@ class Service(services.Service):
                     # i.e., use 'johnson creek' as the name
                     name = name_type
                     # ...and assume there was no street type entered.
-                    street_name.sttype = ''
+                    street_name.sttype = None
         else:
             name = num_name
         street_name.name = name

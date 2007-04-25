@@ -16,7 +16,7 @@
 TODO: This should really be dynamically created from info in the database.
 
 """
-from byCycle.model import Region
+from byCycle.model.domain import Region
 
 
 unknown_region = None
@@ -148,9 +148,7 @@ def getRegion(region):
             if region_key == 'all':
                 _region = None
             else:
-                path = 'byCycle.model.%s' % region_key
-                region_module = __import__(path, globals(), locals(), [''])
-                _region = region_module.Region()
+                _region = Region.get_by(slug=region_key)
     else:
         _region = None
     return _region
