@@ -18,7 +18,7 @@ Given a region (i.e., data source), a layer within that region, and a point, fin
 """
 from sqlalchemy.sql import select, func
 from sqlalchemy.exceptions import InvalidRequestError
-from byCycle.model import db
+from byCycle.model import db, domain
 from byCycle.model.domain import Point
 from byCycle import services
 from byCycle.services.exceptions import IdentifyError
@@ -29,17 +29,20 @@ class Service(services.Service):
 
     name = 'identify'
 
-    def __init__(self, region=None, session=None):
-        services.Service.__init__(self, region=region, session=session)
+    def __init__(self, region=None):
+        services.Service.__init__(self, region=region)
 
     def query(self, q, layer=None):
         """Find feature in layer closest to point represented by ``q``.
 
         ``q``
             A Point object or a string representing a point.
+            
+        ``layer``
+            The layer to search
 
         return
-            A domain object representing the feature nearest ``q``.
+            A domain object representing the feature nearest to ``q``.
 
         raise ValueError
             ``q`` can't be parsed as valid point.
@@ -50,21 +53,24 @@ class Service(services.Service):
         except ValueError:
             raise IdentifyError('Cannot identify due to invalid point %s.' % q)
         reg = self.region
-        SRID = reg.SRID
+        SRID = reg.srid
         units = reg.units
         earth_circumference = reg.earth_circumference
-        layer = 'layer_%s' % layer
-        table = getattr(reg.tables, layer)
-        query = self.session.query(getattr(reg.mappers, layer))
+        layer = '%s_%s' % (reg.slug, layer)
+        for attr in domain.__dict__:
+            if attr.lower() == layer:
+                Entity = domain.__dict__[attr]
+                break
+        c = Entity.c
         wkt = str(point)
         # Function to convert the input point to native geometry
         transform = func.transform(func.GeomFromText(wkt, 4326), SRID)
         # Function to get the distance between input point and table points
-        distance = func.distance(transform, table.c.geom)
+        distance = func.distance(transform, c.geom)
         # This is what we're SELECTing--all columns in the layer plus the
         # distance from the input point to points in the nodes table (along
         # with the node ID and geom).
-        cols = table.c + [distance.label('distance')]
+        cols = c + [distance.label('distance')]
         # Limit the search to within `expand_dist` feet of the input point.
         # Keep trying until we find a match or until `expand_dist` is
         # larger than half the circumference of the earth.
@@ -72,16 +78,16 @@ class Service(services.Service):
             expand_dist = 250
         elif units == 'meters':
             expand_dist = 85
-        overlaps = table.c.geom.op('&&')  # geometry A overlaps geom B operator
+        overlaps = c.geom.op('&&')  # geometry A overlaps geom B operator
         expand = func.expand  # geometry bounds expanding function
         while expand_dist < earth_circumference:
             where = overlaps(expand(transform, expand_dist))
             sel = select(cols, where, order_by=['distance'], limit=1)
             try:
-                object = query.selectone(sel)
+                object = Entity.selectone(sel)
             except InvalidRequestError:
                 expand_dist <<= 1
             else:
                 return object
         raise IdentifyError('Could not identify feature nearest to "%s" in '
-                            'region "%s", layer "%s"' % (q, region, layer))
+                            'region "%s", layer "%s"' % (q, reg, layer))

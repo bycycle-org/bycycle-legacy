@@ -33,10 +33,13 @@ the Address Normalization service (normaddr):
 from sqlalchemy import orm
 from sqlalchemy.sql import select, func, and_, or_
 from sqlalchemy.exceptions import InvalidRequestError
+
 from byCycle.model import db
 from byCycle.model.address import *
 from byCycle.model.geocode import *
-from byCycle.model.domain import Point
+from byCycle.model.domain import StreetName, City, State, Place
+from byCycle.model.domain import Edge, Node, Point
+
 from byCycle import services
 from byCycle.services import normaddr
 from byCycle.services import identify
@@ -66,8 +69,8 @@ class Service(services.Service):
 
     name = 'geocode'
 
-    def __init__(self, region=None, session=None):
-        services.Service.__init__(self, region=region, session=session)
+    def __init__(self, region=None):
+        services.Service.__init__(self, region=region)
 
     def query(self, q):
         """Find and return `Geocodes` in ``region`` matching the address ``q``.
@@ -80,18 +83,20 @@ class Service(services.Service):
         ``q`` `string`
             An address to be normalized & geocoded in the given ``region``.
 
-        return `Geocode` -- A `Geocode` object corresponding to the input
-        address, ``q``.
+        return `Geocode`
+            A `Geocode` object corresponding to the input address, ``q``.
 
-        raise `ValueError` -- Type of input address can't be determined
+        raise `ValueError`
+            Type of input address can't be determined
 
-        raise `InputError`, `ValueError` -- Some are raised in the normaddr
-        query. Look there for details.
+        raise `InputError`, `ValueError`
+            Some are raised in the normaddr query. Look there for details.
 
-        raise `AddressNotFoundError` -- The address can't be geocoded
+        raise `AddressNotFoundError`
+            The address can't be geocoded
 
-        raise `MultipleMatchingAddressesError` -- Multiple address found that
-        match the input address, ``q``
+        raise `MultipleMatchingAddressesError`
+            Multiple address found that match the input address, ``q``
 
         """
         # First, normalize the address, getting back an `Address` object.
@@ -147,31 +152,32 @@ class Service(services.Service):
     def getPostalGeocodes(self, oAddr):
         """Geocode postal address represented by ``oAddr``.
 
-        ``oAddr`` -- A `PostalAddress` (e.g., 123 Main St, Portland) OR an
-        `EdgeAddress`. An edge "address" contains just the ID of some edge.
+        ``oAddr``
+            A `PostalAddress` (e.g., 123 Main St, Portland) OR an
+            `EdgeAddress`. An edge "address" contains just street number and 
+            ID of some edge.
 
-        return `list` -- A list of `PostalGeocode`s.
+        return `list`
+            A list of `PostalGeocode`s.
 
-        raise `AddressNotFoundError` -- Address doesn't match any edge in the
-        database.
+        raise ``AddressNotFoundError``
+            Address doesn't match any edge in the database.
 
         """
         geocodes = []
         num = oAddr.number
-        tables = self.region.tables
-        layer_edges = tables.layer_edges
-        _c = layer_edges.c
-        query = self.session.query(self.region.mappers.layer_edges)
+        table = Edge.table
+        c = Edge.c
 
         try:
             # Try to look up edge by network ID first
             network_id = oAddr.network_id
         except AttributeError:
             # No network ID, so look up addr by other attrs (street name & place)
-            select_ = layer_edges.select(and_(
-                query.join_to('street_name'),
-                func.least(_c.addr_f, _c.addr_t) <= num,
-                num <= func.greatest(_c.addr_f, _c.addr_t)
+            select_ = table.select(and_(
+                Edge.join_to('street_name'),
+                func.least(c.addr_f, c.addr_t) <= num,
+                num <= func.greatest(c.addr_f, c.addr_t)
             ))
             self._appendWhereClausesToSelect(
                 select_,
@@ -179,12 +185,12 @@ class Service(services.Service):
                 self._getPlaceWhereClause(oAddr.place)
             )
             # Get rows and map to Edge objects
-            edges = query.select(select_)
+            edges = Edge.select(select_)
         else:
-            edges = query.select_by(
-                _c.id == network_id,
-                func.least(_c.addr_f, _c.addr_t) <= num,
-                num <= func.greatest(_c.addr_f, _c.addr_t)
+            edges = Edge.select_by(
+                c.id == network_id,
+                func.least(c.addr_f, c.addr_t) <= num,
+                num <= func.greatest(c.addr_f, c.addr_t)
             )
 
         if not edges:
@@ -208,13 +214,12 @@ class Service(services.Service):
         database.
 
         """
-        layer_edges = self.region.tables.layer_edges
-        street_names = self.region.tables.street_names
+        layer_edges = Edge.table
 
         def getNodeIDs(street_name, place):
             node_ids = {}
             # Get street name IDs
-            select_ = select([street_names.c.id])
+            select_ = select([StreetName.c.id])
             self._appendWhereClausesToSelect(
                 select_,
                 self._getStreetNameWhereClause(street_name),
@@ -223,9 +228,10 @@ class Service(services.Service):
             if result.rowcount:
                 street_name_ids = [row.id for row in result]
                 # Get node IDs
+                c = Edge.c
                 select_ = select(
-                    [layer_edges.c.node_f_id, layer_edges.c.node_t_id],
-                    layer_edges.c.street_name_id.in_(*street_name_ids)
+                    [c.node_f_id, c.node_t_id],
+                    c.street_name_id.in_(*street_name_ids)
                 )
                 self._appendWhereClausesToSelect(
                     select_,
@@ -241,17 +247,15 @@ class Service(services.Service):
         ids_A = getNodeIDs(oAddr.street_name1, oAddr.place1)
         if ids_A:
             ids_B = getNodeIDs(oAddr.street_name2, oAddr.place2)
+        else:
+            ids_B = []
 
-        try:
-            node_ids = [id_ for id_ in ids_A if (id_ in ids_B)]
-        except (NameError, UnboundLocalError):
+        node_ids = [id_ for id_ in ids_A if (id_ in ids_B)]
+        if not node_ids:
             raise AddressNotFoundError(address=oAddr, region=self.region)
 
         # Get node rows matching common node IDs and map to `Node` objects
-        layer_nodes = self.region.tables.layer_nodes
-        query = self.session.query(self.region.mappers.layer_nodes)
-        select_nodes = layer_nodes.select(layer_nodes.c.id.in_(*node_ids))
-        nodes = query.select(select_nodes)
+        nodes = Node.select(Node.c.id.in_(*node_ids))
 
         if not nodes:
             raise AddressNotFoundError(address=oAddr, region=self.region)
@@ -268,8 +272,8 @@ class Service(services.Service):
                 street_name1=edge1.street_name, place1=edge1.place_l,
                 street_name2=edge2.street_name, place2=edge2.place_l
             )
-            _g = IntersectionGeocode(self.region, addr, node)
-            geocodes.append(_g)
+            g = IntersectionGeocode(self.region, addr, node)
+            geocodes.append(g)
         return geocodes
 
     def getPointGeocodes(self, oAddr):
@@ -295,16 +299,13 @@ class Service(services.Service):
             # No network ID, so look up `Node` by distance
             id_service = identify.Service(region=self.region)
             try:
-                node = id_service.query(oAddr.point, layer='nodes')
+                node = id_service.query(oAddr.point, layer='node')
             except IdentifyError:
                 pass
         else:
-            reg = self.region
-            _c = reg.tables.layer_nodes.c
-            sel = select(_c, _c.id == node_id)
-            query = self.session.query(reg.mappers.layer_nodes)
             try:
-                node = query.selectone(sel)
+                node = Node.selectone(Node.c.id == node_id)
+                node = getattr(node, '%s_node' % self.region.slug)
             except InvalidRequestError:
                 pass
 
@@ -313,7 +314,7 @@ class Service(services.Service):
         # pick streets that have different names from each other when creating
         # `IntersectionAddresses`s
         try:
-            edges = node.edges
+            edges = node.base.edges
         except UnboundLocalError:
             raise AddressNotFoundError(region=self.region, address=oAddr)
         if len(edges) > 1:
@@ -341,30 +342,24 @@ class Service(services.Service):
 
     def _getStreetNameWhereClause(self, street_name):
         """Get a WHERE clause for ``street_name``."""
-        street_names = self.region.tables.street_names
         clause = []
-        for attr in ('prefix', 'name', 'sttype', 'suffix'):
-            val = getattr(street_name, attr)
+        for name in ('prefix', 'name', 'sttype', 'suffix'):
+            val = getattr(street_name, name)
             if val:
-                clause.append(street_names.c[attr] == val)
+                clause.append(StreetName.c[name] == val)
         if clause:
             return and_(*clause)
         return None
 
     def _getPlaceWhereClause(self, place):
         """Get a WHERE clause for ``place``."""
-        tables = self.region.tables
         clause = []
         if place.city_name:
-            clause.append(tables.cities.c.city == place.city_name)
+            clause.append(City.c.city == place.city_name)
         if place.state_code:
-            clause.append(tables.states.c.id == place.state_code)
+            clause.append(State.c.code == place.state_code)
         if place.zip_code:
-            _c = tables.layer_edges.c
-            clause.append(or_(
-                _c.zip_code_l == place.zip_code,
-                _c.zip_code_r == place.zip_code
-            ))
+            clause.append(Place.c.zip_code == place.zip_code)
         if clause:
             return and_(*clause)
         return None

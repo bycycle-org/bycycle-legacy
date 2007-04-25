@@ -1,4 +1,4 @@
-################################################################################
+###############################################################################
 # $Id$
 # Created 2005-??-??.
 #
@@ -10,13 +10,12 @@
 # For terms of use and warranty details, please see the LICENSE file included
 # in the top level of this distribution. This software is provided AS IS with
 # NO WARRANTY OF ANY KIND.
-################################################################################
+###############################################################################
 """Geocode classes."""
 from cartography.proj import SpatialReference
 from urllib import quote_plus
 
 
-###########################################################################
 class Geocode(object):
     """Geocode base class.
 
@@ -29,7 +28,6 @@ class Geocode(object):
 
     """
 
-    #----------------------------------------------------------------------
     def __init__(self, region, address, network_id, xy):
         """
 
@@ -41,18 +39,19 @@ class Geocode(object):
         self.region = region
         self.address = address
         self.network_id = network_id
-        xy.srs = SpatialReference(epsg=region.SRID)
         self.xy = xy
-        xy_ll = xy.copy()
-        ll_srs = SpatialReference(epsg=4326)
-        xy_ll.transform(src_proj=str(self.xy.srs), dst_proj=str(ll_srs))
+        if xy is not None:
+            xy.srs = SpatialReference(epsg=region.srid)
+            xy_ll = xy.copy()
+            ll_srs = SpatialReference(epsg=4326)
+            xy_ll.transform(src_proj=str(self.xy.srs), dst_proj=str(ll_srs))
+        else:
+            xy_ll = None
         self.xy_ll = xy_ll
 
-    #----------------------------------------------------------------------
     def __str__(self):
         return '\n'.join((str(self.address), str(self.xy)))
 
-    #----------------------------------------------------------------------
     def urlStr(self):
         # TODO: should do s_addr = self.address.urlStr()
         s_addr = str(self.address).replace('\n', ', ')
@@ -63,7 +62,6 @@ class Geocode(object):
         s = ';'.join((s_addr, id_addr))
         return quote_plus(s)
 
-    #----------------------------------------------------------------------
     def to_builtin(self):
         return {
             'type': self.__class__.__name__,
@@ -73,13 +71,11 @@ class Geocode(object):
             'point': self.xy_ll,
             'network_id': self.network_id
         }
-        
-    #----------------------------------------------------------------------
+
     def __repr__(self):
         return repr(self.to_builtin())
 
 
-###########################################################################
 class PostalGeocode(Geocode):
     """Represents a geocode that is associated with a postal address.
 
@@ -93,7 +89,6 @@ class PostalGeocode(Geocode):
 
     """
 
-    #----------------------------------------------------------------------
     def __init__(self, region, address, edge):
         """
 
@@ -106,7 +101,6 @@ class PostalGeocode(Geocode):
         self.location = location
         self.edge = edge
 
-    #----------------------------------------------------------------------
     def to_builtin(self):
         return {
             'type': self.__class__.__name__,
@@ -117,12 +111,10 @@ class PostalGeocode(Geocode):
             'point': {'x': self.xy_ll.x, 'y': self.xy_ll.y},
             'network_id': self.network_id
         }
-        
-    #----------------------------------------------------------------------
+
     def __repr__(self):
         return repr(self.to_builtin())
 
-    #----------------------------------------------------------------------
     def __eq__(self, other):
         """Compare two `PostalGeocode`s for equality """
         return (
@@ -131,7 +123,6 @@ class PostalGeocode(Geocode):
         )
 
 
-###########################################################################
 class IntersectionGeocode(Geocode):
     """Represents a geocode that is associated with an intersection.
 
@@ -143,7 +134,6 @@ class IntersectionGeocode(Geocode):
 
     """
 
-    #----------------------------------------------------------------------
     def __init__(self, region, address, node):
         """
 
@@ -155,8 +145,9 @@ class IntersectionGeocode(Geocode):
         Geocode.__init__(self, region, address, node.id, xy)
         self.node = node
 
-    #----------------------------------------------------------------------
     def to_builtin(self):
+        x = (self.xy_ll.x if self.xy_ll is not None else None)
+        y = (self.xy_ll.y if self.xy_ll is not None else None)
         return {
             'type': self.__class__.__name__,
             'street_name1': self.address.street_name1.to_builtin(),
@@ -164,15 +155,13 @@ class IntersectionGeocode(Geocode):
             'place1': self.address.place1.to_builtin(),
             'place2': self.address.place2.to_builtin(),
             'address': str(self.address),
-            'point': {'x': self.xy_ll.x, 'y': self.xy_ll.y},
+            'point': {'x': x, 'y': y},
             'network_id': self.network_id
         }
-        
-    #----------------------------------------------------------------------
+
     def __repr__(self):
         return repr(self.to_builtin())
 
-    #----------------------------------------------------------------------
     def __eq__(self, other):
         """Compare two `IntersectionGeocode`s for equality """
         return (self.network_id == other.network_id)
