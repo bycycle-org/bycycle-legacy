@@ -30,7 +30,7 @@ byCycle.widget.FixedPane.prototype = {
     if (!(this.collapsible || this.closeable)) return;
 
     // Create and append the control bar
-    this.control_bar = document.createElement('div');
+    this.control_bar = $(document.createElement('div'));
     this.control_bar.addClassName('control-bar');
     this.title_bar.appendChild(this.control_bar);
 
@@ -47,7 +47,7 @@ byCycle.widget.FixedPane.prototype = {
   },
 
   _add_button: function (href, title, text, func) {
-    var a = document.createElement('a');
+    var a = $(document.createElement('a'));
     a.addClassName('button');
     a.href = href;
     a.title = title;
