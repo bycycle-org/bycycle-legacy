@@ -79,13 +79,14 @@ class Geocode(object):
 class PostalGeocode(Geocode):
     """Represents a geocode that is associated with a postal address.
 
-    Attributes
-    ----------
-
-    ``address`` `PostalAddress`
-    ``edge`` `Edge`
-    ``xy`` `Point` -- Geographic location
-    ``location`` `float` -- Location in [0, 1] of point in ``edge``
+    ``address``
+        `PostalAddress`
+    ``edge``
+        `Edge`
+    ``xy`` `Point`
+        Geographic location
+    ``location``
+        Location in [0, 1] of point in ``edge``
 
     """
 

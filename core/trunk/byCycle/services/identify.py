@@ -32,7 +32,7 @@ class Service(services.Service):
     def __init__(self, region=None):
         services.Service.__init__(self, region=region)
 
-    def query(self, q, layer=None):
+    def query(self, q, layer=None, input_units=4326):
         """Find feature in layer closest to point represented by ``q``.
 
         ``q``
@@ -51,20 +51,19 @@ class Service(services.Service):
         try:
             point = Point(q)
         except ValueError:
-            raise IdentifyError('Cannot identify due to invalid point %s.' % q)
+            raise IdentifyError('Cannot identify because POINT is not valid: '
+                                '%s.' % q)
         reg = self.region
         SRID = reg.srid
         units = reg.units
         earth_circumference = reg.earth_circumference
-        layer = '%s_%s' % (reg.slug, layer)
-        for attr in domain.__dict__:
-            if attr.lower() == layer:
-                Entity = domain.__dict__[attr]
-                break
+        path = 'byCycle.model.%s' % reg.slug
+        region_module = __import__(path, locals(), globals(), [layer])
+        Entity = getattr(region_module, layer)
         c = Entity.c
         wkt = str(point)
         # Function to convert the input point to native geometry
-        transform = func.transform(func.GeomFromText(wkt, 4326), SRID)
+        transform = func.transform(func.GeomFromText(wkt, input_units), SRID)
         # Function to get the distance between input point and table points
         distance = func.distance(transform, c.geom)
         # This is what we're SELECTing--all columns in the layer plus the
@@ -74,6 +73,8 @@ class Service(services.Service):
         # Limit the search to within `expand_dist` feet of the input point.
         # Keep trying until we find a match or until `expand_dist` is
         # larger than half the circumference of the earth.
+        if units == 'dd' or SRID == 4326:
+            expand_dist = .001  # ~365.24ft
         if units == 'feet':
             expand_dist = 250
         elif units == 'meters':
@@ -86,7 +87,7 @@ class Service(services.Service):
             try:
                 object = Entity.selectone(sel)
             except InvalidRequestError:
-                expand_dist <<= 1
+                expand_dist *= 2
             else:
                 return object
         raise IdentifyError('Could not identify feature nearest to "%s" in '

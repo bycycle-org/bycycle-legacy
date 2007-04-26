@@ -33,8 +33,6 @@ from byCycle import model_path
 from byCycle.util import joinAttrs
 from byCycle.model.data.sqltypes import POINT, LINESTRING
 
-from byCycle.model.portlandor import data as portlandor_data
-
 
 options_defaults['shortnames'] = True
 
@@ -78,6 +76,8 @@ class Region(Entity):
     has_field('srid', Integer)
     has_field('units', String)
     has_field('earth_circumference', Integer)
+    has_field('block_length', Integer)
+    has_field('jog_length', Integer)
     has_many('edges', of_kind='Edge')
     has_many('nodes', of_kind='Node')
     has_many('edge_attrs', of_kind='EdgeAttr', order_by='id')
@@ -166,15 +166,12 @@ class Region(Entity):
         num_nodes = Node.count_by(region=self)
 
         timer.start()
-        edge_id_name = '%s_edge_id' % self.slug
         print 'Fetching edge attributes...'
         c = Edge.c
-        cols = [c.id, c.node_f_id, c.node_t_id, c.one_way, c.street_name_id,
-                c[edge_id_name]]
-        select_ = select(cols)
-        select_.append_whereclause((c.region_id == self.id))
+        cols = [c.id, c.node_f_id, c.node_t_id, c.one_way, c.street_name_id]
+        select_ = select(cols, (c.region_id == self.id))
         rows = select_.execute()
-        bases = dict([(r[edge_id_name], r) for r in rows])
+        bases = dict([(r.id, r) for r in rows])
         took()
 
         timer.start()
@@ -196,7 +193,8 @@ class Region(Entity):
         for row in region_rows:
             adjustments = self._adjustEdgeRowForMatrix(row)
             ix = row.id
-            base = bases[ix]
+            base_id = row.base_id
+            base = bases[base_id]
             node_f_id, node_t_id = base.node_f_id, base.node_t_id
             one_way = base.one_way
             # 0: no travel in either direction
@@ -233,20 +231,18 @@ class Region(Entity):
 
     @property
     def edge_entity(self):
-        return self._get_entity('edge')
+        return self._get_entity('Edge')
 
     @property
     def node_entity(self):
-        return self._get_entity('node')
+        return self._get_entity('Node')
 
     def _get_entity(self, name):
         entity = getattr(self, '_%s_entity' % name, None)
         if entity is None:
-            entity_name = '%s_%s' % (self.slug, name)
-            for name, obj in globals().items():
-                if hasattr(obj, '__class__') and name.lower() == entity_name:
-                    entity = obj
-                    break
+            path = 'byCycle.model.%s' % self.slug
+            region_module = __import__(path, locals(), globals(), [name])
+            entity = getattr(region_module, name)
             setattr(self, '_%s_entity' % name, entity)
         return entity
 
@@ -293,36 +289,14 @@ class Route(Entity):
 
 
 class Node(Entity):
+    has_field('geom', POINT(4326))
     belongs_to('region', of_kind='Region', **cascade_args)
-    belongs_to('portlandor_node', of_kind='PortlandOR_Node', **cascade_args)
     has_many('edges_f', of_kind='Edge', inverse='node_f')
     has_many('edges_t', of_kind='Edge', inverse='node_t')
 
     @property
-    def sub_node(self):
-        n = getattr(self, '_sub_node', None)
-        if n is None:
-            for name in self.__dict__:
-                if name.endswith('_node_id'):
-                    val = getattr(self, name)
-                    if val is not None:
-                        n = getattr(self, name.rstrip('_id'))
-                        self._sub_node = n
-                        break
-        return n
-
-    @property
     def edges(self):
         return list(self.edges_f) + list(self.edges_t)
-    
-    @property
-    def geom(self):
-        return self.sub_node.geom
-
-
-class PortlandOR_Node(Entity):
-    has_field('geom', POINT(portlandor_data.SRID))
-    has_one('base', of_kind='Node')
 
 
 class Edge(Entity):
@@ -330,27 +304,14 @@ class Edge(Entity):
     has_field('addr_t', Integer)
     has_field('even_side', CHAR(1)),
     has_field('one_way', Integer)
+    has_field('geom', LINESTRING(4326))
     belongs_to('node_f', of_kind='Node', **cascade_args)
     belongs_to('node_t', of_kind='Node', **cascade_args)
     belongs_to('street_name', of_kind='StreetName', **cascade_args)
     belongs_to('place_l', of_kind='Place', **cascade_args)
     belongs_to('place_r', of_kind='Place', **cascade_args)
     belongs_to('region', of_kind='Region', **cascade_args)
-    belongs_to('portlandor_edge', of_kind='PortlandOR_Edge', **cascade_args)
-
-    @property
-    def sub_edge(self):
-        e = getattr(self, '_sub_edge', None)
-        if e is None:
-            for name in self.__dict__:
-                if name.endswith('_edge_id'):
-                    val = getattr(self, name)
-                    if val is not None:
-                        e = getattr(self, name.rstrip('_id'))
-                        self._sub_edge = e
-                        break
-        return e
-
+    
     def getSideNumberIsOn(self, num):
         """Determine which side of the edge, "l" or "r", ``num`` is on."""
         # Determine odd side of edge, l or r, for convenience
@@ -368,39 +329,16 @@ class Edge(Entity):
         else:
             return self.place_r
 
-    def _get_place_l(self):
-        """Get `Place` on left side."""
-        try:
-            self.__place_l
-        except AttributeError:
-            self.__place_l = Place(
-                city=self.city_l,
-                state=self.state_l,
-                zip_code=self.zip_code_l
-            )
-        return self.__place_l
-    place_l = property(_get_place_l)
-
-    def _get_place_r(self):
-        """Get `Place` on right side."""
-        try:
-            self.__place_r
-        except AttributeError:
-            self.__place_r = Place(
-                city=self.city_r,
-                state=self.state_r,
-                zip_code=self.zip_code_r
-            )
-        return self.__place_r
-    place_r = property(_get_place_r)
-
     def __len__(self):
         """Get the length of this `Edge`, using cached value if available."""
         try:
             self._length
         except AttributeError:
+            print self
             self._length = self.geom.length()
         return self._length
+    
+    length = __len__
 
     def getPointAndLocationOfNumber(self, num):
         """
@@ -429,7 +367,7 @@ class Edge(Entity):
                 dist_from_min_addr = num - min_addr
                 location = float(dist_from_min_addr) / edge_len
 
-        c = self.sub_edge.c
+        c = self.c
 
         # Function to get interpolated point
         f = func.line_interpolate_point(c.geom, location)
@@ -437,7 +375,7 @@ class Edge(Entity):
         f = func.asbinary(f)
 
         # Query DB and get WKB POINT
-        select_ = select([f.label('wkb_point')], c.id == self.sub_edge.id)
+        select_ = select([f.label('wkb_point')], c.id == self.id)
         result = select_.execute()
         wkb_point = result.fetchone().wkb_point
 
@@ -519,44 +457,20 @@ class Edge(Entity):
                       street_name=self.street_name,
                       geom=edge_t_geom)
 
-        shared_node = Node(node_id, self.geom.pointN(N))
-        edge_f.node_f = Node(self.node_f_id, self.geom.startPoint())
+        shared_node = Node(id=node_id, geom=self.geom.pointN(N))
+        edge_f.node_f = Node(id=self.node_f_id, geom=self.geom.startPoint())
         edge_f.node_t = shared_node
         edge_t.node_f = shared_node
-        edge_t.node_t = Node(self.node_t_id, self.geom.endPoint())
+        edge_t.node_t = Node(id=self.node_t_id, geom=self.geom.endPoint())
 
         return edge_f, edge_t
 
     def __str__(self):
         stuff = [
-            joinAttrs((
-                'Address Range:',
-                (self.addr_f or '[None]'),
-                'to',
-                (self.addr_t or '[None]')
-                )),
+            joinAttrs(('Address Range:', self.addr_f or '[None]',
+                       'to', self.addr_t or '[None]')),
             (self.street_name or '[No Street Name]'),
-            joinAttrs(
-                ('Cities: ',
-                 (self.city_l or '[No Left Side City]'),
-                 ', ',
-                 (self.city_r or '[No Right Side City]')),
-                join_string=''
-            ),
-            joinAttrs(
-                ('States: ',
-                 (self.state_l or '[No Left Side State]'),
-                 ', ',
-                 (self.state_r or '[No Right Side State]')),
-                join_string=''
-            ),
-            joinAttrs(
-                ('Zip Codes: ',
-                 (self.zip_code_l or '[No Left Side Zip Code]'),
-                 ', ',
-                 (self.zip_code_r or '[No Right Side Zip Code]')),
-                join_string=''
-            ),
+            self.place_l, self.place_r,
         ]
         return joinAttrs(stuff, join_string='\n')
 
@@ -572,35 +486,6 @@ class Edge(Entity):
             #points.append(linestring.pointN(i))
         #simple['geom'] = [{'x': p.x, 'y': p.y} for p in points]
         return simple
-
-
-class PortlandOR_Edge(Entity):
-    has_field('geom', LINESTRING(2913))
-    has_field('localid', Numeric(11, 2) )
-    has_field('code', Integer)
-    has_field('bikemode', CHAR(1))  # enum('','p','t','b','l','m','h','c','x')
-    has_field('up_frac', Float)
-    has_field('abs_slope', Float)
-    has_field('cpd', Integer)
-    has_field('sscode', Integer)
-    has_one('base', of_kind='Edge', inverse='portlandor_edge')
-
-    @classmethod
-    def _getRowsForMatrix(cls):
-        code = cls.c.code
-        region_rows = cls.table.select((
-            ((code >= 1200) & (code < 1600)) |
-            ((code >= 3200) & (code < 3300))
-        )).execute()
-        return region_rows
-
-    @classmethod
-    def _adjustRowForMatrix(cls, row):
-        adjustments = {
-            'abs_slope': encodeFloat(row.abs_slope),
-            'up_frac': encodeFloat(row.up_frac),
-        }
-        return adjustments
 
 
 class StreetName(Entity):
@@ -722,7 +607,7 @@ class Place(Entity):
     belongs_to('region', of_kind='Region', **cascade_args)
 
     def _get_city_name(self):
-        return (None if self.city is None else self.city.city)
+        return (self.city.city if self.city is not None else None)
     def _set_city_name(self, name):
         if self.city is None:
             self.city = City()
@@ -730,7 +615,7 @@ class Place(Entity):
     city_name = property(_get_city_name, _set_city_name)
 
     def _get_state_code(self):
-        return (None if self.state is None else self.state.code)
+        return (self.state.code if self.state is not None else None)
     def _set_state_code(self, code):
         if self.state is None:
             self.state = State()
@@ -738,7 +623,7 @@ class Place(Entity):
     state_code = property(_get_state_code, _set_state_code)
 
     def _get_state_name(self):
-        return (None if self.state is None else self.state.state)
+        return (self.state.state if self.state is not None else None)
     def _set_state_name(self, name):
         if self.state is None:
             self.state = State()

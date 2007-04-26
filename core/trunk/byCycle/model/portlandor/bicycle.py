@@ -1,4 +1,4 @@
-################################################################################# $Id$
+################################################################################ $Id$
 # Created 2005-11-07.
 #
 # Portland, OR Bicycle Travel Mode.
@@ -9,9 +9,9 @@
 # For terms of use and warranty details, please see the LICENSE file included
 # in the top level of this distribution. This software is provided AS IS with
 # NO WARRANTY OF ANY KIND.
-################################################################################
+###############################################################################
 """Bicycle travel mode for Portland, OR, region."""
-from byCycle.model import tmode
+from byCycle.model import tmode, domain
 
 
 # Preferences
@@ -32,7 +32,7 @@ class TravelMode(tmode.TravelMode):
         tmode.TravelMode.__init__(self)
 
         global float_decode
-        float_decode = region.float_decode
+        float_decode = domain.float_decode
 
         global pct_slopes, mph_up, mph_down
         pct_slopes = [p*.01 for p in
@@ -50,7 +50,7 @@ class TravelMode(tmode.TravelMode):
         abs_slp_index = edge_attrs_index['abs_slope']
         up_frac_index = edge_attrs_index['up_frac']
         node_f_id_index = edge_attrs_index['node_f_id']        
-        street_name_id_index = edge_attrs_index['street_name_id']
+        street_name_id_index = edge_attrs_index['streetname_id']
 
         pref = (not bool(pref)) or eval(pref.upper())
         global mu, mm, lt, mt, ht, ca, cca, ccca

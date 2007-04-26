@@ -139,7 +139,7 @@ def addColumn(table_name, column_name, column_type):
         execute('ALTER TABLE %s ADD COLUMN %s %s' %
                    (table_name, column_name, column_type))
     except psycopg2.ProgrammingError, e:
-        if 'already exists' not in e:
+        if 'already exists' not in str(e):
             raise e
     else:
         commit()
@@ -148,7 +148,7 @@ def dropColumn(table_name, column_name):
     try:
         execute('ALTER TABLE %s DROP COLUMN %s' % (table_name, column_name))
     except psycopg2.ProgrammingError, e:
-        if 'already exists' not in e:
+        if 'already exists' not in str(e):
             raise e
     else:
         commit()

@@ -4,3 +4,8 @@ SVN
     * Made changes necessary to get all but one geocode service tests to pass
 * 2007-04-25
     * Made changes necessary to get ALL geocode service tests to pass
+* 2007-04-26
+    * Made changes necessary to get ALL tests to pass, including for routes
+    * Changed Node and Edge inheritance so that subclasses classes point at
+      base classes (with a Foreign Key) instead of the other way around.
+      Base classes now have no knowledge of subclasses.
