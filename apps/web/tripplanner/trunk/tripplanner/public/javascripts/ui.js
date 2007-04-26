@@ -43,7 +43,7 @@ byCycle.UI = (function () {
     onLoad: function() {
       self = byCycle.UI;
       self._assignUIElements();
-	  self._createWidgets();
+      self._createWidgets();
       // If map is "on" and specified map type is loadable, use that map type.
       // Otherwise, use the default map type (base).
       if (!(self.map_state && self.map_type.isLoadable())) {
@@ -63,8 +63,9 @@ byCycle.UI = (function () {
       self.spinner = $('spinner');
       self.bookmark_link = $('bookmark');
 
-	  // Display panes
-	  self.display_panes = $('col-a').getElementsByClassName('display-pane');
+      // Display panes
+      self.display_panes = $('col-a').getElementsByClassName('display-pane');
+
       // Messages
       self.message_pane = $('message_pane');
       self.info_pane = $('info_pane');
@@ -77,19 +78,19 @@ byCycle.UI = (function () {
       self.region_el = $('regions');
       self.map_pane = $('map_pane');
 	  
-	  self.footer = $('footer');
-	},
+      self.footer = $('footer');
+    },
 	
-	_createWidgets: function () {
-	  // Message fixed pane
-	  var w = byCycle.widget.FixedPane;
-	  self.message_fixed_pane = new w(self.message_pane, {collapsible: false});
-	  self.message_fixed_pane.register_listeners('close', self.showResultPane);
+    _createWidgets: function () {
+      // Message fixed pane
+      var w = byCycle.widget.FixedPane;
+      self.message_fixed_pane = new w(self.message_pane, {collapsible: false});
+      self.message_fixed_pane.register_listeners('close', self.showResultPane);
 	  
-	  // Ads fixed pane
-	  var ad_pane = new w('ads', {collapsible: false, destroy_on_close: true});
-	  ad_pane.register_listeners('close', self.onHideAds);	
-	},
+      // Ads fixed pane
+      var ad_pane = new w('ads', {collapsible: false, destroy_on_close: true});
+      ad_pane.register_listeners('close', self.onHideAds);	
+    },
 
     /* Events ****************************************************************/
 
