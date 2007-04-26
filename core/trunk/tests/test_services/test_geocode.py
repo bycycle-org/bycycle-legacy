@@ -14,7 +14,7 @@
 import unittest
 from byCycle.util import meter
 from byCycle.services.geocode import *
-from byCycle.model.domain import Edge, StreetName
+from byCycle.model.domain import Edge, Node, StreetName
 from byCycle.model.geocode import Geocode, PostalGeocode, IntersectionGeocode
 
 
@@ -100,7 +100,8 @@ class TestPortlandOR(unittest.TestCase):
     ### Node
 
     def test_NodeAddress(self):
-        q = '84700'
+        n = Node.selectfirst()
+        q = str(n.id)
         geocode = self._query(q)
 
     def test_NodeAddress_BadID(self):

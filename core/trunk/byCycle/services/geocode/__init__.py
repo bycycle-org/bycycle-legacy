@@ -1,4 +1,4 @@
-################################################################################
+###############################################################################
 # $Id$
 # Created ???.
 #
@@ -10,9 +10,8 @@
 # For terms of use and warranty details, please see the LICENSE file included
 # in the top level of this distribution. This software is provided AS IS with
 # NO WARRANTY OF ANY KIND.
-################################################################################
-"""
-Provides geocoding via the `query` method of the `Service` class.
+###############################################################################
+"""Provides geocoding via the `query` method of the `Service` class.
 
 Geocoding is the process of determining a location on earth associated with a
 an address (or other feature). This service also determines which network
@@ -277,13 +276,12 @@ class Service(services.Service):
             # No network ID, so look up `Node` by distance
             id_service = identify.Service(region=self.region)
             try:
-                node = id_service.query(oAddr.point, layer='node')
+                node = id_service.query(oAddr.point, layer='Node')
             except IdentifyError:
                 pass
         else:
             try:
                 node = Node.selectone(Node.c.id == node_id)
-                node = getattr(node, '%s_node' % self.region.slug)
             except InvalidRequestError:
                 pass
 
@@ -292,7 +290,7 @@ class Service(services.Service):
         # pick streets that have different names from each other when creating
         # `IntersectionAddresses`s
         try:
-            edges = node.base.edges
+            edges = node.edges
         except UnboundLocalError:
             raise AddressNotFoundError(region=self.region, address=oAddr)
         if len(edges) > 1:
@@ -344,11 +342,11 @@ class Service(services.Service):
         clause = []
         if place.city_name:
             r = select([City.c.id], (City.c.city == place.city_name)).execute()
-            city_id = r.fetchone().id if r else None
+            city_id = r.fetchone().id if r.rowcount else None
             clause.append(Place.c.city_id == city_id)
         if place.state_code:
             r = select([State.c.id], (State.c.code == place.state_code)).execute()
-            state_id = r.fetchone().id if r else None
+            state_id = r.fetchone().id if r.rowcount else None
             clause.append(Place.c.state_id == state_id)
         if place.zip_code:
             clause.append(Place.c.zip_code == place.zip_code)

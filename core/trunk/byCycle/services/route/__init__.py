@@ -42,16 +42,20 @@ Here's what the route service does:
   and other information about the route found.
 
 """
+import dijkstar
+
 from cartography.geometry import LineString
+
 from byCycle.util import gis
-from byCycle.services.exceptions import ByCycleError, InputError, NotFoundError
+
 from byCycle.model.address import *
 from byCycle.model.geocode import *
 from byCycle.model.route import *
-from byCycle.model.domain import Node
+from byCycle.model.domain import Node, Edge
+
 from byCycle import services
 from byCycle.services import geocode
-import dijkstar
+from byCycle.services.exceptions import ByCycleError, InputError, NotFoundError
 
 
 class RouteError(ByCycleError):
@@ -78,7 +82,7 @@ class Service(services.Service):
         ``region`` `Region` | `string` -- Region key
 
         """
-        services.Service.__init__(self, region=region, session=None)
+        services.Service.__init__(self, region=region)
 
     def query(self, q, tmode='bicycle', pref=''):
         """Get a route for all the addresses in ``q`` [0 ==> 1 ==> 2 ...].
@@ -115,14 +119,14 @@ class Service(services.Service):
         geocodes = self._getGeocodes(waypoints)
 
         # Get weight function for specified travel mode
-        path = 'byCycle.model.%s.%s' % (self.region.key, tmode)
+        path = 'byCycle.model.%s.%s' % (self.region.slug, tmode)
         module = __import__(path, globals(), locals(), [''])
         mode = module.TravelMode(self.region, pref=pref)
         getEdgeWeight = mode.getEdgeWeight
         getHeuristicWeight = mode.getHeuristicWeight
 
         # Fetch the adjacency matrix
-        G = self.region.getAdjacencyMatrix()
+        G = self.region.matrix
         if not G:
             raise NoRouteError('Graph is empty')
         nodes, edges = G['nodes'], G['edges']
@@ -193,8 +197,7 @@ class Service(services.Service):
 
     def _getGeocodes(self, waypoints):
         """Return a `list` of `Geocode`s associated with each ``waypoint``."""
-        geocode_service = geocode.Service(region=self.region,
-                                          session=self.session)
+        geocode_service = geocode.Service(region=self.region)
         geocodes = []
         input_errors = []
         multiple_match_found = False
@@ -321,7 +324,9 @@ class Service(services.Service):
                 geocode_, node_id, edge_f_id, edge_t_id
             )
             # Create a node at the split
-            node = Node(node_id, geocode_.xy, [edge_f, edge_t])
+            node = Node(id=node_id, geom=geocode_.xy)
+            node.edges_f.append(edge_f)
+            node.edges_t.append(edge_t)
             # Update after split
             split_edges[edge_f_id], split_edges[edge_t_id] = edge_f, edge_t
             self._updateMatrixAfterSplit(
@@ -432,7 +437,7 @@ class Service(services.Service):
         distance = {units: None, 'blocks': None}
 
         # Get edges along path
-        edges = self.region.getEdgesById(self.session, *edge_ids)
+        edges = Edge.select(Edge.c.id.in_(*edge_ids))
 
         # Check if start and end are in edges
         edge_f_id = edge_ids[0]
@@ -446,7 +451,7 @@ class Service(services.Service):
 
         # Get the actual edge lengths since modified weights might have been
         # used to find the path
-        edge_lengths = [len(e) for e in edges]
+        edge_lengths = [e.length() for e in edges]
         total_length = sum(edge_lengths)
         blocks = int(round(total_length / self.region.block_length))
         distance.update({units: total_length, 'blocks': blocks})
@@ -580,12 +585,12 @@ class Service(services.Service):
                 pass
 
             # Add edge's bikemode to list of bikemodes for current stretch
-            bm = e.bikemode
-            if bm is not None:
-                # Only record changes in bikemode
-                dbm = direction['bikemode']
-                if (dbm == [] or bm != dbm[-1]):
-                    dbm.append(bm)
+            #bm = e.bikemode
+            #if bm is not None:
+                ## Only record changes in bikemode
+                #dbm = direction['bikemode']
+                #if (dbm == [] or bm != dbm[-1]):
+                    #dbm.append(bm)
 
             edge_count += 1
             linestring_index += e.geom.numPoints() - 1

@@ -10,6 +10,8 @@ slug = 'portlandor'
 SRID = 2913
 units = 'feet'
 earth_circumference = 131484672
+block_length = 260
+jog_length = block_length / 2
 edge_attrs = ['code', 'bikemode', 'up_frac', 'abs_slope', 'cpd', 'sscode']
 
 

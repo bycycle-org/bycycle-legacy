@@ -30,7 +30,7 @@ class Route(object):
         self.directions = directions
         self.distance = distance
 
-        linestring.srs = SpatialReference(epsg=region.SRID)
+        linestring.srs = SpatialReference(epsg=region.srid)
         self.linestring = linestring
 
         linestring_ll = linestring.copy()

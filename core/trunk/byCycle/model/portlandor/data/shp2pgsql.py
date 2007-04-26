@@ -68,10 +68,11 @@ from byCycle.model import db
 from byCycle.model.sttypes import street_types_ftoa
 from byCycle.model import Region, Node, Edge, StreetName, City, State, Place
 from byCycle.model import EdgeAttr
-from byCycle.model import PortlandOR_Edge as RegionEdge
-from byCycle.model import PortlandOR_Node as RegionNode
+from byCycle.model.portlandor import Edge as RegionEdge
+from byCycle.model.portlandor import Node as RegionNode
 from byCycle.model.portlandor.data import (title, slug, SRID, units,
                                            edge_attrs, earth_circumference,
+                                           block_length, jog_length,
                                            Raw)
 from byCycle.model.portlandor.data.cities import cities_atof
 
@@ -136,11 +137,8 @@ db_name = 'bycycle'
 ### Derived configuration
 ### Should also apply to all regions and should NOT be edited
 
-# Database config
-db_schema = slug
-
 # Path to regional shapefiles
-data_path = os.path.join(base_data_path, db_schema, datasource)
+data_path = os.path.join(base_data_path, slug, datasource)
 
 # Path to specific layer
 layer_path = os.path.join(data_path, layer)
@@ -148,11 +146,11 @@ layer_path = os.path.join(data_path, layer)
 # Raw tables go in the raw schema using the schema name as the table name.
 # "This is the raw table for schema X." With the schema, we can create and
 # drop the "real" schema tables without worrying about the raw table.
-raw_table_name = 'raw.%s' % db_schema
+raw_table_name = 'raw.%s' % slug
 
 # Output file for SQL imported from shapefile
 # Ex: ~/byCycle/evil/byCycle/model/portlandor/data/portlandor.str04aug.raw.sql
-sql_file = '%s_%s_raw.sql' % (db_schema, layer)
+sql_file = '%s_%s_%s_raw.sql' % (slug, datasource.replace('/', '_'), layer)
 sql_file_path = os.path.join(os.path.dirname(__file__), sql_file)
 
 # Complete command to convert shapefile to raw SQL
@@ -275,20 +273,20 @@ def any_not_none(sequence):
 
 
 def delete_edges():
-    col = Edge.c['%s_edge_id' % db_schema]
+    col = Edge.c['%s_edge_id' % slug]
     map(Edge.delete, Edge.select(col != None))
     db.flush()
     #db.deleteAllFromTable(RegionEdge.table)
 
 
 def delete_nodes():
-    col = Node.c['%s_node_id' % db_schema]
+    col = Node.c['%s_node_id' % slug]
     map(Node.delete, Node.select(col != None))
     db.flush()
     #db.deleteAllFromTable(RegionNode.table)
 
 
-def get_records(cols):
+def get_records(cols, distinct=True):
     """Get distinct records.
 
     ``cols``
@@ -299,7 +297,7 @@ def get_records(cols):
         ``cols``
 
     """
-    result = select(cols, distinct=True).execute()
+    result = select(cols, distinct=distinct).execute()
     records = set([tuple([v for v in row])
                    for row in result
                    if any_not_none(row)])
@@ -332,7 +330,7 @@ def shp2sql():
 
 
 def shp2db():
-    """Read shapefile into database table (raw.``db_schema``)."""
+    """Read shapefile into database table (raw.``slug``)."""
     Q = 'CREATE SCHEMA raw'
     try:
         db.execute(Q)
@@ -342,7 +340,7 @@ def shp2db():
         db.commit()
     db.dropTable(Raw.table)
     system(sql2db_cmd)
-    db.vacuum('raw.%s' % db_schema)
+    db.vacuum('raw.%s' % slug)
 
 
 def drop_tables():
@@ -353,7 +351,7 @@ def drop_tables():
     """
     delete_region()
     for table in db.metadata.table_iterator():
-        if table.schema != 'raw' and table.name.startswith(db_schema):
+        if table.schema != 'raw' and table.name.startswith(slug):
             db.dropTable(table, cascade=True)
             echo('Dropped %s' % table.name)
 
@@ -374,8 +372,9 @@ def delete_region():
     """
     region = get_or_create_region()
     region_id = region.id
-    slug = region.slug
     Qs = (
+        'DELETE FROM %s_edge' % slug,
+        'DELETE FROM %s_node' % slug,
         'DELETE FROM streetname_regions__region_street_names WHERE '
         'region_id = %s' % region_id,
         'DELETE FROM region_cities__city_regions WHERE '
@@ -386,8 +385,6 @@ def delete_region():
         '(SELECT DISTINCT street_name_id FROM edge)',
         'DELETE FROM edge WHERE region_id = %s' % region_id,
         'DELETE FROM node WHERE region_id = %s' % region_id,
-        'DELETE FROM %s_edge' % slug,
-        'DELETE FROM %s_node' % slug,
         'DELETE FROM place WHERE region_id = %s' % region_id,
         'DELETE FROM region WHERE id = %s' % region_id,
     )
@@ -413,6 +410,8 @@ def get_or_create_region():
             srid=SRID,
             units=units,
             earth_circumference=earth_circumference,
+            block_length=block_length,
+            jog_length=jog_length,
         )
         insert_records(Region.table, [record], 'region')
         region = Region.get_by(slug=slug)
@@ -537,33 +536,57 @@ def transfer_places():
 
 def transfer_nodes():
     """Transfer nodes from raw table to node table."""\
-    # This might be easier: 
+    # This might be easier:
     # UPDATE portlandor_node
-    #     SET geom = startPoint(the_geom) 
+    #     SET geom = startPoint(the_geom)
     #     FROM raw.portlandor WHERE raw.portlandor.n0 = id;
     # UPDATE portlandor_node
     #     SET geom = endPoint(the_geom)
     #     FROM raw.portlandor WHERE raw.portlandor.n1 = id;
     region = get_or_create_region()
+
     echo('Getting columns from raw table...')
     c = Raw.c
-    raw_records_f = get_records([c.node_f_id, func.startPoint(c.geom)])
-    raw_records_t = get_records([c.node_t_id, func.endPoint(c.geom)])
-    new_records = raw_records_f.union(raw_records_t)
+    raw_records_f = get_records([c.node_f_id, func.startPoint(c.geom)],
+                                distinct=False)
+    raw_records_t = get_records([c.node_t_id, func.endPoint(c.geom)],
+                                distinct=False)
+
     records = []
     region_records = []
     region_id = region.id
-    for r in new_records:
-        node_id = r[0]
-        geom = r[1]
-        region_records.append(dict(id=node_id, geom=geom))
-        records.append(dict(portlandor_node_id=node_id, region_id=region_id))
+
+    Node.table.append_column(Column('region_node_id', Integer))
+    db.addColumn('node', 'region_node_id', 'INTEGER')
+
+    seen_nodes = {}
+    def collect_records(raw_records):
+        for r in raw_records:
+            node_id = r[0]
+            if node_id in seen_nodes:
+                continue
+            seen_nodes[node_id] = 1
+            geom = r[1]
+            records.append(dict(region_id=region_id, region_node_id=node_id))
+            region_records.append(dict(id=node_id, geom=geom))
+    collect_records(raw_records_f)
+    collect_records(raw_records_t)
+
     echo('Inserting records into regional node table...')
     insert_records(RegionNode.table, region_records, '"%s" nodes' % title)
+
     echo('Inserting records into node table...')
     insert_records(Node.table, records, 'nodes')
+
+    echo('Associating region nodes with base nodes...')
+    Q = ('UPDATE %s_node SET base_id = node.id FROM node '
+         'WHERE node.region_node_id = %s_node.id' % (slug, slug))
+    echo(Q)
+    db.execute(Q)
+    db.commit()
+
     echo('Vacuuming node tables...')
-    db.vacuum('node', '%s_node' % db_schema)
+    db.vacuum('node', '%s_node' % slug)
 
 
 def transfer_edges():
@@ -604,10 +627,14 @@ def transfer_edges():
     echo('Getting nodes...')
     c = Node.c
     where = [c.region_id == region.id]
-    result = select((c['%s_node_id' % slug], c.id), *where).execute()
+    result = select(('region_node_id', c.id), *where).execute()
     nodes = dict([(r[0], r[1]) for r in result])
 
     echo('Transferring edges...')
+
+    Edge.table.append_column(Column('region_edge_id', Integer))
+    db.addColumn('edge', 'region_edge_id', 'INTEGER')
+
     records = []
     region_records = []
     region_id = region.id
@@ -660,24 +687,37 @@ def transfer_edges():
             place_l_id=place_l_id,
             place_r_id=place_r_id,
             region_id=region_id,
+            region_edge_id=i,
         ))
         records[-1][edge_id_name] = i
         if (i % step) == 0:
             echo('Inserting %s records into regional edge table...' % step)
             insert_records(RegionEdge.table, region_records,
-                           '"%s" nodes' % title)
+                           '"%s" edges' % title)
             echo('Inserting %s records into edge table...' % step)
-            insert_records(Edge.table, records, 'nodes')
+            insert_records(Edge.table, records, 'edges')
             echo('%i down, %i to go' % (i, num_records - i))
             records, region_records = [], []
         i += 1
+
     if records:
         echo('Inserting remaining records into regional edge table...')
-        insert_records(RegionEdge.table, region_records, '"%s" nodes' % title)
+        insert_records(RegionEdge.table, region_records, '"%s" edges' % title)
         echo('Inserting remaining records into edge table...')
-        insert_records(Edge.table, records, 'nodes')
+        insert_records(Edge.table, records, 'edges')
+
+    db.dropColumn('node', 'region_node_id')
+
+    echo('Associating region edges with base edges...')
+    Q = ('UPDATE %s_edge SET base_id = edge.id FROM edge '
+         'WHERE edge.region_edge_id = %s_edge.id' % (slug, slug))
+    echo(Q)
+    db.execute(Q)
+    db.commit()
+    db.dropColumn('edge', 'region_edge_id')
+
     echo('Vacuuming edge tables...')
-    db.vacuum('edge', '%s_edge' % db_schema)
+    db.vacuum('edge', '%s_edge' % slug)
 
 
 def associate_edges_with_nodes():
