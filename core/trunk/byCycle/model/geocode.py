@@ -57,7 +57,7 @@ class Geocode(object):
         s_addr = str(self.address).replace('\n', ', ')
         # Build the "ID address" => num?, network ID, region key
         num = getattr(self.address, 'number', '')
-        id_addr = ('%s-%s-%s' % (num, self.network_id, self.region.key))
+        id_addr = ('%s-%s-%s' % (num, self.network_id, self.region.slug))
         id_addr = id_addr.lstrip('-')  # in case it's not postal
         s = ';'.join((s_addr, id_addr))
         return quote_plus(s)
