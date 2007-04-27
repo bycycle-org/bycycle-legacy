@@ -5,19 +5,17 @@ from pylons.templating import render, render_response
 from pylons.helpers import abort, redirect_to, etag_cache
 from pylons.i18n import N_, _, ungettext
 
+import restler
+
 from byCycle import model
 
 import tripplanner.lib.helpers as h
 
 
-class BaseController(WSGIController):
-    def __call__(self, environ, start_response):
-        return WSGIController.__call__(self, environ, start_response)
+RestController = restler.BaseController(model)
 
 
-# This includes restler/base.py as if it contents had been written directly
-# in this file.
-execfile(__import__('restler').include_path)
+class BaseController(WSGIController): pass
 
 
 # Include the '_' function in the public names

@@ -125,7 +125,7 @@ class ServicesController(RestController):
     def _get_json_content(self, fragment=True):
         """Get a JSON string.
 
-        Assumes members have a ``__simplify__`` method. Modifies the base
+        Assumes members have a ``to_builtin`` method. Modifies the base
         simple object before JSONification by "wrapping" it in a result
         container object.
 
@@ -148,9 +148,9 @@ class ServicesController(RestController):
             choices = []
             for choice in getattr(self, 'choices', []):
                 if isinstance(choice, Geocode):
-                    choices.append(choice.__simplify__())
+                    choices.append(choice.to_builtin())
                 else:
-                    choices.append([m.__simplify__() for m in choice])
+                    choices.append([m.to_builtin() for m in choice])
             if choices:
                 result['choices'] = choices
             return result
