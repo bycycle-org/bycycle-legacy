@@ -4,19 +4,14 @@
 
 .fixed-pane .title-bar {
   position: relative;
-  background: #99b3cc;
+  background: #bfe0ff;
+  border: 1px solid #99b3cc;
   padding: 2px;
 }
 
 .fixed-pane .title-bar .title {
-  color: white;
+  color: #222;
   font-weight: bold;
-}
-.fixed-pane .title-bar .title a {
-  color: white;
-}
-.fixed-pane .title-bar .title a:hover {
-  color: orange;
 }
 
 .fixed-pane .title-bar .control-bar {
@@ -24,14 +19,14 @@
   right: 2px;
   bottom: 2px;
 }
-.fixed-pane .title-bar .control-bar a.button {
+.fixed-pane .title-bar .control-bar a.button:link {
   margin-left: 2px;
-  color: gray;
+  color: #222;
   font-weight: bold;
   text-decoration: none;
 }
 .fixed-pane .title-bar .control-bar a.button:hover {
-  color: black;
+  color: orange;
 }
 
 .fixed-pane .content-pane {
