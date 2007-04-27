@@ -30,7 +30,7 @@ from cartography import geometry
 from cartography.proj import SpatialReference
 
 from byCycle import model_path
-from byCycle.util import joinAttrs
+from byCycle.util import gis, joinAttrs
 from byCycle.model.data.sqltypes import POINT, LINESTRING
 
 
@@ -311,7 +311,20 @@ class Edge(Entity):
     belongs_to('place_l', of_kind='Place', **cascade_args)
     belongs_to('place_r', of_kind='Place', **cascade_args)
     belongs_to('region', of_kind='Region', **cascade_args)
-    
+
+    def to_feet(self):
+        return self.to_miles() * 5280.0
+
+    def to_miles(self):
+        return gis.getLengthOfLineString([self.geom.pointN(n) for n in
+                                          range(self.geom.numPoints())])
+
+    def to_kilometers(self):
+        return self.to_miles() * 1.609344
+
+    def to_meters(self):
+        return self.to_kilometers() / 1000.0
+
     def getSideNumberIsOn(self, num):
         """Determine which side of the edge, "l" or "r", ``num`` is on."""
         # Determine odd side of edge, l or r, for convenience
@@ -336,17 +349,20 @@ class Edge(Entity):
         except AttributeError:
             self._length = self.geom.length()
         return self._length
-    
+
     length = __len__
 
     def getPointAndLocationOfNumber(self, num):
         """
 
-        ``num`` `int` -- A building number that should be in [addr_f, addr_t]
+        ``num``
+            A number that should be in range [addr_f, addr_t]
 
-        return `Point`, `float` -- The coordinate that ``num`` is at within
-        this `Edge`; the location, in range [0, 1], of ``num`` within this
-        edge.
+        return
+            ``Point``
+                The coordinate of ``num`` within this edge
+            Location
+                The location, in range [0, 1], of ``num`` within this edge
 
         """
         # Sanity check; num should always be an `int`
@@ -415,9 +431,8 @@ class Edge(Entity):
                         node_id=-1, edge_f_id=-1, edge_t_id=-2):
         """Split this edge at ``location`` and return two new edges.
 
-        The first edge is `node_f`=>``num``; the second is
-        ``num``=>`node_t`. Distribute attributes of original edge to the two
-        new edges.
+        The first edge is `node_f`=>``num``; the second is ``num``=>`node_t`.
+        Distribute attributes of original edge to the two new edges.
 
         ``location`` `float` -- Location in range [0, 1] to split at
         ``node_id`` -- Node ID to assign the node at the split
@@ -432,8 +447,6 @@ class Edge(Entity):
         - Get line geometry on either side of XY
         - Transfer geometry and attributes to two new edges
         - Return the  two new edges
-
-        TODO: Distribute ``geom`` attributes proportionately
 
         """
         num_points = self.geom.numPoints()
@@ -474,9 +487,7 @@ class Edge(Entity):
         return joinAttrs(stuff, join_string='\n')
 
     def to_builtin(self):
-        attrs = [col.key for col in self.c]
-        vals = [getattr(self, a) for a in attrs]
-        simple = dict(zip(attrs, vals))
+        return super(Edge, self).to_builtin()
         #linestring = self.geom.copy()
         #srs = SpatialReference(epsg=4326)
         #linestring.transform(src_proj=str(self.geom.srs), dst_proj=str(srs))
@@ -484,7 +495,7 @@ class Edge(Entity):
         #for i in range(linestring.numPoints()):
             #points.append(linestring.pointN(i))
         #simple['geom'] = [{'x': p.x, 'y': p.y} for p in points]
-        return simple
+        #return simple
 
 
 class StreetName(Entity):
