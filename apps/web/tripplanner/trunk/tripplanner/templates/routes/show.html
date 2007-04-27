@@ -4,7 +4,7 @@
 <%
     from urllib import unquote_plus
     route = c.route
-    units = 'feet'#c.region.units
+    units = c.region.units
     distance = route.distance[units]
     miles = distance / 5280.0
     mi = '%.2f' % miles
