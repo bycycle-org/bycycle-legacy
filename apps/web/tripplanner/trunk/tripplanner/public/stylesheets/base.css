@@ -48,34 +48,25 @@ a:hover { color: orange; }
 #masthead, #input_container, #bar {
   padding: 5px;
 }
-#masthead, #input_container {
-  padding-bottom: 0;
-}
 #input_container, #bar, #content {
-  margin-right: 121px;
-}
-#input_container {
-  padding-right: 0;
+  margin-right: 122px;
 }
 #ads {
   position: absolute;
   top: 0;
   right: 0;
-  width: 120px;
+  width: 122px;
   height: 100%;
   background: white;
-  border-left: 1px solid #99b3cc;
   overflow: hidden;
 }
 #ads.fixed-pane .content-pane {
   padding: 0;
   margin: 0;
-  border: none;
-  border-bottom: 2px solid #99b3cc;
 }
 div#region-ads {
   font-weight: bold;
-  border-bottom: 2px solid #99b3cc;
+  border-bottom: 1px solid #99b3cc;
 }
 div.region-ad {
   padding: 2px;
@@ -123,7 +114,7 @@ div.region-ad {
 #col-b {
   float: right;
   width: 69%;
-  border-left: 1px solid #a7cc95;
+  border-left: 1px solid #99b3cc;
 }
 
 
@@ -131,13 +122,19 @@ div.region-ad {
 #input_container {
   margin-left: 155px;
 }
+#input_container .tab-contents {
+  background: #bfe0ff;
+}
+#input_container .tab-button {
+  background: #fff;
+}
+#input_container .selected-tab-button {
+  background: #bfe0ff;
+}
 #region-search {
+  background: #bfe0ff;
   border: 1px solid #99b3cc;
   padding: 5px;
-}
-#input_container .tab-contents, #region-search {
-  border-right: none;
-  border-bottom: none;
 }
 
 /* Input Controls */
@@ -160,7 +157,9 @@ div.region-ad {
 
 /* Status & Links */
 #bar {
-  background: #a7cc95;
+  background: #d1ffba;
+  border: solid #a7cc95;
+  border-width: 1px 0;
 }
 #status {
   float: left;
@@ -239,12 +238,12 @@ div.region-ad {
 
 /* Column B -- Map, map controls, and any other map-related stuff */
 #map-controls {
-  border-bottom: 1px solid #a7cc95;
+  border-bottom: 1px solid #99b3cc;
   padding: 5px;
 }
 /* The map object is inserted here */
 #map_pane {
-  background: #99b3cc;
+  background: #bfe0ff;
 }
 .info_win {
   width: 250px;
