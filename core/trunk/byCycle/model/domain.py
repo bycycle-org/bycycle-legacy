@@ -334,7 +334,6 @@ class Edge(Entity):
         try:
             self._length
         except AttributeError:
-            print self
             self._length = self.geom.length()
         return self._length
     
