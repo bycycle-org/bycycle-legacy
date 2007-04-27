@@ -22,6 +22,18 @@ class Edge(Entity):
     has_field('sscode', Integer)
     belongs_to('base', of_kind='byCycle.model.domain.Edge', **cascade_args)
 
+    def to_feet(self):
+        return self.geom.length()
+
+    def to_miles(self):
+        return self.geom.length() / 5280.0
+
+    def to_kilometers(self):
+        return self.geom.length() / 5280.0 * 1.609344
+
+    def to_meters(self):
+        return self.geom.length() / 5280.0 * 1.609344 / 1000.0
+
     @classmethod
     def _getRowsForMatrix(cls):
         code = cls.c.code
