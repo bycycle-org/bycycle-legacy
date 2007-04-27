@@ -87,8 +87,8 @@ byCycle.UI.Query.prototype = {
     var li;
     var result_list = this.result_list;
     results.each(function (r) {
-      li = document.createElement('li');
-      li.appendChild.bind(li)(r.widget.dom_node);
+      li = $(document.createElement('li'));
+      li.appendChild(r.widget.dom_node);
       result_list.appendChild(li);
     });
     byCycle.logDebug('Left on200.');
@@ -115,6 +115,10 @@ byCycle.UI.Query.prototype = {
     this.http_status = request.status;
     this.ui.status.update(this.getElapsedTimeMessage());
     byCycle.logDebug('Left onComplete. (Request processing complete.)');
+  },
+
+  onException: function(request) {
+    this.ui.spinner.hide();
   },
 
   /**

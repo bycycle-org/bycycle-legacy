@@ -66,8 +66,8 @@
       self.pref_el = $('pref');
       self.location_list = $('location_list');
       self.route_list = $('route_list');
-	  self.bike_overlay_link = $('bike-overlay-link');
-	  self.toggle_bike_overlay = $('toggle-bike-overlay');
+      self.bike_overlay_link = $('bike-overlay-link');
+      self.toggle_bike_overlay = $('toggle-bike-overlay');
     },
 
     _createEventHandlers: function () {
