@@ -30,9 +30,8 @@ byCycle.widget.FixedPane.prototype = {
     if (!(this.collapsible || this.closeable)) return;
 
     // Create and append the control bar
-    this.control_bar = $(document.createElement('div'));
-    this.control_bar.addClassName('control-bar');
-    this.title_bar.appendChild(this.control_bar);
+    this.control_bar = this.title_bar.getElementsByClassName('control-bar')[0];
+    byCycle.logDebug(this.control_bar);
 
     if (this.collapsible) {
       byCycle.logDebug('Creating _ control...');
