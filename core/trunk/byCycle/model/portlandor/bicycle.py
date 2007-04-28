@@ -105,7 +105,6 @@ class TravelMode(tmode.TravelMode):
     def getEdgeWeight(self, v, edge_attrs, prev_edge_attrs):
         """Calculate weight for edge given it & last crossed edge's attrs."""
         length = edge_attrs[length_index] * float_decode
-        length = length / 5280.0
         code = edge_attrs[code_index]
         bikemode = edge_attrs[bikemode_index]
         slope = edge_attrs[abs_slp_index] * float_decode

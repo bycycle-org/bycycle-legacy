@@ -12,85 +12,62 @@
 # NO WARRANTY OF ANY KIND.
 ################################################################################
 import unittest
-from byCycle.util import meter
+
 from byCycle.services.route import *
 from byCycle.model.route import Route
 
 
-timer = meter.Timer()
-
-
-class TestPortlandOR(unittest.TestCase):
+class Test_A_Route(unittest.TestCase):
 
     def _query(self, q, region=None):
-        print '=========='
-        timer.start()
         service = Service(region=region)
         route_or_routes = service.query(q)
-        try:
-            route_or_routes[0]
-        except TypeError:
-            routes = [route_or_routes]
-        else:
-            routes = route_or_routes
-        for r in routes:
-            self.assert_(isinstance(r, Route))
-            print r
-        print 'Took %.2f seconds' % timer.stop()
-        print '=========='
-        return routes
+        return route_or_routes
 
     def _queryRaises(self, q, exc):
         self.assertRaises(exc, self._query, q)
 
-    def _test_no_place_on_first_address(self):
-        q = ('4807 se kelly', '633 n alberta, portland, or')
-        routes = self._query(q)
+    def test_should_have_specific_turns(self):
+        q = ('4807 se kelly, portland, or', '45th and division, portland, or')
+        route = self._query(q)
+        assert isinstance(route, Route)
+        d = route.directions
+        expected_turns = 'east left left right right left right left'.split()
+        d_turns = [d[i]['turn'] for i in range(len(d))]
+        print expected_turns
+        print d_turns
+        assert d_turns == expected_turns
 
-    def _test_no_place_on_second_address(self):
+    def test_with_coordinate_addresses_should_pass(self):
+        q = ('x=-122.668104, y=45.523127', '4807 se kelly')
+        route = self._query(q, region='portlandor')
+        q = ('4807 se kelly', 'longitude=-122.668104, latitude=45.523127')
+        route = self._query(q, region='portlandor')
+        q = ('x=-122.668104, lat=45.523127',
+             'longitude=-122.615426, latitude=45.502625')
+        route = self._query(q, region='portlandor')
+
+    def test_with_no_place_on_first_address_should_pass_but_does_not(self):
+        # FIXME: Make this NOT pass (then change the name of the test)
+        q = ('4807 se kelly', '633 n alberta, portland, or')
+        routes = self._queryRaises(q, InputError)
+
+    def test_with_no_place_on_second_address_should_be_ok(self):
         q = ('4807 se kelly, portland, or', '633 n alberta')
         routes = self._query(q)
 
-    def test_route(self):
-        q = ('4807 se kelly, portland, or', '45th and division, portland, or')
-        #route = self._query(q)
-        #q = ('250 ne going, portland, or', '350 n going, portland, or')
-        #q = ('634 beech portland or','633 n alberta, portland or')
-        try:
-            routes = self._query(q)
-        except MultipleMatchingAddressesError, exc:
-            print exc.choices
-        else:
-            self.assert_(len(routes) == 1)
-
-    def test_three_addresses(self):
+    def test_with_three_addresses_should_return_a_list_with_2_routes(self):
         q = ('4807 se kelly, portland, or', '633 n alberta', '1500 ne alberta')
         routes = self._query(q)
-        self.assert_(len(routes) == 2)
-        
+        assert isinstance(routes, list)
+        assert len(routes) == 2
+
 
 if __name__ == '__main__':
     unittest.main()
 
 
 """
-if __name__ == '__main__':
-    import sys
-
-
-    def print_key(key):
-        for k in key:
-            print k,
-            if type(key[k]) == type({}):
-                print
-                for l in key[k]:
-                    print '\t', l, key[k][l]
-            else: print key[k]
-        print
-
-    try:
-        region, q = sys.argv[1].split(',')
-    except IndexError:
         Qs = {'milwaukeewi':
               (('Puetz Rd & 51st St', '841 N Broadway St'),
                ('27th and lisbon', '35th and w north'),
@@ -111,37 +88,4 @@ if __name__ == '__main__':
                 ('-122.645488, 45.509475', 'sw hall & denney'),
                ),
               }
-    else:
-        q = q.split(' to ')
-        Qs = {region: (q,)}
-
-
-    for region in ['portlandor']:
-        service = Service(region=region)
-        qs = Qs[region]
-        for q in qs:
-            try:
-                timer.start()
-                r = service.query(q)
-            except MultipleMatchingAddressesError, e:
-                print e.route
-            except NoRouteError, e:
-                print e
-            #except Exception, e:
-            #    print e
-            else:
-                D = r['directions']
-                print r['start']['geocode']
-                print r['end']['geocode']
-                for d in D:
-                    print '%s on %s toward %s -- %s mi [%s]' % \
-                          (d['turn'],
-                           d['street'],
-                           d['toward'],
-                           d['distance']['mi'],
-                           d['bikemode'])
-                print
-                print 'Took %.2f' % timer.stop()
-                print '----------------------------------------' \
-                      '----------------------------------------'
 """
