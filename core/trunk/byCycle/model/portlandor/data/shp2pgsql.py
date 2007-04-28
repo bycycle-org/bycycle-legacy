@@ -535,14 +535,7 @@ def transfer_places():
 
 
 def transfer_nodes():
-    """Transfer nodes from raw table to node table."""\
-    # This might be easier:
-    # UPDATE portlandor_node
-    #     SET geom = startPoint(the_geom)
-    #     FROM raw.portlandor WHERE raw.portlandor.n0 = id;
-    # UPDATE portlandor_node
-    #     SET geom = endPoint(the_geom)
-    #     FROM raw.portlandor WHERE raw.portlandor.n1 = id;
+    """Transfer nodes from raw table to node table."""
     region = get_or_create_region()
 
     echo('Getting columns from raw table...')
@@ -581,6 +574,13 @@ def transfer_nodes():
     echo('Associating region nodes with base nodes...')
     Q = ('UPDATE %s_node SET base_id = node.id FROM node '
          'WHERE node.region_node_id = %s_node.id' % (slug, slug))
+    echo(Q)
+    db.execute(Q)
+    db.commit()
+    
+    echo('Transferring regional node geometry to node table...')
+    Q = ('UPDATE node SET geom = transform(portlandor_node.geom, 4326)'
+         'FROM portlandor_node WHERE portlandor_node.base_id = node.id')
     echo(Q)
     db.execute(Q)
     db.commit()
@@ -715,6 +715,13 @@ def transfer_edges():
     db.execute(Q)
     db.commit()
     db.dropColumn('edge', 'region_edge_id')
+
+    echo('Transferring regional edge geometry to edge table...')
+    Q = ('UPDATE edge SET geom = transform(portlandor_edge.geom, 4326)'
+         'FROM portlandor_edge WHERE portlandor_edge.base_id = edge.id')
+    echo(Q)
+    db.execute(Q)
+    db.commit()
 
     echo('Vacuuming edge tables...')
     db.vacuum('edge', '%s_edge' % slug)

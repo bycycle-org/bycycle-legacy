@@ -63,7 +63,7 @@ float_decode = 10 ** -float_exp
 
 def encodeFloat(f):
     """Encode the float ``f`` as an integer."""
-    return int(math.floor(f * float_encode))
+    return int(round(f * float_encode))
 
 def decodeFloat(i):
     """Decode the int ``i`` back to its original float value."""
@@ -192,9 +192,8 @@ class Region(Entity):
         meter_i = 1
         for row in region_rows:
             adjustments = self._adjustEdgeRowForMatrix(row)
-            ix = row.id
-            base_id = row.base_id
-            base = bases[base_id]
+            ix = row.base_id
+            base = bases[ix]
             node_f_id, node_t_id = base.node_f_id, base.node_t_id
             one_way = base.one_way
             # 0: no travel in either direction
@@ -203,8 +202,8 @@ class Region(Entity):
             # 3: travel in both directions
             ft = one_way & 1
             tf = one_way & 2
-            entry = [encodeFloat(row.geom.length()), base.street_name_id,
-                     base.node_f_id]
+            entry = [encodeFloat(row.geom.length() / 5280.0),
+                     base.street_name_id, base.node_f_id]
             entry += [row[a.name] for a in self.edge_attrs]
             for k in adjustments:
                 entry[self.edge_attrs_index[k]] = adjustments[k]

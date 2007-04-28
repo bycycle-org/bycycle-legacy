@@ -9,3 +9,9 @@ SVN
     * Changed Node and Edge inheritance so that subclasses classes point at
       base classes (with a Foreign Key) instead of the other way around.
       Base classes now have no knowledge of subclasses.
+* 2007-04-27
+    * Made changes necessary to get route tests to pass AND be *meaningful*;
+      previously, the tests were passing, but the edges were out of order
+      due to the fact that doing a "SELECT ... IN ..." doesn't necessarily
+      return rows in the same order as the IDs in the IN clause.
+    * Made some incidental changes affecting routing also.

@@ -41,7 +41,7 @@ class Geocode(object):
         self.network_id = network_id
         self.xy = xy
         if xy is not None:
-            xy.srs = SpatialReference(epsg=region.srid)
+            xy.srs = SpatialReference(epsg=4326)#region.srid)
             xy_ll = xy.copy()
             ll_srs = SpatialReference(epsg=4326)
             xy_ll.transform(src_proj=str(self.xy.srs), dst_proj=str(ll_srs))

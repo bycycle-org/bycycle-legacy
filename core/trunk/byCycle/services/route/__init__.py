@@ -134,7 +134,7 @@ class Service(services.Service):
         # Get paths between adjacent waypoints
         paths_info = []
         for s, e in zip(geocodes[:-1], geocodes[1:]):
-            # path_info: node_ids, edge_ids, start_node, end_node, split_edges
+            # path_info: node_ids, edge_ids, split_edges
             path_info = self._getPathBetweenGeocodes(
                 s, e, G, nodes, edges, getEdgeWeight, getHeuristicWeight
             )
@@ -149,7 +149,7 @@ class Service(services.Service):
         ends = makeWaypoints(slice(1, None))
         # for start/end original, start/end geocode, path...
         for start, end, path_info in zip(starts, ends, paths_info):
-            # route_info := nodes, edges, directions, linestring, distance
+            # route_data: nodes, edges, directions, linestring, distance
             route_data = self._makeDirectionsForPath(*path_info)
             route = Route(self.region, start, end, *route_data)
             routes.append(route)
@@ -174,7 +174,7 @@ class Service(services.Service):
         waypoints = [(w or '').strip() for w in q]
         num_waypoints = len(waypoints)
         if num_waypoints == 0:
-            errors.append('Please enter start and end addresses')        
+            errors.append('Please enter start and end addresses')
         if num_waypoints == 1:
             # Make sure there are at least two waypoints
             errors.append('Please enter an end addresses')
@@ -247,7 +247,7 @@ class Service(services.Service):
 
         ``getHeuristicWeight``
 
-        return `tuple` -- Node IDs, Edge IDs, Start node, End Node, Split Edges
+        return `tuple` -- Node IDs, Edge IDs, Split Edges
 
         """
         if start_geocode == end_geocode:
@@ -289,7 +289,7 @@ class Service(services.Service):
                 )
             )
 
-        return node_ids, edge_ids, start_node, end_node, split_edges
+        return node_ids, edge_ids, split_edges
 
     def _getNodeForGeocode(self,
                            geocode_,
@@ -381,8 +381,10 @@ class Service(services.Service):
                 self.H['nodes'][split_id][node_2_id] = edge_2_id
 
         # Get node IDs NOT at split
-        node_1_id = [edge_1.node_f_id, edge_1.node_t_id][edge_1.node_t_id != split_id]
-        node_2_id = [edge_2.node_f_id, edge_2.node_t_id][edge_2.node_t_id != split_id]
+        node_t_id = edge_1.node_t_id
+        node_1_id = edge_1.node_f_id if node_t_id == split_id else node_t_id
+        node_t_id = edge_2.node_t_id
+        node_2_id = edge_2.node_f_id if node_t_id == split_id else node_t_id
         # Get edge IDs for one arc direction
         edge_1_id, edge_2_id = edge_1.id, edge_2.id
         # Update for one direction
@@ -392,52 +394,66 @@ class Service(services.Service):
         edge_1_id, edge_2_id = edge_2_id, edge_1_id
         updateOneNode(node_1_id, node_2_id, edge_1_id, edge_2_id)
 
-    def _makeDirectionsForPath(self,
-                               node_ids, edge_ids,
-                               start_node, end_node,
-                               split_edges):
+    def _makeDirectionsForPath(self, node_ids, edge_ids, split_edges):
         """Process the shortest path into a nice list of directions.
 
-        `edge_ids` `list` -- The IDs of the edges on the route
-        ``node_ids`` `list` -- The IDs of the nodes on the route
+        ``node_ids``
+            The IDs of the nodes on the route
 
-        return nodes, edges, directions, linestring, distance
-            - A list of directions. Each direction has the following form:
+        ``edge_ids``
+            The IDs of the edges on the route
+
+        ``split_edges``
+            Temporary edges formed by splitting an existing edge when the
+            start and/or end of a route is within an edge (e.g., for an
+            address like "123 Main St"
+
+        return
+            * A list of directions. Each direction has the following form:
               {
-                 'turn': 'left',
-                 'street': 'se stark st'
-                 'toward': 'se 45th ave'
-                 'linestring_index': 3,
-                 'distance': {
+                'turn': 'left',
+                'street': 'se stark st'
+                'toward': 'se 45th ave'
+                'linestring_index': 3,  # index of start point in overall LS
+                'distance': {
                      'feet': 264,
-                     'blocks': 0
+                     'miles': .05,
+                     'kilometers': .08,
+                     'blocks': 1
                  },
-                 'bikemode': 'bl',
+                 ###'bikemode': 'bl',
                  'jogs': [{'turn': 'left', 'street': 'ne 7th ave'}, ...]
                }
 
-             - A linestring, which is a list of x, y coords. Each coordinate
-               has the following form:
-               {
-                  'x': -122,
-                  'y': -45
-               }
+            * A linestring, which is a list of x, y coords. Each coordinate
+              has the following form:
+              {
+                'x': -122,
+                'y': -45
+              }
 
-             - A `dict` of total distances in units of miles, kilometers, and
-               blocks:
-               {
-                  units: 5487,
-                  'blocks': 9
-               }
+            * A `dict` of total distances in units of feet, miles, kilometers,
+              and blocks:
+              {
+                'feet': 5487,
+                'miles': 1.04,
+                'kilometers': 1.11,
+                'blocks': 9
+              }
 
         """
         directions = []
         linestring = None
-        units = self.region.units
-        distance = {units: None, 'blocks': None}
+        distance = {}
 
         # Get edges along path
-        edges = Edge.select(Edge.c.id.in_(*edge_ids))
+        unordered_edges = Edge.select(Edge.c.id.in_(*edge_ids))
+        # Make sure they're in path order
+        edge_map = dict([(e.id, e) for e in unordered_edges])
+        edges = []
+        for i in edge_ids:
+            if i > 0:
+                edges.append(edge_map[i])
 
         # Check if start and end are in edges
         edge_f_id = edge_ids[0]
@@ -451,10 +467,15 @@ class Service(services.Service):
 
         # Get the actual edge lengths since modified weights might have been
         # used to find the path
-        edge_lengths = [e.length() for e in edges]
+        edge_lengths = [e.to_feet() for e in edges]
         total_length = sum(edge_lengths)
         blocks = int(round(total_length / self.region.block_length))
-        distance.update({units: total_length, 'blocks': blocks})
+        distance.update({
+            'feet': total_length,
+            'miles': total_length / 5280.0,
+            'kilometers': total_length / 5280.0 * 1.609344,
+            'blocks': blocks,
+        })
 
         # Get bearing of first and last segment of each edge. We use this
         # later to calculate turns from one edge to another--turning from
@@ -498,7 +519,6 @@ class Service(services.Service):
         for i, e in enumerate(edges):
             street_name = e.street_name
             street_names.append(street_name)  # save for later
-
             try:
                 next_e = edges[i + 1]
             except IndexError:
@@ -506,7 +526,6 @@ class Service(services.Service):
             else:
                 next_street_name = next_e.street_name
             edge_length = edge_lengths[i]
-            []
             if street_name and street_name.almostEqual(prev_street_name):
                 edge_lengths[stretch_start_i] += edge_lengths[i]
                 edge_lengths[i] = None
@@ -547,7 +566,9 @@ class Service(services.Service):
                     'linestring_index': linestring_index,
                     'jogs': jogs[directions_count],
                     'distance': {
-                        units: length, 'blocks': 0
+                        'feet': length, 'miles': length / 5280.0,
+                        'kilometers': length / 5280.0 * 1.609344,
+                        'blocks': length / self.region.block_length
                     }
                 }
 

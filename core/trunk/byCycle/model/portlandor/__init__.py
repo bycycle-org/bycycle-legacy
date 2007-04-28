@@ -36,11 +36,7 @@ class Edge(Entity):
 
     @classmethod
     def _getRowsForMatrix(cls):
-        code = cls.c.code
-        region_rows = cls.table.select((
-            ((code >= 1200) & (code < 1600)) |
-            ((code >= 3200) & (code < 3300))
-        )).execute()
+        region_rows = cls.table.select().execute()
         return region_rows
 
     @classmethod
@@ -49,6 +45,9 @@ class Edge(Entity):
             'abs_slope': encodeFloat(row.abs_slope),
             'up_frac': encodeFloat(row.up_frac),
         }
+        code = row.code
+        if not ((1200 <= code < 1600) and (3200 <= code < 3300)):
+            adjustments['length'] = 1000000  # ~189 miles
         return adjustments
 
 

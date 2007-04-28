@@ -279,6 +279,8 @@ class Service(services.Service):
                 node = id_service.query(oAddr.point, layer='Node')
             except IdentifyError:
                 pass
+            else:
+                node = node.base
         else:
             try:
                 node = Node.selectone(Node.c.id == node_id)
