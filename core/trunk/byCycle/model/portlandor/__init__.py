@@ -46,8 +46,8 @@ class Edge(Entity):
             'up_frac': encodeFloat(row.up_frac),
         }
         code = row.code
-        if not ((1200 <= code < 1600) and (3200 <= code < 3300)):
-            adjustments['length'] = 1000000  # ~189 miles
+        if not ((1200 <= code < 1600) or (3200 <= code < 3300)):
+            adjustments['length'] = 5280000
         return adjustments
 
 
