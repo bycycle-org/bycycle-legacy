@@ -50,36 +50,33 @@ ${self.json()}
            >show on map</a>
       </span>
     </%def>
-
-    <%def name="content()">
-      <div class="address">${html_addr}</div>
-      <div class="multi-select-links">
-        <a class="show-on-map-link"
-           href="#show-location-on-map"
-           title="Show this location on the map"
-           onclick="byCycle.UI.map.setCenter({x: ${x}, y: ${y}}); return false;"
-           >Show on map</a>
-        |
-        <a class="select-geocode-link"
-           href="${h.url_for('find_geocodes', region_id=c.region.slug, q=field_addr)}#select-this-location"
-           title="Select this location"
-           onclick="byCycle.UI.selectGeocode(this, ${i}); return false;"
-           >Select</a>
-      </div>
-      <div class="set_as_s_or_e" style="display: none;">
-        Set as
-        <a class="set-as-start"
-           href="#set-as-start"
-           title="Use this as the starting point of a route"
-           onclick='byCycle.UI.setAsStart("${field_addr}"); return false;'
-           ><i>start</i></a> or
-        <a class="set-as-end"
-           href="#set-as-end"
-           title="Use this as the end point of a route"
-           onclick='byCycle.UI.setAsEnd("${field_addr}"); return false;'
-           ><i>end</i></a>
-        of route
-      </div>
-    </%def>
+    <div class="address">${html_addr}</div>
+    <div class="multi-select-links">
+      <a class="show-on-map-link"
+         href="#show-location-on-map"
+         title="Show this location on the map"
+         onclick="byCycle.UI.map.setCenter({x: ${x}, y: ${y}}); return false;"
+         >Show on map</a>
+      |
+      <a class="select-geocode-link"
+         href="${h.url_for('find_geocodes', region_id=c.region.slug, q=field_addr)}#select-this-location"
+         title="Select this location"
+         onclick="byCycle.UI.selectGeocode(this, ${i}); return false;"
+         >Select</a>
+    </div>
+    <div class="set_as_s_or_e" style="display: none;">
+      Set as
+      <a class="set-as-start"
+         href="#set-as-start"
+         title="Use this as the starting point of a route"
+         onclick='byCycle.UI.setAsStart("${field_addr}"); return false;'
+         ><i>start</i></a> or
+      <a class="set-as-end"
+         href="#set-as-end"
+         title="Use this as the end point of a route"
+         onclick='byCycle.UI.setAsEnd("${field_addr}"); return false;'
+         ><i>end</i></a>
+      of route
+    </div>
   </%call>
 </%def>
