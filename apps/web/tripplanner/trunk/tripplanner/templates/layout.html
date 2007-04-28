@@ -144,77 +144,72 @@
             show_error_pane = (c.errors or
                                (c.http_status and c.http_status > 299))
             show_info_pane = not show_error_pane
+            msg_pane_style = {'display': ('' if show_msg_pane else 'none')}
           %>
-          <div id="message_pane" class="display-pane fixed-pane" ${h.hide_element(not show_msg_pane)}>
 
-            <div class="title-bar"><div class="title">&nbsp;</div></div>
+          <%call expr="fixed_pane(id='message_pane', classes=['display-pane'], style=msg_pane_style)">
+            <div id="info_pane" ${h.hide_element(not show_info_pane)}>
+              % if c.info:
+                ${c.info}
+              % else:
+                <p class="no-top-margin">
+                  This is a new version of the trip planner. It only works for the Portland, OR, region.
+                  If you have any problems with it or if you want to access other regions, the
+                  <b><a href="http://bycycle.metro-region.org/old-tripplanner" title="Use the old version if this new version doesn't work for you">old version</a></b> is available <b><a href="http://bycycle.metro-region.org/old-tripplanner" title="Use the old version if this new version doesn't work for you">here</a></b>.
+                </p>
 
-            <div class="content-pane">
+                <p>
+                  The trip planner is under active development. Please
+                  <a href="http://bycycle.org/contact"
+                     title="Send us problems, comments, questions, &amp; suggestions (opens in new window)"
+                     target="byCyle_window"
+                     >contact us</a>
+                     with any problems, comments, questions, or suggestions.
+                </p>
 
-              <div id="info_pane" ${h.hide_element(not show_info_pane)}>
+                <p>
+                  If you find this application useful or would like to contribute to its improvement, please consider
+                  <a href="http://bycycle.org/support/donate"
+                     title="Support byCycle (opens in new window)"
+                     target="byCyle_window">donating</a>,
+                  <a href="http://bycycle.org/support/buy-stuff"
+                     title="Buy byCycle stuff"
+                     target="byCyle_window">buying our apparel and other items</a>, or
+                  <a href="http://bycycle.org/support/get-involved"
+                     title="Get Involved"
+                     target="byCycle_window">getting involved</a>.
+                </p>
 
-                % if c.info:
-                  ${c.info}
-                % else:
-                  <p class="no-top-margin">
-                    This is a new version of the trip planner. It only works for the Portland, OR, region.
-                    If you have any problems with it or if you want to access other regions, the 
-                    <b><a href="http://bycycle.metro-region.org/old-tripplanner" title="Use the old version if this new version doesn't work for you">old version</a></b> is available <b><a href="http://bycycle.metro-region.org/old-tripplanner" title="Use the old version if this new version doesn't work for you">here</a></b>.
-                  </p>
-
-                  <p>
-                    The trip planner is under active development. Please
-                    <a href="http://bycycle.org/contact"
-                       title="Send us problems, comments, questions, &amp; suggestions (opens in new window)"
-                       target="byCyle_window"
-                       >contact us</a>
-                       with any problems, comments, questions, or suggestions.
-                  </p>
-
-                  <p>
-                    If you find this application useful or would like to contribute to its improvement, please consider
-                    <a href="http://bycycle.org/support/donate"
-                       title="Support byCycle (opens in new window)"
-                       target="byCyle_window">donating</a>,
-                    <a href="http://bycycle.org/support/buy-stuff"
-                       title="Buy byCycle stuff"
-                       target="byCyle_window">buying our apparel and other items</a>, or
-                    <a href="http://bycycle.org/support/get-involved"
-                       title="Get Involved"
-                       target="byCycle_window">getting involved</a>.
-                  </p>
-
-                  <p class="no-bottom-margin">
-                    Users should independently verify all information presented here. This
-                    service is provided <b>AS IS</b> with <b>NO WARRANTY</b> of any kind.
-                    <em>Please be careful out there.</em>
-                  </p>
-                % endif
-              </div>
-
-              <div id="error_pane" ${h.hide_element(not show_error_pane)}>
-                % if c.errors:
-                  <h2>${c.title}</h2>
-                  <%
-                    try:
-                      lines = c.errors.splitlines()
-                    except AttributeError:
-                      lines = None
-                  %>
-                  % if lines:
-                    <ul>
-                      % for e in lines:
-                        <li>${e}</li>
-                      % endfor
-                    </ul>
-                  % else:
-                    ${c.errors}
-                  % endif
-                % endif
-                ${self.body()}
-              </div>
+                <p class="no-bottom-margin">
+                  Users should independently verify all information presented here. This
+                  service is provided <b>AS IS</b> with <b>NO WARRANTY</b> of any kind.
+                  <em>Please be careful out there.</em>
+                </p>
+              % endif
             </div>
-          </div>
+
+            <div id="error_pane" ${h.hide_element(not show_error_pane)}>
+              % if c.errors:
+                <h2>${c.title}</h2>
+                <%
+                  try:
+                    lines = c.errors.splitlines()
+                  except AttributeError:
+                    lines = None
+                %>
+                % if lines:
+                  <ul>
+                    % for e in lines:
+                      <li>${e}</li>
+                    % endfor
+                  </ul>
+                % else:
+                  ${c.errors}
+                % endif
+              % endif
+              ${self.body()}
+            </div>
+          </%call>
           <!-- /Message Pane -->
 
 
@@ -251,15 +246,10 @@
 
 
       <!-- Ads -->
-      <div id="ads" class="fixed-pane">
-        <div class="title-bar">
-          <div class="title">&nbsp;</div>
-        </div>
-        <div class="content-pane">
-          ${self.ads()}
-          ${h.javascript_include_tag('ads')}
-        </div>
-      </div>
+      <%call expr="fixed_pane(id='ads')">
+        ${self.ads()}
+        ${h.javascript_include_tag('ads')}
+      </%call>
       <!-- /Ads -->
 
 
@@ -290,7 +280,7 @@
       </div>
 
       <h2>Bicycle Trip Planner</h2>
-      
+
       <h3>Get There by Cycle!</h3>
 
       <div>
@@ -326,6 +316,8 @@
   </body>
 </html>
 
+
+<%namespace file="/widgets/fixed-pane.html" import="fixed_pane" />
 
 <%def name="region_title()">
   ${c.region.title if c.region else 'Select a region'}

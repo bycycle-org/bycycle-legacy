@@ -1,79 +1,72 @@
 <%inherit file="layout.html"/>
 
+<%! from urllib import unquote_plus %>
+
+<%namespace file="/widgets/fixed-pane.html" import="fixed_pane" />
 
 <%
-    from urllib import unquote_plus
     route = c.route
-    units = c.region.units
-    distance = route.distance[units]
-    miles = distance / 5280.0
-    mi = '%.2f' % miles
-    km = '%.2f' % (miles * 1.609344)
-    s = route.start['geocode']
-    s_addr = s.address
-    e = route.end['geocode']
-    e_addr = e.address
+    distance = route.distance
+    total_mi = distance['miles']
+    total_km = distance['kilometers']
+    start = route.start['geocode']
+    s_addr = start.address
+    end = route.end['geocode']
+    e_addr = end.address
     directions = route.directions
     linestring = route.linestring_ll
     centroid = linestring.centroid()
     s_addr = str(s_addr).replace('\n', '<br/>')
     e_addr = str(e_addr).replace('\n', '<br/>')
     last_street = e_addr.split('<br/>', 1)[0]
-    s_url_str = s.urlStr()
-    e_url_str = e.urlStr()
+    s_url_str = start.urlStr()
+    e_url_str = end.urlStr()
     tab = '&nbsp;&nbsp;&nbsp;&nbsp;'
     set_center_onclick = 'byCycle.UI.map.setCenter({x: %s, y: %s}); return false;'
     map_blowup_href = "#show-map-blowup"
     map_blowup_onclick = "byCycle.UI.map.showMapBlowup({x: %s, y: %s}); return false;"
 %>
 
-<div class="fixed-pane">
-  <div class="title-bar">
-    <div class="title">
-      Route
-      <span class="small">
-        <a class="show-on-map-link"
-           href="#show-route-on-map"
-           title="Show this route on the map"
-           onclick="${set_center_onclick % (centroid.x, centroid.y)}"
-           >show on map</a>
-      </span>
-    </div>
-  </div>
-
-  <div class="content-pane">
+<%call expr="fixed_pane()">
+    <%def name="title()">
+        Route
+        <span class="small">
+          <a class="show-on-map-link"
+             href="#show-route-on-map"
+             title="Show this route on the map"
+             onclick="${set_center_onclick % (centroid.x, centroid.y)}"
+             >show on map</a>
+        </span>
+    </%def>
     <table class="directions">
         <tr>
             <td colspan="2">
                 <a href="${map_blowup_href}"
-                   onclick="${map_blowup_onclick % (s.xy_ll.x, s.xy_ll.y)}"
+                   onclick="${map_blowup_onclick % (start.xy_ll.x, start.xy_ll.y)}"
                    >Start</a></h2>
             </td>
             <td class="start" colspan="2">
                 ${s_addr}
             </td>
         </tr>
-        
         <tr>
             <td colspan="2">
                  <a href="${map_blowup_href}"
-                   onclick="${map_blowup_onclick % (e.xy_ll.x, e.xy_ll.y)};"
+                   onclick="${map_blowup_onclick % (end.xy_ll.x, end.xy_ll.y)};"
                    >End</a>
             </td>
             <td class="end" colspan="2">
                 ${e_addr}
             </td>
         </tr>
-        
         <tr>
             <td colspan="2">
                  Distance
             </td>
             <td colspan="2">
-                ${mi} miles (${km} km)
+                ${'%.2f' % total_mi} miles (${'%.2f' % total_km} km)
             </td>
         </tr>
-        
         <tr>
             <td id="reverse_div" colspan="4">
                 <a href="/${c.region.slug}/route/['${e_url_str}', '${s_url_str}']"
@@ -81,65 +74,56 @@
                    >Reverse Directions</a>
             </td>
         </tr>
-
-<%
-    last_i = len(directions) - 1
-    row_class = h.cycle('a', 'b')
-%>
-% for i, d in enumerate(directions):
-    <%
-        turn = d['turn']
-        street = d['street']
-        point = linestring.pointN(d['linestring_index'])
-        if turn == 'straight':
-            turn = 'cont.'
-            street = street[1]
-        if street == 'None':
-            street = '[No name]'
-        street = ' - '.join([s.strip() for s in street.split('-') if s])
-        if i == 0:
-            street = street #'%s toward %s' % (street, d['toward'])
-        jogs = d['jogs']
-        if jogs:
-            J = ['<br/>%sJogs...' % tab]
-            for j in jogs:
-                J.append('<br/>%s%s&middot; <i>%s</i> at %s' %
-                         (tab, tab, j['turn'], j['street']))
-            jogs = ''.join(J)
-        else:
-            jogs = ''
-        ls_index = d['linestring_index']
-        distance = d['distance'][units]
-        miles = distance / 5280.0  # TODO: region.toMiles(distance)
-        mi = '%.2f' % miles
-        km = '%.2f' % (miles * 1.609344)
-        bikemodes = d['bikemode']
-        bikemodes = ' [%s]' % ', '.join([b for b in bikemodes]) if bikemodes else ''
-    %>
-
-    <tr>
-        <td class="count ${row_class}">
-            <a href="${map_blowup_href}"
-               onclick="${map_blowup_onclick % (point.x, point.y)}"
-               >${i + 1}</a>
-        </td>
-        <td class="turn ${row_class}">${turn.title()}</td>
-        <td class="direction ${row_class}">${street}</td>
-        <td class="segment_distance ${row_class}">${mi} mi</td>
-    </tr>
-
-    <% row_class = h.cycle('a', 'b') %>
-% endfor
-
+        % for i, d in enumerate(directions):
+            <%
+                row_class = h.cycle('a', 'b')
+                turn = d['turn']
+                street = d['street']
+                point = linestring.pointN(d['linestring_index'])
+                if turn == 'straight':
+                    turn = 'cont.'
+                    street = street[1]
+                if street == 'None':
+                    street = '[No name]'
+                street = ' - '.join([s.strip() for s in street.split('-') if s])
+                if i == 0:
+                    street = street #'%s toward %s' % (street, d['toward'])
+                jogs = d['jogs']
+                if jogs:
+                    J = ['<br/>%sJogs...' % tab]
+                    for j in jogs:
+                        J.append('<br/>%s%s&middot; <i>%s</i> at %s' %
+                                 (tab, tab, j['turn'], j['street']))
+                    jogs = ''.join(J)
+                else:
+                    jogs = ''
+                ls_index = d['linestring_index']
+                distance = d['distance']
+                mi = '%.2f' % distance['miles']
+                km = '%.2f' % distance['kilometers']
+                #bms = d['bikemode']
+                #bms = ' [%s]' % ', '.join([b for b in bms]) if bms else ''
+            %>
+                <tr>
+                    <td class="count ${row_class}">
+                        <a href="${map_blowup_href}"
+                           onclick="${map_blowup_onclick % (point.x, point.y)}"
+                           >${i + 1}</a>
+                    </td>
+                    <td class="turn ${row_class}">${turn.title()}</td>
+                    <td class="direction ${row_class}">${street}</td>
+                    <td class="segment_distance ${row_class}">${mi} mi</td>
+                </tr>
+        % endfor
+        <% row_class = h.cycle('a', 'b') %>
         <tr>
             <td class="count ${row_class}">
                 <a href="${map_blowup_href}"
-                   onclick="${map_blowup_onclick % (e.xy_ll.x, e.xy_ll.y)}"
+                   onclick="${map_blowup_onclick % (end.xy_ll.x, end.xy_ll.y)}"
                    >${i + 2}</a>
             </td>
             <td class="turn ${row_class}">End</td>
             <td class="direction ${row_class}" colspan="2">${last_street}</td>
         </tr>
-    </table>    
-  </div>
-</div>
+    </table>
+</%call>
