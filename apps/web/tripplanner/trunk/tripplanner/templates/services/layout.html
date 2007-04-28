@@ -126,7 +126,7 @@
 
 <%def name="map_controls()">
   <!-- Map Menu -->
-  <div id="map-controls">
+  <div id="map-controls" class="noprint">
     <!--<select id="map_mode">-->
       <!--<option value="">- Map Mode -</option>-->
       <!--<option value="">Normal</option>-->
@@ -172,6 +172,6 @@
 
 <%def name="json()">
   % if c.format != 'json':
-    ${h.hidden_field('', value=c.json, class_='json')}
+    ${h.hidden_field(None, value=c.json, class_='json')}
   % endif
 </%def>

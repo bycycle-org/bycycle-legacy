@@ -38,42 +38,27 @@
              >show on map</a>
         </span>
     </%def>
-    <table class="directions">
-        <tr>
-            <td colspan="2">
-                <a href="${map_blowup_href}"
-                   onclick="${map_blowup_onclick % (start.xy_ll.x, start.xy_ll.y)}"
-                   >Start</a></h2>
-            </td>
-            <td class="start" colspan="2">
-                ${s_addr}
-            </td>
-        </tr>
-        <tr>
-            <td colspan="2">
-                 <a href="${map_blowup_href}"
-                   onclick="${map_blowup_onclick % (end.xy_ll.x, end.xy_ll.y)};"
-                   >End</a>
-            </td>
-            <td class="end" colspan="2">
-                ${e_addr}
-            </td>
-        </tr>
-        <tr>
-            <td colspan="2">
-                 Distance
-            </td>
-            <td colspan="2">
-                ${'%.2f' % total_mi} miles (${'%.2f' % total_km} km)
-            </td>
-        </tr>
-        <tr>
-            <td id="reverse_div" colspan="4">
-                <a href="/${c.region.slug}/route/['${e_url_str}', '${s_url_str}']"
-                   onclick="byCycle.UI.reverseDirections('${unquote_plus(e_url_str)}', '${unquote_plus(s_url_str)}'); return false;"
-                   >Reverse Directions</a>
-            </td>
-        </tr>
+    <div class="start">
+        <a href="${map_blowup_href}"
+           title="Start of route"
+           onclick="${map_blowup_onclick % (start.xy_ll.x, start.xy_ll.y)}"
+           >${s_addr}</a>
+    </div>
+    <div class="end">
+        <a href="${map_blowup_href}"
+           title="End of route"
+           onclick="${map_blowup_onclick % (end.xy_ll.x, end.xy_ll.y)};"
+           >${e_addr}</a>
+    </div>
+    <div class="total-distance">
+        ${'%.2f' % total_mi} miles / ${'%.2f' % total_km} km
+    </div>
+    <div class="noprint reverse-directions">
+        <a href="/regions/${c.region.slug}/routes;find?q=${e_url_str}+to+${s_url_str}"
+           onclick="byCycle.UI.reverseDirections('${unquote_plus(e_url_str)}', '${unquote_plus(s_url_str)}'); return false;"
+           >Reverse Directions</a>
+    </div>
+    <div class="directions">
         % for i, d in enumerate(directions):
             <%
                 row_class = h.cycle('a', 'b')
@@ -90,7 +75,7 @@
                     street = street #'%s toward %s' % (street, d['toward'])
                 jogs = d['jogs']
                 if jogs:
-                    J = ['<br/>%sJogs...' % tab]
+                    J = ['%sJogs...' % tab]
                     for j in jogs:
                         J.append('<br/>%s%s&middot; <i>%s</i> at %s' %
                                  (tab, tab, j['turn'], j['street']))
@@ -104,26 +89,31 @@
                 #bms = d['bikemode']
                 #bms = ' [%s]' % ', '.join([b for b in bms]) if bms else ''
             %>
-                <tr>
-                    <td class="count ${row_class}">
+                <div class="direction ${row_class}">
+                    <span class="count">
                         <a href="${map_blowup_href}"
                            onclick="${map_blowup_onclick % (point.x, point.y)}"
                            >${i + 1}</a>
-                    </td>
-                    <td class="turn ${row_class}">${turn.title()}</td>
-                    <td class="direction ${row_class}">${street}</td>
-                    <td class="segment_distance ${row_class}">${mi} mi</td>
-                </tr>
+                    </span>
+                    <span class="turn">${turn.title()}</span>
+                    <span class="direction">${street}</span>
+                    <span class="segment_distance"> - ${mi} mi</span>
+                    % if jogs:
+                        <div class="jogs">
+                            ${jogs}
+                        </div>
+                    % endif
+                </div>
         % endfor
         <% row_class = h.cycle('a', 'b') %>
-        <tr>
-            <td class="count ${row_class}">
+        <div class="direction ${row_class}">
+            <span class="count">
                 <a href="${map_blowup_href}"
                    onclick="${map_blowup_onclick % (end.xy_ll.x, end.xy_ll.y)}"
                    >${i + 2}</a>
-            </td>
-            <td class="turn ${row_class}">End</td>
-            <td class="direction ${row_class}" colspan="2">${last_street}</td>
-        </tr>
-    </table>
+            </span>
+            <span class="turn">End</span>
+            <span class="direction">${last_street}</span>
+        </div>
+    </div>
 </%call>
