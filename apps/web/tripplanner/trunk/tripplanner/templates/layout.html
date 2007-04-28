@@ -23,6 +23,28 @@
     ${h.if_ie(h.stylesheet_link_tag('base_ie.css'))}
     ${self.stylesheet_links()}
 
+    <style type="text/css">
+      @media print {
+        html, body {
+          overflow: visible;
+        }
+        html, body, #col-a, #col-b, #message_pane, #result_pane, #map_pane {
+          padding: 0;
+          margin: 0;
+          width: 100%;
+        }
+        #col-a, #col-b {
+          float: none;
+        }
+        #message_pane, #result_pane, #map_pane {
+          height: auto;
+        }
+        .gmnoprint, .noprint {
+          display: none;
+        }
+      }
+    </style>
+
     <script type="text/javascript">
       //<![CDATA[
       // Global setup
@@ -39,7 +61,7 @@
   <body>
 
 
-    <div id="meta">
+    <div id="meta" class="noprint">
       <div id="current-region">
         Region:
         ${self.region_title()}
@@ -69,7 +91,7 @@
 
 
       <!-- Masthead -->
-      <div id="masthead">
+      <div id="masthead" class="noprint">
         <h1 id="logo">
           <a href="http://bycycle.org/" title="byCycle.org Home Page">
           ${h.image_tag('logo.png', title='byCycle.org Home Page', width=150, height=25, alt='byCycle.org')}
@@ -96,7 +118,7 @@
 
 
       <!-- Bar -->
-      <div id="bar">
+      <div id="bar" class="noprint">
 
 
         <div id="status">
@@ -132,7 +154,7 @@
         <div id="col-a">
 
 
-          <div id="spinner" class="spinner" style="display: none;">
+          <div id="spinner" class="spinner noprint" style="display: none;">
             ${h.image_tag('spinner.gif', width=16, height=16)}
           </div>
 
@@ -246,7 +268,7 @@
 
 
       <!-- Ads -->
-      <%call expr="fixed_pane(id='ads')">
+      <%call expr="fixed_pane(id='ads', classes=['noprint'])">
         ${self.ads()}
         ${h.javascript_include_tag('ads')}
       </%call>
@@ -258,7 +280,7 @@
 
 
     <!-- Footer -->
-    <div id="footer">
+    <div id="footer" class="noprint">
       &copy; 2007 <a href="http://byCycle.org/" title="byCycle Home Page">byCycle.org</a>
       &middot;
       Hosted by <a href="http://www.metro-region.org/">Metro</a>
@@ -272,7 +294,7 @@
 
 
     <!-- Loading -->
-    <div id="loading" style="display: none;">
+    <div id="loading" class="noprint" style="display: none;">
       <div id="loading-masthead">
         <a href="http://bycycle.org/" title="byCycle.org Home Page">
           ${h.image_tag('logo.png', title='byCycle.org Home Page', width=150, height=25, alt='byCycle.org')}
@@ -327,7 +349,7 @@
 
 <%def name="input_container(classes=[])">
   <!-- Input Container -->
-  <div id="input_container" class="${' '.join(classes)}">
+  <div id="input_container" class="noprint ${' '.join(classes)}">
     % if caller:
       ${caller.body()}
     % endif

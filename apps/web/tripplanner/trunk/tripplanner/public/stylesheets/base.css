@@ -214,10 +214,7 @@ div.region-ad {
 }
 #route_list .fixed-pane .content-pane {
   padding: 0;
-  border: none;
-}
-#route_list .fixed-pane {
-  border-left: 1px solid #99b3cc;
+  border-bottom: none;
 }
 .disclaimer {
   font-size: 85%;
@@ -269,47 +266,25 @@ div.region-ad {
 
 
 /* Route Summary & Directions */
-.start { color: green; }
-.end { color: red; }
-.start h2, .end h2, .total_distance h2 {
-  padding: 0px;
-  margin: 0px;
-  font-size: 14px;
-}
-.directions {
-  width: 100%;
-  border-collapse: collapse;
-}
-.directions td {
-  border: 1px solid #99b3cc;
-  padding: 2px;
-  vertical-align: middle;
-}
-.directions div {
+div.start,
+div.end,
+div.total-distance,
+div.reverse-directions,
+div.directions div {
+  border-bottom: 1px solid #99b3cc;
   padding: 2px;
 }
-.count { text-align: right; }
-.a { background: #ddd; }
-.b { background: #fff; }
-
-
-/* Print Rules **********/
-@media print {
-  html, body {
-    overflow: visible;
-  }
-  html, body, #col-a, #col-b, #result {
-    padding: 0;
-    margin: 0;
-    width: 100%;
-  }
-  #col-a, #col-b {
-    float: none;
-  }
-  #result {
-    height: auto;
-  }
-  .gmnoprint, .noprint {
-    display: none;
-  }
+div.start a {
+  color: green;
 }
+div.end a {
+  color: red;
+}
+div.directions div.direction div.jogs {
+  border-bottom: none;
+}
+div.a { background: #ddd; }
+div.b { background: #fff; }
+span.count { text-align: right; }
+span.turn { font-weight: bold; }
+span.segment_distance { font-style: italic; }
