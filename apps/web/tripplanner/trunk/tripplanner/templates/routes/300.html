@@ -52,22 +52,19 @@ ${self.json()}
     field_addr = unquote_plus(geocode.urlStr())
   %>
   <%call expr="fixed_pane(title_bar_style={'display': 'none'}, )">
-    <%def name="title()"></%def>
-    <%def name="content()">
-      <div class="address">${html_addr}</div>
-      <div class="multi-select-links">
-        <a class="show-on-map-link"
-           href="#show-location-on-map"
-           title="Show this location on the map"
-           onclick="byCycle.UI.map.setCenter({x: ${x}, y: ${y}}); return false;"
-           >Show on map</a>
-        |
-        <a class="select-geocode-link"
-           href="${h.url_for('find_geocodes', region_id=c.region.slug, q=field_addr)}#select-this-location"
-           title="Select this location"
-           onclick="byCycle.UI.selectRouteGeocode(this, ${i}, ${j}); return false;"
-           >Select</a>
-      </div>
-    </%def>
+    <div class="address">${html_addr}</div>
+    <div class="multi-select-links">
+      <a class="show-on-map-link"
+         href="#show-location-on-map"
+         title="Show this location on the map"
+         onclick="byCycle.UI.map.setCenter({x: ${x}, y: ${y}}); return false;"
+         >Show on map</a>
+      |
+      <a class="select-geocode-link"
+         href="${h.url_for('find_geocodes', region_id=c.region.slug, q=field_addr)}#select-this-location"
+         title="Select this location"
+         onclick="byCycle.UI.selectRouteGeocode(this, ${i}, ${j}); return false;"
+         >Select</a>
+    </div>
   </%call>
 </%def>
