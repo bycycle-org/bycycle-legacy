@@ -75,13 +75,18 @@
         &middot;
         <a href="http://bycycle.org/projects/trip-planner/help"
            title="Trip Planner help page (opens in new window)"
-           target="byCyle_window"
+           target="byCycle_window"
            >Help</a>
         &middot;
         <a href="http://bycycle.org/contact"
            title="Send us your comments, questions, suggestions, etc (opens in new window)"
-           target="byCyle_window"
+           target="byCycle_window"
            >Feedback</a>
+        &middot;
+        <a href="http://bycycle.org/support"
+           title="Please support byCycle (opens in new window)"
+           target="byCycle_window"
+           >Support byCycle</a>
       </div>
     </div>
     <!-- /#meta -->
@@ -93,18 +98,19 @@
       <!-- Masthead -->
       <div id="masthead" class="noprint">
         <h1 id="logo">
-          <a href="http://bycycle.org/" title="byCycle.org Home Page">
+          <a href="http://bycycle.org/" title="byCycle.org Home Page (opens in new window)" target="byCycle_window">
           ${h.image_tag('logo.png', title='byCycle.org Home Page', width=150, height=25, alt='byCycle.org')}
           </a>
         </h1>
 
         <h2 id="app-name">
-          ${h.link_to('Bicycle Trip Planner', h.url_for('/'), title='byCycle.org Bicycle Trip Planner')}
+          ${h.link_to('Bicycle Trip Planner', h.url_for('/'), title='byCycle.org Bicycle Trip Planner (this page)')}
         </h2>
 
         <h3 id="app-version">
           <a href="http://en.wikipedia.org/wiki/Development_stage#Beta"
-             title="Beta?"
+             title="Beta? (opens in new window)"
+             target="byCycle_window" 
              >beta</a>
         </h3>
       </div>
@@ -128,7 +134,7 @@
             Welcome to the
             <a href="http://bycycle.org/"
                title="byCycle Home Page (opens in new window)"
-               target="byCyle_window"
+               target="byCycle_window"
                >byCycle.org</a> bicycle trip planner.
           % endif
         </div>
@@ -184,7 +190,7 @@
                   The trip planner is under active development. Please
                   <a href="http://bycycle.org/contact"
                      title="Send us problems, comments, questions, &amp; suggestions (opens in new window)"
-                     target="byCyle_window"
+                     target="byCycle_window"
                      >contact us</a>
                      with any problems, comments, questions, or suggestions.
                 </p>
@@ -193,10 +199,10 @@
                   If you find this application useful or would like to contribute to its improvement, please consider
                   <a href="http://bycycle.org/support/donate"
                      title="Support byCycle (opens in new window)"
-                     target="byCyle_window">donating</a>,
+                     target="byCycle_window">donating</a>,
                   <a href="http://bycycle.org/support/buy-stuff"
                      title="Buy byCycle stuff"
-                     target="byCyle_window">buying our apparel and other items</a>, or
+                     target="byCycle_window">buying our apparel and other items</a>, or
                   <a href="http://bycycle.org/support/get-involved"
                      title="Get Involved"
                      target="byCycle_window">getting involved</a>.
@@ -281,14 +287,19 @@
 
     <!-- Footer -->
     <div id="footer" class="noprint">
-      &copy; 2007 <a href="http://byCycle.org/" title="byCycle Home Page">byCycle.org</a>
+      &copy; 2007 <a href="http://byCycle.org/" title="byCycle Home Page (opens in new window)" target="byCycle_window">byCycle.org</a>
       &middot;
-      Hosted by <a href="http://www.metro-region.org/">Metro</a>
+      Hosted by <a href="http://www.metro-region.org/" title="Metro regional government (opens in new window)" target="byCycle_window">Metro</a>
       &middot;
-      Powered by <a href="http://www.python.org/">Python</a> and
-      <a href="http://pylonshq.com/">Pylons</a>
+      Powered by <a href="http://www.python.org/" title="Python programming language (opens in new window)" target="byCycle_window">Python</a> and
+      <a href="http://pylonshq.com/" title="Pylons Web framework (opens in new window)" target="byCycle_window">Pylons</a>
       &middot;
-      <a href="http://trac.bycycle.org/" title="Information for Developers (Trac)">Developers</a>
+      <a href="http://trac.bycycle.org/" title="Information for Developers (Trac) (opens in new window)" target="byCycle_window">Developers</a>
+      &middot;
+      <a href="http://bycycle.org/support"
+         title="Please support byCycle (opens in new window)"
+         target="byCycle_window"
+         >Support byCycle</a>
     </div>
     <!-- /Footer -->
 
@@ -296,7 +307,7 @@
     <!-- Loading -->
     <div id="loading" class="noprint" style="display: none;">
       <div id="loading-masthead">
-        <a href="http://bycycle.org/" title="byCycle.org Home Page">
+        <a href="http://bycycle.org/" title="byCycle.org Home Page (opens in new window)" target="byCycle_window">
           ${h.image_tag('logo.png', title='byCycle.org Home Page', width=150, height=25, alt='byCycle.org')}
         </a>
       </div>
