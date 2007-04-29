@@ -645,13 +645,13 @@ class Place(Entity):
 
     def to_builtin(self):
         return {
-            'city': self.city.to_builtin(),
-            'state': self.state.to_builtin(),
-            'zip_code': str(self.zip_code or '')
+            'city': (self.city.to_builtin() if self.city is not None else None),
+            'state': (self.state.to_builtin() if self.state is not None else None),
+            'zip_code': str(self.zip_code or None)
         }
 
     def __nonzero__(self):
-        return bool(self.city or self.state or self.zip_code)
+        return bool(self.city or self.state or (self.zip_code is not None))
 
 
 class InitCoordinatesException(Exception):
