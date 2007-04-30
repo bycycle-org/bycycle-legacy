@@ -26,21 +26,13 @@ byCycle.widget.FixedPane.prototype = {
   },
 
   _create_controls: function () {
-    byCycle.logDebug('Creating fixed pane controls...');
     if (!(this.collapsible || this.closeable)) return;
-
-    // Create and append the control bar
     this.control_bar = this.title_bar.getElementsByClassName('control-bar')[0];
-    byCycle.logDebug(this.control_bar);
-
     if (this.collapsible) {
-      byCycle.logDebug('Creating _ control...');
       this._add_button('#toggle-window-contents', 'Hide window content', '_',
                        this.on_collapse);
     }
-
     if (this.closeable) {
-      byCycle.logDebug('Creating X control...');
       this._add_button('#close-window', 'Close window', 'X', this.on_close);
     }
   },
