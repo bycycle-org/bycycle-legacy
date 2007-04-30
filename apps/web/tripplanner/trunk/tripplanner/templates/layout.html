@@ -19,31 +19,10 @@
 
     <title>byCycle.org - Bicycle Trip Planner - ${self.region_title()}</title>
 
-    ${h.stylesheet_link_tag('base.css', 'fixed-pane.css')}
-    ${h.if_ie(h.stylesheet_link_tag('base_ie.css'))}
+    ${h.stylesheet_link_tag('base', 'fixed-pane')}
+    ${h.if_ie(h.stylesheet_link_tag('base_ie'))}
+    ${h.stylesheet_link_tag('print', media='print')}
     ${self.stylesheet_links()}
-
-    <style type="text/css">
-      @media print {
-        html, body {
-          overflow: visible;
-        }
-        html, body, #col-a, #col-b, #message_pane, #result_pane, #map_pane {
-          padding: 0;
-          margin: 0;
-          width: 100%;
-        }
-        #col-a, #col-b {
-          float: none;
-        }
-        #message_pane, #result_pane, #map_pane {
-          height: auto;
-        }
-        .gmnoprint, .noprint {
-          display: none;
-        }
-      }
-    </style>
 
     <script type="text/javascript">
       //<![CDATA[
@@ -71,7 +50,7 @@
       </div>
 
       <div id="meta-links">
-        <b><a href="http://bycycle.metro-region.org/old-tripplanner" title="Use the old version if this new version doesn't work for you">Old Version</a></b>
+        <span class="attention"><a href="http://bycycle.metro-region.org/old-tripplanner" title="Use the old version if this new version doesn't work for you">Old Version</a></span>
         &middot;
         <a href="http://bycycle.org/projects/trip-planner/help"
            title="Trip Planner help page (opens in new window)"
@@ -172,7 +151,7 @@
             show_error_pane = (c.errors or
                                (c.http_status and c.http_status > 299))
             show_info_pane = not show_error_pane
-            msg_pane_style = {'display': ('' if show_msg_pane else 'none')}
+            msg_pane_style = {'display': ('block' if show_msg_pane else 'none')}
           %>
 
           <%call expr="fixed_pane(id='message_pane', classes=['display-pane'], style=msg_pane_style)">
@@ -181,13 +160,18 @@
                 ${c.info}
               % else:
                 <p class="no-top-margin">
-                  This is a new version of the trip planner. It only works for the Portland, OR, region.
+                  This is a <span class="attention">new version</span> of the trip planner. It only works for the ${h.link_to('Portland, OR, region', h.url_for('region', id='portlandor'))}.
                   If you have any problems with it or if you want to access other regions, the
-                  <b><a href="http://bycycle.metro-region.org/old-tripplanner" title="Use the old version if this new version doesn't work for you">old version</a></b> is available <b><a href="http://bycycle.metro-region.org/old-tripplanner" title="Use the old version if this new version doesn't work for you">here</a></b>.
+                  <span class="attention"><a href="http://bycycle.metro-region.org/old-tripplanner" title="Use the old version if this new version doesn't work for you">old version</a></span> is available <b><a href="http://bycycle.metro-region.org/old-tripplanner" title="Use the old version if this new version doesn't work for you">here</a></b>.
                 </p>
 
                 <p>
-                  The trip planner is under active development. Please
+                  The trip planner, though 
+                  <a href="http://bycycle.org/2007/04/29/new-version-of-trip-planner-launched/"
+                     title="Blog post about funding status"
+                     target="byCycle_window"
+                     >essentially unfunded</a>,
+                     is under active development. Please
                   <a href="http://bycycle.org/contact"
                      title="Send us problems, comments, questions, &amp; suggestions (opens in new window)"
                      target="byCycle_window"
@@ -208,10 +192,15 @@
                      target="byCycle_window">getting involved</a>.
                 </p>
 
-                <p class="no-bottom-margin">
+                <p>
                   Users should independently verify all information presented here. This
                   service is provided <b>AS IS</b> with <b>NO WARRANTY</b> of any kind.
                   <em>Please be careful out there.</em>
+                </p>
+
+                <p class="w3c no-bottom-margin noprint">
+                  <a href="http://validator.w3.org/check/referer" title="W3C Markup Validator" target="byCycle_window"><img src="http://www.w3.org/Icons/valid-xhtml10" alt="Valid XHTML 1.0 Transitional" height="31" width="88" /></a>
+                  <a href="http://jigsaw.w3.org/css-validator/check/referer" title="W3C CSS Validator" target="byCycle_window"><img style="border:0;width:88px;height:31px" src="http://jigsaw.w3.org/css-validator/images/vcss" alt="Valid CSS!" /></a>
                 </p>
               % endif
             </div>
