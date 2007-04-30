@@ -53,6 +53,10 @@ byCycle.UI = (function () {
       self.onResize();
       self.setRegion(self.region_id);
       self._createEventHandlers();
+      var zoom = parseInt(byCycle.getParamVal('zoom'));
+      if (!isNaN(zoom)) {
+        self.map.setZoom(zoom);
+      }
       Element.remove('loading');
       self.onResize();
     },
@@ -131,10 +135,8 @@ byCycle.UI = (function () {
       var style = {marginRight: '0px'};
       ids.each(function (id) { $(id).setStyle(style); });
     },
-	
-	handleMapClick: function (event) {
-	
-	},
+
+    handleMapClick: function (event) {},
 
     /* Display Panes *********************************************************/
 

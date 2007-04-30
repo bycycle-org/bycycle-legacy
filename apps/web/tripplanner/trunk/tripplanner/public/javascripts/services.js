@@ -22,8 +22,8 @@
     results: $H({'geocodes': $H({}), 'routes': $H({})}),
     http_status: null,
     response_text: null,
-	bike_overlay: null,
-	bike_overlay_state: false,
+    bike_overlay: null,
+    bike_overlay_state: false,
 
     status_messages: {
       200: 'One result was found',
@@ -51,6 +51,9 @@
                                       initial_tab_id);
       self.handleQuery();
       self.onResize();
+      if (byCycle.getParamVal('bike_map')) {
+        self.toggleBikeTileOverlay();
+      }
     },
 
     _assignUIElements: function() {
