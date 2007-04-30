@@ -14,13 +14,11 @@ def if_ie(content, join_string=''):
 
 
 def hide_element(cond=True, as_attr=True):
-    if cond:
-        if as_attr:
-            return 'style="display: none;"'
-        else:
-            return 'display: none;'
+    rule = 'display: %s' % ('none' if cond else 'block')
+    if as_attr:
+        return 'style="%s"' % rule
     else:
-        return ''
+        return rule
 
 
 def make_inline_style(style_dict):
