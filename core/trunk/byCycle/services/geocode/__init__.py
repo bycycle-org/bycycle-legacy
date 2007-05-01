@@ -168,10 +168,12 @@ class Service(services.Service):
         table = Edge.table
         c = Edge.c
 
-        clause = [
-            (func.least(c.addr_f, c.addr_t) <= num),
-            (num <= func.greatest(c.addr_f, c.addr_t))
-        ]
+        clause = [or_(
+            and_(num >= func.least(c.addr_f_l, c.addr_f_r),
+                 num <= func.greatest(c.addr_t_l, c.addr_t_r)),
+            and_(num >= func.least(c.addr_t_l, c.addr_t_r),
+                 num <= func.greatest(c.addr_f_l, c.addr_f_r))
+        )]
 
         try:
             # Try to look up edge by network ID first
@@ -308,9 +310,9 @@ class Service(services.Service):
             edge = edges[0]
             # Set address number to number at `node` end of edge
             if node.id == edge.node_f_id:
-                num = edge.addr_f
+                num = edge.addr_f_l or edge.addr_f_r
             else:
-                num = edge.addr_t
+                num = edge.addr_t_l or edge.addr_t_r
             addr = PostalAddress(num, edge.street_name, edge.place_l)
             g = PostalGeocode(self.region, addr, edge)
             g.node = node

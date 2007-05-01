@@ -299,8 +299,10 @@ class Node(Entity):
 
 
 class Edge(Entity):
-    has_field('addr_f', Integer)
-    has_field('addr_t', Integer)
+    has_field('addr_f_l', Integer)
+    has_field('addr_f_r', Integer)
+    has_field('addr_t_l', Integer)
+    has_field('addr_t_r', Integer)
     has_field('even_side', CHAR(1)),
     has_field('one_way', Integer)
     has_field('geom', LINESTRING(4326))
@@ -355,7 +357,7 @@ class Edge(Entity):
         """
 
         ``num``
-            A number that should be in range [addr_f, addr_t]
+            A number that should be in the this edge's address range
 
         return
             ``Point``
@@ -365,15 +367,16 @@ class Edge(Entity):
 
         """
         # Sanity check; num should always be an `int`
-        num = int(num)
+        num = int(num or 0)
 
         # Determine location in [0, 1] of num along edge
-        # Note: addr_f/t might be NULL
-        if (not num) or (None in (self.addr_f, self.addr_t)):
+        # Note: addrs might be NULL/None
+        addrs = (self.addr_f_l, self.addr_f_r, self.addr_t_l, self.addr_t_r)
+        min_addr = min(addrs)
+        max_addr = max(addrs)
+        if not num or None in (min_addr, max_addr):
             location = .5
         else:
-            min_addr = min(self.addr_f, self.addr_t)
-            max_addr = max(self.addr_f, self.addr_t)
             if min_addr == max_addr:
                 location = .5
             else:
@@ -409,8 +412,8 @@ class Edge(Entity):
         )
         # address range
         num = geocode.address.number
-        edge_f.addr_t = num
-        edge_t.addr_f = num
+        edge_f.addr_t_l, edge_f.addr_t_r = num, num
+        edge_t.addr_f_l, edge_t.addr_f_r = num, num
         return edge_f, edge_t
 
     def splitAtNumber(self, num, node_id=-1, edge_f_id=-1, edge_t_id=-2):
@@ -478,8 +481,10 @@ class Edge(Entity):
 
     def __str__(self):
         stuff = [
-            joinAttrs(('Address Range:', self.addr_f or '[None]',
-                       'to', self.addr_t or '[None]')),
+            joinAttrs(('Address Range:',
+                       self.addr_f_l, ', ', self.addr_f_r,
+                       'to',
+                       self.addr_t_l, ', ', self.addr_t_r)),
             (self.street_name or '[No Street Name]'),
             self.place_l, self.place_r,
         ]
