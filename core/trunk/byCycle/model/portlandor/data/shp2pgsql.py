@@ -577,7 +577,7 @@ def transfer_nodes():
     echo(Q)
     db.execute(Q)
     db.commit()
-    
+
     echo('Transferring regional node geometry to node table...')
     Q = ('UPDATE node SET geom = transform(portlandor_node.geom, 4326)'
          'FROM portlandor_node WHERE portlandor_node.base_id = node.id')
@@ -643,22 +643,9 @@ def transfer_edges():
     step = 2500
     num_records = raw_records.rowcount
     for r in raw_records:
-        addr_f_l, addr_f_r = r.addr_f_l, r.addr_f_r
-        addr_t_l, addr_t_r = r.addr_t_l, r.addr_t_r
-        # Unify "from" addresses
-        if any_not_none((addr_f_l, addr_f_r)):
-            addr_f = int(round((addr_f_l or addr_f_r) / 10.0) * 10) + 1
-        else:
-            addr_f = None
-        # Unify "to" addresses
-        if any_not_none((addr_t_l, addr_t_r)):
-            addr_t = int(round((addr_t_l or addr_t_r) / 10.0) * 10)
-        else:
-            addr_t = None
-        even_side = getEvenSide(addr_f_l, addr_f_r, addr_t_l, addr_t_r)
-        t = r.sttype
-        st_name_id = street_names[(r.prefix, r.name,
-                                   street_types_ftoa.get(t, t), r.suffix)]
+        even_side = getEvenSide(r.addr_f_l, r.addr_f_r, r.addr_t_l, r.addr_t_r)
+        sttype = street_types_ftoa.get(r.sttype, r.sttype)
+        st_name_id = street_names[(r.prefix, r.name, sttype, r.suffix)]
         city_l = cities_atof[r.city_l]
         city_r = cities_atof[r.city_r]
         state_l = 'or' if city_l != 'vancouver' else 'wa'
@@ -677,8 +664,10 @@ def transfer_edges():
             sscode=r.sscode
         ))
         records.append(dict(
-            addr_f=addr_f,
-            addr_t=addr_t,
+            addr_f_l=r.addr_f_l or None,
+            addr_f_r=r.addr_f_r or None,
+            addr_t_l=r.addr_t_l or None,
+            addr_t_r=r.addr_t_r or None,
             even_side=even_side,
             one_way=one_ways[r.one_way],
             node_f_id=nodes[r.node_f_id],

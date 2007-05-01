@@ -119,7 +119,7 @@ class TestPortlandOR(unittest.TestCase):
 
         # Get edge matching 633 n alberta st        
         c = Edge.c
-        edge = Edge.selectfirst((c.addr_f <= 633) & (c.addr_t >= 633) &
+        edge = Edge.selectfirst((c.addr_f_l <= 633) & (c.addr_t_l >= 633) &
                                 (c.street_name_id == street_name_id))
         network_id = edge.id
 

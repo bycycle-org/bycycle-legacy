@@ -52,7 +52,7 @@ class TestPortlandOR(unittest.TestCase):
 
         # Get edge matching 633 n alberta st        
         c = Edge.c
-        edge = Edge.selectfirst((c.addr_f <= 633) & (c.addr_t >= 633) &
+        edge = Edge.selectfirst((c.addr_f_l <= 633) & (c.addr_t_l >= 633) &
                                 (c.street_name_id == street_name_id))
         network_id = edge.id
         
@@ -66,7 +66,8 @@ class TestPortlandOR(unittest.TestCase):
     ### Intersection
 
     def test_IntersectionAddress_BothPlaces(self):
-        q = 'W Burnside St, Portland, OR 97204 AND NW 3rd Ave, Portland, OR 97209'
+        q = ('W Burnside St, Portland, OR 97204 AND '
+             'NW 3rd Ave, Portland, OR 97209')
         geocode = self._query(q)
 
     def test_IntersectionAddress_DisambiguatedMultipleMatch(self):
@@ -187,6 +188,12 @@ class TestPortlandOR(unittest.TestCase):
     def test_PostalAddress_WithSuffixOnNumberStreetName(self):
         q = '4550 ne 15th'
         geocode = self._query(q)
+
+
+class Test_An_Existing_Address(unittest.TestCase):
+    def test_should_be_found(self):
+        q = '4122 NE Sandy'
+        geocode = Service(region='portlandor').query(q)
 
 
 class DontTestMilwaukee(unittest.TestCase):

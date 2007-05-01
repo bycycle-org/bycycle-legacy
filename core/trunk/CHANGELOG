@@ -15,3 +15,5 @@ SVN
       due to the fact that doing a "SELECT ... IN ..." doesn't necessarily
       return rows in the same order as the IDs in the IN clause.
     * Made some incidental changes affecting routing also.
+* 2007-05-01
+    * Removed address unification scheme.
