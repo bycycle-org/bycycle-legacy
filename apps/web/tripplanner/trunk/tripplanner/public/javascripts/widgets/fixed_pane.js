@@ -89,8 +89,8 @@ byCycle.widget.FixedPane.prototype = {
 
   _run_listeners: function (event_name) {
     var listeners = this._get_listeners(event_name);
-    if (listeners.length) {
-      listeners.each(function (h) { h(); });
+    for (var i = 0; i < listeners.length; ++i) {
+      listeners[i]();
     }
   }
 };
