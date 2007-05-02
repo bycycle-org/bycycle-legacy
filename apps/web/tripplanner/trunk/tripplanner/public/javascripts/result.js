@@ -22,12 +22,12 @@ byCycle.UI.Result.prototype = {
 
   remove: function() {
     // Remove LI container
-    $(this.id).parentNode.remove();
+    Element.remove($(this.id).parentNode);
     // Remove map overlays
-    var removeOverlay = this.map.removeOverlay.bind(this.map)
-    this.overlays.each(function (o) {
-       removeOverlay(o);
-    });
+    var removeOverlay = this.map.removeOverlay.bind(this.map);
+    for (var i = 0; i < this.overlays.length; ++i) {
+       removeOverlay(this.overlays[i]);
+    };
     // Remove this from results list
     delete byCycle.UI.results[this.service][this.id];
   }
