@@ -2,6 +2,8 @@
 from elixir import Entity, using_options, using_table_options
 from elixir import has_field
 from elixir import Integer, String, Integer, Float
+
+from byCycle.model import db
 from byCycle.model.data.sqltypes import MULTILINESTRING
 
 
@@ -13,6 +15,8 @@ earth_circumference = 131484672
 block_length = 260
 jog_length = block_length / 2
 edge_attrs = ['code', 'bikemode', 'up_frac', 'abs_slope', 'cpd', 'sscode']
+
+metadata = db.metadata_factory()
 
 
 class Raw(Entity):

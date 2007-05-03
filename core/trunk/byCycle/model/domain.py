@@ -2,7 +2,7 @@
 # $Id$
 # Created 2006-09-14.
 #
-# Entity classes.
+# Database entity classes.
 #
 # Copyright (C) 2006 Wyatt Baldwin, byCycle.org <wyatt@bycycle.org>.
 # All rights reserved.
@@ -11,18 +11,26 @@
 # in the top level of this distribution. This software is provided AS IS with
 # NO WARRANTY OF ANY KIND.
 ###############################################################################
-"""Entity classes."""
+"""Abstract database entity classes.
+
+They are "abstract" in the sense that they are not intended to be used
+directly. Instead they are overridden by inheriting with ``inheritance=None``
+and calling ``base_statements`` first in the subclass definition.
+
+"""
+import sys
 import os
 import marshal
 import math
 
-from sqlalchemy.sql import func, select
+from sqlalchemy import func, select
 
 from elixir import Entity
 from elixir import options_defaults, using_options, using_table_options
 from elixir import has_field
 from elixir import belongs_to, has_one, has_many, has_and_belongs_to_many
 from elixir import Unicode, Integer, String, CHAR, Integer, Numeric, Float
+from elixir.statements import STATEMENTS
 
 import simplejson
 
@@ -31,8 +39,14 @@ from cartography.proj import SpatialReference
 
 from byCycle import model_path
 from byCycle.util import gis, joinAttrs
+from byCycle.model import db
 from byCycle.model.data.sqltypes import POINT, LINESTRING
 
+__all__ = ['Region', 'EdgeAttr', 'Ad', 'Service', 'Geocode', 'Route', 'Node',
+           'Edge', 'StreetName', 'City', 'State', 'Place']
+
+
+metadata = db.metadata_factory('base')
 
 options_defaults['shortnames'] = True
 
@@ -40,6 +54,20 @@ cascade_args = dict(
     constraint_kwargs={'ondelete': 'cascade'},
     cascade='all, delete-orphan'
 )
+
+
+def base_statements(base_entity_name):
+    """Pseudo-statement to import the statements from a "base" entity.
+
+    When this pseudo-statement is added as the first statement in an
+    ``Entity`` class definition, it effectively copies the statements from the
+    "base" ``Entity`` identified by ``base_entity_name`` to the "child"
+    ``Entity`` that executes the statement.
+
+    """
+    entity = globals()[base_entity_name]
+    class_locals = sys._getframe(1).f_locals
+    statements = class_locals[STATEMENTS] = getattr(entity, STATEMENTS)[:]
 
 
 def __to_builtin(self):
@@ -78,19 +106,10 @@ class Region(Entity):
     has_field('earth_circumference', Integer)
     has_field('block_length', Integer)
     has_field('jog_length', Integer)
-    has_many('edges', of_kind='Edge')
-    has_many('nodes', of_kind='Node')
     has_many('edge_attrs', of_kind='EdgeAttr', order_by='id')
     has_many('geocodes', of_kind='Geocode')
     has_many('routes', of_kind='Route')
     has_many('ads', of_kind='Ad')
-    has_many('places', of_kind='Place')
-    has_and_belongs_to_many('street_names', of_kind='StreetName',
-                            cascade='all, delete-orphan')
-    has_and_belongs_to_many('cities', of_kind='City',
-                            cascade='all, delete-orphan')
-    has_and_belongs_to_many('states', of_kind='State',
-                            cascade='all, delete-orphan')
 
     @property
     def data_path(self):
@@ -163,47 +182,39 @@ class Region(Entity):
         def took():
             print 'Took %s seconds.' % timer.stop()
 
-        num_nodes = Node.count_by(region=self)
-
         timer.start()
         print 'Fetching edge attributes...'
-        c = Edge.c
-        cols = [c.id, c.node_f_id, c.node_t_id, c.one_way, c.street_name_id]
-        select_ = select(cols, (c.region_id == self.id))
-        rows = select_.execute()
-        bases = dict([(r.id, r) for r in rows])
+        c = self.module.Edge.c
+        cols = [c.id, c.node_f_id, c.node_t_id, c.one_way, c.street_name_id,
+                c.geom]
+        cols += [a.name for a in self.edge_attrs]
+        rows = select(cols).execute()
+        num_edges = rows.rowcount
         took()
 
         timer.start()
-        print 'Fetching regional edge attributes...'
-        region_rows = self._getEdgeRowsForMatrix()
-        num_edges = region_rows.rowcount
-        took()
-
-        timer.start()
-        print 'Total number of edges in region: %s' % len(bases)
-        print 'Number of filtered edges: %s' % num_edges
-        print 'Number of nodes in region: %s' % num_nodes
+        print 'Total number of edges in region: %s' % num_edges
         print 'Creating adjacency matrix...'
         matrix = {'nodes': {}, 'edges': {}}
         nodes = matrix['nodes']
         edges = matrix['edges']
         meter = Meter(num_items=num_edges, start_now=True)
         meter_i = 1
-        for row in region_rows:
+        for row in rows:
             adjustments = self._adjustEdgeRowForMatrix(row)
-            ix = row.base_id
-            base = bases[ix]
-            node_f_id, node_t_id = base.node_f_id, base.node_t_id
-            one_way = base.one_way
+            ix = row.id
+            node_f_id, node_t_id = row.node_f_id, row.node_t_id
+            street_name_id = row.street_name_id
+            one_way = row.one_way
+            geom = row.geom
             # 0: no travel in either direction
             # 1: travel from => to only
             # 2: travel to => from only
             # 3: travel in both directions
             ft = one_way & 1
             tf = one_way & 2
-            entry = [encodeFloat(row.geom.length() / 5280.0),
-                     base.street_name_id, base.node_f_id]
+            entry = [encodeFloat(geom.length() / 5280.0),
+                     street_name_id, node_f_id]
             entry += [row[a.name] for a in self.edge_attrs]
             for k in adjustments:
                 entry[self.edge_attrs_index[k]] = adjustments[k]
@@ -219,7 +230,6 @@ class Region(Entity):
             meter.update(meter_i)
             meter_i += 1
         rows.close()
-        region_rows.close()
         print
         took()
 
@@ -229,27 +239,23 @@ class Region(Entity):
         took()
 
     @property
-    def edge_entity(self):
-        return self._get_entity('Edge')
-
-    @property
-    def node_entity(self):
-        return self._get_entity('Node')
+    def module(self):
+        module = getattr(self, '_module', None)
+        if module is None:
+            path = 'byCycle.model.%s' % self.slug
+            module = __import__(path, locals(), globals(), [''])
+            self._module = module
+        return module
 
     def _get_entity(self, name):
         entity = getattr(self, '_%s_entity' % name, None)
         if entity is None:
-            path = 'byCycle.model.%s' % self.slug
-            region_module = __import__(path, locals(), globals(), [name])
-            entity = getattr(region_module, name)
+            entity = getattr(self.module, name)
             setattr(self, '_%s_entity' % name, entity)
         return entity
 
-    def _getEdgeRowsForMatrix(self):
-        return self.edge_entity._getRowsForMatrix()
-
     def _adjustEdgeRowForMatrix(self, row):
-        return self.edge_entity._adjustRowForMatrix(row)
+        return self.module.Edge._adjustRowForMatrix(row)
 
     def __str__(self):
         return '%s: %s' % (self.slug, self.title)
@@ -289,7 +295,6 @@ class Route(Entity):
 
 class Node(Entity):
     has_field('geom', POINT(4326))
-    belongs_to('region', of_kind='Region', **cascade_args)
     has_many('edges_f', of_kind='Edge', inverse='node_f')
     has_many('edges_t', of_kind='Edge', inverse='node_t')
 
@@ -311,7 +316,6 @@ class Edge(Entity):
     belongs_to('street_name', of_kind='StreetName', **cascade_args)
     belongs_to('place_l', of_kind='Place', **cascade_args)
     belongs_to('place_r', of_kind='Place', **cascade_args)
-    belongs_to('region', of_kind='Region', **cascade_args)
 
     def to_feet(self):
         return self.to_miles() * 5280.0
@@ -462,20 +466,23 @@ class Edge(Entity):
         edge_f_geom = geometry.LineString(points=edge_f_points, srs=srs)
         edge_t_geom = geometry.LineString(points=edge_t_points, srs=srs)
 
-        edge_f = Edge(id=edge_f_id,
-                      node_f_id=self.node_f_id, node_t_id=node_id,
-                      street_name=self.street_name,
-                      geom=edge_f_geom)
-        edge_t = Edge(id=edge_t_id,
-                      node_f_id=node_id, node_t_id=self.node_t_id,
-                      street_name=self.street_name,
-                      geom=edge_t_geom)
-
-        shared_node = Node(id=node_id, geom=self.geom.pointN(N))
-        edge_f.node_f = Node(id=self.node_f_id, geom=self.geom.startPoint())
+        RegionEdge = self.__class__
+        edge_f = RegionEdge(id=edge_f_id,
+                            node_f_id=self.node_f_id, node_t_id=node_id,
+                            street_name=self.street_name,
+                            geom=edge_f_geom)
+        edge_t = RegionEdge(id=edge_t_id,
+                            node_f_id=node_id, node_t_id=self.node_t_id,
+                            street_name=self.street_name,
+                            geom=edge_t_geom)
+        
+        RegionNode = self.node_f.__class__
+        geom = self.geom
+        shared_node = RegionNode(id=node_id, geom=geom.pointN(N))
+        edge_f.node_f = RegionNode(id=self.node_f_id, geom=geom.startPoint())
         edge_f.node_t = shared_node
         edge_t.node_f = shared_node
-        edge_t.node_t = Node(id=self.node_t_id, geom=self.geom.endPoint())
+        edge_t.node_t = RegionNode(id=self.node_t_id, geom=geom.endPoint())
 
         return edge_f, edge_t
 
@@ -492,14 +499,6 @@ class Edge(Entity):
 
     def to_builtin(self):
         return super(Edge, self).to_builtin()
-        #linestring = self.geom.copy()
-        #srs = SpatialReference(epsg=4326)
-        #linestring.transform(src_proj=str(self.geom.srs), dst_proj=str(srs))
-        #points = []
-        #for i in range(linestring.numPoints()):
-            #points.append(linestring.pointN(i))
-        #simple['geom'] = [{'x': p.x, 'y': p.y} for p in points]
-        #return simple
 
 
 class StreetName(Entity):
@@ -507,8 +506,6 @@ class StreetName(Entity):
     has_field('name', String)
     has_field('sttype', String(4))
     has_field('suffix', String(2))
-    has_and_belongs_to_many('regions', of_kind='Region',
-                            cascade='all, delete-orphan')
 
     def __str__(self):
         attrs = (
@@ -571,8 +568,6 @@ class StreetName(Entity):
 
 class City(Entity):
     has_field('city', String)
-    has_and_belongs_to_many('regions', of_kind='Region',
-                            cascade='all, delete-orphan')
 
     def __str__(self):
         if self.city:
@@ -593,8 +588,6 @@ class City(Entity):
 class State(Entity):
     has_field('code', CHAR(2))  # Two-letter state code
     has_field('state', String)
-    has_and_belongs_to_many('regions', of_kind='Region',
-                            cascade='all, delete-orphan')
 
     def __str__(self):
         if self.code:
@@ -618,7 +611,6 @@ class Place(Entity):
     has_field('zip_code', Integer)
     belongs_to('city', of_kind='City', **cascade_args)
     belongs_to('state', of_kind='State', **cascade_args)
-    belongs_to('region', of_kind='Region', **cascade_args)
 
     def _get_city_name(self):
         return (self.city.city if self.city is not None else None)

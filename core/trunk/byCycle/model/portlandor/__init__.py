@@ -1,17 +1,27 @@
+from sqlalchemy import MetaData
+
 from elixir import Entity
 from elixir import options_defaults, using_options, using_table_options
 from elixir import has_field
 from elixir import belongs_to, has_one, has_many, has_and_belongs_to_many
 from elixir import Unicode, Integer, String, CHAR, Integer, Numeric, Float
 
-
+from byCycle.model import db, domain
+from byCycle.model.domain import base_statements
 from byCycle.model.domain import cascade_args, encodeFloat, decodeFloat
 from byCycle.model.data.sqltypes import POINT, LINESTRING
-from byCycle.model.portlandor.data import SRID
+from byCycle.model.portlandor.data import SRID, slug
 
 
-class Edge(Entity):
-    using_options(tablename='portlandor_edge')
+options_defaults['shortnames'] = True
+options_defaults['inheritance'] = None
+options_defaults['table_options']['schema'] = slug
+
+metadata = db.metadata_factory(slug)
+
+
+class Edge(domain.Edge):
+    base_statements('Edge')
     has_field('geom', LINESTRING(SRID))
     has_field('localid', Numeric(11, 2) )
     has_field('code', Integer)
@@ -20,24 +30,18 @@ class Edge(Entity):
     has_field('abs_slope', Float)
     has_field('cpd', Integer)
     has_field('sscode', Integer)
-    belongs_to('base', of_kind='byCycle.model.domain.Edge', **cascade_args)
 
     def to_feet(self):
         return self.geom.length()
 
     def to_miles(self):
-        return self.geom.length() / 5280.0
+        return self.to_feet() / 5280.0
 
     def to_kilometers(self):
-        return self.geom.length() / 5280.0 * 1.609344
+        return self.to_miles() * 1.609344
 
     def to_meters(self):
-        return self.geom.length() / 5280.0 * 1.609344 / 1000.0
-
-    @classmethod
-    def _getRowsForMatrix(cls):
-        region_rows = cls.table.select().execute()
-        return region_rows
+        return self.to_kilometers() * 1000.0
 
     @classmethod
     def _adjustRowForMatrix(cls, row):
@@ -51,11 +55,26 @@ class Edge(Entity):
         return adjustments
 
 
-class Node(Entity):
-    using_options(tablename='portlandor_node')
+class Node(domain.Node):
+    base_statements('Node')
     has_field('geom', POINT(SRID))
-    belongs_to('base', of_kind='byCycle.model.domain.Node', **cascade_args)
 
     @property
     def edges(self):
-        return self.base.edges
+        return super(Node, self).edges
+
+
+class StreetName(domain.StreetName):
+    base_statements('StreetName')
+
+
+class City(domain.City):
+    base_statements('City')
+
+
+class State(domain.State):
+    base_statements('State')
+
+
+class Place(domain.Place):
+    base_statements('Place')

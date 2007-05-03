@@ -345,6 +345,7 @@ class Service(services.Service):
         """
         name = street_name.name
         num_name = self._appendSuffixToNumberStreetName(name)
+        StreetName = self.region.module.StreetName
         if sttype in sttypes_ftoa:
             # If a full street type was entered...
             # E.g., street name is 'johnson' and street type is 'creek'

@@ -15,6 +15,9 @@
 from byCycle.util import joinAttrs
 from byCycle.model.domain import StreetName, Place, Point
 
+__all__ = ['AddressError', 'Address', 'PostalAddress', 'EdgeAddress',
+           'IntersectionAddress', 'PointAddress', 'NodeAddress']
+
 
 class AddressError(Exception):
     pass

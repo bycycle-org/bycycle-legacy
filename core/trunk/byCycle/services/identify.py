@@ -32,7 +32,7 @@ class Service(services.Service):
     def __init__(self, region=None):
         services.Service.__init__(self, region=region)
 
-    def query(self, q, layer=None, input_units=4326):
+    def query(self, q, layer=None, input_srid=4326):
         """Find feature in layer closest to point represented by ``q``.
 
         ``q``
@@ -40,6 +40,9 @@ class Service(services.Service):
             
         ``layer``
             The layer to search
+            
+        ``input_srid``
+            The SRID of the input point represented by ``q``
 
         return
             A domain object representing the feature nearest to ``q``.
@@ -57,13 +60,11 @@ class Service(services.Service):
         SRID = reg.srid
         units = reg.units
         earth_circumference = reg.earth_circumference
-        path = 'byCycle.model.%s' % reg.slug
-        region_module = __import__(path, locals(), globals(), [layer])
-        Entity = getattr(region_module, layer)
+        Entity = getattr(self.region.module, layer)
         c = Entity.c
         wkt = str(point)
         # Function to convert the input point to native geometry
-        transform = func.transform(func.GeomFromText(wkt, input_units), SRID)
+        transform = func.transform(func.GeomFromText(wkt, input_srid), SRID)
         # Function to get the distance between input point and table points
         distance = func.distance(transform, c.geom)
         # This is what we're SELECTing--all columns in the layer plus the
