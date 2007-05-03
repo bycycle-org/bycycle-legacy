@@ -95,9 +95,12 @@
                            onclick="${map_blowup_onclick % (point.x, point.y)}"
                            >${i + 1}</a>
                     </span>
+                    -
                     <span class="turn">${turn.title()}</span>
+                    -
                     <span class="direction">${street}</span>
-                    <span class="segment_distance"> - ${mi} mi</span>
+                    -
+                    <span class="segment_distance">${mi} mi</span>
                     % if jogs:
                         <div class="jogs">
                             ${jogs}
@@ -112,7 +115,9 @@
                    onclick="${map_blowup_onclick % (end.xy_ll.x, end.xy_ll.y)}"
                    >${i + 2}</a>
             </span>
+            -
             <span class="turn">End</span>
+            -
             <span class="direction">${last_street}</span>
         </div>
     </div>
