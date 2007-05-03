@@ -24,15 +24,16 @@ byCycle.UI = (function () {
     /* Initialization ********************************************************/
 
     setLoadingStatus: function(msg) {
-      $('loading_status').innerHTML = msg;
+      Element.update('loading-status', msg);
     },
 
     /**
      * Do stuff that must happen _during_ page load
      */
     beforeLoad: function() {
-      Element.show('loading');
-      byCycle.UI.setLoadingStatus('Initializing map...');
+	  Element.show('spinner');
+      byCycle.UI.setLoadingStatus('Loading...');
+	  byCycle.UI.setLoadingStatus('Initializing map...');
       map_state && map_type.beforeLoad();
       Event.observe(window, 'load', byCycle.UI.onLoad);
     },
@@ -57,7 +58,8 @@ byCycle.UI = (function () {
       if (!isNaN(zoom)) {
         self.map.setZoom(zoom);
       }
-      Element.remove('loading');
+      self.spinner.hide();
+	  Element.remove('loading-status');
       self.onResize();
     },
 
@@ -101,8 +103,13 @@ byCycle.UI = (function () {
     _createEventHandlers: function() {
       Event.observe(window, 'resize', self.onResize);
       Event.observe(document.body, 'unload', self.onUnload);
-	  self.region_el && Event.observe(self.region_el, 'change', 
-	                                  self.setRegionFromSelectBox);
+	  if (self.region_el) {
+		Event.observe(self.region_el, 'change', self.setRegionFromSelectBox);
+	  }
+	  Event.observe('spinner', 'click', function (event) {
+		Event.stop(event);
+		Element.hide(self.spinner)
+	  });
     },
 
     onResize: function(event) {
