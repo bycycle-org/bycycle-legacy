@@ -16,6 +16,8 @@ Route class.
 """
 from cartography.proj import SpatialReference
 
+__all__ = ['Route']
+
 
 class Route(object):
     """Represents a route between two addresses."""

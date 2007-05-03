@@ -14,7 +14,7 @@
 import unittest
 from byCycle.services.normaddr import *
 from byCycle.model import address, db
-from byCycle.model.domain import Region, StreetName, Edge
+from byCycle.model.domain import Region
 from sqlalchemy import *
 
 
@@ -109,18 +109,19 @@ class TestPortlandOR(unittest.TestCase):
 
     def test_PortlandOR_EdgeAddress(self):
         r = self.region
-        
+        StreetName = r.module.StreetName
+        Edge = r.module.Edge
         # Get street name ID for n alberta st
         c = StreetName.c
         street_name = StreetName.selectfirst((c.prefix == 'n') &
-                                             (c.name == 'alberta') & 
-                                             (c.sttype == 'st'))
+                                               (c.name == 'alberta') & 
+                                               (c.sttype == 'st'))
         street_name_id = street_name.id
 
         # Get edge matching 633 n alberta st        
         c = Edge.c
         edge = Edge.selectfirst((c.addr_f_l <= 633) & (c.addr_t_l >= 633) &
-                                (c.street_name_id == street_name_id))
+                                  (c.street_name_id == street_name_id))
         network_id = edge.id
 
         q = '633-%s' % network_id

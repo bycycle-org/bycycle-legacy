@@ -22,11 +22,8 @@ from __future__ import with_statement
 import os
 
 import psycopg2
-
 import sqlalchemy
-from sqlalchemy.engine import create_engine
-from sqlalchemy.orm import create_session
-
+from sqlalchemy import MetaData, create_engine, create_session
 from elixir import metadata, objectstore
 
 from byCycle import model_path
@@ -39,7 +36,13 @@ def init():
     engine = create_engine(getConnectionUri())
     connection = engine.raw_connection()
     cursor = connection.cursor()
-    connectMetadata()
+    #connectMetadata()
+
+def metadata_factory(name=None):
+    """Create and return ``metadata`` connected to the global ``engine``."""
+    metadata = MetaData(name)
+    metadata.connect(engine)
+    return metadata
 
 def getConnectionUri(db_type='postgres', user='bycycle', password=None,
                      host='localhost', database='bycycle'):
@@ -111,7 +114,8 @@ def dropTable(table, cascade=False):
         if not cascade:
             table.drop(checkfirst=True)
         else:
-            execute('DROP TABLE %s CASCADE' % table.name)
+            execute('DROP TABLE %s.%s CASCADE' % ((table.schema or 'public'),
+                                                   table.name))
             commit()
     except (psycopg2.ProgrammingError, sqlalchemy.exceptions.SQLError), e:
         if 'does not exist' in str(e):
@@ -181,7 +185,7 @@ def getById(class_or_mapper, session, *ids):
     return ordered_objects
 
 
-def addGeometryColumn(table, srid, geom_type, name='geom'):
+def addGeometryColumn(table, srid, geom_type, schema='public', name='geom'):
     """Add a PostGIS geometry column to ``table``.
 
     ``table``
@@ -203,17 +207,13 @@ def addGeometryColumn(table, srid, geom_type, name='geom'):
     create_gist_index = ('CREATE INDEX "%s_%s_gist"'
                          'ON "%s"."%s"'
                          'USING GIST ("%s" gist_geometry_ops)')
-    db_schema = table.schema or 'public'
-    table_name = table.name
     geom_type = geom_type.upper()
-
     try:
-        execute(drop_col % (db_schema, table_name, name))
+        execute(drop_col % (schema, table, name))
     except psycopg2.ProgrammingError:
         rollback()  # important!
-    execute(add_geom_col % (db_schema, table_name, name, srid, geom_type))
-    execute(create_gist_index %
-            (table_name, name, db_schema, table_name, name))
+    execute(add_geom_col % (schema, table, name, srid, geom_type))
+    execute(create_gist_index % (table, name, schema, table, name))
     commit()
 
 init()

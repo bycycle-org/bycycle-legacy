@@ -13,9 +13,8 @@
 ################################################################################
 import unittest
 from byCycle.util import meter
+from byCycle.model.geocode import *
 from byCycle.services.geocode import *
-from byCycle.model.domain import Edge, Node, StreetName
-from byCycle.model.geocode import Geocode, PostalGeocode, IntersectionGeocode
 
 
 quiet = 1
@@ -44,6 +43,8 @@ class TestPortlandOR(unittest.TestCase):
 
     def test_EdgeAddress(self):
         # Get street name ID for n alberta st
+        StreetName = self.service.region.module.StreetName
+        Edge = self.service.region.module.Edge
         c = StreetName.c
         street_name = StreetName.selectfirst((c.prefix == 'n') &
                                              (c.name == 'alberta') & 
@@ -101,7 +102,7 @@ class TestPortlandOR(unittest.TestCase):
     ### Node
 
     def test_NodeAddress(self):
-        n = Node.selectfirst()
+        n = self.service.region.module.Node.selectfirst()
         q = str(n.id)
         geocode = self._query(q)
 

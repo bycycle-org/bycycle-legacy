@@ -51,7 +51,6 @@ from byCycle.util import gis
 from byCycle.model.address import *
 from byCycle.model.geocode import *
 from byCycle.model.route import *
-from byCycle.model.domain import Node, Edge
 
 from byCycle import services
 from byCycle.services import geocode
@@ -324,6 +323,7 @@ class Service(services.Service):
                 geocode_, node_id, edge_f_id, edge_t_id
             )
             # Create a node at the split
+            Node = self.region.module.Node
             node = Node(id=node_id, geom=geocode_.xy)
             node.edges_f.append(edge_f)
             node.edges_t.append(edge_t)
@@ -447,6 +447,7 @@ class Service(services.Service):
         distance = {}
 
         # Get edges along path
+        Edge = self.region.module.Edge
         unordered_edges = Edge.select(Edge.c.id.in_(*edge_ids))
         # Make sure they're in path order
         edge_map = dict([(e.id, e) for e in unordered_edges])

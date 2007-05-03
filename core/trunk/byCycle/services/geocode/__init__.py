@@ -36,12 +36,9 @@ from sqlalchemy.exceptions import InvalidRequestError
 from byCycle.model import db
 from byCycle.model.address import *
 from byCycle.model.geocode import *
-from byCycle.model.domain import StreetName, City, State, Place
-from byCycle.model.domain import Edge, Node, Point
 
 from byCycle import services
-from byCycle.services import normaddr
-from byCycle.services import identify
+from byCycle.services import normaddr, identify
 from byCycle.services.exceptions import *
 
 
@@ -104,6 +101,13 @@ class Service(services.Service):
         na_service = normaddr.Service(region=self.region)
         oAddr = na_service.query(q)
         self.region = na_service.region
+
+        module = self.region.module
+        g = globals()
+        entities = 'Edge', 'Node', 'StreetName', 'City', 'State', 'Place'
+        for name in entities:
+            g[name] = getattr(module, name)
+            
         if isinstance(oAddr, (NodeAddress, PointAddress)):
             geocodes = self.getPointGeocodes(oAddr)
         elif isinstance(oAddr, (EdgeAddress, PostalAddress)):
@@ -281,8 +285,6 @@ class Service(services.Service):
                 node = id_service.query(oAddr.point, layer='Node')
             except IdentifyError:
                 pass
-            else:
-                node = node.base
         else:
             try:
                 node = Node.selectone(Node.c.id == node_id)
