@@ -202,8 +202,8 @@
                 </p>
 
                 <p class="w3c no-bottom-margin noprint">
-                  ${h.link_to(h.image_tag('valid-xhtml.png', title='W3C CSS Validator', alt='Valid XHTML 1.0 Transitional', width=88, height=31), 'http://validator.w3.org/check/referer', target='byCycle_window')}
-                  ${h.link_to(h.image_tag('valid-css.png', title='W3C Markup Validator', alt='Valid CSS', width=88, height=31), 'http://jigsaw.w3.org/css-validator/check/referer', target='byCycle_window')}
+                  ${h.link_to(h.image_tag('valid-xhtml.png', title='W3C CSS Validator (opens in new window)', alt='Valid XHTML 1.0 Transitional', width=88, height=31), 'http://validator.w3.org/check/referer', target='_blank')}
+                  ${h.link_to(h.image_tag('valid-css.png', title='W3C Markup Validator (opens in new window)', alt='Valid CSS', width=88, height=31), 'http://jigsaw.w3.org/css-validator/check/referer', target='_blank')}
                 </p>
               % endif
             </div>
