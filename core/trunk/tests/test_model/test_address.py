@@ -16,7 +16,7 @@
 """
 import unittest
 from byCycle.model.address import *
-from byCycle.model.domain import *
+from byCycle.model.entities import *
 
 
 class TestPostalAddress(unittest.TestCase):
