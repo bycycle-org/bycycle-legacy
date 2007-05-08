@@ -6,6 +6,12 @@ from elixir import Integer, String, Integer, Float
 from byCycle.model import db
 from byCycle.model.data.sqltypes import MULTILINESTRING
 
+from cities import cities_atof
+
+__all__ = ['title', 'slug', 'SRID', 'units', 'earth_circumference',
+           'block_length', 'jog_length', 'cities_atof', 'states', 'one_ways',
+           'bikemodes', 'edge_attrs', 'Raw']
+
 
 title = 'Portland, OR, metro region'
 slug = 'portlandor'
@@ -15,6 +21,28 @@ earth_circumference = 131484672
 block_length = 260
 jog_length = block_length / 2
 edge_attrs = ['code', 'bikemode', 'up_frac', 'abs_slope', 'cpd', 'sscode']
+
+# States to insert into states table in insert_states()
+states = {'or': 'oregon', 'wa': 'washington'}
+
+# dbf value => database value
+one_ways = {'n': 0, 'f': 1, 't': 2, '':  3, None: 3}
+
+# dbf value => database value
+bikemodes = {
+    'mu': 't',
+    'mm': 'p',
+    'bl': 'b',
+    'lt': 'l',
+    'mt': 'm',
+    'ht': 'h',
+    'ca': 'c',
+    'pm': 'x',
+    'up': 'u',
+    'pb': 'n',
+    'xx': 'n',
+    None: None,
+}
 
 metadata = db.metadata_factory()
 

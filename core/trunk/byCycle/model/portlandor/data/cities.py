@@ -52,4 +52,5 @@ cities_atof = {
     'wlnn': 'west linn',
     'wvlg': 'wood village',
     'yamh': 'yamhill',
+    None: None,
 }
