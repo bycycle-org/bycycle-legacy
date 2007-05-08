@@ -18,8 +18,8 @@ Given a region (i.e., data source), a layer within that region, and a point, fin
 """
 from sqlalchemy.sql import select, func
 from sqlalchemy.exceptions import InvalidRequestError
-from byCycle.model import db, domain
-from byCycle.model.domain import Point
+from byCycle.model import db
+from byCycle.model.point import Point
 from byCycle import services
 from byCycle.services.exceptions import IdentifyError
 

@@ -30,8 +30,8 @@ The service recognizes these types of addresses:
 import re
 from byCycle import services
 from byCycle.services.exceptions import ByCycleError, InputError
-from byCycle.model import address, regions, states, sttypes, compass, domain
-from byCycle.model.domain import *
+from byCycle.model import address, regions, states, sttypes, compass
+from byCycle.model.entities import StreetName, Place
 
 
 # RE to check to see if a string has at least one word char

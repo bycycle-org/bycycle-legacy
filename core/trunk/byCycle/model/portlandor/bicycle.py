@@ -11,7 +11,8 @@
 # NO WARRANTY OF ANY KIND.
 ###############################################################################
 """Bicycle travel mode for Portland, OR, region."""
-from byCycle.model import tmode, domain
+from byCycle.model import tmode
+from byCycle.model.entities.util import float_decode
 
 
 # Preferences
@@ -30,9 +31,6 @@ class TravelMode(tmode.TravelMode):
 
         """
         tmode.TravelMode.__init__(self)
-
-        global float_decode
-        float_decode = domain.float_decode
 
         global pct_slopes, mph_up, mph_down
         pct_slopes = [p*.01 for p in

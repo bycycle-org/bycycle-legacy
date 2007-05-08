@@ -6,9 +6,10 @@ from elixir import has_field
 from elixir import belongs_to, has_one, has_many, has_and_belongs_to_many
 from elixir import Unicode, Integer, String, CHAR, Integer, Numeric, Float
 
-from byCycle.model import db, domain
-from byCycle.model.domain import base_statements
-from byCycle.model.domain import cascade_args, encodeFloat, decodeFloat
+from byCycle.model import db
+from byCycle.model.entities import base
+from byCycle.model.entities.base import base_statements
+from byCycle.model.entities.util import cascade_args, encodeFloat, decodeFloat
 from byCycle.model.data.sqltypes import POINT, LINESTRING
 from byCycle.model.portlandor.data import SRID, slug
 
@@ -20,7 +21,7 @@ options_defaults['table_options']['schema'] = slug
 metadata = db.metadata_factory(slug)
 
 
-class Edge(domain.Edge):
+class Edge(base.Edge):
     base_statements('Edge')
     has_field('geom', LINESTRING(SRID))
     has_field('localid', Numeric(11, 2) )
@@ -55,7 +56,7 @@ class Edge(domain.Edge):
         return adjustments
 
 
-class Node(domain.Node):
+class Node(base.Node):
     base_statements('Node')
     has_field('geom', POINT(SRID))
 
@@ -64,17 +65,17 @@ class Node(domain.Node):
         return super(Node, self).edges
 
 
-class StreetName(domain.StreetName):
+class StreetName(base.StreetName):
     base_statements('StreetName')
 
 
-class City(domain.City):
+class City(base.City):
     base_statements('City')
 
 
-class State(domain.State):
+class State(base.State):
     base_statements('State')
 
 
-class Place(domain.Place):
+class Place(base.Place):
     base_statements('Place')
