@@ -31,6 +31,7 @@ import simplejson
 
 from byCycle import model_path
 from byCycle.model import db
+from byCycle.model.entities.util import cascade_args
 
 __all__ = ['Region', 'EdgeAttr', 'Ad', 'Service', 'Geocode', 'Route']
 

@@ -30,15 +30,10 @@ from sqlalchemy import func, select
 from cartography import geometry
 
 from byCycle.util import gis, joinAttrs
+from byCycle.model.entities.util import cascade_args
 from byCycle.model.data.sqltypes import POINT, LINESTRING
 
 __all__ = ['Node', 'Edge', 'StreetName', 'City', 'State', 'Place']
-
-
-cascade_args = dict(
-    constraint_kwargs={'ondelete': 'cascade'},
-    cascade='all, delete-orphan'
-)
 
 
 def base_statements(base_entity_name):
