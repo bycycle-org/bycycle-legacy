@@ -24,19 +24,18 @@ import os
 import psycopg2
 import sqlalchemy
 from sqlalchemy import MetaData, create_engine, create_session
-from elixir import metadata, objectstore
+from elixir import objectstore
 
 from byCycle import model_path
 
 
 session_context = objectstore.context
 
-def init():
+def init(**connection_args):
     global engine, connection, cursor
-    engine = create_engine(getConnectionUri())
+    engine = create_engine(getConnectionUri(**connection_args))
     connection = engine.raw_connection()
     cursor = connection.cursor()
-    #connectMetadata()
 
 def metadata_factory(name=None):
     """Create and return ``metadata`` connected to the global ``engine``."""
@@ -54,9 +53,9 @@ def getConnectionUri(db_type='postgres', user='bycycle', password=None,
     dburi = '%s://%s:%s@%s/%s' % (db_type, user, password, host, database)
     return dburi
 
-def connectMetadata(md=None):
+def connectMetadata(metadata):
     """Connect metadata to ``engine``. Use ``md`` if specified."""
-    (md or metadata).connect(engine)
+    metadata.connect(engine)
 
 def makeSession():
     connectMetadata()
@@ -64,18 +63,6 @@ def makeSession():
 
 def clearSession():
     del session_context.current
-
-def createAll():
-    turnSQLEchoOn()
-    connectMetadata()
-    metadata.create_all()
-    turnSQLEchoOff()
-
-def dropAll():
-    turnSQLEchoOn()
-    connectMetadata()
-    metadata.drop_all()
-    turnSQLEchoOff()
 
 def turnSQLEchoOff():
     """Turn off echoing of SQL statements."""
@@ -104,8 +91,24 @@ def commit():
 def rollback():
     connection.rollback()
 
-def flush():
-    objectstore.flush()
+def dropSchema(schema, cascade=True):
+    cascade_clause = ' CASCADE' if cascade else ''
+    Q = 'DROP SCHEMA %s%s' % (schema, cascade_clause)
+    try:
+        execute(Q)
+    except psycopg2.ProgrammingError:
+        rollback()  # important!
+    else:
+        commit()
+
+def createSchema(schema):
+    Q = 'CREATE SCHEMA %s' % schema
+    try:
+        execute(Q)
+    except psycopg2.ProgrammingError:
+        rollback()  # important!
+    else:
+        commit()    
 
 def dropTable(table, cascade=False):
     # TODO: Try to make this work when the table has dependencies
