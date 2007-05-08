@@ -14,7 +14,7 @@
 import unittest
 from byCycle.services.normaddr import *
 from byCycle.model import address, db
-from byCycle.model.domain import Region
+from byCycle.model.entities import Region
 from sqlalchemy import *
 
 
