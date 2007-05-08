@@ -13,7 +13,8 @@
 ###############################################################################
 """Address classes."""
 from byCycle.util import joinAttrs
-from byCycle.model.domain import StreetName, Place, Point
+from byCycle.model.point import Point
+from byCycle.model.entities import StreetName, Place
 
 __all__ = ['AddressError', 'Address', 'PostalAddress', 'EdgeAddress',
            'IntersectionAddress', 'PointAddress', 'NodeAddress']

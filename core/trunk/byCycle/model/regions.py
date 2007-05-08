@@ -13,10 +13,10 @@
 ###############################################################################
 """Info on regions.
 
-TODO: This should really be dynamically created from info in the database.
+TODO: This should stored in the database.
 
 """
-from byCycle.model.domain import Region
+from byCycle.model.entities import Region
 
 
 unknown_region = None
