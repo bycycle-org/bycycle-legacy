@@ -91,7 +91,7 @@ def commit():
 def rollback():
     connection.rollback()
 
-def dropSchema(schema, cascade=True):
+def dropSchema(schema, cascade=False):
     cascade_clause = ' CASCADE' if cascade else ''
     Q = 'DROP SCHEMA %s%s' % (schema, cascade_clause)
     try:
