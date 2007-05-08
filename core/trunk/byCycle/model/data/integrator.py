@@ -1,9 +1,8 @@
-#!/usr/bin/env python2.5
 ###############################################################################
 # $Id: shp2pgsql.py 187 2006-08-16 01:26:11Z bycycle $
-# Created 2006-09-07
+# Created 2007-05-08
 #
-# Portland, OR, shapefile import.
+# Base regional data integrator.
 #
 # Copyright (C) 2006, 2007 Wyatt Baldwin, byCycle.org <wyatt@bycycle.org>.
 # All rights reserved.
@@ -12,44 +11,7 @@
 # in the top level of this distribution. This software is provided AS IS with
 # NO WARRANTY OF ANY KIND.
 ###############################################################################
-"""
-Usage: shp2pgsql.py [various options]
-
-There are three forms for running this script. All version require that the
-datasource and layer be specified. In the following, replace "shp2pgsql.py"
-with::
-
-  shp2pgsql.py --source <path to datasource> --layer <layer within datasource>
-
-1. This will run through all the actions, prompting you for each one:
-
-  shp2pgsql.py
-
-2. This will either prompt you to run the actions from indices i to j in the
-  actions list or just run all the actions from i to j if `no-prompt` is
-  specified:
-
-  shp2pgsql.py [--start|-s <i>] [--end|-e <j>] [--no-prompt|-n]
-
-3. This will run only the action at index i without prompting:
-
-  shp2pgsql.py --only|-o <i>
-
-Defaults:
-    - start=0
-    - end=n-1 where n is the number of actions
-    - no-prompt flag off
-    - only not used
-
-If no args are supplied, you will be prompted to run all actions.
-
-If either of ``start`` or ``end`` (or both) is present, the ``only`` option
-must not be present.
-
-If ``only`` is present, ``no-prompt`` is implied.
-
-"""
-import os, sys, getopt
+import os, sys
 
 import sqlalchemy
 from sqlalchemy import func, select, and_, or_
@@ -61,10 +23,6 @@ from byCycle.model import db
 from byCycle.model import Region, EdgeAttr
 from byCycle.model.sttypes import street_types_ftoa
 
-from byCycle.model import portlandor as region_module
-from byCycle.model.portlandor import *
-from byCycle.model.portlandor.data import *
-
 
 class Integrator(object):
     
@@ -75,28 +33,18 @@ class Integrator(object):
     
     def __init__(self, region_key, source, layer, no_prompt, **opts):
         self.region_key = region_key
+
+        path = 'byCycle.model.%s' % region_key
+        self.region_module = __import__(path, locals(), globals(), [''])
+        
+        path = path + '.data'
+        self.region_data_module = __import__(path, locals(), globals(), [''])
+        
+        self.raw_table = self.region_data_module.Raw.table
+        
         self.source = source
         self.layer = layer
         self.no_prompt = no_prompt
-        self.actions = [
-            self.shp2sql,
-            self.shp2db,
-            self.create_public_tables,
-            self.delete_region,
-            self.get_or_create_region,
-            self.drop_schema,
-            self.create_schema,
-            self.drop_tables,
-            self.create_tables,
-            self.transfer_street_names,
-            self.transfer_cities,
-            self.transfer_states,
-            self.transfer_places,
-            self.transfer_nodes,
-            self.transfer_edges,
-            self.vacuum_all_tables,
-            self.create_matrix,
-        ]
         
     def run(self, start=0, end=None, no_prompt=False, only=None):
         if only is not None:
@@ -121,7 +69,7 @@ class Integrator(object):
                     # Yes, do this action
                     self.timer.start()
                     try:
-                        action()
+                        action(self)
                     except Exception, e:
                         print ('\n*** Errors encountered in action %s.' % i)
                         raise
@@ -150,8 +98,10 @@ class Integrator(object):
         shp2sql_cmd = 'shp2pgsql -c -i -I -s %s %s %s.%s > %s'
                                  # % (SRID, layer, schema, SQL file)
         
-        shp2sql_cmd = shp2sql_cmd % (SRID, layer_path, Raw.table.schema,
-                                     Raw.table.name, self.get_sql_file_path())
+        shp2sql_cmd = shp2sql_cmd % (self.region_data_module.SRID,
+                                     layer_path, self.raw_table.schema,
+                                     self.raw_table.name,
+                                     self.get_sql_file_path())
         self.system(shp2sql_cmd)
 
     def shp2db(self):
@@ -161,13 +111,13 @@ class Integrator(object):
         sql2db_cmd = 'psql --quiet -d %s -f %s'  # % (database, SQL file)
         sql2db_cmd = sql2db_cmd % (self.db_name, self.get_sql_file_path())
         db.createSchema('raw')   # if it doesn't exist
-        db.dropTable(Raw.table)  # if it exists
+        db.dropTable(self.raw_table)  # if it exists
         self.system(sql2db_cmd)
         db.vacuum('raw.%s' % self.region_key)
 
     def create_public_tables(self):
         """Create public tables (shared by all regions)."""
-        region_module.metadata.create_all()
+        self.region_module.metadata.create_all()
     
     
     def delete_region(self):
@@ -186,20 +136,21 @@ class Integrator(object):
             self.echo(e)
             region = None
         if region is None:
+            mod = self.region_data_module
             record = dict(
-                title=title,
+                title=mod.title,
                 slug=self.region_key,
-                srid=SRID,
-                units=units,
-                earth_circumference=earth_circumference,
-                block_length=block_length,
-                jog_length=jog_length,
+                srid=mod.SRID,
+                units=mod.units,
+                earth_circumference=mod.earth_circumference,
+                block_length=mod.block_length,
+                jog_length=mod.jog_length,
             )
             self.insert_records(Region.table, [record], 'region')
             region = Region.get_by(slug=self.region_key)
             region.edge_attrs = []
             region.flush()
-            attrs = [dict(name=a, region_id=region.id) for a in edge_attrs]
+            attrs = [dict(name=a, region_id=region.id) for a in mod.edge_attrs]
             self.insert_records(EdgeAttr.table, attrs, 'edge attributes')
             region.refresh()
         return region
@@ -211,7 +162,7 @@ class Integrator(object):
     def create_schema(self):
         """Create database SCHEMA for current region."""
         db.createSchema(self.region_key)
-        region_module.metadata.create_all()
+        self.region_module.metadata.create_all()
 
     def drop_tables(self):
         """Drop all regional tables (not including raw)."""
@@ -225,15 +176,19 @@ class Integrator(object):
         """Create all regional tables. Ignores existing tables."""
         region = self.get_or_create_region()
         region.module.metadata.create_all()
-        schema = Edge.table.schema
-        db.addGeometryColumn(Edge.table.name, SRID, 'LINESTRING', schema=schema)
-        db.addGeometryColumn(Node.table.name, SRID, 'POINT', schema=schema)
+        schema = self.region_module.Edge.table.schema
+        SRID = self.region_data_module.SRID
+        db.addGeometryColumn(self.region_module.Edge.table.name, SRID,
+                             'LINESTRING', schema=schema)
+        db.addGeometryColumn(self.region_module.Node.table.name, SRID,
+                             'POINT', schema=schema)
 
     def transfer_street_names(self):
         """Transfer street names from raw table."""
+        StreetName = self.region_module.StreetName
         region = self.get_or_create_region()
         region_id = region.id
-        c = Raw.c
+        c = self.raw_table.c
         cols = map(func.lower, (c.prefix, c.name, c.sttype, c.suffix))
         raw_records = self.get_records(cols)
         c = StreetName.c
@@ -251,7 +206,9 @@ class Integrator(object):
 
     def transfer_cities(self):
         """Transfer cities from raw table."""
-        c = Raw.c
+        City = self.region_module.City
+        cities_atof = self.region_data_module.cities_atof
+        c = self.raw_table.c
         raw_records_l = self.get_records([func.lower(c.city_l)])
         raw_records_r = self.get_records([func.lower(c.city_r)])
         raw_records = raw_records_l.union(raw_records_r)
@@ -269,6 +226,8 @@ class Integrator(object):
 
     def transfer_states(self):
         """Transfer states."""
+        State = self.region_module.State
+        states = self.region_data_module.states
         raw_records = set(states.items())
         existing_records = self.get_records([State.c.code, State.c.state])
         new_records = raw_records.difference(existing_records)
@@ -283,7 +242,12 @@ class Integrator(object):
 
     def transfer_places(self):
         """Create places."""
-        c = Raw.c
+        City = self.region_module.City
+        State = self.region_module.State
+        Place = self.region_module.Place
+        cities_atof = self.region_data_module.cities_atof
+        states = self.region_data_module.states
+        c = self.raw_table.c
         cols = (func.lower(c.city_l), c.zip_code_l)
         raw_records_l = self.get_records(cols)
         cols = (func.lower(c.city_r), c.zip_code_r)
@@ -307,20 +271,25 @@ class Integrator(object):
             state = State.get_by(code=state_code, state=states[state_code])
             city_id = None if city is None else city.id
             state_id = None if state is None else state.id
-            records.append(dict(city_id=city_id, state_id=state_id, zip_code=zc))
+            records.append(dict(city_id=city_id, state_id=state_id,
+                                zip_code=zc))
         self.insert_records(Place.table, records, 'places')
         self.vacuum_entity(Place)
 
     def transfer_nodes(self):
         """Transfer nodes from raw table to node table."""
+        Node = self.region_module.Node
+        
         region = self.get_or_create_region()
     
         self.echo('Getting columns from raw table...')
-        c = Raw.c
-        raw_records_f = self.get_records([c.node_f_id, func.startPoint(c.geom)],
-                                    distinct=False)
-        raw_records_t = self.get_records([c.node_t_id, func.endPoint(c.geom)],
-                                    distinct=False)
+        c = self.raw_table.c
+        raw_records_f = self.get_records([c.node_f_id,
+                                          func.startPoint(c.geom)],
+                                          distinct=False)
+        raw_records_t = self.get_records([c.node_t_id,
+                                          func.endPoint(c.geom)],
+                                          distinct=False)
     
         records = []
         seen_nodes = {}
@@ -343,9 +312,16 @@ class Integrator(object):
     def transfer_edges(self):
         """Transfer edges from raw table."""
         region = self.get_or_create_region()
+
+        Edge = self.region_module.Edge
+        StreetName = self.region_module.StreetName
+        Place = self.region_module.Place
+        cities_atof = self.region_data_module.cities_atof
+        one_ways = self.region_data_module.one_ways
+        bikemodes = self.region_data_module.bikemodes
     
         self.echo('Getting columns from raw table...')
-        c = Raw.table.c
+        c = self.raw_table.c
         cols = [
             c.id, c.geom, c.node_f_id, c.node_t_id,
             c.addr_f_l, c.addr_t_l, c.addr_f_r, c.addr_t_r,
@@ -458,15 +434,15 @@ class Integrator(object):
         ``msg`` `string`
             The prompt message, in the form of a question.
     
-        ``prefix``
-            Something to prefix the prompt with (like a number to indicate which
-            action we're on).
+        ``prefix``        
+            Something to prefix the prompt with (like a number to indicate
+            which action we're on).
     
         ``default`` `string` `bool`
             The default response for this prompt (when the user just presses
-            Enter). Can be 'n', 'no', or anything that will evaluate as False to
-            set the default response to 'no'. Otherwise the default response will
-            be 'yes'.
+            Enter). Can be 'n', 'no', or anything that will evaluate as False
+            to set the default response to 'no'. Otherwise the default
+            response will be 'yes'.
     
         Return `bool`
             True indicates a positive (Go ahead) response.
@@ -597,101 +573,23 @@ class Integrator(object):
     def echo(self, *args):
         for msg in args:
             print '    - %s' % msg
-        
 
-
-
-
-# -- Integrate Script (move to byCycle/scripts) --#
-
-def main(argv):    
-    # Get command line options
-    opts = getOpts(sys.argv[1:])
-
-    region = opts.pop('region')
-    source = opts.pop('source')
-    layer = opts.pop('layer')
-    no_prompt = bool(opts.get('no_prompt', opts.get('only', False)))
-
-    integrator = Integrator(region, source, layer, **opts)
-
-    if opts['end'] is None:
-        opts['end'] = len(integrator.actions) - 1
-
-    integrator.run(**opts)
-
-
-def getOpts(argv):
-    """Parse the opts from ``argv`` and return them as a ``dict``."""
-    opts = {
-        'region': None,
-        'source': None,
-        'layer': None,
-        'start': 0,
-        'end': None,
-        'no_prompt': False,
-        'only': None,
-        }
-    # Parse args
-    try:
-        short_opts = 'r:d:l:s:e:no:h'
-        long_opts = ['region=', 'source=', 'layer=', 'start=', 'end=',
-                     'no-prompt', 'only=', 'help']
-        cl_opts, args = getopt.gnu_getopt(argv, short_opts, long_opts)
-    except getopt.GetoptError, e:
-        usage()
-        die(2, str(e))
-    start_or_end_specified = False
-    # See what args were given and put them in the args dict
-    for opt, val in cl_opts:
-        if opt not in ('--region', '-r',
-                       '--source', '-d',
-                       '--layer', '-l',
-                       '--no-prompt', '-n',
-                       '--help', '-h'):
-            try:
-                val = int(val)
-            except ValueError:
-                die(2, '%s value must be an integer.' % opt)
-        if opt in ('--region', '-r'):
-            opts['region'] = val
-        elif opt in ('--source', '-d'):
-            opts['source'] = val
-        elif opt in ('--layer', '-l'):
-            opts['layer'] = val
-        elif opt in ('--start', '-s'):
-            start_or_end_specified = True
-            opts['start'] = val
-        elif opt in ('--end', '-e'):
-            start_or_end_specified = True
-            opts['end'] = val
-        elif opt in ('--no-prompt', '-n'):
-            opts['no_prompt'] = True
-        elif opt in ('--only', '-o'):
-            opts['only'] = val
-        elif opt in ('--help', '-h'):
-            usage()
-            sys.exit()
-        else:
-            usage()
-            die(1, 'Unknown option: ``%s``' % opt)
-    if opts['only'] is not None:
-        if start_or_end_specified:
-            usage()
-            die(2, '``only`` must be the *only* argument or not specified.')
-        else:
-            opts['no_prompt'] = True
-    return opts
-
-def die(code=1, msg=''):
-    print 'ERROR: %s' % msg
-    print '(shp2pgsql.error.log may contain details.)'
-    sys.exit(code)
-
-def usage(msg=''):
-    if msg:
-        print '\n%s' % msg
-    print __doc__
-
-if __name__ == '__main__':
-    main(sys.argv)
+    actions = [
+        shp2sql,
+        shp2db,
+        create_public_tables,
+        delete_region,
+        get_or_create_region,
+        drop_schema,
+        create_schema,
+        drop_tables,
+        create_tables,
+        transfer_street_names,
+        transfer_cities,
+        transfer_states,
+        transfer_places,
+        transfer_nodes,
+        transfer_edges,
+        vacuum_all_tables,
+        create_matrix,
+    ]
