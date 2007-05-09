@@ -11,6 +11,34 @@
 # in the top level of this distribution. This software is provided AS IS with
 # NO WARRANTY OF ANY KIND.
 ###############################################################################
+"""Provides a base class for integrating regional data.
+
+Notes:
+
+    - Expects `psql` and `shp2pgsql` to be on your ${PATH}
+
+    - Expects a module at byCycle/model/<region key> that contains the 
+      region's entity classes
+
+    - Expects a module at byCycle/model/<region key>/data that contains the
+      region's "raw" entity class
+
+    - The data module should also contain:
+      - ``cities_atof`` that maps abbreviated city names to full city names
+      - ``states`` that maps two-letter state codes to full state names
+      - ``one_ways`` that maps the region's one way attributes to...
+        - 0 for no travel in either direction
+        - 1 for travel in the from => to direction
+        - 2 for travel in the to => from direction
+        - 3 for travel in either direction
+      - ``bikemodes`` that maps the region's bike mode attribute to...
+        - whatever format you want in the DB
+      - ``edge_attrs``, which is a list of the edge attributes that are used
+        for route finding
+
+    - Expects all data to be lower case
+
+"""
 import os, sys
 
 import sqlalchemy
@@ -118,8 +146,7 @@ class Integrator(object):
     def create_public_tables(self):
         """Create public tables (shared by all regions)."""
         self.region_module.metadata.create_all()
-    
-    
+
     def delete_region(self):
         """Delete region and any dependent records (CASCADE)."""
         Q = "DELETE FROM region WHERE slug = '%s'" % self.region_key
@@ -383,8 +410,8 @@ class Integrator(object):
                 street_name_id=st_name_id,
                 place_l_id=place_l_id,
                 place_r_id=place_r_id,
-                # region-specific fields:
                 geom=r.geom.geometryN(0),
+                # region-specific fields:
                 localid=r.localid,
                 bikemode=bikemodes[r.bikemode],
                 code=r.code,
@@ -574,6 +601,7 @@ class Integrator(object):
         for msg in args:
             print '    - %s' % msg
 
+    #-- Default actions and the order in which they will be run --#
     actions = [
         shp2sql,
         shp2db,
