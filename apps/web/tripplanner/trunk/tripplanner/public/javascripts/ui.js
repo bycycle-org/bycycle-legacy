@@ -113,20 +113,19 @@ byCycle.UI = (function () {
     },
 
     onResize: function(event) {
-      var dims = Element.getDimensions(document.body);
-
       var pos = Position.cumulativeOffset(self.footer);
-      var footer_height = dims.height - pos[1];
+	  var footer_offset = pos[1];
 
       // Resize column A
-      pos = Position.cumulativeOffset(self.message_pane);
-      var height = dims.height - pos[1] - footer_height - 10;
+      var offset = Position.cumulativeOffset(self.message_pane)[1];
+	  offset = offset || Position.cumulativeOffset(self.result_pane)[1];
+      var height = footer_offset - offset - 10;
       var style = {height: height + 'px'};
       self.display_panes.each(function (pane) { pane.setStyle(style); });
 
       // Resize map
-      pos = Position.cumulativeOffset(self.map_pane);
-      height = dims.height - pos[1] - footer_height;
+      offset = Position.cumulativeOffset(self.map_pane)[1];
+      height = footer_offset - offset;
       self.map.setSize({h: height});
     },
 
