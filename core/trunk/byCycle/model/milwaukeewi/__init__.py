@@ -11,43 +11,61 @@
 # in the top level of this distribution. This software is provided AS IS with
 # NO WARRANTY OF ANY KIND.
 ###############################################################################
-"""This module defines the Milwaukee, WI, region."""
-import math
-from byCycle.model import region
+from sqlalchemy import MetaData
+
+from elixir import Entity, options_defaults, has_field
+from elixir import Integer, String, CHAR, Integer
+
+from byCycle.model import db
+from byCycle.model.entities import base
+from byCycle.model.entities.base import base_statements
+from byCycle.model.data.sqltypes import POINT, LINESTRING
+from byCycle.model.milwaukeewi.data import SRID, slug
+
+__all__ = ['Edge', 'Node', 'StreetName', 'City', 'State', 'Place']
 
 
-block_length = 5280.0 / 20.0
-jog_length = block_length / 2.0
+options_defaults['shortnames'] = True
+options_defaults['inheritance'] = None
+options_defaults['table_options']['schema'] = slug
+
+metadata = db.metadata_factory(slug)
 
 
-class _Region(region.Region):
+class Edge(base.Edge):
+    base_statements('Edge')
+    has_field('geom', LINESTRING(SRID))
+    has_field('code', CHAR(3))
+    has_field('bikemode', CHAR(1))  # enum(t, r, l, p)
+    has_field('lanes', Integer)
+    has_field('adt', Integer)
+    has_field('spd', Integer)
 
-    title = 'Milwaukee, WI'
-    block_length = block_length
-    jog_length = jog_length
-    edge_attrs = ['bikemode', 'lanes', 'adt', 'spd']
-
-    def __init__(self):
-        region.Region.__init__(self, 'milwaukeewi')
-
-    def _adjustRowForMatrix(self, row):
-        one_way = row['one_way']
-        if one_way == 'ft':
-            one_way = 1
-        elif one_way == 'tf':
-            one_way = 2
-        elif one_way == '':
-            one_way = 3
-        else:
-            one_way = 0
-        row['one_way'] = one_way
+    @classmethod
+    def _adjustRowForMatrix(cls, row):
+        return {}
 
 
-__region = None
+class Node(base.Node):
+    base_statements('Node')
+    has_field('geom', POINT(SRID))
+
+    @property
+    def edges(self):
+        return super(Node, self).edges
 
 
-def Region(*args, **kwargs):
-    global __region
-    if __region is None:
-        __region = _Region(*args, **kwargs)
-    return __region
+class StreetName(base.StreetName):
+    base_statements('StreetName')
+
+
+class City(base.City):
+    base_statements('City')
+
+
+class State(base.State):
+    base_statements('State')
+
+
+class Place(base.Place):
+    base_statements('Place')

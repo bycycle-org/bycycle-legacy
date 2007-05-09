@@ -274,6 +274,7 @@ class Integrator(object):
         Place = self.region_module.Place
         cities_atof = self.region_data_module.cities_atof
         states = self.region_data_module.states
+
         c = self.raw_table.c
         cols = (func.lower(c.city_l), c.zip_code_l)
         raw_records_l = self.get_records(cols)
@@ -281,17 +282,19 @@ class Integrator(object):
         raw_records_r = self.get_records(cols)
         raw_records = raw_records_l.union(raw_records_r)
         def get_city_state_and_zip(r):
-            city = cities_atof[r[0]]
-            state = 'or' if city != 'vancouver' else 'wa'
-            return city, state, r[1]
+            city, zip_code = r[0], r[1]
+            city = cities_atof[city] if city is not None else None
+            state = self.get_state_code_for_city(city)
+            zip_code = int(zip_code) if zip_code is not None else zip_code
+            return city, state, zip_code
         raw_records = set([get_city_state_and_zip(r) for r in raw_records])
+
         places = Place.select()
-        existing_records = set([(None if p.city is None else p.city.city,
-                                 None if p.state is None else p.state.code,
-                                 p.zip_code)
-                                for p in places])
-        new_records = raw_records.difference(existing_records)
+        existing_records = set([(p.city_name, p.state_code, p.zip_code) for p
+                                in places])
+
         records = []
+        new_records = raw_records.difference(existing_records)
         for r in new_records:
             city_name, state_code, zc = r[0], r[1], r[2]
             city = City.get_by(city=city_name)
@@ -301,6 +304,7 @@ class Integrator(object):
             records.append(dict(city_id=city_id, state_id=state_id,
                                 zip_code=zc))
         self.insert_records(Place.table, records, 'places')
+
         self.vacuum_entity(Place)
 
     def transfer_nodes(self):
@@ -346,6 +350,7 @@ class Integrator(object):
         cities_atof = self.region_data_module.cities_atof
         one_ways = self.region_data_module.one_ways
         bikemodes = self.region_data_module.bikemodes
+        edge_attrs = self.region_data_module.edge_attrs
     
         self.echo('Getting columns from raw table...')
         c = self.raw_table.c
@@ -353,8 +358,9 @@ class Integrator(object):
             c.id, c.geom, c.node_f_id, c.node_t_id,
             c.addr_f_l, c.addr_t_l, c.addr_f_r, c.addr_t_r,
             c.zip_code_l, c.zip_code_r,
-            c.localid, c.code, c.up_frac, c.abs_slope, c.sscode, c.cpd
+            c.permanent_id, c.code
         ]
+        cols += [c[name] for name in edge_attrs]
         for i, col in enumerate(cols):
             cols[i] = col.label(col.key)    
         lower_cols = [
@@ -376,10 +382,8 @@ class Integrator(object):
     
         self.echo('Getting places...')
         places = Place.select()
-        places = dict([((None if p.city is None else p.city.city,
-                         None if p.state is None else p.state.code,
-                         p.zip_code),p.id)
-                         for p in places])
+        places = dict([((p.city_name, p.state_code, p.zip_code), p.id) for p 
+                       in places])
         places[(None, None, None)] = None
     
         self.echo('Transferring edges...')
@@ -394,11 +398,13 @@ class Integrator(object):
             st_name_id = street_names[(r.prefix, r.name, sttype, r.suffix)]
             city_l = cities_atof[r.city_l]
             city_r = cities_atof[r.city_r]
-            state_l = 'or' if city_l != 'vancouver' else 'wa'
-            state_r = 'or' if city_r != 'vancouver' else 'wa'
-            place_l_id = places[(city_l, state_l, r.zip_code_l)]
-            place_r_id = places[(city_r, state_r, r.zip_code_r)]
-            records.append(dict(
+            state_l = self.get_state_code_for_city(city_l)
+            state_r = self.get_state_code_for_city(city_r)
+            zl = int(r.zip_code_l) if r.zip_code_l is not None else None
+            zr = int(r.zip_code_r) if r.zip_code_r is not None else None
+            place_l_id = places[(city_l, state_l, zl)]
+            place_r_id = places[(city_r, state_r, zr)]
+            record = dict(
                 addr_f_l=r.addr_f_l or None,
                 addr_f_r=r.addr_f_r or None,
                 addr_t_l=r.addr_t_l or None,
@@ -410,16 +416,16 @@ class Integrator(object):
                 street_name_id=st_name_id,
                 place_l_id=place_l_id,
                 place_r_id=place_r_id,
+                # fields that may have a different *type* per region:
                 geom=r.geom.geometryN(0),
-                # region-specific fields:
-                localid=r.localid,
+                permanent_id=r.permanent_id,
                 bikemode=bikemodes[r.bikemode],
                 code=r.code,
-                up_frac=r.up_frac,
-                abs_slope=r.abs_slope,
-                cpd=r.cpd,
-                sscode=r.sscode
-            ))
+            )
+            # fields that are specific to a region:
+            for attr in edge_attrs:
+                record[attr] = r[attr]
+            records.append(record)
             if (i % step) == 0:
                 self.echo('Inserting %s records into edge table...' % step)
                 self.insert_records(Edge.table, records, 'edges')
@@ -550,9 +556,7 @@ class Integrator(object):
     
         """
         result = select(cols, distinct=distinct).execute()
-        records = set([tuple([v for v in row])
-                       for row in result
-                       if self.any_not_none(row)])
+        records = set([tuple([v for v in row]) for row in result])
         result.close()
         return records
 
