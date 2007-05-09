@@ -120,7 +120,7 @@ byCycle.UI = (function () {
 
       // Resize column A
       pos = Position.cumulativeOffset(self.message_pane);
-      var height = dims.height - pos[1] - footer_height - 5;
+      var height = dims.height - pos[1] - footer_height - 10;
       var style = {height: height + 'px'};
       self.display_panes.each(function (pane) { pane.setStyle(style); });
 

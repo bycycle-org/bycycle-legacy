@@ -41,7 +41,7 @@
 
 
     <div id="meta" class="noprint">
-      <div id="current-region">
+      <div id="meta-left">
         Region:
         ${self.region_title()}
         % if c.region:
@@ -49,7 +49,7 @@
         % endif
       </div>
 
-      <div id="meta-links">
+      <div id="meta-right">
         <span class="attention"><a href="http://bycycle.metro-region.org/old-tripplanner" title="Use the old version if this new version doesn't work for you">Old Version</a></span>
         &middot;
         <a href="http://bycycle.org/projects/trip-planner/help"
@@ -67,6 +67,8 @@
            target="_blank"
            >Support byCycle</a>
       </div>
+      
+      <div class="clear"></div>
     </div>
     <!-- /#meta -->
 
@@ -104,7 +106,9 @@
 
       <!-- Bar -->
       <div id="bar" class="noprint">
-
+        <div id="spinner" class="spinner noprint" style="display: none;">
+          ${h.image_tag('spinner.gif', width=16, height=16, alt='Click to hide')}
+        </div>
 
         <div id="status">
           % if c.status:
@@ -116,9 +120,8 @@
                target="_blank"
                >byCycle.org</a> bicycle trip planner.
           % endif
-          <span id="loading-status"></span>
+          <span id="loading-status">Loading...</span>
         </div>
-
 
         <!-- Links -->
         <div id="links">
@@ -138,11 +141,6 @@
 
         <!-- Column A -->
         <div id="col-a">
-
-
-          <div id="spinner" class="spinner noprint" style="display: none;">
-            ${h.image_tag('spinner.gif', width=16, height=16, alt='Click to hide')}
-          </div>
 
 
           <!-- Message Pane -->

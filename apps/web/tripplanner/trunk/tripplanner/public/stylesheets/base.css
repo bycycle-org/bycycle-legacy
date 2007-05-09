@@ -40,14 +40,11 @@ a:hover { color: orange; }
   font-size: 11px;
   background: #ddd;
 }
-#meta {
-  position: relative;
-  text-align: right;
+#meta-left {
+  float: left;
 }
-#current-region {
-  position: absolute;
-  top: 2px;
-  left: 2px;
+#meta-right {
+  float: right;
 }
 #wrapper {
   position: relative;
@@ -116,7 +113,6 @@ div.region-ad {
 #col-a {
   float: left;
   width: 30%;
-  position: relative;
 }
 #col-b {
   float: right;
@@ -164,6 +160,7 @@ div.region-ad {
 
 /* Status & Links */
 #bar {
+  position: relative;
   background: #d1ffba;
   border: solid #a7cc95;
   border-width: 1px 0;
@@ -189,7 +186,7 @@ div.region-ad {
 #spinner {
   position: absolute;
   left: -1px;
-  top: -1px;
+  bottom: -22px;
 }
 .spinner {
   float: left;
@@ -207,7 +204,6 @@ div.region-ad {
 }
 #message_pane, #result_pane {
   padding: 5px;
-  padding-bottom: 0;
   overflow: auto;
 }
 #result_pane .tab-contents {
