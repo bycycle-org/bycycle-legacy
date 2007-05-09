@@ -184,6 +184,7 @@
         }
         self.runQuery(query_class, event, input);
       } else {
+		event && Event.stop(event);
         self.q_el.focus();
         self.showErrors('Please enter something to search for!');
       }
@@ -209,6 +210,7 @@
 
     showErrors: function(errors) {
       self.status.innerHTML = 'Oops!';
+	  self.spinner.hide();
       // FIXME: Why?
       errors = errors.split('\n');
       var content = ['<b>Error', (errors.length == 1 ? '' : 's'), '</b>',
