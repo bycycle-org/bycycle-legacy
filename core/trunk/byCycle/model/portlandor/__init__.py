@@ -1,15 +1,25 @@
+###############################################################################
+# $Id$
+# Created 2005-11-07
+#
+# Portland, OR, region.
+#
+# Copyright (C) 2006 Wyatt Baldwin, byCycle.org <wyatt@bycycle.org>.
+# All rights reserved.
+#
+# For terms of use and warranty details, please see the LICENSE file included
+# in the top level of this distribution. This software is provided AS IS with
+# NO WARRANTY OF ANY KIND.
+###############################################################################
 from sqlalchemy import MetaData
 
-from elixir import Entity
-from elixir import options_defaults, using_options, using_table_options
-from elixir import has_field
-from elixir import belongs_to, has_one, has_many, has_and_belongs_to_many
+from elixir import Entity, options_defaults, has_field
 from elixir import Unicode, Integer, String, CHAR, Integer, Numeric, Float
 
 from byCycle.model import db
 from byCycle.model.entities import base
 from byCycle.model.entities.base import base_statements
-from byCycle.model.entities.util import cascade_args, encodeFloat, decodeFloat
+from byCycle.model.entities.util import encodeFloat
 from byCycle.model.data.sqltypes import POINT, LINESTRING
 from byCycle.model.portlandor.data import SRID, slug
 
@@ -26,7 +36,7 @@ metadata = db.metadata_factory(slug)
 class Edge(base.Edge):
     base_statements('Edge')
     has_field('geom', LINESTRING(SRID))
-    has_field('localid', Numeric(11, 2) )
+    has_field('permanent_id', Numeric(11, 2))
     has_field('code', Integer)
     has_field('bikemode', CHAR(1))  # enum('','p','t','b','l','m','h','c','x')
     has_field('up_frac', Float)

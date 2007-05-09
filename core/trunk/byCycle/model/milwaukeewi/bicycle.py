@@ -38,7 +38,7 @@ class Mode(tmode.TravelMode):
         lanes = edge_attrs[indices["lanes"]]
         adt = edge_attrs[indices["adt"]]
         spd = edge_attrs[indices["spd"]]
-        ix_sn = edge_attrs[indices["street_name_id"]]
+        ix_sn = edge_attrs[indices["streetname_id"]]
 
         hours = length / self.mph
 

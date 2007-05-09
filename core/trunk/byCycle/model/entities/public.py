@@ -68,11 +68,13 @@ class Region(Entity):
         In the ``matrix``, there is an (ordered) of edge attributes for each
         edge. ``edge_attrs_index`` gives us a way to access those attributes
         by name while keeping the size of the matrix smaller. We require that
-        edges for all regions have at least a length, street name ID, and
-        from-node ID.
+        edges for all regions have at least a length, street name ID,
+        from-node ID, street classification (AKA code), and bike mode.
 
         """
-        edge_attrs = ['length', 'streetname_id', 'node_f_id']
+        edge_attrs = ['length', 'streetname_id', 'node_f_id', 'code',
+                      'bikemode']
+        # Add the region-specific edge attributes used for routing
         edge_attrs += [a.name for a in self.edge_attrs]
         edge_attrs_index = {}
         for i, attr in enumerate(edge_attrs):
@@ -128,7 +130,7 @@ class Region(Entity):
         print 'Fetching edge attributes...'
         c = self.module.Edge.c
         cols = [c.id, c.node_f_id, c.node_t_id, c.one_way, c.street_name_id,
-                c.geom]
+                c.geom, c.code, c.bikemode]
         cols += [a.name for a in self.edge_attrs]
         rows = select(cols).execute()
         num_edges = rows.rowcount

@@ -67,6 +67,7 @@ class Edge(Entity):
     has_field('addr_t_r', Integer)
     has_field('even_side', CHAR(1)),
     has_field('one_way', Integer)
+    has_field('permanent_id', Integer)
     has_field('geom', LINESTRING(4326))
     belongs_to('node_f', of_kind='Node', **cascade_args)
     belongs_to('node_t', of_kind='Node', **cascade_args)
