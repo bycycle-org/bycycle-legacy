@@ -114,9 +114,8 @@ byCycle.UI = (function () {
 
     onResize: function(event) {
       var dims = Element.getDimensions(document.body);
-      byCycle.logDebug('Viewport dimensions:', dims.width, dims.height);
 
-	  var pos = Position.cumulativeOffset(self.footer);
+      var pos = Position.cumulativeOffset(self.footer);
       var footer_height = dims.height - pos[1];
 
       // Resize column A

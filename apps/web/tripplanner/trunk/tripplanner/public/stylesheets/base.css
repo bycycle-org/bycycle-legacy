@@ -130,16 +130,16 @@ div.region-ad {
   margin-left: 155px;
 }
 #input_container .tab-contents {
-  background: #bfe0ff;
+  background: #d0d7de;
 }
 #input_container .tab-button {
   background: #fff;
 }
 #input_container .selected-tab-button {
-  background: #bfe0ff;
+  background: #d0d7de;
 }
 #region-search {
-  background: #bfe0ff;
+  background: #d0d7de;
   border: 1px solid #99b3cc;
   padding: 5px;
 }
@@ -255,7 +255,7 @@ div.region-ad {
 }
 /* The map object is inserted here */
 #map_pane {
-  background: #bfe0ff;
+  background: #d0d7de;
 }
 .info_win {
   width: 250px;
