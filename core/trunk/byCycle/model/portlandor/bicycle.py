@@ -50,7 +50,11 @@ class TravelMode(tmode.TravelMode):
         node_f_id_index = edge_attrs_index['node_f_id']        
         street_name_id_index = edge_attrs_index['streetname_id']
 
-        pref = globals().get(pref.upper()) if pref is not None else None
+        try:
+            pref = globals()[pref.upper()] if pref else None
+        except KeyError:
+            raise ValueError('Unknown travel mode: %s' % pref)
+
         global mu, mm, lt, mt, ht, ca, cca, ccca
         global blt, bmt, bht, bca, bcca, bccca
         global no_bm_lt, no_bm_mt, no_bm_ht, no_bm_ca, no_bm_cca, no_bm_ccca
