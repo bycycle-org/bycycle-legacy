@@ -91,8 +91,8 @@
         Event.stop(event);
         self.setAsEnd(byCycle.UI.map.getCenterString());
       });
-	  Event.observe(self.bike_overlay_link, 'click',
-	                self.toggleBikeTileOverlay);
+      Event.observe(self.bike_overlay_link, 'click',
+                    self.toggleBikeTileOverlay);
     },
 
     showResultPane: function(list_pane) {
@@ -155,12 +155,12 @@
         Element.remove(json);
         query_obj.on200(request);
       } else if (self.http_status == 300) {
-		var json = self.error_pane.getElementsByClassName('json')[0];
+        var json = self.error_pane.getElementsByClassName('json')[0];
         var request = {status: self.http_status, responseText: $F(json)};
         Element.remove(json);
-		query_obj.on300(request);
-	  }
-	  self.query = query_obj;
+        query_obj.on300(request);
+      }
+      self.query = query_obj;
     },
 
     runGenericQuery: function(event, input /* =undefined */) {
@@ -170,13 +170,13 @@
         var query_class;
         // Is the query a route?
         var waypoints = q.toLowerCase().split(' to ');
-		byCycle.logDebug(waypoints);
+        byCycle.logDebug(waypoints);
         if (waypoints.length > 1) {
           // Query looks like a route
           self.s_el.value = waypoints[0];
           self.e_el.value = waypoints[1];
-		  // Override using ``s`` and ``e``
-		  var input = {q: q};
+          // Override using ``s`` and ``e``
+          var input = {q: q};
           query_class = self.RouteQuery;
         } else {
           // Query doesn't look like a route; default to geocode query
@@ -184,7 +184,7 @@
         }
         self.runQuery(query_class, event, input);
       } else {
-		event && Event.stop(event);
+        event && Event.stop(event);
         self.q_el.focus();
         self.showErrors('Please enter something to search for!');
       }
@@ -210,7 +210,7 @@
 
     showErrors: function(errors) {
       self.status.innerHTML = 'Oops!';
-	  self.spinner.hide();
+      self.spinner.hide();
       // FIXME: Why?
       errors = errors.split('\n');
       var content = ['<b>Error', (errors.length == 1 ? '' : 's'), '</b>',
@@ -245,6 +245,13 @@
 
       self.showResultPane(self.location_list);
       self.status.update('Added location to locations list.');
+      
+      if (self.is_first_result) {
+        self.map.setZoom(self.map.default_zoom);
+      } else {
+        self.is_first_result = false;
+      }
+
       byCycle.logDebug('Left selectGeocode.');
     },
 
@@ -254,16 +261,16 @@
     selectRouteGeocode: function(select_link, i, j) {
       byCycle.logDebug('Entered selectRouteGeocode...');
       var dom_node = $(select_link).up('ul');
-	  var next = dom_node.next();
-	  var choice = self.query.response.choices[i][j];
-	  var addr;
-	  if (choice.number) {
-		addr = [choice.number, choice.network_id].join('-');
-	  } else {
-	    addr = choice.network_id
-	  }
+      var next = dom_node.next();
+      var choice = self.query.response.choices[i][j];
+      var addr;
+      if (choice.number) {
+        addr = [choice.number, choice.network_id].join('-');
+      } else {
+        addr = choice.network_id
+      }
       self.query.route_choices[i] = addr;
-	  dom_node.remove();
+      dom_node.remove();
       if (next) {
         next.show();
       } else {
