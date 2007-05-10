@@ -216,11 +216,11 @@
                     lines = None
                 %>
                 % if lines:
-                  <ul>
+                  <div class="errors">
                     % for e in lines:
-                      <li>${e}</li>
+                      <div class="error">${e}</div>
                     % endfor
-                  </ul>
+                  </div>
                 % else:
                   ${c.errors}
                 % endif
