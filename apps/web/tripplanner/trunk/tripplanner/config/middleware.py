@@ -49,6 +49,8 @@ def make_app(global_conf, full_stack=True, **app_conf):
     
         # Error Handling
         app = ErrorHandler(app, global_conf, error_template=error_template, **config.errorware)
+        
+        g.error_handler = app
     
         if asbool(global_conf.get('debug')):
             pass

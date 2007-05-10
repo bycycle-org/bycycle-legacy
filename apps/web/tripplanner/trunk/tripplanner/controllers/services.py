@@ -1,4 +1,4 @@
-import re
+import sys, re
 
 from byCycle.services.exceptions import *
 from byCycle.model.geocode import Geocode
@@ -89,7 +89,7 @@ class ServicesController(RestController):
         except Exception, exc:
             self.http_status = 500
             self.title = 'Error'
-            exc.description = str(exc)
+            exc.description = ('<p>An internal was encountered. An email has been sent to the site administrators informing them of the problem.</p> <p>If you want to provide details about the error, please send email to <a href="mailto:tripplanner.errros@bycycle.org" title="Report this error">tripplanner.errros @ bycycle.org</a>.</p> <h3>Error Info</h3> <p>%s</p>' % exc)
         else:
             self.http_status = 200
             self.title = service.name.title()
@@ -114,6 +114,11 @@ class ServicesController(RestController):
         else:
             template = 'index'
             self.errors = exc.description
+            if g.debug:
+                raise exc
+            else:
+                g.error_handler.exception_handler(sys.exc_info(),
+                                                  request.environ)
 
         return self._render_response(template=template, code=self.http_status)
 

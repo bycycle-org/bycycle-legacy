@@ -48,6 +48,7 @@ a:hover { color: orange; }
 }
 #wrapper {
   position: relative;
+  min-width: 600px;
 }
 #masthead, #input_container, #bar {
   padding: 5px;
