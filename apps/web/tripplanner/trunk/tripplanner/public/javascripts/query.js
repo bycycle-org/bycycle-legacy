@@ -7,7 +7,6 @@ byCycle.UI.Query.prototype = {
                        opts /* processing_message='Processing...'
                                input=undefined */) {
     if (arguments.length == 0) return;
-    byCycle.logDebug('Q initialize');
     this.ui = byCycle.UI;
     this.service = service;
     this.form = form;
@@ -34,17 +33,14 @@ byCycle.UI.Query.prototype = {
   before: function() {
     // Always do this
     // Base version should not raise errors
-    byCycle.logDebug('Entered before()...');
     this.start_ms = new Date().getTime();
     Element.show(this.ui.spinner);
     this.ui.status.innerHTML = this.processing_message;
     Element.hide(this.ui.message_pane);
-    byCycle.logDebug('Left before()');
   },
 
   doQuery: function() {
     // Done only if no errors in before()
-    byCycle.logDebug('Entered doQuery...');
     var path = ['regions', this.ui.region_id, this.service + ';find'].join('/')
     var url = [byCycle.prefix, path].join('');
     var params = this.input ? this.input : this.form.serialize(true);
@@ -74,10 +70,8 @@ byCycle.UI.Query.prototype = {
   },
 
   on200: function(request) {
-    byCycle.logDebug('Entered on200...');
     eval('var response = ' + request.responseText + ';');
     this.response = response;
-    byCycle.logDebug(response);
     this.ui.showResultPane(this.result_list);
     var results = this.makeResults(response);
     // Process the results for ``service``
@@ -91,30 +85,29 @@ byCycle.UI.Query.prototype = {
       li.appendChild(r.widget.dom_node);
       result_list.appendChild(li);
     });
-    byCycle.logDebug('Left on200.');
+    this.ui.is_first_result = false;
   },
 
   on300: function(request) {
-    byCycle.logDebug('Entered on300...');
     eval('var response = ' + request.responseText + ';');
     this.response = response;
     this.ui.showMessagePane(this.ui.error_pane, response.fragment);
-    byCycle.logDebug('Left on300.');
+	if (this.ui.is_first_result) {
+	  this.ui.map.setZoom(this.ui.map.default_zoom);
+	} else {
+	  this.ui.is_first_result = false;
+	}
   },
 
   onFailure: function(request) {
-    byCycle.logDebug('Search failed. Status: ' + request.status);
     eval('var response = ' + request.responseText + ';');
     this.ui.showMessagePane(this.ui.error_pane, response.errors);
-    byCycle.logDebug('Left onFailure.');
   },
 
   onComplete: function(request) {
-    byCycle.logDebug('Entered onComplete...');
     this.ui.spinner.hide();
     this.http_status = request.status;
     this.ui.status.update(this.getElapsedTimeMessage());
-    byCycle.logDebug('Left onComplete. (Request processing complete.)');
   },
 
   onException: function(request) {
@@ -129,7 +122,6 @@ byCycle.UI.Query.prototype = {
    * @param response The response object (responseText evaled)
    */
   makeResults: function(response) {
-    byCycle.logDebug('Entered makeResults...');
     var results = [];
 
     // Extract top level DOM nodes from response HTML fragment (skipping text
@@ -147,8 +139,6 @@ byCycle.UI.Query.prototype = {
       results.push(result);
     }).bind(this));
 
-    this.ui.is_first_result = false;
-    byCycle.logDebug('Left makeResults.');
     return results;
   },
 
@@ -163,14 +153,12 @@ byCycle.UI.Query.prototype = {
    * @return ``Result``
    */
   makeResult: function (result, dom_node) {
-    byCycle.logDebug('Entered makeResult...');
     var id = [this.service, 'result', new Date().getTime()].join('_');
     dom_node.id = id;
     var widget = new byCycle.widget.FixedPane(dom_node, {destroy_on_close: true});
     var result_obj = new this.ui.Result(id, result, this.service, widget);
     widget.register_listeners('close', result_obj.remove.bind(result_obj));
     this.ui.results[this.service][id] = result_obj;
-    byCycle.logDebug('Left makeResult.');
     return result_obj;
   },
 
@@ -207,7 +195,6 @@ byCycle.UI.GeocodeQuery.prototype = Object.extend(new byCycle.UI.Query(), {
                                result_list=byCycle.UI.location_list,
                                processing_message='Locating address...',
                                input=undefined */) {
-    byCycle.logDebug('GQ initialize');
     opts = opts || {};
     var ui = byCycle.UI;
     var form = opts.form || ui.query_form;
@@ -216,7 +203,6 @@ byCycle.UI.GeocodeQuery.prototype = Object.extend(new byCycle.UI.Query(), {
   },
 
   before: function() {
-    byCycle.logDebug('Entered GeocodeQuery.before()...');
     this.superclass.before.apply(this, arguments);
     var q;
     if (typeof(this.input) == 'undefined') {
@@ -229,8 +215,7 @@ byCycle.UI.GeocodeQuery.prototype = Object.extend(new byCycle.UI.Query(), {
   },
 
   processResults: function(response, results) {
-    byCycle.logDebug('Entered GeocodeQuery.processResults()...');
-    var zoom = this.ui.is_first_result ? 14 : undefined;
+    var zoom = this.ui.is_first_result ? this.ui.map.default_zoom : undefined;
     // For each result, place a marker on the map.
     var div, content_pane;
     var placeGeocodeMarker = this.ui.map.placeGeocodeMarker.bind(this.ui.map);
@@ -240,7 +225,6 @@ byCycle.UI.GeocodeQuery.prototype = Object.extend(new byCycle.UI.Query(), {
       div.appendChild(content_pane);
       r.addOverlay(placeGeocodeMarker(r.result.point, div, zoom));
     });
-    byCycle.logDebug('Left GeocodeQuery.processResults().');
   }
 });
 
@@ -257,7 +241,6 @@ byCycle.UI.RouteQuery.prototype = Object.extend(new byCycle.UI.Query(), {
                                result_list=byCycle.UI.location_list,
                                processing_message='Finding route...',
                                input=undefined */) {
-    byCycle.logDebug('RQ initialize');
     opts = opts || {};
     var ui = byCycle.UI;
     var form = opts.form || ui.route_form;
@@ -268,7 +251,6 @@ byCycle.UI.RouteQuery.prototype = Object.extend(new byCycle.UI.Query(), {
   },
 
   before: function() {
-    byCycle.logDebug('Entered RouteQuery.before()...');
     this.superclass.before.call(this);
     var errors = [];
     if (typeof(this.input) == 'undefined') {
@@ -311,7 +293,6 @@ byCycle.UI.RouteQuery.prototype = Object.extend(new byCycle.UI.Query(), {
   },
 
   processResults: function(response, results) {
-    byCycle.logDebug('Entered RouteQuery.processResults()...');
     var map = this.ui.map;
 
     var route, ls, s_e_markers, s_marker, e_marker, line;
@@ -350,6 +331,5 @@ byCycle.UI.RouteQuery.prototype = Object.extend(new byCycle.UI.Query(), {
       if (ui.color_index == ui.colors_len) { ui.color_index = 0; }
       r.overlays.push(s_marker, e_marker, line);
     });
-    byCycle.logDebug('Left RouteQuery.processResults().');
   }
 });

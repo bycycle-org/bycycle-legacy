@@ -62,6 +62,8 @@ byCycle.Map.google = {
  */
 byCycle.Map.google.Map = Class.create();
 byCycle.Map.google.Map.prototype = Object.extend(new byCycle.Map.base.Map(), {
+  default_zoom: 14,
+
   initialize: function(ui, container) {
     this.superclass = byCycle.Map.base.Map.prototype;
     this.superclass.initialize.apply(this, arguments);
