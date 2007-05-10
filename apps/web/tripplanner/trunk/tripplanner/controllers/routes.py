@@ -49,4 +49,4 @@ class RoutesController(ServicesController):
                 self.title = 'Multiple Matches'
                 self.choices = exc.choices
         return super(RoutesController, self)._find(q, service_class=Service,
-                                                   block=block)
+                                                   block=block, **params)

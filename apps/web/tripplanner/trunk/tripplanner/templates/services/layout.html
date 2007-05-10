@@ -46,7 +46,7 @@
               tabindex="4"
               style="text-decoration: none;"
             > &laquo;-&raquo; </a>${h.text_field('e', id='e', value=c.e, title='Enter end address', tabindex='5')}
-            ##${self.route_pref()}
+            ${self.route_pref()}
             ${h.submit(value='Find Route', title='Click to find a route', tabindex='9')}
           </div>
 
@@ -66,8 +66,13 @@
 
 <!-- Route preference form control -->
 <%def name='route_pref()'>
-  <% region_ns = self.get_namespace('/regions/%s.html' % c.region.slug) %>
-  ${region_ns.route_pref()}
+  % if c.region.slug == 'portlandor':
+    <select id="pref" name="pref" tabindex="8">
+      <option value="default">- Route Type -</option>
+      <option value="default">Normal</option>
+      <option value="safer">Safer</option>
+    </select>      
+  % endif
 </%def>
 
 
