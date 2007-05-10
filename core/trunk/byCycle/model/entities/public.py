@@ -53,6 +53,14 @@ class Region(Entity):
     has_many('routes', of_kind='Route')
     has_many('ads', of_kind='Ad')
 
+    required_edge_attrs = [
+        'length',
+        'street_name_id',
+        'node_f_id',
+        'code',
+        'bikemode'
+    ]
+
     @property
     def data_path(self):
         return os.path.join(model_path, self.slug, 'data')
@@ -72,8 +80,7 @@ class Region(Entity):
         from-node ID, street classification (AKA code), and bike mode.
 
         """
-        edge_attrs = ['length', 'streetname_id', 'node_f_id', 'code',
-                      'bikemode']
+        edge_attrs = self.required_edge_attrs[:]
         # Add the region-specific edge attributes used for routing
         edge_attrs += [a.name for a in self.edge_attrs]
         edge_attrs_index = {}
@@ -146,31 +153,30 @@ class Region(Entity):
         meter_i = 1
         for row in rows:
             adjustments = self._adjustEdgeRowForMatrix(row)
+
             ix = row.id
-            node_f_id, node_t_id = row.node_f_id, row.node_t_id
-            street_name_id = row.street_name_id
+            node_f_id = row.node_f_id
+            node_t_id = row.node_t_id
             one_way = row.one_way
-            geom = row.geom
-            # 0: no travel in either direction
-            # 1: travel from => to only
-            # 2: travel to => from only
-            # 3: travel in both directions
-            ft = one_way & 1
-            tf = one_way & 2
-            entry = [encodeFloat(geom.length() / 5280.0),
-                     street_name_id, node_f_id]
+
+            entry = [encodeFloat(row.geom.length() / 5280.0)]
+            entry += [row[attr] for attr in self.required_edge_attrs[1:]]
             entry += [row[a.name] for a in self.edge_attrs]
             for k in adjustments:
                 entry[self.edge_attrs_index[k]] = adjustments[k]
             edges[ix] = tuple(entry)
-            if ft:
-                if not node_f_id in nodes:
-                    nodes[node_f_id] = {}
-                nodes[node_f_id][node_t_id] = ix
-            if tf:
-                if not node_t_id in nodes:
-                    nodes[node_t_id] = {}
-                nodes[node_t_id][node_f_id] = ix
+
+            # One way values:
+            # 0: no travel in either direction
+            # 1: travel from => to only
+            # 2: travel to => from only
+            # 3: travel in both directions
+
+            if one_way & 1:
+                nodes.setdefault(node_f_id, {})[node_t_id] = ix
+            if one_way & 2:
+                nodes.setdefault(node_t_id, {})[node_f_id] = ix
+
             meter.update(meter_i)
             meter_i += 1
         rows.close()

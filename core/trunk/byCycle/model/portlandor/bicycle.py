@@ -48,7 +48,7 @@ class TravelMode(tmode.TravelMode):
         abs_slp_index = edge_attrs_index['abs_slope']
         up_frac_index = edge_attrs_index['up_frac']
         node_f_id_index = edge_attrs_index['node_f_id']        
-        street_name_id_index = edge_attrs_index['streetname_id']
+        street_name_id_index = edge_attrs_index['street_name_id']
 
         try:
             pref = globals()[pref.upper()] if pref else None
