@@ -48,7 +48,7 @@ from byCycle.util import meter
 
 from byCycle import model_path
 from byCycle.model import db
-from byCycle.model import Region, EdgeAttr
+from byCycle.model.entities import public
 from byCycle.model.sttypes import street_types_ftoa
 
 
@@ -145,7 +145,7 @@ class Integrator(object):
 
     def create_public_tables(self):
         """Create public tables (shared by all regions)."""
-        self.region_module.metadata.create_all()
+        public.metadata.create_all()
 
     def delete_region(self):
         """Delete region and any dependent records (CASCADE)."""
@@ -156,9 +156,9 @@ class Integrator(object):
 
     def get_or_create_region(self):
         """Create region."""
-        Region.table.create(checkfirst=True)
+        public.Region.table.create(checkfirst=True)
         try:
-            region = Region.get_by(slug=self.region_key)
+            region = public.Region.get_by(slug=self.region_key)
         except sqlalchemy.exceptions.SQLError, e:
             self.echo(e)
             region = None
@@ -173,12 +173,12 @@ class Integrator(object):
                 block_length=mod.block_length,
                 jog_length=mod.jog_length,
             )
-            self.insert_records(Region.table, [record], 'region')
-            region = Region.get_by(slug=self.region_key)
+            self.insert_records(public.Region.table, [record], 'region')
+            region = public.Region.get_by(slug=self.region_key)
             region.edge_attrs = []
             region.flush()
             attrs = [dict(name=a, region_id=region.id) for a in mod.edge_attrs]
-            self.insert_records(EdgeAttr.table, attrs, 'edge attributes')
+            self.insert_records(public.EdgeAttr.table, attrs, 'edge attributes')
             region.refresh()
         return region
    
