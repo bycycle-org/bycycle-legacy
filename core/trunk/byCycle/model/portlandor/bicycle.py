@@ -22,7 +22,7 @@ FASTER, SHORTER, FLATTER, SAFER, DEFAULT = range(5)
 class TravelMode(tmode.TravelMode):
     """Bicycle travel mode for the Portland, OR, region."""
 
-    def __init__(self, region, pref=''):
+    def __init__(self, region, pref=None):
         """
 
         ``pref`` `string`        
@@ -50,7 +50,7 @@ class TravelMode(tmode.TravelMode):
         node_f_id_index = edge_attrs_index['node_f_id']        
         street_name_id_index = edge_attrs_index['streetname_id']
 
-        pref = (not bool(pref)) or eval(pref.upper())
+        pref = globals().get(pref.upper()) if pref is not None else None
         global mu, mm, lt, mt, ht, ca, cca, ccca
         global blt, bmt, bht, bca, bcca, bccca
         global no_bm_lt, no_bm_mt, no_bm_ht, no_bm_ca, no_bm_cca, no_bm_ccca
