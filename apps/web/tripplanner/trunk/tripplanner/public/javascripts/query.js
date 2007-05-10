@@ -89,14 +89,10 @@ byCycle.UI.Query.prototype = {
   },
 
   on300: function(request) {
+    this.ui.spinner.hide();
     eval('var response = ' + request.responseText + ';');
     this.response = response;
     this.ui.showMessagePane(this.ui.error_pane, response.fragment);
-	if (this.ui.is_first_result) {
-	  this.ui.map.setZoom(this.ui.map.default_zoom);
-	} else {
-	  this.ui.is_first_result = false;
-	}
   },
 
   onFailure: function(request) {
