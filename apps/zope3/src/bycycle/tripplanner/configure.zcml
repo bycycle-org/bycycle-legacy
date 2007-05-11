@@ -1,0 +1,11 @@
+<configure xmlns="http://namespaces.zope.org/browser">
+
+    <page
+        for=".interfaces.IRegionContainer"
+        name="regions"
+        permission="zope.Public"
+        class=".browser.views.regions.Index"
+        template="browser/templates/regions/index.pt"
+    />
+
+</configure>
