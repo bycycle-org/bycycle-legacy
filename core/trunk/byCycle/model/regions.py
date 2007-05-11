@@ -86,7 +86,7 @@ zip_codes.update(dict([(zc, portlandor) for zc in portlandor_zip_codes]))
 
 
 # region key alias => region key
-aliases = ('all', '', None)
+aliases = ('all',)
 region_aliases = dict([(a, 'all') for a in aliases])
 
 aliases = (milwaukeewi, 'mil', 'milwaukee')
@@ -102,8 +102,8 @@ region_aliases.update(dict([(a, pittsburghpa) for a in aliases]))
 def getRegionKey(region):
     """Find the proper region key for ``region``.
 
-    ``region`` `string`
-        A region proper name, alias, or key.
+    ``region``
+        A region proper name, alias, or key, or None
 
     return `string`
         Lowercase region key.
@@ -112,12 +112,16 @@ def getRegionKey(region):
         ``region`` is not a known region name, alias, or key.
 
     """
+    if region is None:
+        return None
     region = (region or '').strip()
     region = ''.join(region.split())
     chars = (',', '.', '-')
-    for _c in chars:
-        region = region.replace(_c, '')
+    for c in chars:
+        region = region.replace(c, '')
     region = region.lower()
+    if not region:
+        return None
     try:
         region = region_aliases[region]
     except KeyError:
