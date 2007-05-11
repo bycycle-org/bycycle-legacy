@@ -22,7 +22,7 @@ FASTER, SHORTER, FLATTER, SAFER, DEFAULT = range(5)
 class TravelMode(tmode.TravelMode):
     """Bicycle travel mode for the Portland, OR, region."""
 
-    def __init__(self, region, pref=None):
+    def __init__(self, region, pref='default'):
         """
 
         ``pref`` `string`        
@@ -51,7 +51,7 @@ class TravelMode(tmode.TravelMode):
         street_name_id_index = edge_attrs_index['street_name_id']
 
         try:
-            pref = globals()[pref.upper()] if pref else None
+            pref = globals()[(pref or 'default').upper()]
         except KeyError:
             raise ValueError('Unknown travel mode: %s' % pref)
 
