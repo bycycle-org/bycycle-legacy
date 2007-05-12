@@ -289,8 +289,6 @@ byCycle.UI.RouteQuery.prototype = Object.extend(new byCycle.UI.Query(), {
   },
 
   processResults: function(response, results) {
-    var map = this.ui.map;
-
     var route, ls, s_e_markers, s_marker, e_marker, line;
     var ui = this.ui;
     var map = ui.map;
