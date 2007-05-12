@@ -44,12 +44,12 @@ byCycle.Map.google = {
   isLoadable: function() {
     var is_loadable = false;
     if (this.api_loaded && GBrowserIsCompatible()) {
-        is_loadable = true;
+      is_loadable = true;
     } else {
       $('map_message').show();
       if (!this.api_loaded) {
         $('map_message').update('No Google Maps API key found for ' +
-		                        byCycle.domain);
+                                byCycle.domain);
       }
     }
     return is_loadable;
@@ -198,6 +198,21 @@ byCycle.Map.google.Map.prototype = Object.extend(new byCycle.Map.base.Map(), {
     this.map.addOverlay(line);
     return line;
   },
+  
+  drawPolyLineFromEncodedPoints: function (points, levels, color, weight, 
+                                           opacity) {
+    var line = new GPolyline.fromEncoded({
+      points: points,
+      levels: levels,
+      color: color,
+      weight: weight,
+      opacity: opacity,
+      zoomFactor: 2,
+      numLevels: 18
+    });
+    this.map.addOverlay(line);
+    return line;  
+  },
 
   placeMarker: function(point, icon) {
     var marker = new GMarker(new GLatLng(point.y, point.x), icon);
@@ -250,10 +265,10 @@ byCycle.Map.google.Map.prototype = Object.extend(new byCycle.Map.base.Map(), {
     var marker = this.placeMarker(region.center, icon);
     var self = this;
     GEvent.addListener(marker, 'click', function() {
-	  var params = byCycle.request_params.toQueryString();
+      var params = byCycle.request_params.toQueryString();
       var location = [byCycle.prefix, 'regions/', region.key];
-	  if (params) { location.push('?', params); }
-	  window.location = location.join('');
+      if (params) { location.push('?', params); }
+      window.location = location.join('');
     });
     return marker;
   },
@@ -271,7 +286,7 @@ byCycle.Map.google.Map.prototype = Object.extend(new byCycle.Map.base.Map(), {
     var sw = bounds.sw;
     var ne = bounds.ne;
     var gbounds = new GLatLngBounds(new GLatLng(sw.y, sw.x),
-                    new GLatLng(ne.y, ne.x));
+                                    new GLatLng(ne.y, ne.x));
     this.map.setCenter(center, this.map.getBoundsZoomLevel(gbounds));
   },
 
@@ -305,69 +320,69 @@ byCycle.Map.google.Map.prototype = Object.extend(new byCycle.Map.base.Map(), {
   },
 
   makeBikeTileOverlay: function (zoom_levels) {
-	var domain = 'mica.metro-region.org';
-	var transparent_png = ['http://', domain,
-	                       '/bycycle/images/transparent.png'].join('');
-	var c = '&copy; <a href="http://www.metro-region.org/">Metro</a>';
-	var copyrights = new GCopyrightCollection(c);
-	var wms_url = ['http://', domain, '/cgi-bin/mapserv-postgis',
-				   '?map=/var/www/html/bycycle/bycycle.map&'].join('');
-	var layers = 'bike_rte,county_lines';
-	var tile_size = 256;
-	var tile_size_less_one = tile_size - 1;
-	var img_format = 'image/png';
-	var srs = "EPSG:4326";
-	var min_zoom = 9;
-	var url = [wms_url,
-	           "SERVICE=WMS",
-			   "&VERSION=1.1.1",
-			   "&REQUEST=GetMap",
-			   "&LAYERS=", layers,
-			   "&STYLES=",
-			   "&FORMAT=", img_format,
-			   "&BGCOLOR=0xFFFFFF",
-			   "&TRANSPARENT=TRUE",
-			   "&SRS=", srs,
-			   "&WIDTH=", tile_size,
-			   "&HEIGHT=", tile_size].join('');
-	var sw, ne;
+    var domain = 'mica.metro-region.org';
+    var transparent_png = ['http://', domain,
+                           '/bycycle/images/transparent.png'].join('');
+    var c = '&copy; <a href="http://www.metro-region.org/">Metro</a>';
+    var copyrights = new GCopyrightCollection(c);
+    var wms_url = ['http://', domain, '/cgi-bin/mapserv-postgis',
+                   '?map=/var/www/html/bycycle/bycycle.map&'].join('');
+    var layers = 'bike_rte,county_lines';
+    var tile_size = 256;
+    var tile_size_less_one = tile_size - 1;
+    var img_format = 'image/png';
+    var srs = "EPSG:4326";
+    var min_zoom = 9;
+    var url = [wms_url,
+               "SERVICE=WMS",
+               "&VERSION=1.1.1",
+               "&REQUEST=GetMap",
+               "&LAYERS=", layers,
+               "&STYLES=",
+               "&FORMAT=", img_format,
+               "&BGCOLOR=0xFFFFFF",
+               "&TRANSPARENT=TRUE",
+               "&SRS=", srs,
+               "&WIDTH=", tile_size,
+               "&HEIGHT=", tile_size].join('');
+    var sw, ne;
 
-	var pdx_bounds = byCycle.regions.regions.portlandor.bounds;
-	var pdx_sw = pdx_bounds.sw;
-	var pdx_ne = pdx_bounds.ne;
-	var bounds = new GLatLngBounds(new GLatLng(pdx_sw.lat, pdx_sw.lng),
-								   new GLatLng(pdx_ne.lat, pdx_ne.lng));
+    var pdx_bounds = byCycle.regions.regions.portlandor.bounds;
+    var pdx_sw = pdx_bounds.sw;
+    var pdx_ne = pdx_bounds.ne;
+    var bounds = new GLatLngBounds(new GLatLng(pdx_sw.lat, pdx_sw.lng),
+                                   new GLatLng(pdx_ne.lat, pdx_ne.lng));
 
-	var projection = new GMercatorProjection(zoom_levels);
-	projection.tileCheckRange = function(tile,  zoom,  tile_size) {
-	  var x = tile.x * tile_size;
-	  var y = tile.y * tile_size;
-	  var sw_point = new GPoint(x, y + tile_size_less_one);
-	  var ne_point = new GPoint(x + tile_size_less_one, y);
-	  sw = this.fromPixelToLatLng(sw_point, zoom);
-	  ne = this.fromPixelToLatLng(ne_point, zoom );
-	  var tile_bounds = new GLatLngBounds(sw, ne);
-	  if (tile_bounds.intersects(bounds)) {
-		return true;
-	  } else {
-		return false;
-	  }
-	};
+    var projection = new GMercatorProjection(zoom_levels);
+    projection.tileCheckRange = function(tile,  zoom,  tile_size) {
+      var x = tile.x * tile_size;
+      var y = tile.y * tile_size;
+      var sw_point = new GPoint(x, y + tile_size_less_one);
+      var ne_point = new GPoint(x + tile_size_less_one, y);
+      sw = this.fromPixelToLatLng(sw_point, zoom);
+      ne = this.fromPixelToLatLng(ne_point, zoom );
+      var tile_bounds = new GLatLngBounds(sw, ne);
+      if (tile_bounds.intersects(bounds)) {
+        return true;
+      } else {
+        return false;
+      }
+    };
 
-	var layer = new GTileLayer(copyrights, 0, zoom_levels - 1);
-	layer.getTileUrl = function(tile, zoom) {
-	  projection.tileCheckRange(tile, zoom, tile_size);
-	  if (zoom < min_zoom) {
-		var tile_url = transparent_png;
-	  } else {
-		var bbox = [sw.lng(), sw.lat(), ne.lng(), ne.lat()].join(',');
-		var tile_url = [url, "&BBOX=", bbox].join('');
-	  }
-	  return tile_url;
-	};
-	layer.isPng = function() { return true;	};
-	layer.getOpacity = function() { return .625; };
-	
-	return new GTileLayerOverlay(layer);
+    var layer = new GTileLayer(copyrights, 0, zoom_levels - 1);
+    layer.getTileUrl = function(tile, zoom) {
+      projection.tileCheckRange(tile, zoom, tile_size);
+      if (zoom < min_zoom) {
+        var tile_url = transparent_png;
+      } else {
+        var bbox = [sw.lng(), sw.lat(), ne.lng(), ne.lat()].join(',');
+        var tile_url = [url, "&BBOX=", bbox].join('');
+      }
+      return tile_url;
+    };
+    layer.isPng = function() { return true; };
+    layer.getOpacity = function() { return .625; };
+    
+    return new GTileLayerOverlay(layer);
   }
 });
