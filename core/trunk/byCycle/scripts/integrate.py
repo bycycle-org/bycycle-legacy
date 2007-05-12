@@ -13,11 +13,35 @@
 # NO WARRANTY OF ANY KIND.
 ###############################################################################
 """
-Usage:
+Usage::
 
     shp2pgsql.py [various options, see below]
 
-Options:
+Example::
+
+    shp2pgsql.py --region portlandor --source pirate --layer str06oct -n
+    
+    In this example, --region is the region "key" matching the region's
+    Python module name and ``slug`` in the public.regions database table.
+    
+    --source is the name of a directory in ${HOME}/byCycleData/portlandor. In
+    this case, on my machine, it refers to the directory
+    /home/bycycle/byCycleData/portlandor/pirate. 
+    
+    [Note that, for now, ${HOME}/byCycleData can't be changed from the command
+    line. It can be changed by creating an Integrator and setting its
+    ``base_data_path`` attribute. It might also be possible to set --source as
+    an absolute path, but I haven't tried this.]
+
+    --layer is the base name of a shapefile and its associated DBF and other
+    files. In this example, the pirate directory contains the files
+    str06oct.shp, str06oct.dbf, etc.
+
+    -n (short for --no-prompt) indicates that we want to run all of the data
+    integration actions without being prompted. In normal use, this will
+    probably be the default.
+
+Options::
 
     --region | -r <region key>
         The unique "region key" for a region. It should match the region's
@@ -83,6 +107,7 @@ def main(argv):
 
 def getOpts(argv):
     """Parse the opts from ``argv`` and return them as a ``dict``."""
+    required_opts = 'region', 'source', 'layer'
     opts = {
         'start': 0,
         'end': None,
@@ -132,17 +157,24 @@ def getOpts(argv):
         else:
             usage()
             die(1, 'Unknown option: ``%s``' % opt)
+
+    required_missing = [o for o in required_opts if o not in opts]
+    if required_missing:
+        msg = 'Required options missing: %s' % ', '.join(required_missing)
+        usage()
+        die(2, msg)
+
     if opts['only'] is not None:
         if start_or_end_specified:
             usage()
-            die(2, '``only`` must be the *only* argument or not specified.')
+            die(3, '--only must be the *only* argument or not specified.')
         else:
             opts['no_prompt'] = True
+
     return opts
 
 def die(code=1, msg=''):
     print 'ERROR: %s' % msg
-    print '(shp2pgsql.error.log may contain details.)'
     sys.exit(code)
 
 def usage(msg=''):
