@@ -277,11 +277,11 @@ byCycle.UI.RouteQuery.prototype = Object.extend(new byCycle.UI.Query(), {
       if (typeof c == 'Array') {
         addr = null;
       } else {
-		if (c.number) {
-		  addr = [c.number, c.network_id].join('-');
-		} else {
-		  addr = c.network_id
-		}
+        if (c.number) {
+          addr = [c.number, c.network_id].join('-');
+        } else {
+          addr = c.network_id
+        }
       }
       route_choices[i] = addr;
     });
@@ -299,13 +299,19 @@ byCycle.UI.RouteQuery.prototype = Object.extend(new byCycle.UI.Query(), {
     var placeMarkers = map.placeMarkers.bind(map);
     var addListener = map.addListener.bind(map);
     var showMapBlowup = map.showMapBlowup.bind(map);
-    var drawPolyLine = map.drawPolyLine.bind(map);
+    var drawPolyLine;
+    if (map.drawPolyLineFromEncodedPoints) {
+      drawPolyLine = map.drawPolyLineFromEncodedPoints.bind(map);
+    } else {
+      drawPolyLine = map.drawPolyLine.bind(map);
+    }
     results.each(function (r) {
       route = r.result;
       ls = route.linestring;
 
       // Zoom to linestring
-      centerAndZoomToBounds(getBoundsForPoints(ls));
+      // TODO: Compute this in back end
+      centerAndZoomToBounds(route.bounds, route.center);
 
       // Place from and to markers
       s_e_markers = placeMarkers([ls[0], ls[ls.length - 1]],
@@ -322,10 +328,20 @@ byCycle.UI.RouteQuery.prototype = Object.extend(new byCycle.UI.Query(), {
       });
 
       // Draw linestring
-      line = drawPolyLine(ls, ui.colors[ui.color_index]);
+      var line;
+      var color = ui.colors[ui.color_index];
+      if (map.drawPolyLineFromEncodedPoints) {
+        line = drawPolyLine(route.google_points, route.google_levels, color);
+      } else {
+        line = drawPolyLine(ls, color);
+      }
+      
+      // Add overlays to result object
+      r.overlays.push(s_marker, e_marker, line);
+
+      // Update route line color for next route
       ui.color_index += 1;
       if (ui.color_index == ui.colors_len) { ui.color_index = 0; }
-      r.overlays.push(s_marker, e_marker, line);
     });
   }
 });
