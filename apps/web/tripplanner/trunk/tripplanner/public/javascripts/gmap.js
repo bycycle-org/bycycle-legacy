@@ -207,8 +207,8 @@ byCycle.Map.google.Map.prototype = Object.extend(new byCycle.Map.base.Map(), {
       color: color,
       weight: weight,
       opacity: opacity,
-      zoomFactor: 2,
-      numLevels: 18
+      zoomFactor: 32,
+      numLevels: 4
     });
     this.map.addOverlay(line);
     return line;  
