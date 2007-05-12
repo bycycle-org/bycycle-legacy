@@ -1,20 +1,19 @@
-################################################################################
+###############################################################################
 # $Id: geocode.py 212 2006-09-11 04:16:40Z bycycle $
 # Created 2006-09-25.
 #
-# Route classes.
+# Route entity.
 #
-# Copyright (C) 2006 Wyatt Baldwin, byCycle.org <wyatt@bycycle.org>.
+# Copyright (C) 2006, 2007 Wyatt Baldwin, byCycle.org <wyatt@bycycle.org>.
 # All rights reserved.
 #
 # For terms of use and warranty details, please see the LICENSE file included
 # in the top level of this distribution. This software is provided AS IS with
 # NO WARRANTY OF ANY KIND.
-"""
-Route class.
-
-"""
+###############################################################################
+"""Route entity."""
 from cartography.proj import SpatialReference
+from byCycle.model import glineenc
 
 __all__ = ['Route']
 
@@ -45,12 +44,23 @@ class Route(object):
         points = []
         for i in range(self.linestring_ll.numPoints()):
             points.append(self.linestring_ll.pointN(i))
+        linestring = [{'x': p.x, 'y': p.y} for p in points]
+        pairs = [(p.y, p.x) for p in points]
+        bounds = self.linestring_ll.envelope()
+        centroid = bounds.centroid()
         route = {
             'start': dict(self.start),
             'end': dict(self.end),
-            'linestring': [{'x': p.x, 'y': p.y} for p in points],
+            'linestring': linestring,
+            'bounds': {
+                'sw': {'x': bounds.minx, 'y': bounds.miny},
+                'ne': {'x': bounds.maxx, 'y': bounds.maxy}
+            },
+            'center': {'x': centroid.x, 'y': centroid.y},
             'directions': self.directions,
-            'distance': self.distance
+            'distance': self.distance,
+            'google_points': glineenc.encode_pairs(pairs),
+            'google_levels': 'P' * len(pairs),
         }
         route['start']['geocode'] = route['start']['geocode'].to_builtin()
         route['end']['geocode'] = route['end']['geocode'].to_builtin()
