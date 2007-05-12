@@ -1,13 +1,21 @@
-from zope.publisher.browser import BrowserView
+from zope.app.form.browser.editview import EditView
+from zope.app.form.browser.add import AddView
+from zope.app.form import CustomWidgetFactory
+from zope.app.form.browser import ListSequenceWidget, ObjectWidget
+
+from bycycle.tripplanner.interfaces import IRegion, IAd
+from bycycle.tripplanner.entities import Ad
 
 
-class Index(BrowserView):
-
-    def __call__(self):
-          return self.index()
+_ad_widget = CustomWidgetFactory(ObjectWidget, Ad)
+_ads_widget = CustomWidgetFactory(ListSequenceWidget, subwidget=_ad_widget)
 
 
-class Edit(BrowserView):
+class Add(AddView):
+    __used_for__ = IRegion
+    ads_widget = _ads_widget
 
-    def __call__(self):
-          return self.index()
+
+class Edit(EditView):
+    __used_for__ = IRegion
+    ads_widget = _ads_widget

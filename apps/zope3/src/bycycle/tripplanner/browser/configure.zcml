@@ -1,0 +1,93 @@
+<configure
+	xmlns="http://namespaces.zope.org/browser"
+	i18n_domain="bycycle"
+	>
+
+	<!-- Region Container -->
+	<addMenuItem
+		class="bycycle.tripplanner.entities.RegionContainer"
+		title="Region Container"
+		description="Region Container"
+		permission="zope.ManageContent"
+	/>
+	<containerViews
+		for="bycycle.tripplanner.interfaces.IRegionContainer"
+		index="zope.View"
+		contents="zope.View"
+		add="zope.ManageContent"
+	/>	
+	<page
+		for="bycycle.tripplanner.interfaces.IRegionContainer"
+		name="index"
+		template="templates/regions/index.pt"
+		permission="zope.View"
+		menu="zmi_views"
+		title="Show Region Container"
+	/>
+
+	<!-- Region -->
+	<addMenuItem
+		class="bycycle.tripplanner.entities.Region"
+		title="Region"
+		description="Region"
+		permission="zope.ManageContent"
+	/>
+	<page
+		for="bycycle.tripplanner.interfaces.IRegion"
+		name="index"
+		template="templates/regions/show.pt"
+		permission="zope.View"
+		menu="zmi_views"
+		title="Show Region"
+	/>
+	<addform
+		name="addregion"
+		label="Add Region"
+		schema="bycycle.tripplanner.interfaces.IRegion"
+		content_factory="bycycle.tripplanner.entities.Region"
+		class=".views.regions.Add"
+		permission="zope.ManageContent"
+		menu="zmi_views" title="New"
+	/>
+	<editform
+		name="edit"
+		label="Edit Region"
+		schema="bycycle.tripplanner.interfaces.IRegion"
+		class=".views.regions.Edit"
+		permission="zope.ManageContent"
+		menu="zmi_views" title="Edit"
+	/>
+
+	<!-- Ad -->
+	<addMenuItem
+		class="bycycle.tripplanner.entities.Ad"
+		title="Ad"
+		description="Ad"
+		permission="zope.ManageContent"
+	/>
+	<page
+		for="bycycle.tripplanner.interfaces.IAd"
+		name="show"
+		template="templates/ads/show.pt"
+		permission="zope.View"
+		menu="zmi_views"
+		title="Show Ad"
+	/>
+	<addform
+		name="addad"
+		label="Add Ad"
+		schema="bycycle.tripplanner.interfaces.IAd"
+		content_factory="bycycle.tripplanner.entities.Ad"
+		permission="zope.ManageContent"
+		menu="zmi_views"
+		title="New Ad"
+	/>
+	<editform
+		name="edit"
+		schema="bycycle.tripplanner.interfaces.IAd"
+		permission="zope.ManageContent"
+		menu="zmi_views"
+		title="Edit Ad"
+	/>
+
+</configure>

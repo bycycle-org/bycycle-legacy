@@ -1,0 +1,17 @@
+<html metal:use-macro="context/@@standard_macros/view">
+    <head>
+        <title tal:content="context/title">Ad Title</title>
+    </head>
+
+    <body>
+        <div metal:fill-slot="body">
+            <h2 tal:content="context/title">Ad Title</h2>
+            <p>
+                <a tal:attributes="href string:${context/href}">
+                    <span tal:content="context/href">Ad URL</span>
+                </a>
+            </p>
+            <p tal:content="context/content">Ad content</p>
+        </div>
+    </body>
+</html>
