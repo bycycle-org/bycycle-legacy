@@ -74,9 +74,6 @@ byCycle.UI.Query.prototype = {
     this.response = response;
     this.ui.showResultPane(this.result_list);
     var results = this.makeResults(response);
-    // Process the results for ``service``
-    // I.e., recenter map, place markers, draw line, etc
-    this.processResults(response, results);
     // Show widget in result list for ``service``
     var li;
     var result_list = this.result_list;
@@ -85,6 +82,9 @@ byCycle.UI.Query.prototype = {
       li.appendChild(r.widget.dom_node);
       result_list.appendChild(li);
     });
+    // Process the results for ``service``
+    // I.e., recenter map, place markers, draw line, etc
+    this.processResults(response, results);
     this.ui.is_first_result = false;
   },
 
