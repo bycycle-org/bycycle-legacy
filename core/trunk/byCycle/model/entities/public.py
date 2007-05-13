@@ -39,6 +39,10 @@ __all__ = ['Region', 'EdgeAttr', 'Ad', 'Service', 'Geocode', 'Route']
 metadata = db.metadata_factory('public')
 options_defaults['shortnames'] = True
 
+# A place to keep references to adjacency matrices so they don't need to be
+# continually read from disk
+matrix_registry = {}
+
 
 class Region(Entity):
     has_field('title', String)
@@ -90,7 +94,7 @@ class Region(Entity):
 
     def _get_adjacency_matrix(self):
         """Return matrix. Prefer 1) existing 2) disk 3) newly created."""
-        matrix = getattr(self, '_matrix', None)
+        matrix = matrix_registry.get(self.slug, None)
         if matrix is None:
             try:
                 loadfile = open(self.matrix_path, 'rb')
@@ -102,11 +106,11 @@ class Region(Entity):
                 except (EOFError, ValueError, TypeError):
                     matrix = self.createAdjacencyMatrix()
                 loadfile.close()
-            self._matrix = matrix
+            matrix_registry[self.slug] = matrix
         return matrix
 
     def _set_adjacency_matrix(self, matrix):
-        self._matrix = matrix
+        matrix_registry[self.slug] = matrix
         dumpfile = open(self.matrix_path, 'wb')
         marshal.dump(matrix, dumpfile)
         dumpfile.close()
