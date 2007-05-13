@@ -64,5 +64,5 @@ def make_app(global_conf, full_stack=True, **app_conf):
     if g.debug:
         static_app = StaticURLParser(config.paths['static_files'])
         javascripts_app = StaticJavascripts()
-        app = Cascade([javascripts_app, app])
+        app = Cascade([static_app, javascripts_app, app])
     return app
