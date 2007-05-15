@@ -215,25 +215,21 @@ class Service(services.Service):
         layer_edges = Edge.table
 
         def get_node_ids(street_name, place):
-            node_ids = {}
+            """Get `set` of node IDs for ``street_name`` and ``place``."""
+            ids = set()
             c = Edge.c
             select_ = select([c.node_f_id, c.node_t_id])
             self.append_street_name_where_clause(select_, street_name)
             self.append_place_where_clause(select_, place)
             result = select_.execute()
-            for row in result:
-                node_ids[row.node_f_id] = 1
-                node_ids[row.node_t_id] = 1
-            result.close()
-            return node_ids
+            map(ids.update, ((r.node_f_id, r.node_t_id) for r in result))
+            return ids
 
-        ids_A = get_node_ids(oAddr.street_name1, oAddr.place1)
-        if ids_A:
-            ids_B = get_node_ids(oAddr.street_name2, oAddr.place2)
-        else:
-            ids_B = []
+        node_ids = get_node_ids(oAddr.street_name1, oAddr.place1)
+        if node_ids:
+            other_ids = get_node_ids(oAddr.street_name2, oAddr.place2)
+            node_ids = node_ids & other_ids
 
-        node_ids = [id_ for id_ in ids_A if (id_ in ids_B)]
         if not node_ids:
             raise AddressNotFoundError(address=oAddr, region=self.region)
 
