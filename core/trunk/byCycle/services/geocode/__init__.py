@@ -242,11 +242,36 @@ class Service(services.Service):
         # Create and return `IntersectionGeocode`s
         geocodes = []
         for node in nodes:
-            # TODO: Pick edges that correspond to the input address's cross
-            # streets instead of the first two (which is basically choosing at
-            # random).
             edges = node.edges
-            edge1, edge2 = edges[0], edges[1]
+            
+            # Score the node's edges, finding the ones that best match the
+            # cross streets of the input address
+            best_score1, edge1 = 0, None
+            best_score2, edge2 = 0, None
+            for e in edges:
+                street_name = e.street_name
+                place_l, place_r = e.place_l, e.place_r
+                score_1, score_2 = 0, 0
+                for attr in ('prefix', 'name', 'sttype', 'suffix'):
+                    e_val = getattr(street_name, attr)
+                    if e_val == getattr(oAddr.street_name1, attr):
+                        score_1 += 1
+                    if e_val == getattr(oAddr.street_name2, attr):
+                        score_2 += 1
+                for attr in ('city', 'state', 'zip_code'):
+                    e_l_val = getattr(place_l, attr)
+                    e_r_val = getattr(place_r, attr)
+                    if getattr(oAddr.place1, attr) in (e_l_val, e_r_val):
+                        score_1 += 1
+                    if getattr(oAddr.place2, attr) in (e_l_val, e_r_val):
+                        score_2 += 1
+                # Are the scores for this edge better than the previous best
+                # scores for the previous best-matching edges?
+                if score_1 > best_score1:
+                    best_score1, edge1 = score_1, e
+                if score_2 > best_score2:
+                    best_score2, edge2 = score_2, e
+
             addr = IntersectionAddress(
                 street_name1=edge1.street_name, place1=edge1.place_l,
                 street_name2=edge2.street_name, place2=edge2.place_l
