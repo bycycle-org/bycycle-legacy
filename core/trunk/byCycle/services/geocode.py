@@ -253,14 +253,14 @@ class Service(services.Service):
                 place_l, place_r = e.place_l, e.place_r
                 score_1, score_2 = 0, 0
                 for attr in ('prefix', 'name', 'sttype', 'suffix'):
-                    e_val = getattr(street_name, attr)
+                    e_val = getattr(street_name, attr, None)
                     if e_val == getattr(oAddr.street_name1, attr):
                         score_1 += 1
                     if e_val == getattr(oAddr.street_name2, attr):
                         score_2 += 1
                 for attr in ('city', 'state', 'zip_code'):
-                    e_l_val = getattr(place_l, attr)
-                    e_r_val = getattr(place_r, attr)
+                    e_l_val = getattr(place_l, attr, None)
+                    e_r_val = getattr(place_r, attr, None)
                     if getattr(oAddr.place1, attr) in (e_l_val, e_r_val):
                         score_1 += 1
                     if getattr(oAddr.place2, attr) in (e_l_val, e_r_val):
