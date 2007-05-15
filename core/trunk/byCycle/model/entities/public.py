@@ -2,7 +2,7 @@
 # $Id$
 # Created 2006-09-14.
 #
-# Database entity classes.
+# Public (i.e., shared) entity classes.
 #
 # Copyright (C) 2006, 2007 Wyatt Baldwin, byCycle.org <wyatt@bycycle.org>.
 # All rights reserved.
@@ -11,13 +11,7 @@
 # in the top level of this distribution. This software is provided AS IS with
 # NO WARRANTY OF ANY KIND.
 ###############################################################################
-"""Abstract database entity classes.
-
-They are "abstract" in the sense that they are not intended to be used
-directly. Instead they are overridden by inheriting with ``inheritance=None``
-and calling ``base_statements`` first in the subclass definition.
-
-"""
+"""Entities that are shared by all regions; they live in the public SCHEMA."""
 import os, marshal
 
 from sqlalchemy import func, select
