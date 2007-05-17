@@ -52,7 +52,7 @@ def make_app(global_conf, full_stack=True, **app_conf):
         
         g.error_handler = app
     
-        if asbool(global_conf.get('debug')):
+        if g.debug:
             pass
             # Display error documents for 401, 403, 404 status codes (if debug is disabled also
             # intercepts 500)

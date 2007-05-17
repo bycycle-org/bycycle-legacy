@@ -11,6 +11,15 @@ from tripplanner.controllers.regions import RegionsController
 __all__ = base__all__ + ['ServicesController']
 
 
+internal_server_error_explanation = """\
+An internal error was encountered. An email has been sent to the site administrators informing them of the problem.
+
+If you want to provide more details about the error, please send email to:
+
+<a href="mailto:tripplanner.errros@bycycle.org" title="Report this error">tripplanner.errors@bycycle.org</a>
+"""
+
+
 class ServicesController(RestController):
     """Base class for controllers that interact with back end services."""
 
@@ -26,8 +35,10 @@ class ServicesController(RestController):
         the geocode controller's ``find``.
 
         """
-        q = request.params.get('q', '').strip()
-        if q:
+        q = request.params.get('q', None)
+        s = request.params.get('s', None)
+        e = request.params.get('e', None)        
+        if q is not None:
             try:
                 # See if query looks like a route
                 request.params['q'] = self._makeRouteList(q)
@@ -37,17 +48,17 @@ class ServicesController(RestController):
                 controller = 'geocodes'
             else:
                 controller = 'routes'
+        elif s is not None or e is not None:
+            controller = 'routes'
         else:
-            s = request.params.get('s', '').strip()
-            e = request.params.get('e', '').strip()
-            if s or e:
-                controller = 'routes'
-            else:
-                self.errors = 'Please enter something to search for'
-                self.action = 'index'
-                return self._render_response(template='index')
-        redirect_to('/regions/%s/%s;find' % (self.region.slug, controller),
-                    **dict(request.params))
+            self.http_status = 400
+            e = InputError('Please enter something to search for!')
+            self.exception = e
+            return self._render_response(template='errors',
+                                         code=self.http_status)
+        redirect_to(h.url_for(region_id=self.region.slug,
+                              controller=controller, action='find'),
+                              **dict(request.params))
 
     def _find(self, query, service_class, block=None, **params):
         """Show the result of ``query``ing a service.
@@ -72,27 +83,24 @@ class ServicesController(RestController):
 
         try:
             result = service.query(query, **params)
-        except InputError, exc:
+        except InputError, self.exception:
             self.http_status = 400
-            self.title = 'Error%s' % ('s' if len(exc.errors) != 1 else '')
-        except NotFoundError, exc:
+        except NotFoundError, self.exception:
             self.http_status = 404
-            self.title = 'Not Found'
-        except ByCycleError, bc_exc:
+        except ByCycleError, self.exception:
             # Let subclass deal with any other `ByCycleError`. The ``block``
-            # function should set ``self.http_status`` and ``self.title`` and
-            # pass back the name of a template by setting ``self._template``.
+            # function MUST set ``self.http_status`` and MAY set
+            # ``self._template``.
             if not block:
                 raise
-            block(bc_exc)
-            template = self._template
-        except Exception, exc:
+            block(self.exception)
+        except Exception, self.exception:
             self.http_status = 500
-            self.title = 'Error'
-            exc.description = ('<p>An internal was encountered. An email has been sent to the site administrators informing them of the problem.</p> <p>If you want to provide details about the error, please send email to <a href="mailto:tripplanner.errros@bycycle.org" title="Report this error">tripplanner.errros @ bycycle.org</a>.</p> <h3>Error Info</h3> <p>%s</p>' % exc)
+            self.exception.title = 'Internal Server Error'
+            self.exception.description = str(self.exception)
+            self.exception.explanation = internal_server_error_explanation
         else:
             self.http_status = 200
-            self.title = service.name.title()
             try:
                 # Is the result a collection? Note that member objects should
                 # not be iterable!
@@ -108,15 +116,16 @@ class ServicesController(RestController):
 
         try:
             # Was there an error?
-            exc
-        except UnboundLocalError:
+            self.exception
+        except AttributeError:
             pass
         else:
-            template = 'index'
-            self.errors = exc.description
-            if g.debug:
-                raise exc
+            template = getattr(self, '_template', 'errors')
+            if g.debug and self.http_status == 500:
+                raise self.exception
             else:
+                # TODO: Make this send the request details also. Currently, it
+                # doesn't send the request URL, PATH_INFO, etc.
                 g.error_handler.exception_handler(sys.exc_info(),
                                                   request.environ)
 
@@ -138,17 +147,30 @@ class ServicesController(RestController):
         def block(obj):
             result = {
                 'type': self.Entity.__class__.__name__,
-                'title': getattr(self, 'title', ''),
-                'message': getattr(self, 'message', ''),
-                'errors': getattr(self, 'errors', ''),
                 'results': (obj if isinstance(obj, list) else [obj]),
             }
+
+            msg = getattr(self, 'message', None)
+            if msg is not None:
+                result['message'] = msg
+
+            exc = getattr(self, 'exception', None)
+            if exc is not None:
+                result['exception'] = {
+                    'code': self.http_status,
+                    'title': getattr(exc, 'title', None),
+                    'description': getattr(exc, 'description', None),
+                    'explanation': getattr(exc, 'explanation', None),
+                    'errors': getattr(exc, 'errors', None),
+                }
+
             if fragment:
                 wrap = self.wrap
                 self.wrap = False
                 f = super(ServicesController, self)._get_html_content()[0]
                 self.wrap = wrap
                 result['fragment'] = f
+
             # ``choices`` may be set when HTTP status is 300
             choices = []
             for choice in getattr(self, 'choices', []):
@@ -158,6 +180,7 @@ class ServicesController(RestController):
                     choices.append([m.to_builtin() for m in choice])
             if choices:
                 result['choices'] = choices
+
             return result
         return super(ServicesController, self)._get_json_content(block=block)
 

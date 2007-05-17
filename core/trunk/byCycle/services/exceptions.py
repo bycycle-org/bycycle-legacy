@@ -15,26 +15,40 @@
 
 
 class ByCycleError(Exception):
-    def __init__(self, desc='byCycle Error'):
-        self.description = desc
+
+    title = 'Error'
+    description = 'byCycle Error'
+
+    def __init__(self):
         Exception.__init__(self)
+
     def __str__(self):
         return str(self.description)
 
 
 class InputError(ByCycleError):
+
+    title = 'Input Error'
+    
     def __init__(self, errors=[]):
         if isinstance(errors, basestring):
             errors = [errors]
         self.errors = errors
-        desc = '\n'.join([str(e) for e in errors])
-        ByCycleError.__init__(self, desc=desc)
+        self.description = '\n'.join([str(e) for e in errors])
+        ByCycleError.__init__(self)
 
 
 class NotFoundError(ByCycleError):
-    pass
+
+    title = 'Not Found'
+
+    def __init__(self):
+        ByCycleError.__init__(self)
 
 
 class IdentifyError(ByCycleError):
-    def __init__(self, desc):
-        ByCycleError.__init__(self, desc=desc)
+
+    title = 'Unidentifiable'
+
+    def __init__(self):
+        ByCycleError.__init__(self)

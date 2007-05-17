@@ -145,9 +145,9 @@
 
           <!-- Message Pane -->
           <%
-            show_msg_pane = (not c.http_status or c.info or c.errors or
+            show_msg_pane = (not c.http_status or c.info or c.exception or
                              (c.http_status and c.http_status > 299))
-            show_error_pane = (c.errors or
+            show_error_pane = (c.exception or
                                (c.http_status and c.http_status > 299))
             show_info_pane = not show_error_pane
             msg_pane_style = {'display': ('block' if show_msg_pane else 'none')}
@@ -207,24 +207,6 @@
             </div>
 
             <div id="error_pane" ${h.hide_element(not show_error_pane)}>
-              % if c.errors:
-                <h2>${c.title}</h2>
-                <%
-                  try:
-                    lines = c.errors.splitlines()
-                  except AttributeError:
-                    lines = None
-                %>
-                % if lines:
-                  <div class="errors">
-                    % for e in lines:
-                      <div class="error">${e}</div>
-                    % endfor
-                  </div>
-                % else:
-                  ${c.errors}
-                % endif
-              % endif
               ${self.body()}
             </div>
           </%call>
@@ -364,6 +346,30 @@
       % endfor
     </div>
   % endif
+</%def>
+
+<%def name="errors()">
+  <div class="errors">
+    <h2>${getattr(c.exception, 'title', 'Error')}</h2>
+    % if hasattr(c.exception, 'errors'):
+      % for error in c.exception.errors:
+        <p class="error">
+          ${error}
+        </p>
+      % endfor
+    % else:
+      <p class="error">
+        ${c.exception.description}
+      </p>
+    % endif
+    <% explanation = getattr(c.exception, 'explanation', None) %>
+    % if explanation is not None:
+      <div class="explanation">
+        <h3>What This Means</h3>
+        <p>${explanation.strip().replace('\n', '</p><p>')}</p>
+      </div>
+    % endif
+  </div>
 </%def>
 
 
