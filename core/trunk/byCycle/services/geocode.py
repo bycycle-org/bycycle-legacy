@@ -44,20 +44,39 @@ from byCycle.services.exceptions import *
 
 class GeocodeError(ByCycleError):
     """Base Error class for Geocode service."""
-    def __init__(self, desc='Geocode Error'):
-        ByCycleError.__init__(self, desc)
+
+    title = 'Geocode Service Error'
+    description = ('An error was encountered in the geocoding service. '
+                   'Further information is unavailable')
+    
+    def __init__(self):
+        ByCycleError.__init__(self)
+
 
 class AddressNotFoundError(GeocodeError, NotFoundError):
-    def __init__(self, desc='Address Not Found', address='', region=''):
-        if region and address:
-            desc = ('Unable to find address "%s" in region "%s"' %
-                    (address, region.title))
-        GeocodeError.__init__(self, desc=desc)
+    
+    title = 'Address Not Found'
+    description = 'Unable to find address.'
+    explanation = """\
+Reasons an address might not be found are...
+    """
+    
+    def __init__(self, address=None, region=None):
+        desc = ['Unable to find address "%s"' % address]
+        if region is not None:
+            desc.append('in %s' % region.title)
+        self.description = ' '.join(desc) + '.'
+        GeocodeError.__init__(self)
+
 
 class MultipleMatchingAddressesError(GeocodeError):
-    def __init__(self, desc='Multiple Matches Found', geocodes=[]):
+
+    title = 'Multiple Matching Addresses Found'
+    description = 'Multiple addresses were found that match the input address.'
+
+    def __init__(self, geocodes=[]):
         self.geocodes = geocodes
-        GeocodeError.__init__(self, desc=desc)
+        GeocodeError.__init__(self)
 
 
 class Service(services.Service):

@@ -208,15 +208,15 @@
       self.runQuery(self.RouteQuery, event, input);
     },
 
-    showErrors: function(errors) {
+    showErrors: function(/* args */) {
+      var errors = $A(arguments);
       self.status.innerHTML = 'Oops!';
       self.spinner.hide();
-      // FIXME: Why?
-      errors = errors.split('\n');
-      var content = ['<b>Error', (errors.length == 1 ? '' : 's'), '</b>',
+      var content = ['<h2>Error', (errors.length == 1 ? '' : 's'), '</h2>',
                      '<div class="errors">',
-                       '<div class="error">',
-                          errors.join('</div><div class="error">'),
+                       '<p class="error">',
+                          errors.join('</p><p class="error">'),
+                       '</p>',
                      '</div>'].join('');
       self.showMessagePane(self.error_pane, content);
     },

@@ -238,9 +238,8 @@ div.region-ad {
 .errors .title_bar, .errors .title_bar td {
   background: #fd766a;
 }
-.errors div.error {
-  margin-bottom: 2px;
-  padding: 2px;
+.errors p.error {
+  padding: 5px;
   border: 1px solid #fd766a;
 }
 

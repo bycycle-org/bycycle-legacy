@@ -58,17 +58,49 @@ from byCycle.services.exceptions import ByCycleError, InputError, NotFoundError
 
 
 class RouteError(ByCycleError):
-    def __init__(self, desc='Route Error'):
-        ByCycleError.__init__(self, desc)
+    
+    title = 'Route Service Error'
+    description = ('An error was encountered in the routing service. '
+                   'Further information is unavailable')
+    
+    def __init__(self):
+        ByCycleError.__init__(self)
+
+
+class EmptyGraphError(RouteError):
+    
+    title = 'Empty Routing Graph'
+    description = ('The routing graph is empty, which really should not even'
+                   'be possible.')
+    
+    def __init__(self):
+        RouteError.__init__(self)
+
 
 class NoRouteError(RouteError, NotFoundError):
-    def __init__(self, desc='No Route'):
-        RouteError.__init__(self, desc=desc)
+    
+    title = 'Route Not Found'
+    
+    def __init__(self, start_geocode, end_geocode, region):
+        self.description = (
+            'Unable to find a route from "%s" to "%s" in region "%s"' % (
+                str(start_geocode.address).replace('\n', ', '), 
+                str(end_geocode.address).replace('\n', ', '),
+                region
+            )
+        )
+        RouteError.__init__(self)
+
 
 class MultipleMatchingAddressesError(RouteError):
+
+    title = 'Multiple Matching Addresses Found'
+    description = ('Multiple addresses were found that match one or more '
+                   'input addresses.')
+
     def __init__(self, desc='Multiple Matches Found', choices=None):
         self.choices = choices
-        RouteError.__init__(self, desc=desc)
+        RouteError.__init__(self)
 
 
 class Service(services.Service):
@@ -127,7 +159,7 @@ class Service(services.Service):
         # Fetch the adjacency matrix
         G = self.region.matrix
         if not G:
-            raise NoRouteError('Graph is empty')
+            raise EmptyGraphError('Graph is empty')
         nodes, edges = G['nodes'], G['edges']
 
         # Get paths between adjacent waypoints
@@ -280,13 +312,7 @@ class Service(services.Service):
                 heuristic_func=getHeuristicWeight
             )
         except dijkstar.NoPathError:
-            raise NoRouteError(
-                'Unable to find a route from "%s" to "%s" in region "%s"' % (
-                    str(start_geocode).replace('\n', ', '),
-                    str(end_geocode).replace('\n', ', '),
-                    self.region
-                )
-            )
+            raise NoRouteError(start_geocode, end_geocode, self.region)
 
         return node_ids, edge_ids, split_edges
 

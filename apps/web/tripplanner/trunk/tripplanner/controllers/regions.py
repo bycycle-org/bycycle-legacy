@@ -9,9 +9,8 @@ class RegionsController(RestController):
         c.service = 'services'
 
     def index(self):
-        if 'errors' in session:
-            c.title = 'Error'
-            c.errors = session.pop('errors')
+        if 'exception' in session:
+            c.exception = session.pop('exception')
             session.save()
 
         # legacy support
@@ -46,7 +45,7 @@ class RegionsController(RestController):
         q = params.get('q', '').strip()
         params.pop('commit', '')
         if region_id is None:
-            session['errors'] = 'Please select a region'
+            session['exception'] = 'Please select a region'
             session.save()
             self.q = q
             params.pop('q', None)
@@ -66,7 +65,8 @@ class RegionsController(RestController):
             try:
                 return regions.getRegionKey(region_id)
             except ValueError:
-                session['errors'] = 'Unknown region: %s' % region_id
+                session['exception'] = 'Unknown region: %s' % region_id
+                session['http_status'] = 404
                 session.save()
                 params = params or dict(request.params)
                 params.pop('region', '')

@@ -89,15 +89,14 @@ byCycle.UI.Query.prototype = {
   },
 
   on300: function(request) {
+    this.onFailure(request);
+  },
+
+  onFailure: function(request) {
     this.ui.spinner.hide();
     eval('var response = ' + request.responseText + ';');
     this.response = response;
     this.ui.showMessagePane(this.ui.error_pane, response.fragment);
-  },
-
-  onFailure: function(request) {
-    eval('var response = ' + request.responseText + ';');
-    this.ui.showMessagePane(this.ui.error_pane, response.errors);
   },
 
   onComplete: function(request) {
@@ -195,6 +194,7 @@ byCycle.UI.GeocodeQuery.prototype = Object.extend(new byCycle.UI.Query(), {
     var ui = byCycle.UI;
     var form = opts.form || ui.query_form;
     var result_list = opts.result_list || ui.location_list;
+    opts.processing_message = opts.processing_message || 'Looking up address...';
     this.superclass.initialize.call(this, 'geocodes', form, result_list, opts);
   },
 
@@ -241,6 +241,7 @@ byCycle.UI.RouteQuery.prototype = Object.extend(new byCycle.UI.Query(), {
     var ui = byCycle.UI;
     var form = opts.form || ui.route_form;
     var result_list = opts.result_list || ui.route_list;
+    opts.processing_message = opts.processing_message || 'Finding route...';
     var service = 'routes';
     this.superclass.initialize.call(this, service, form, result_list, opts);
     this.ui.selectInputTab(service);
@@ -260,7 +261,7 @@ byCycle.UI.RouteQuery.prototype = Object.extend(new byCycle.UI.Query(), {
         }
         if (!e) {
           errors.push('Please enter an end address');
-          if (s) {is
+          if (s) {
             this.ui.e_el.focus();
           }
         }
