@@ -220,6 +220,7 @@ class EdgeAttr(Entity):
 class Ad(Entity):
     has_field('title', String)
     has_field('href', String)
+    has_field('link_text', String)
     has_field('text', String)
     belongs_to('region', of_kind='Region', **cascade_args)
     def __str__(self):
