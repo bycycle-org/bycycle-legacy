@@ -46,8 +46,8 @@ sttypes_atof = sttypes.street_types_atof
 states_ftoa = states.states_ftoa
 states_atof = states.states_atof
 
-no_address_msg = 'Please enter an address'
-no_region_msg = 'Please select a region'
+no_address_msg = 'Please enter an address.'
+no_region_msg = 'Please select a region.'
 
 
 class Service(services.Service):
@@ -179,7 +179,16 @@ class Service(services.Service):
         # Raise an exception if we get here: address is unnormalizeable
         raise InputError(
             'We could not understand the address you entered, "%s".' %
-            str(original_q)
+            str(original_q),
+            """\
+The trip planner currently only understands street addresses such as "123 Main St" or "1st & Main". (City, state, and zip code are all optional.)
+
+In particular, the trip planner doesn't know about points of interest such as parks, libraries, or airports.
+
+It also doesn't recognize cities, states, and/or zip codes by themselves, so if you type in "Portland, OR" you will get this error.
+
+Another possible reason is that you entered a street name without a number. For example, if you entered just "Main St," this error basically is asking "Where on Main St?" You have to give the building number ("123 Main St") or use cross streets ("1st and Main").
+"""
         )
 
     def _parse(self, addr):
@@ -324,9 +333,9 @@ class Service(services.Service):
                 self.region = zip_region_key
             else:
                 # By here, we should have figured out the region; if not, fail.
-                errors = ['Please enter a city and state -OR- a zip code '
-                          '-OR- set your region for address "%s"' % q]
-                raise InputError(errors)
+                raise InputError('Please enter a city and state -OR- a zip '
+                                 'code -OR- set your region for address '
+                                 '"%s"' % q)
 
     def _adjustName(self, street_name, sttype):
         """Adjust ``street_name``'s name.

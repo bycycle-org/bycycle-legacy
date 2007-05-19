@@ -52,8 +52,8 @@ class ServicesController(RestController):
             controller = 'routes'
         else:
             self.http_status = 400
-            e = InputError('Please enter something to search for!')
-            self.exception = e
+            msg = 'Please enter something to search for.'
+            self.exception = InputError(msg)
             return self._render_response(template='errors',
                                          code=self.http_status)
         redirect_to(h.url_for(region_id=self.region.slug,

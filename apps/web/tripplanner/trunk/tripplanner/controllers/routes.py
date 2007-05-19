@@ -11,28 +11,28 @@ class RoutesController(ServicesController):
         if q:
             try:
                 q = self._makeRouteList(q)
-            except ValueError, self.exception:
+            except ValueError:
                 self.q = q
                 self.http_status = 400
-                self.exception.description = "That doesn't look like a route"
-                return self._render_response(template='index')
+                self.exception = InputError("That doesn't look like a route.")
+                return self._render_response(template='errors')
         else:
             s = request.params.get('s', '').strip()
             e = request.params.get('e', '').strip()
             if s and e:
                 q = [s, e]
             else:
-                self.http_status = 400
                 if s:
                     self.s = s
-                    self.error_message = 'Please enter an end address'
+                    err_msg = 'Please enter an end address.'
                 elif e:
                     self.e = e
-                    self.error_message = 'Please enter a start address'
+                    err_msg = 'Please enter a start address.'
                 else:
-                    self.error_message = 'Please enter something to search for'
-                # TODO: raise an InputError
-                return self._render_response(template='index')
+                    err_msg = 'Please enter something to search for.'
+                self.http_status = 400
+                self.exception = InputError(err_msg)
+                return self._render_response(template='errors')
         self.s, self.e = q[0], q[1]
         self.q = '%s to %s' % (q[0], q[1])
         params = {}

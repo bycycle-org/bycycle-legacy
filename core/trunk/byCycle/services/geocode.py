@@ -47,10 +47,10 @@ class GeocodeError(ByCycleError):
 
     title = 'Geocode Service Error'
     description = ('An error was encountered in the geocoding service. '
-                   'Further information is unavailable')
+                   'Further information is unavailable.')
     
-    def __init__(self):
-        ByCycleError.__init__(self)
+    def __init__(self, description=None):
+        ByCycleError.__init__(self, description)
 
 
 class AddressNotFoundError(GeocodeError, NotFoundError):
@@ -59,15 +59,43 @@ class AddressNotFoundError(GeocodeError, NotFoundError):
     description = 'Unable to find address.'
     explanation = """\
 Reasons an address might not be found are...
-    """
+
+* The spelling of the street name is incorrect.
+
+* A numbered street was spelled out as a word. For example, instead of using "15th", you typed "fifteenth".
+
+In general, street names must match exactly what you would see on a street sign.
+
+A few other reasons are...
+
+* The city, state, and zip code don't match or are incorrect. If in doubt, just leave the city, state, and zip code off entirely.
+
+* The street direction (for example, "N" or "NE") is incorrect. If in doubt, leave off the direction.
+
+* The street type, (for example, "Street" or "Road"), is incorrect. If in doubt, leave off the street type.
+
+If you try all of these things and the address still isn't found, you can try the "find address at center" link at the top left of the map. Zoom in on the location you're interested in and center the red dot over it, then click the link. This will find the closest intersection, which is usually close enough.
+"""
     
-    def __init__(self, address=None, region=None):
+    def __init__(self, address, region=None):
         desc = ['Unable to find address "%s"' % address]
         if region is not None:
             desc.append('in %s' % region.title)
-        self.description = ' '.join(desc) + '.'
-        GeocodeError.__init__(self)
+        desc = ' '.join(desc) + '.'
+        GeocodeError.__init__(self, desc)
 
+
+class MultipleAddressesNotFoundError(AddressNotFoundError):
+    
+    title = 'Addresses Not Found'
+
+    def __init__(self, addresses, region=None):
+        if len(addresses) == 1:
+            raise AddressNotFoundError(addresses[0], region)
+        desc = ('Unable to find addresses: "%s".' % 
+                '", "'.join([a for a in addresses]))
+        GeocodeError.__init__(self, desc)
+    
 
 class MultipleMatchingAddressesError(GeocodeError):
 
