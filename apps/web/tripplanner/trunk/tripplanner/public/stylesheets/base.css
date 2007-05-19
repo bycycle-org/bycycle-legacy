@@ -69,12 +69,20 @@ a:hover { color: orange; }
   padding: 0;
   margin: 0;
 }
-div#region-ads {
-  font-weight: bold;
+div#region-ads h2 {
+  margin: 0;
+  font-size: 110%;
+  background: #d1ffba;
+  padding: 2px;
   border-bottom: 1px solid #99b3cc;
 }
 div.region-ad {
   padding: 2px;
+  font-size: 90%;
+  border-bottom: 1px solid #99b3cc;
+}
+div.region-ad a {
+  font-weight: bold;
 }
 #footer {
   position: absolute;

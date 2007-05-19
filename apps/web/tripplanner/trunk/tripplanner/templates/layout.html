@@ -266,8 +266,6 @@
       Powered by <a href="http://www.python.org/" title="Python programming language (opens in new window)" target="_blank">Python</a> and
       <a href="http://pylonshq.com/" title="Pylons Web framework (opens in new window)" target="_blank">Pylons</a>
       &middot;
-      <a href="http://trac.bycycle.org/" title="Information for Developers (Trac) (opens in new window)" target="_blank">Developers</a>
-      &middot;
       <a href="http://bycycle.org/support"
          title="Please support byCycle (opens in new window)"
          target="_blank"
@@ -335,13 +333,15 @@
   <% region = c.region %>
   % if region and region.ads:
     <div id="region-ads">
-      <div class="region-ad"><b>Local Ads</b></div>
+      <h2>Local Stuff</h2>
       % for ad in region.ads:
         <div class="region-ad">
           <a href="${ad.href}"
              title="${ad.title}"
              target="byCycle-ad-link"
-             >${ad.text}</a>
+             >${ad.link_text}</a>
+          <br/>
+          ${ad.text}
         </div>
       % endfor
     </div>
