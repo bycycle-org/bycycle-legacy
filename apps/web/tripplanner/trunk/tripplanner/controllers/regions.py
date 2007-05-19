@@ -1,4 +1,6 @@
+from byCycle.services.exceptions import InputError, NotFoundError
 from byCycle.model import regions
+from byCycle.model.entities.public import Region
 
 from tripplanner.lib.base import *
 
@@ -9,16 +11,23 @@ class RegionsController(RestController):
         c.service = 'services'
 
     def index(self):
-        if 'exception' in session:
-            c.exception = session.pop('exception')
-            session.save()
+        params = dict(request.params)
 
         # legacy support
-        params = dict(request.params)
         prefix = 'bycycle_'
         for k in params:
             if k.startswith(prefix):
                 params[k.lstrip(prefix)] = params.pop(k)
+
+        if 'exception' in session:
+            self.exception = session.pop('exception')
+            self.http_status = session.pop('http_status')
+            session.save()
+            self.q = params.get('q', None)
+            self.regions = self.Entity.select()
+            return self._render_response(template='errors',
+                                         code=self.http_status)
+
         id = self._get_region_id(params.pop('region', None), params)
         if id:
             if 'fr' in params:
@@ -45,7 +54,8 @@ class RegionsController(RestController):
         q = params.get('q', '').strip()
         params.pop('commit', '')
         if region_id is None:
-            session['exception'] = 'Please select a region'
+            session['exception'] = InputError('Please select a region')
+            session['http_status'] = 400
             session.save()
             self.q = q
             params.pop('q', None)
@@ -65,10 +75,11 @@ class RegionsController(RestController):
             try:
                 return regions.getRegionKey(region_id)
             except ValueError:
-                session['exception'] = 'Unknown region: %s' % region_id
+                session['exception'] = NotFoundError('Unknown region: %s' %
+                                                     region_id)
                 session['http_status'] = 404
                 session.save()
                 params = params or dict(request.params)
                 params.pop('region', '')
                 params.pop('bycycle_region', '')
-                redirect_to('/regions', **dict(params))
+                redirect_to('regions', **dict(params))

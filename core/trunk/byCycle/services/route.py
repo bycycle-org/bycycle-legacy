@@ -63,8 +63,8 @@ class RouteError(ByCycleError):
     description = ('An error was encountered in the routing service. '
                    'Further information is unavailable')
     
-    def __init__(self):
-        ByCycleError.__init__(self)
+    def __init__(self, description=None):
+        ByCycleError.__init__(self, description)
 
 
 class EmptyGraphError(RouteError):
@@ -82,14 +82,17 @@ class NoRouteError(RouteError, NotFoundError):
     title = 'Route Not Found'
     
     def __init__(self, start_geocode, end_geocode, region):
-        self.description = (
+        self.start_geocode = start_geocode
+        self.end_geocode = end_geocode
+        self.region = region
+        desc = (
             'Unable to find a route from "%s" to "%s" in region "%s"' % (
                 str(start_geocode.address).replace('\n', ', '), 
                 str(end_geocode.address).replace('\n', ', '),
                 region
             )
         )
-        RouteError.__init__(self)
+        RouteError.__init__(self, desc)
 
 
 class MultipleMatchingAddressesError(RouteError):
@@ -98,7 +101,7 @@ class MultipleMatchingAddressesError(RouteError):
     description = ('Multiple addresses were found that match one or more '
                    'input addresses.')
 
-    def __init__(self, desc='Multiple Matches Found', choices=None):
+    def __init__(self, choices=None):
         self.choices = choices
         RouteError.__init__(self)
 
@@ -205,21 +208,21 @@ class Service(services.Service):
         waypoints = [(w or '').strip() for w in q]
         num_waypoints = len(waypoints)
         if num_waypoints == 0:
-            errors.append('Please enter start and end addresses')
+            errors.append('Please enter start and end addresses.')
         if num_waypoints == 1:
             # Make sure there are at least two waypoints
-            errors.append('Please enter an end addresses')
+            errors.append('Please enter an end address.')
         else:
             # Make sure waypoints are not blank
             if num_waypoints == 2:
                 if not waypoints[0]:
-                    errors.append('Please enter a start address')
+                    errors.append('Please enter a start address.')
                 if not waypoints[-1]:
-                    errors.append('Please enter an end address')
+                    errors.append('Please enter an end address.')
             else:
                 for w in waypoints:
                     if not w:
-                        errors.append('Addresses cannot be blank')
+                        errors.append('Addresses cannot be blank.')
                         break
         # Let multiple input errors fall through to here
         if errors:
@@ -230,14 +233,14 @@ class Service(services.Service):
         """Return a `list` of `Geocode`s associated with each ``waypoint``."""
         geocode_service = geocode.Service(region=self.region)
         geocodes = []
-        input_errors = []
+        addresses_not_found = []
         multiple_match_found = False
         choices = []
         for w in waypoints:
             try:
                 geocode_ = geocode_service.query(w)
             except geocode.AddressNotFoundError, e:
-                input_errors.append(e.description)
+                addresses_not_found.append(w)
             except geocode.MultipleMatchingAddressesError, e:
                 multiple_match_found = True
                 choices.append(e.geocodes)
@@ -246,8 +249,9 @@ class Service(services.Service):
                 choices.append(geocode_)
                 if not self.region and geocode_service.region:
                     self.region = geocode_service.region
-        if input_errors:
-            raise InputError(input_errors)
+        if addresses_not_found:
+            raise geocode.MultipleAddressesNotFoundError(addresses_not_found,
+                                                         self.region)
         elif multiple_match_found:
             raise MultipleMatchingAddressesError(choices=choices)
         return geocodes
@@ -282,7 +286,7 @@ class Service(services.Service):
 
         """
         if start_geocode == end_geocode:
-            raise InputError('Start and end addresses appear to be the same')
+            raise InputError('Start and end addresses appear to be the same.')
 
         ### Get the start and end nodes for path finding. G may be updated.
 
