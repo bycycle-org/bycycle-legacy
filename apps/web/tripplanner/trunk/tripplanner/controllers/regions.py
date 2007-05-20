@@ -22,8 +22,8 @@ class RegionsController(RestController):
         if 'exception' in session:
             self.exception = session.pop('exception')
             self.http_status = session.pop('http_status')
+            self.q = session.pop('q', None)
             session.save()
-            self.q = params.get('q', None)
             self.regions = self.Entity.select()
             return self._render_response(template='errors',
                                          code=self.http_status)
@@ -60,12 +60,16 @@ class RegionsController(RestController):
             exc.title = 'Please Select a Region'
             session['exception'] = exc
             session['http_status'] = 400
+            if params.pop('q', None) is not None:
+                session['q'] = q
             session.save()
             return redirect_to('regions', **params)
         elif q:
+            # Go to and find something in region
             redirect_to('find_services', region_id=region_id, **params)
         else:
-            params.pop('q', '')
+            # Just go to region
+            params.pop('q', None)
             redirect_to('region', id=region_id, **params)
 
     @staticmethod
@@ -77,11 +81,14 @@ class RegionsController(RestController):
             try:
                 return regions.getRegionKey(region_id)
             except ValueError:
+                params = params or dict(request.params)
+                q = params.pop('q', None)
                 session['exception'] = NotFoundError('Unknown region: %s' %
                                                      region_id)
                 session['http_status'] = 404
+                if q is not None:
+                    session['q'] = q
                 session.save()
-                params = params or dict(request.params)
                 params.pop('region', '')
                 params.pop('bycycle_region', '')
                 redirect_to('regions', **dict(params))
