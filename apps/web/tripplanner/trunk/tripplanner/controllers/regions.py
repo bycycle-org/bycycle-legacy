@@ -54,11 +54,13 @@ class RegionsController(RestController):
         q = params.get('q', '').strip()
         params.pop('commit', '')
         if region_id is None:
-            session['exception'] = InputError('Please select a region')
+            exc = InputError(
+                'You must select a region from the drop down list above or ' 
+                'by clicking one of the Xs on the map.')
+            exc.title = 'Please Select a Region'
+            session['exception'] = exc
             session['http_status'] = 400
             session.save()
-            self.q = q
-            params.pop('q', None)
             return redirect_to('regions', **params)
         elif q:
             redirect_to('find_services', region_id=region_id, **params)
