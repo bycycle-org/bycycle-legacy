@@ -28,9 +28,9 @@ title = 'Milwaukee, WI, metro region'
 slug = 'milwaukeewi'
 SRID = 4326
 units = 'dd'
-earth_circumference = 131484672
-block_length = 260
-jog_length = block_length / 2
+earth_circumference = 360
+block_length = 0.00071187004976519237  # ~260ft
+jog_length = block_length / 2.0
 edge_attrs = ['lanes', 'adt', 'spd']
 
 cities = (

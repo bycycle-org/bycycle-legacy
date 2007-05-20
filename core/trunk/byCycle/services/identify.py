@@ -56,15 +56,14 @@ class Service(services.Service):
         except ValueError:
             raise IdentifyError('Cannot identify because POINT is not valid: '
                                 '%s.' % q)
-        reg = self.region
-        SRID = reg.srid
-        units = reg.units
-        earth_circumference = reg.earth_circumference
-        Entity = getattr(self.region.module, layer)
+        region = self.region
+        earth_circumference = region.earth_circumference
+        Entity = getattr(region.module, layer)
         c = Entity.c
         wkt = str(point)
         # Function to convert the input point to native geometry
-        transform = func.transform(func.GeomFromText(wkt, input_srid), SRID)
+        transform = func.transform(func.GeomFromText(wkt, input_srid),
+                                   region.srid)
         # Function to get the distance between input point and table points
         distance = func.distance(transform, c.geom)
         # This is what we're SELECTing--all columns in the layer plus the
@@ -74,12 +73,7 @@ class Service(services.Service):
         # Limit the search to within `expand_dist` feet of the input point.
         # Keep trying until we find a match or until `expand_dist` is
         # larger than half the circumference of the earth.
-        if units == 'dd' or SRID == 4326:
-            expand_dist = .001  # ~365.24ft
-        if units == 'feet':
-            expand_dist = 250
-        elif units == 'meters':
-            expand_dist = 85
+        expand_dist = region.block_length
         overlaps = c.geom.op('&&')  # geometry A overlaps geom B operator
         expand = func.expand  # geometry bounds expanding function
         while expand_dist < earth_circumference:
@@ -92,4 +86,4 @@ class Service(services.Service):
             else:
                 return object
         raise IdentifyError('Could not identify feature nearest to "%s" in '
-                            'region "%s", layer "%s"' % (q, reg, layer))
+                            'region "%s", layer "%s"' % (q, region, layer))
