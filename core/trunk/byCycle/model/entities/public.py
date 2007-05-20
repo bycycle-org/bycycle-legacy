@@ -19,7 +19,7 @@ from sqlalchemy import func, select
 from elixir import Entity
 from elixir import options_defaults, using_options, using_table_options
 from elixir import has_field, belongs_to, has_many
-from elixir import Integer, String
+from elixir import Integer, String, Float
 
 import simplejson
 
@@ -43,9 +43,9 @@ class Region(Entity):
     has_field('slug', String)
     has_field('srid', Integer)
     has_field('units', String)
-    has_field('earth_circumference', Integer)
-    has_field('block_length', Integer)
-    has_field('jog_length', Integer)
+    has_field('earth_circumference', Float)
+    has_field('block_length', Float)
+    has_field('jog_length', Float)
     has_many('edge_attrs', of_kind='EdgeAttr', order_by='id')
     has_many('geocodes', of_kind='Geocode')
     has_many('routes', of_kind='Route')
