@@ -41,7 +41,7 @@ class TravelMode(tmode.TravelMode):
         global edge_attrs_index, length_index, code_index, bikemode_index
         global abs_slp_index, up_frac_index, node_f_id_index
         global street_name_id_index
-        edge_attrs_index = region.edge_attrs_index        
+        edge_attrs_index = region.edge_attrs_index
         length_index = edge_attrs_index['length']
         code_index = edge_attrs_index['code']
         bikemode_index = edge_attrs_index['bikemode']
