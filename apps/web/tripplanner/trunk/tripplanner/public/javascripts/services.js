@@ -91,8 +91,10 @@
         Event.stop(event);
         self.setAsEnd(byCycle.UI.map.getCenterString());
       });
-      Event.observe(self.bike_overlay_link, 'click',
-                    self.toggleBikeTileOverlay);
+      if (self.bike_overlay_link) {
+        Event.observe(self.bike_overlay_link, 'click',
+                      self.toggleBikeTileOverlay);
+      }
     },
 
     showResultPane: function(list_pane) {

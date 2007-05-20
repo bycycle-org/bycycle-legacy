@@ -1,28 +1,30 @@
-################################################################################
+###############################################################################
 # $Id$
 # Created 2005-11-07.
 #
 # Milwaukee, WI, Bicycle Travel Mode.
 #
-# Copyright (C) 2006 Wyatt Baldwin, byCycle.org <wyatt@bycycle.org>.
+# Copyright (C) 2006, 2007 Wyatt Baldwin, byCycle.org <wyatt@bycycle.org>.
 # All rights reserved.
 # 
 # For terms of use and warranty details, please see the LICENSE file included
 # in the top level of this distribution. This software is provided AS IS with
 # NO WARRANTY OF ANY KIND.
-################################################################################
+###############################################################################
 """Bicycle travel mode for Milwaukee, WI, region."""
 from byCycle.model import tmode
 
 
-class Mode(tmode.TravelMode):
-    def __init__(self, region):
+class TravelMode(tmode.TravelMode):
+
+    def __init__(self, region, pref=None):
         tmode.TravelMode.__init__(self)
         self.mph = 10
+        global indices
+        indices = region.edge_attrs_index
 
     def getEdgeWeight(self, v, edge_attrs, prev_edge_attrs):
         """Calculate weight for edge given it & last crossed edge's attrs."""
-        indices = self.indices
         length = edge_attrs[indices["length"]] / 1000000.0
 
         cfcc = edge_attrs[indices["code"]]
@@ -38,7 +40,7 @@ class Mode(tmode.TravelMode):
         lanes = edge_attrs[indices["lanes"]]
         adt = edge_attrs[indices["adt"]]
         spd = edge_attrs[indices["spd"]]
-        ix_sn = edge_attrs[indices["streetname_id"]]
+        ix_sn = edge_attrs[indices["street_name_id"]]
 
         hours = length / self.mph
 
@@ -70,7 +72,7 @@ class Mode(tmode.TravelMode):
             try:
                 # Penalize edge if it has different street name from previous edge
                 prev_ix_sn = prev_edge_attrs[indices["street_name_id"]]
-                if ix_sn != prev_ix_sn: hours += .0055555555555555
+                if ix_sn != prev_ix_sn: hours += .0027777
             except TypeError:
                 pass
 
