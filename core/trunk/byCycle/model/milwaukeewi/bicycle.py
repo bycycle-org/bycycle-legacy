@@ -13,6 +13,7 @@
 ###############################################################################
 """Bicycle travel mode for Milwaukee, WI, region."""
 from byCycle.model import tmode
+from byCycle.model.entities.util import float_decode
 
 
 class TravelMode(tmode.TravelMode):
@@ -25,9 +26,9 @@ class TravelMode(tmode.TravelMode):
 
     def getEdgeWeight(self, v, edge_attrs, prev_edge_attrs):
         """Calculate weight for edge given it & last crossed edge's attrs."""
-        length = edge_attrs[indices["length"]] / 1000000.0
+        length = edge_attrs[indices['length']] * float_decode
 
-        cfcc = edge_attrs[indices["code"]]
+        cfcc = edge_attrs[indices['code']]
         try:
             cl, cat = cfcc[0], int(cfcc[1:])
             ma, mi = int(cfcc[1]), int(cfcc[2])
@@ -36,11 +37,11 @@ class TravelMode(tmode.TravelMode):
             cl, cat = 'x', 0
             ma, mi = 0, 0
 
-        bikemode = edge_attrs[indices["bikemode"]]
-        lanes = edge_attrs[indices["lanes"]]
-        adt = edge_attrs[indices["adt"]]
-        spd = edge_attrs[indices["spd"]]
-        ix_sn = edge_attrs[indices["street_name_id"]]
+        bikemode = edge_attrs[indices['bikemode']]
+        lanes = edge_attrs[indices['lanes']]
+        adt = edge_attrs[indices['adt']]
+        spd = edge_attrs[indices['spd']]
+        ix_sn = edge_attrs[indices['street_name_id']]
 
         hours = length / self.mph
 
@@ -70,9 +71,11 @@ class TravelMode(tmode.TravelMode):
             hours *= lanes_factor
 
             try:
-                # Penalize edge if it has different street name from previous edge
-                prev_ix_sn = prev_edge_attrs[indices["street_name_id"]]
-                if ix_sn != prev_ix_sn: hours += .0027777
+                # Penalize edge if it has different street name from previous
+                # edge
+                prev_ix_sn = prev_edge_attrs[indices['street_name_id']]
+                if ix_sn != prev_ix_sn:
+                    hours += .0027777
             except TypeError:
                 pass
 

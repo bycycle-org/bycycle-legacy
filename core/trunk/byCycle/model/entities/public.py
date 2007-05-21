@@ -157,7 +157,7 @@ class Region(Entity):
             node_t_id = row.node_t_id
             one_way = row.one_way
 
-            entry = [encodeFloat(row.geom.length() / 5280.0)]
+            entry = [encodeFloat(row.geom.length())]
             entry += [row[attr] for attr in self.required_edge_attrs[1:]]
             entry += [row[a.name] for a in self.edge_attrs]
             for k in adjustments:
