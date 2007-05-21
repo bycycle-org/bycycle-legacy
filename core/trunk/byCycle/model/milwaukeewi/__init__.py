@@ -16,8 +16,10 @@ from sqlalchemy import MetaData
 from elixir import Entity, options_defaults, has_field
 from elixir import Integer, String, CHAR, Integer
 
+from byCycle.util import gis
 from byCycle.model import db
 from byCycle.model.entities import base
+from byCycle.model.entities.util import encodeFloat
 from byCycle.model.entities.base import base_statements
 from byCycle.model.data.sqltypes import POINT, LINESTRING
 from byCycle.model.milwaukeewi.data import SRID, slug
@@ -43,7 +45,11 @@ class Edge(base.Edge):
 
     @classmethod
     def _adjustRowForMatrix(cls, row):
-        return {}
+        geom = row.geom
+        length = gis.getLengthOfLineString([geom.pointN(n) for n in
+                                            range(geom.numPoints())])
+        
+        return {'length': encodeFloat(length)}
 
 
 class Node(base.Node):

@@ -59,6 +59,7 @@ class Edge(base.Edge):
     @classmethod
     def _adjustRowForMatrix(cls, row):
         adjustments = {
+            'length': encodeFloat(row.geom.length() / 5280.0),
             'abs_slope': encodeFloat(row.abs_slope),
             'up_frac': encodeFloat(row.up_frac),
         }
