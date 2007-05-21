@@ -79,7 +79,7 @@ class Route(object):
                 d['turn'],
                 d['street'],
                 d['toward'],
-                '%.2f' % (d['distance'][self.region.units]),
+                '%.2f' % (d['distance']['miles']),
                 self.region.units,
                 bm,
             ))
@@ -91,7 +91,7 @@ class Route(object):
         s = [
             self.start['geocode'],
             self.end['geocode'],
-            'Distance: %.2f' % (self.distance[self.region.units]),
+            'Distance: %.2f' % (self.distance['miles']),
             directions,
         ]
         return '\n'.join([str(a) for a in s])
