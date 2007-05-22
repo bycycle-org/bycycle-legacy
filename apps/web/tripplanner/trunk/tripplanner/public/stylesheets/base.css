@@ -261,6 +261,35 @@ div.region-ad a {
 #map_pane {
   background: #d0d7de;
 }
+#map-buttons {
+  -moz-user-select: none;
+  color: black;
+  font-family: Arial,sans-serif;
+  font-size: small;
+  height: 19px;
+  position: absolute;
+  right: 7px;
+  top: 33px;
+}
+#map-buttons a {
+  color: black;
+  text-decoration: none;
+}
+.map-button {
+  background-color: white;
+  border: 1px solid black;
+  cursor: pointer;
+  text-align: center;
+}
+.map-button-inner {
+  padding: 0 1em;
+  border: 1px solid;
+  border-color: white rgb(176, 176, 176) rgb(176, 176, 176) white;
+}
+#legend-map-button {
+  text-align: center;
+  cursor: pointer;
+}
 .info_win {
   width: 250px;
 }
