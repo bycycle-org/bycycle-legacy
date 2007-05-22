@@ -139,22 +139,22 @@
       <!--<option value="identifyIntersection">Identify Intersection</option>-->
       <!--<option value="identifyStreet">Identify Street</option>-->
     <!--</select>-->
-    <a id="find-at-center-link"
-      href="#find-address-at-center-of-map"
+    <input type="button"
+      id="find-at-center-link"
       title="Find address nearest to red dot at center of map"
-      >Find address at center</a>
+      value="Find address at center"
+      />
 
     <% region_ns = self.get_namespace('/regions/%s.html' % c.region.slug) %>
     % if hasattr(region_ns, 'map_controls'):
-      &middot;
       ${region_ns.map_controls()}
     % endif
 
-    &middot;
-    <a id="clear-map-link"
-       href="#clear-map-and-results"
-       title="Clear all results and map"
-       >Clear All</a>
+    <input type="button"
+      id="clear-map-link"
+      title="Clear all results and map"
+      value="Clear all"
+      />
   </div>
   <!-- /Map Menu -->
 </%def>

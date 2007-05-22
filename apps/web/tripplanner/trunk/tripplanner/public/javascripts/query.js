@@ -328,7 +328,7 @@ byCycle.UI.RouteQuery.prototype = Object.extend(new byCycle.UI.Query(), {
 
       // Draw linestring
       var line;
-      var color = ui.colors[ui.color_index];
+      var color = ui.route_line_color;
       if (map.drawPolyLineFromEncodedPoints) {
         line = drawPolyLine(route.google_points, route.google_levels, color);
       } else {
@@ -337,10 +337,6 @@ byCycle.UI.RouteQuery.prototype = Object.extend(new byCycle.UI.Query(), {
       
       // Add overlays to result object
       r.overlays.push(s_marker, e_marker, line);
-
-      // Update route line color for next route
-      ui.color_index += 1;
-      if (ui.color_index == ui.colors_len) { ui.color_index = 0; }
     });
   }
 });

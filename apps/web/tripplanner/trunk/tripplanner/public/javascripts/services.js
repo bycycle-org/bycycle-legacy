@@ -2,13 +2,6 @@
 (function () {
   var self = byCycle.UI;
 
-  // Route colors
-  var colors = [
-      '#0000ff', '#00ff00', '#ff0000',
-      '#00ffff', '#ff00ff', '#ff8800',
-      '#000000'
-  ];
-
   // Save old versions of UI functions
   var onLoad = self.onLoad;
   var _assignUIElements = self._assignUIElements;
@@ -33,10 +26,7 @@
       500: 'Something unexpected happened'
     },
 
-    colors: colors,
-    color_index: 0,
-    colors_len: colors.length,
-
+    route_line_color: '#000000',
 
     /* BEGIN Functions that replace functions in byCycle.UI */
 
@@ -54,6 +44,8 @@
       if (byCycle.getParamVal('bike_map')) {
         self.toggleBikeTileOverlay();
       }
+      self.map_buttons = self.map_buttons.remove();
+      self.map_pane.appendChild(self.map_buttons);
     },
 
     _assignUIElements: function() {
@@ -70,7 +62,8 @@
       self.location_list = $('location_list');
       self.route_list = $('route_list');
       self.bike_overlay_link = $('bike-overlay-link');
-      self.toggle_bike_overlay = $('toggle-bike-overlay');
+      self.map_buttons = $('map-buttons');
+      self.legend_button = $('legend-map-button');
     },
 
     _createEventHandlers: function () {
@@ -95,6 +88,10 @@
         Event.observe(self.bike_overlay_link, 'click',
                       self.toggleBikeTileOverlay);
       }
+      Event.observe(self.legend_button, 'click', function (event) {
+        var url = '/static/regions/' + self.region_id + '/map_legend_popup.html';
+        var w = window.open(url, 'bike_map_legend_window', 'status=0,toolbar=0,scrollbars=1,location=0,menubar=0,directories=0,width=755,height=390,left=0,top=0');
+      });
     },
 
     showResultPane: function(list_pane) {
@@ -342,14 +339,14 @@
       if (self.bike_overlay_state) {
         // Bike layer was on; turn it off
         self.map.removeOverlay(self.bike_overlay);
-        self.bike_overlay_link.href = '#show-bike-map';
-        self.toggle_bike_overlay.update('Show');
+        Element.hide('map-buttons');
+        self.bike_overlay_link.value = 'Show bike map';
       } else {
         // Bike layer was off; turn it on
         self.bike_overlay = self.map.makeBikeTileOverlay(20);
         self.map.addOverlay(self.bike_overlay);
-        self.bike_overlay_link.href = '#hide-bike-map';
-        self.toggle_bike_overlay.update('Hide');
+        Element.show('map-buttons');
+        self.bike_overlay_link.value = 'Hide bike map';
         if (self.map.getZoom() < 9) { self.map.setZoom(9); }
         self.bike_overlay.show();
       }
