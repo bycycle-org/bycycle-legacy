@@ -121,13 +121,14 @@ class ServicesController(RestController):
             pass
         else:
             template = getattr(self, '_template', 'errors')
-            if g.debug and self.http_status == 500:
-                raise self.exception
-            else:
-                # TODO: Make this send the request details also. Currently, it
-                # doesn't send the request URL, PATH_INFO, etc.
-                g.error_handler.exception_handler(sys.exc_info(),
-                                                  request.environ)
+            if self.http_status == 500:
+                if g.debug:
+                    raise self.exception
+                else:
+                    # TODO: Make this send the request details also. Currently,
+                    # it doesn't send the request URL, PATH_INFO, etc.
+                    g.error_handler.exception_handler(sys.exc_info(),
+                                                      request.environ)
 
         return self._render_response(template=template, code=self.http_status)
 
