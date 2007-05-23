@@ -134,17 +134,7 @@ div.region-ad a {
 #input_container {
   margin-left: 155px;
 }
-#input_container .tab-contents {
-  background: #d0d7de;
-}
-#input_container .tab-button {
-  background: #fff;
-}
-#input_container .selected-tab-button {
-  background: #d0d7de;
-}
 #region-search {
-  background: #d0d7de;
   border: 1px solid #99b3cc;
   padding: 5px;
 }
