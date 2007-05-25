@@ -23,6 +23,8 @@ from byCycle.model.entities.util import encodeFloat
 from byCycle.model.data.sqltypes import POINT, LINESTRING
 from byCycle.model.portlandor.data import SRID, slug
 
+from dijkstar import infinity
+
 __all__ = ['Edge', 'Node', 'StreetName', 'City', 'State', 'Place']
 
 
@@ -63,9 +65,6 @@ class Edge(base.Edge):
             'abs_slope': encodeFloat(row.abs_slope),
             'up_frac': encodeFloat(row.up_frac),
         }
-        code = row.code
-        if not ((1200 <= code < 1600) or (3200 <= code < 3300)):
-            adjustments['length'] = 5280000
         return adjustments
 
 

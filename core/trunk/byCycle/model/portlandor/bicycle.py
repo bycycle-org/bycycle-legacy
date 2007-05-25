@@ -18,6 +18,13 @@ from byCycle.model.entities.util import float_decode
 # Preferences
 FASTER, SHORTER, FLATTER, SAFER, DEFAULT = range(5)
 
+# This maps MAX street class codes to "normal" codes, for use with bike lanes
+max_codes = {
+    5301: 1300,
+    5401: 1400,
+    5501: 1500,
+}
+
 
 class TravelMode(tmode.TravelMode):
     """Bicycle travel mode for the Portland, OR, region."""
@@ -114,8 +121,7 @@ class TravelMode(tmode.TravelMode):
         downfrac = 1 - upfrac
         node_f_id = edge_attrs[node_f_id_index]
         street_name_id = edge_attrs[street_name_id_index]
-        #cpd = edge_attrs[cpd_index]
- 
+
         # -- Calculate base weight of edge (in hours)
         
         # Length of edge that is uphill in from => to direction
@@ -159,12 +165,12 @@ class TravelMode(tmode.TravelMode):
         hours = up_time + down_time
 
         # -- Adjust weight based on user preference
-        
-        if bikemode is not 'n':
+        if bikemode != 'n':
             # Adjust bike network street
             if   bikemode == 't':          hours *= mu
             elif bikemode == 'p':          hours *= mm
             elif bikemode == 'b':
+                code = max_codes.get(code, code)
                 # Adjust bike lane for traffic (est. from st. type)
                 if   code in (1500, 1521): hours *= blt    #lt
                 elif code == 1450:         hours *= bmt    #mt
