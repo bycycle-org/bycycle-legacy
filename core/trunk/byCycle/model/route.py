@@ -80,7 +80,7 @@ class Route(object):
                 d['street'],
                 d['toward'],
                 '%.2f' % (d['distance']['miles']),
-                self.region.units,
+                'miles',
                 bm,
             ))
         directions = '\n'.join([
