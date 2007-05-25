@@ -20,6 +20,8 @@ FASTER, SHORTER, FLATTER, SAFER, DEFAULT = range(5)
 
 # This maps MAX street class codes to "normal" codes, for use with bike lanes
 max_codes = {
+    5101: 1100,
+    5201: 1200,
     5301: 1300,
     5401: 1400,
     5501: 1500,
@@ -118,7 +120,7 @@ class TravelMode(tmode.TravelMode):
         bikemode = edge_attrs[bikemode_index]
         slope = edge_attrs[abs_slp_index] * float_decode
         upfrac = edge_attrs[up_frac_index] * float_decode
-        downfrac = 1 - upfrac
+        downfrac = 1.0 - upfrac
         node_f_id = edge_attrs[node_f_id_index]
         street_name_id = edge_attrs[street_name_id_index]
 
@@ -128,7 +130,7 @@ class TravelMode(tmode.TravelMode):
         up_len = length * upfrac
 
         # Length of edge that is downhill in from => to direction
-        down_len = length * (1.0 - upfrac)
+        down_len = length * downfrac
 
         # Swap uphill and downhill lengths when traversing edge to => from
         if v != node_f_id:
