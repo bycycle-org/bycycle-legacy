@@ -58,7 +58,26 @@ class Integrator(object):
     base_data_path = os.path.join(os.environ['HOME'], 'byCycleData')
     overall_timer = meter.Timer(start_now=True)
     timer = meter.Timer(start_now=False)
-    
+    actions = [
+        'shp2sql',
+        'shp2db',
+        'create_public_tables',
+        'delete_region',
+        'get_or_create_region',
+        'drop_schema',
+        'create_schema',
+        'drop_tables',
+        'create_tables',
+        'transfer_street_names',
+        'transfer_cities',
+        'transfer_states',
+        'transfer_places',
+        'transfer_nodes',
+        'transfer_edges',
+        'vacuum_all_tables',
+        'create_matrix',
+    ]
+
     def __init__(self, region_key, source, layer, no_prompt, **opts):
         self.region_key = region_key
 
@@ -82,7 +101,8 @@ class Integrator(object):
         do_prompt = not no_prompt
         print
         for i, action in enumerate(self.actions):
-            msg = action.__doc__
+            method = getattr(self, action, lambda: 0)
+            msg = method.__doc__ or ''
             if i < start or i > end:
                 print '%s: Skipping "%s"' % (i, msg)
             else:
@@ -97,7 +117,7 @@ class Integrator(object):
                     # Yes, do this action
                     self.timer.start()
                     try:
-                        action(self)
+                        method()
                     except Exception, e:
                         print ('\n*** Errors encountered in action %s.' % i)
                         raise
@@ -604,24 +624,3 @@ class Integrator(object):
     def echo(self, *args):
         for msg in args:
             print '    - %s' % msg
-
-    #-- Default actions and the order in which they will be run --#
-    actions = [
-        shp2sql,
-        shp2db,
-        create_public_tables,
-        delete_region,
-        get_or_create_region,
-        drop_schema,
-        create_schema,
-        drop_tables,
-        create_tables,
-        transfer_street_names,
-        transfer_cities,
-        transfer_states,
-        transfer_places,
-        transfer_nodes,
-        transfer_edges,
-        vacuum_all_tables,
-        create_matrix,
-    ]

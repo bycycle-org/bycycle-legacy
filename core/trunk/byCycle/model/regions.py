@@ -13,7 +13,8 @@
 ###############################################################################
 """Info on regions.
 
-TODO: This should stored in the database.
+TODO: This should stored in the database or derived from data that's already
+in the DB.
 
 """
 from byCycle.model.entities import Region
@@ -97,6 +98,9 @@ region_aliases.update(dict([(a, portlandor) for a in aliases]))
 
 aliases = (pittsburghpa, 'pgh')
 region_aliases.update(dict([(a, pittsburghpa) for a in aliases]))
+
+aliases = (seattlewa, 'seattle')
+region_aliases.update(dict([(a, seattlewa) for a in aliases]))
 
 
 def getRegionKey(region):
