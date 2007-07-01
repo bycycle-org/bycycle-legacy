@@ -20,8 +20,7 @@ not been tested. In general, we are going to keep up with the latest stable
 releases of all supporting software (until we finally make a real release).
 
 Theoretically, assuming you are on Ubuntu, this whole section could be run as 
-a shell script and everything would be magically installed. However, that is 
-unlikely to work at this time.
+a shell script and everything would be magically installed. Theoretically.
 
 
 Core Dependencies
@@ -33,29 +32,19 @@ cd $HOME/src
 ## On Ubuntu, you'll need to install some basic dev tools:
 sudo apt-get install build-essential flex
 
-## If you're going to install Python from source, you'll need this:
-sudo apt-get install zlib1g-dev
-
-## Subversion <http://subversion.tigris.org/>
+## Subversion 1.4 <http://subversion.tigris.org/>
 # On Windows, you'll almost definitely also want TortoiseSVN
 # <http://tortoisesvn.tigris.org/>
 sudo apt-get install subversion
 
-## PostgreSQL 8.1.x <http://www.postgresql.org/>
-sudo apt-get install postgresql-8.1 postgresql-dev postgresql-server-dev-8.1
+## PostgreSQL 8.2 <http://www.postgresql.org/>
+sudo apt-get install postgresql-8.2 postgresql-server-dev-8.2 libpq-dev
 
 ## GEOS 2.2.3
-# I can't remember why, but the Ubuntu package won't work
-wget http://geos.refractions.net/geos-2.2.3.tar.bz2
-tar xvjf geos-2.2.3.tar.bz2
-cd geos-2.2.3
-./configure && make && sudo make install
+sudo apt-get install libgeos2c2a
 
-## Proj 4.5.0
-wget ftp://ftp.remotesensing.org/proj/proj-4.5.0.tar.gz
-tar xvzf proj-4.5.0.tar.gz
-cd proj-4.5.0
-./configure && make && sudo make install
+## Proj 4.4.9
+sudo apt-get install proj
 
 ## PostGIS 1.2.1
 # Depends on Proj and GEOS for some operations
@@ -68,19 +57,12 @@ cd postgis-1.2.1
 Python and Python Packages
 --------------------------
 
-## Python 2.5.x <http://www.python.org/>
-# I like a nice, clean, private install in $HOME
-# All the commands below assume Python is installed in $HOME
-# Adjust as necessary
-wget http://www.python.org/ftp/python/2.5/Python-2.5.tar.bz2
-tar xvjf Python-2.5.tar.bz2
-cd Python-2.5
-./configure --prefix=$HOME
-make && make install
+## Python 2.5 <http://python.org>
+# On Ubuntu 7.04, version 2.5 is installed by default
 
 ## setuptools <http://peak.telecommunity.com/DevCenter/setuptools>
 wget http://peak.telecommunity.com/dist/ez_setup.py
-$HOME/bin/python2.5 ez_setup.py
+python2.5 ez_setup.py
 
 ## Note: At this point you may be able to use setuptools to install the Python
 ## packages below automatically (except the PCL). Try one of the following 
@@ -96,13 +78,13 @@ $HOME/bin/easy_install-2.5 -Z byCycleTripPlanner
 easy_install -UZ psycopg2
 
 ## SQLAlchemy (latest) <http://www.sqlalchemy.org/>
-$HOME/bin/easy_install-2.5 -UZ SQLAlchemy
+easy_install-2.5 -UZ SQLAlchemy
 
 ## zope.interface
 wget http://www.zope.org/Products/ZopeInterface/3.3.0/zope.interface-3.3.0.tar.gz
 tar xvzf zope.interface-3.3.0.tar.gz
 cd zope.interface-3.3.0
-$HOME/bin/python2.5 setup.py install
+python2.5 setup.py install
 
 ## Python Cartographic Library (PCL) - Core 0.11.0
 # Depends on Proj and GEOS for some operations
@@ -110,7 +92,7 @@ $HOME/bin/python2.5 setup.py install
 wget http://gispython.org/downloads/gispy/PCL-0.11.0.tar.gz
 tar xvzf PCL-0.11.0.tar.gz
 cd PCL-0.11.0/PCL-Core
-$HOME/bin/python2.5 setup.py install
+python2.5 setup.py install
 
 
 Deployment
@@ -119,7 +101,7 @@ Deployment
 ## Apache <http://httpd.apache.org/>
 # Note: Not required for a dev environment--use Paste server
 
-## mod_python OR mod_proxy (this is an open question)
+## mod_proxy (this is an open question)
 
 
 Installation of byCycle Core
