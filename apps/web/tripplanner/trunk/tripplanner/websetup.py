@@ -1,15 +1,15 @@
-import paste.deploy
+"""Setup the tripplanner application"""
+from paste.deploy import appconfig
+
+from pylons import config
+
 from byCycle import model
 
+from tripplanner.config.environment import load_environment
 
 def setup_config(command, filename, section, vars):
-    """Set up the application."""
+    """Place any commands to setup tripplanner here"""
     print '== Setting up byCycle Trip Planner Web application...'
-    # Get configuration
-    conf = paste.deploy.appconfig('config:' + filename)
-    app_conf = conf.local_conf
-    paste.deploy.CONFIG.push_process_config({
-        'app_conf': app_conf,
-        'global_conf': conf.global_conf
-    })
+    conf = appconfig('config:' + filename)
+    load_environment(conf.global_conf, conf.local_conf)
     print '== Done setting up byCycle Trip Planner Web application.'

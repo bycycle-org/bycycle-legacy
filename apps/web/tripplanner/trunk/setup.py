@@ -36,12 +36,11 @@ setup(
     'Topic :: Other/Nonlisted Topic',
     'Topic :: Scientific/Engineering :: GIS',
     ],
-    packages=find_packages(),
+    packages=find_packages(exclude=['ez_setup']),
     zip_safe=False,
     install_requires=(
     'byCycleCore>=0.4a0.dev,==dev',
     'Pylons>=0.9.5',
-    'Mako>=0.1.5',
     'Restler',
     ),
     test_suite = 'nose.collector',
@@ -50,6 +49,6 @@ setup(
     [paste.app_factory]
     main=tripplanner:make_app
     [paste.app_install]
-    main=paste.script.appinstall:Installer
+    main=pylons.util:PylonsInstaller
     """,
     )

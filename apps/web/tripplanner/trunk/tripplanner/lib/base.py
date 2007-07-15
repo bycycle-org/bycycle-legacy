@@ -1,9 +1,9 @@
-from pylons import Response, c, g, cache, request, session
+from pylons import c, cache, config, g, request, response, session
 from pylons.controllers import WSGIController
 from pylons.decorators import jsonify, validate
-from pylons.templating import render, render_response
-from pylons.helpers import abort, redirect_to, etag_cache
-from pylons.i18n import N_, _, ungettext
+from pylons.helpers import abort, etag_cache, redirect_to
+from pylons.i18n import _, ungettext, N_
+from pylons.templating import render
 
 import restler
 
@@ -18,6 +18,5 @@ RestController = restler.BaseController(model)
 class BaseController(WSGIController): pass
 
 
-# Include the '_' function in the public names
 __all__ = [__name for __name in locals().keys() if not __name.startswith('_')
            or __name == '_']
