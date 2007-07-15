@@ -1,14 +1,13 @@
-import os
+from pylons import config
 from routes import Mapper
 
+def make_map():
+    """Create, configure and return the routes Mapper"""
+    mapper = Mapper(directory=config['pylons.paths']['controllers'],
+                    always_scan=config['debug'])
 
-def make_map(global_conf={}, app_conf={}):
-    root_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-    mapper = Mapper(directory=os.path.join(root_path, 'controllers'))
-
-    # This route handles displaying the error page and graphics used in the
-    # 404/500 error pages. It should likely stay at the top to ensure that the
-    # error page is displayed properly.
+    # The ErrorController route (handles 404/500 error pages); it should
+    # likely stay at the top, ensuring it can always be resolved
     mapper.connect('error/:action/:id', controller='error')
 
     # Default route => Show list of regions
@@ -27,7 +26,6 @@ def make_map(global_conf={}, app_conf={}):
     mapper.resource('geocode', 'geocodes', **options)
     mapper.resource('route', 'routes', **options)
 
-    # This one can be used to display a template directly
     mapper.connect('*url', controller='template', action='view')
 
     return mapper
