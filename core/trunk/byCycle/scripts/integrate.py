@@ -15,11 +15,11 @@
 """
 Usage::
 
-    shp2pgsql.py [various options, see below]
+    integrate.py [various options, see below]
 
 Example::
 
-    shp2pgsql.py --region portlandor --source pirate --layer str06oct -n
+    integrate.py --region portlandor --source pirate --layer str06oct -n
     
     In this example, --region is the region "key" matching the region's
     Python module name and ``slug`` in the public.regions database table.
