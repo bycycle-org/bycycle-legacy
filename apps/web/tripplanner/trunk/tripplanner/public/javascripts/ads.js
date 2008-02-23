@@ -9,6 +9,5 @@ google_color_bg = 'FFFFFF';
 google_color_link = '4466DD';
 google_color_text = '000000';
 google_color_url = '4466DD';
-if (!debug) {
-  byCycle.util.writeScript('http://pagead2.googlesyndication.com/pagead/show_ads.js');
-}
+byCycle.util.writeScript(
+  'http://pagead2.googlesyndication.com/pagead/show_ads.js');

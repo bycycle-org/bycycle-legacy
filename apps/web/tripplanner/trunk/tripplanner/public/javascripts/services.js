@@ -32,13 +32,10 @@
 
     onLoad: function () {
       onLoad();
-      var w = byCycle.widget.TabControl;
-      var initial_tab_id = (self.service == 'routes' ? 'find-a-route' :
-                            'search-the-map');
-      self.input_tab_control = new w(self.input_container, initial_tab_id);
-      initial_tab_id = (self.service == 'routes' ? 'routes' : 'locations');
-      self.result_tab_control = new w(self.result_pane, initial_tab_id,
-                                      initial_tab_id);
+      
+      self.input_tab_control = new YAHOO.widget.TabView('input_tabs'); 
+      self.result_tab_control = new YAHOO.widget.TabView('result_tabs');
+
       self.handleQuery();
       self.onResize();
       if (byCycle.getParamVal('bike_map')) {
@@ -97,7 +94,7 @@
     showResultPane: function(list_pane) {
       list_pane = list_pane || self.location_list;
       self.message_pane.hide();
-      self.result_tab_control.select_by_id(list_pane.parentNode.id)
+      self.result_tab_control.set('activeIndex', list_pane.id == 'route_list' ? 1 : 0);
       self.result_pane.show();
     },
 
@@ -111,7 +108,7 @@
     },
 
     selectInputTab: function(service) {
-      self.input_tab_control.select(service == 'routes' ? 1 : 0);
+      self.input_tab_control.set('activeIndex', service == 'routes' ? 1 : 0);
     },
 
     swapStartAndEnd: function(event) {

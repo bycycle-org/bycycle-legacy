@@ -12,4 +12,4 @@ class Globals(object):
         """One instance of Globals is created during application initialization
         and is available during requests via the 'g' variable.
         """
-        self.debug = asbool(global_conf.get('debug', False))
+        self.debug = asbool(config.get('debug', False))

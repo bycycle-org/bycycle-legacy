@@ -34,17 +34,18 @@ def make_app(global_conf, full_stack=True, **app_conf):
 
     # The Pylons WSGI app
     app = PylonsApp()
+    g = app.globals
 
     if asbool(full_stack):
         # Handle Python exceptions
         app = ErrorHandler(app, global_conf, error_template=error_template,
                            **config['pylons.errorware'])
-        app.globals.error_handler = app
+        g.error_handler = app
 
     # Establish the Registry for this application
     app = RegistryManager(app)
 
-    if app.globals.debug:
+    if g.debug:
         static_app = StaticURLParser(config.paths['static_files'])
         javascripts_app = StaticJavascripts()
         app = Cascade([static_app, javascripts_app, app])

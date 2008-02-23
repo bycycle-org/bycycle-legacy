@@ -1,0 +1,18 @@
+<%def name="tab_view(id, hrefs, labels=None, selected=None)">
+  <div id="${id}" class="yui-navset">
+    <ul class="yui-nav">
+      % if labels is None:
+        <% labels = [href.replace('-', ' ').capitalize() for href in  hrefs] %>
+      % endif
+      % if selected is None:
+        <% selected = hrefs[0] %>
+      % endif
+      % for href, label in zip(hrefs, labels):
+        <li class="${'selected' if href == selected else ''}" title="${label}"><a href="#${href}"><em>${label}</em></a></li> 
+      % endfor
+    </ul>
+    <div class="yui-content">
+      ${caller.body()}
+    </div>
+  </div>
+</%def>

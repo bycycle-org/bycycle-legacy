@@ -24,14 +24,14 @@ byCycle.UI = (function () {
     /* Initialization ********************************************************/
 
     setLoadingStatus: function(msg) {
-      Element.update('loading-status', msg);
+      //Element.update('loading-status', msg);
     },
 
     /**
      * Do stuff that must happen _during_ page load
      */
     beforeLoad: function() {
-	  Element.show('spinner');
+	  //Element.show('spinner');
       byCycle.UI.setLoadingStatus('Loading...');
 	  byCycle.UI.setLoadingStatus('Initializing map...');
       map_state && map_type.beforeLoad();
@@ -58,15 +58,15 @@ byCycle.UI = (function () {
       if (!isNaN(zoom)) {
         self.map.setZoom(zoom);
       }
-      self.spinner.hide();
-	  Element.remove('loading-status');
+      //self.spinner.hide();
+      Element.remove('loading-status');
       self.onResize();
     },
 
     _assignUIElements: function() {
       // Bar
       self.status = $('status');
-      self.spinner = $('spinner');
+      //self.spinner = $('spinner');
       self.bookmark_link = $('bookmark');
 
       // Display panes
@@ -77,7 +77,7 @@ byCycle.UI = (function () {
       self.info_pane = $('info_pane');
       self.error_pane = $('error_pane');
       self.message_panes = [self.info_pane, self.error_pane];
-	  // Results
+      // Results
       self.result_pane = $('result_pane');
 
       // Map and related
@@ -106,26 +106,25 @@ byCycle.UI = (function () {
 	  if (self.region_el) {
 		Event.observe(self.region_el, 'change', self.setRegionFromSelectBox);
 	  }
-	  Event.observe('spinner', 'click', function (event) {
-		Event.stop(event);
-		Element.hide(self.spinner)
-	  });
+	  //Event.observe('spinner', 'click', function (event) {
+		//Event.stop(event);
+		//Element.hide(self.spinner)
+	  //});
     },
 
     onResize: function(event) {
-      var pos = Position.cumulativeOffset(self.footer);
-	  var footer_offset = pos[1];
+      var body_height = Element.getDimensions(document.body).height;
 
       // Resize column A
       var offset = Position.cumulativeOffset(self.message_pane)[1];
 	  offset = offset || Position.cumulativeOffset(self.result_pane)[1];
-      var height = footer_offset - offset - 10;
+      var height = body_height - offset;
       var style = {height: height + 'px'};
       self.display_panes.each(function (pane) { pane.setStyle(style); });
 
       // Resize map
       offset = Position.cumulativeOffset(self.map_pane)[1];
-      height = footer_offset - offset;
+      height = body_height - offset;
       self.map.setSize({h: height});
     },
 
@@ -136,8 +135,9 @@ byCycle.UI = (function () {
 
     onHideAds: function (event) {
       event && Event.stop(event);
-      var ids = ['input_container', 'bar', 'content'];
+      var ids = ['bar', 'content'];
       var style = {marginRight: '0px'};
+	  $('input_container').setStyle({marginRight: '5px'});
       ids.each(function (id) { $(id).setStyle(style); });
     },
 
