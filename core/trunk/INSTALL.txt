@@ -3,9 +3,16 @@ byCycle Trip Planner - Installation
 
 Created 2006-01-23
 
+Env
+===
+
+projects_dir=~/Projects
 
 Dependencies
 ============
+
+Packages
+--------
 
 byCycle is developed on Ubuntu, so this section is Ubuntu-centric.
 
@@ -30,27 +37,30 @@ sudo apt-get install proj
 # Depends on Proj and GEOS for some operations
 sudo apt-get install postgresql-8.2-postgis
 
-
-Python and Python Packages
---------------------------
+Python
+------
 
 # Python 2.5.1 <http://www.python.org/>
-# Python 2.5 is the default Python on Ubuntu
+# Python 2.5.1 is the default Python on Ubuntu
+# Python dev package is needed by psycopg2
 sudo apt-get install python2.5-dev
 
-# setuptools <http://peak.telecommunity.com/DevCenter/setuptools>
-wget http://peak.telecommunity.com/dist/ez_setup.py
-python2.5 ez_setup.py
+Python Packages
+---------------
 
-# psycopg2 DBAPI module <http://initd.org/tracker/psycopg/wiki/PsycopgTwo>
-# Requires python-dev
-easy_install -UZ psycopg2
+# The current preferred way to install byCycle for development is to use
+# virtualenv <http://pypi.python.org/pypi/virtualenv>.
+sudo easy_install virtualenv
+cd $projects_dir
+virtualenv byCycle
+cd byCycle
+mkdir src
+source bin/activate
 
-# SQLAlchemy 0.3.8 <http://www.sqlalchemy.org/>
-easy_install -UZ SQLAlchemy
-
-# Elixir
-easy_install -UZ Elixir
+# Most of the python packages required by byCycle are automatically installed
+# when byCycle is easy_installed. The packages below must be installed
+# "manually" because the PCL isn't egg-ified and doesn't automatically
+# install its Python dependency, zope.interface (check this).
 
 # zope.interface
 easy_install -UZ zope.interface 
@@ -59,50 +69,47 @@ easy_install -UZ zope.interface
 # Depends on Proj and GEOS for some operations
 # Depends on libgeos-dev
 # Depends on zope.interface
+cd src
 wget http://gispython.org/downloads/gispy/PCL-0.11.0.tar.gz
 tar xvzf PCL-0.11.0.tar.gz
 cd PCL-0.11.0/PCL-Core
 python setup.py install
 
-# nose for testing
-easy_install nose
-
-Deployment
-----------
-
-# Apache <http://httpd.apache.org/>
-# Note: Not required for a dev environment--use Paste server
-
-# mod_proxy
-
-
 Installation of byCycle Core
 ============================
 
-# Check out the code:
-# May require a password? Use guest:guest
+# Check out the code (still in virtualenv src directory).
+# Use guest:guest credentials unless you've got an SVN login.
 svn co http://guest:guest@svn.bycycle.org/byCycle/core/trunk byCycle
 
-# Install in development mode
+# Install in development mode. Installation will automatically install other
+# Python dependencies.
 cd byCycle
 python setup.py develop
 
+Testing
+-------
 
-Installation of Trip Planner Web Application
-============================================
+cd core/trunk/tests
+nosetests
+
+Installation of Trip Planner Web App
+====================================
 
 TODO: This probably belongs in a different document--i.e., with the Pylons 
 app. That doc should start out by saying, "First, install the byCycle core and
 its dependencies using the instructions at..."
 
-# Pylons 0.9.6.1 <http://pylonshq.com/>
-easy_install -UZ Pylons
+# Check out the trip planner Web app (in virtualenv src directory).
+# Use guest:guest credentials unless you've got an SVN login.
+cd $projects_dir/src
+svn co \
+    http://guest:guest@svn.bycycle.org/byCycle/apps/web/tripplanner/trunk \
+    TripPlanner
 
-# Check out the Trip Planner Pylons Web application:
-svn co http://svn.bycycle.org/byCycle/apps/web/tripplanner/trunk tripplanner
-
-# Install in development mode
-cd tripplanner
+# Install in development mode. Installation will automatically install other
+# Python dependencies.
+cd TripPlanner
 python setup.py develop
 
 # Test it out
@@ -110,75 +117,19 @@ cd tripplanner
 paster serve --reload development.ini
 firefox http://localhost:5000/
 
-# Google Map
-# If you want to view the Google Map, you will need a Google Maps API key.
-# <http://www.google.com/apis/maps/>.
+Google Map
+If you want to view the Google Map, you will need a Google Maps API key.
+<http://www.google.com/apis/maps/>.
 
+Deployment
+==========
 
-Testing
-=======
+Apache 2 <http://httpd.apache.org/>
+Note: Not required for a dev environment--use Paste server
+Paste server behind mod_proxy
 
-...
-
-
-Data
-====
-
-[Warning: This part needs some updating.]
-
-Under certain circumstances, the package will be provided with the database
-and routing matrix included. In this case, you shouldn't have to do anything
-else.
-
-When the data is not supplied, here's what you do to add a new data mode and
-its associated travel modes to the model:
-
-- Make sure you have shp2pgsql (part of PostGIS) installed first and that
-  it is on your PATH
-
-- Make a new directory in the model for the data and associated scripts
-  'mkdir byCycle/model/timbuktu'
-
-- Create a directory to hold your data files
-  'mkdir byCycle/model/timbuktu/data'
-
-- Put your data files for import (e.g., timbuktu.shp, timbuktu.dbf) in a
-  subdirectory of the data directory. It doesn't really matter what the
-  directory is called; just make it something meaningful for you and something
-  that will distinguish it from any future versions of your data.
-
-- Copy the files __init__.py and bicycle.py from byCycle/model/portlandor to
-  byCycle/model/timbuktu/
-
-- Copy the files shp2pgsql.py and tables.py from byCycle/model/portlandor/data
-  to byCycle/model/timbuktu/data
-
-- Here's where it gets hard: now you have to modify tables.py and shp2pgsql.py
-  to be able to import your data. How you will do this depends on your data. If
-  your data is similar to other datasets we've seen, then it will be fairly
-  easy; if not, it might be hard, possibly very hard (or just tedious and
-  annoying).
-
-- If you get past the above step, you now need to modify __init__.py and
-  bicycle.py. You will modify __init__.py to create the adjacency matrix for
-  routing. This shouldn't be too difficult. You just need to specify which
-  fields from the DB you want to use. To create the adjacency matrix, run
-  __init__.py as a script. Next, you will modify bicycle.py to create the
-  weight (or "cost" if you prefer) function using the fields that should now
-  be in the adjacency matrix.
-
-If everything went well, you should now be able to look up addresses and find
-routes using the data you imported and the files modified as detailed above.
-
-One thing to keep in mind when doing the above is to make sure you keep the
-structure the same as the other data modes in the model. In other words, you
-want the same directory structure and the same paths, except you'll
-change portlandor to timbuktu and add or remove fields as appropriate to your
-data.
-
-
-Problems and Issues
-===================
+Issues
+======
 
 If you have any problems with any of this, please feel free to contact us.
 
