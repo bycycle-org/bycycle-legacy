@@ -35,10 +35,10 @@ a:hover { color: orange; }
 
 
 /* Top level */
-#meta, #footer {
+#meta {
   padding: 2px;
   font-size: 11px;
-  background: #ddd;
+  border-bottom: 1px solid #99b3cc;
 }
 #meta-left {
   float: left;
@@ -50,16 +50,16 @@ a:hover { color: orange; }
   position: relative;
   min-width: 600px;
 }
-#masthead, #input_container, #bar {
+#masthead, #bar {
   padding: 5px;
 }
-#input_container, #bar, #content {
+#input_container {
+  margin: 5px 127px 5px 160px;
+}
+#bar, #content {
   margin-right: 122px;
 }
 #ads {
-  position: absolute;
-  top: 0;
-  right: 0;
   width: 122px;
   height: 100%;
   background: white;
@@ -83,13 +83,6 @@ div.region-ad {
 }
 div.region-ad a {
   font-weight: bold;
-}
-#footer {
-  position: absolute;
-  left: 0;
-  bottom: 0;
-  width: 100%;
-  z-index: 1000;
 }
 
 
@@ -131,9 +124,6 @@ div.region-ad a {
 
 
 /* Input */
-#input_container {
-  margin-left: 155px;
-}
 #region-search {
   border: 1px solid #99b3cc;
   padding: 5px;

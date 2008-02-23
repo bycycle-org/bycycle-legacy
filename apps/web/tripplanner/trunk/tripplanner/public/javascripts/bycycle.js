@@ -59,6 +59,6 @@ var byCycle = (function() {
       return v;
     },
 
-    logDebug: (debug ? console.log : noop)
+    logDebug: ((debug && typeof(console) != 'undefined') ? console.log : noop)
   };
 })();
