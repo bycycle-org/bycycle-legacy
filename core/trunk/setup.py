@@ -42,11 +42,12 @@ GPL.""",
     packages=find_packages(),
     zip_safe=False,
     install_requires=(
-    'psycopg2==2.0.5.1',
-    'SQLAlchemy>-0.3.7',
-    'Elixir>=0.3.0',
-    'zope.interface>=0.3.0',
+    'psycopg2',
+    'SQLAlchemy',
+    'Elixir',
+    'zope.interface',
     'Dijkstar',
+    'nose',
     ),
 )
 
