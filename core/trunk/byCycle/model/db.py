@@ -43,8 +43,8 @@ def metadata_factory(name=None):
     metadata.connect(engine)
     return metadata
 
-def getConnectionUri(db_type='postgres', user='bycycle', password=None,
-                     host='localhost', database='bycycle'):
+def getConnectionUri(db_type='postgres', user=os.environ['USER'],
+                     password=None, host='localhost', database='bycycle'):
     """Get database connection URI (DSN)."""
     if password is None:
         pw_path = os.path.join(model_path, '.pw')
@@ -218,8 +218,6 @@ def addGeometryColumn(table, srid, geom_type, schema='public', name='geom'):
     execute(add_geom_col % (schema, table, name, srid, geom_type))
     execute(create_gist_index % (table, name, schema, table, name))
     commit()
-
-init()
 
 
 if __name__ == '__main__':
