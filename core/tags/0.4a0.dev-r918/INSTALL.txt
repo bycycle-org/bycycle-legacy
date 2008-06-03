@@ -1,0 +1,246 @@
+byCycle Trip Planner - Installation
++++++++++++++++++++++++++++++++++++
+
+Created 2006-01-23
+
+
+Dependencies
+============
+
+There are few pieces of additional software necessary to run the byCycle
+system. All of these are free and available for just about any platform.
+
+Dependencies must be installed in roughly the order given. The provided 
+installation commands are somewhat Ubuntu-specific but should work on other 
+platforms with a little modification (on Windows there are usually installers 
+for the things that are installed from source on Linux).
+
+Other combinations of versions of the software listed below may work but have 
+not been tested. In general, we are going to keep up with the latest stable 
+releases of all supporting software (until we finally make a real release).
+
+Theoretically, assuming you are on Ubuntu, this whole section could be run as 
+a shell script and everything would be magically installed. However, that is 
+unlikely to work at this time.
+
+
+Core Dependencies
+-----------------
+
+## Adjust this if you want files to be downloaded to some other location
+cd $HOME/src
+
+## On Ubuntu, you'll need to install some basic dev tools:
+sudo apt-get install build-essential flex
+
+## If you're going to install Python from source, you'll need this:
+sudo apt-get install zlib1g-dev
+
+## Subversion <http://subversion.tigris.org/>
+# On Windows, you'll almost definitely also want TortoiseSVN
+# <http://tortoisesvn.tigris.org/>
+sudo apt-get install subversion
+
+## PostgreSQL 8.1.x <http://www.postgresql.org/>
+sudo apt-get install postgresql-8.1 postgresql-dev postgresql-server-dev-8.1
+
+## GEOS 2.2.3
+# I can't remember why, but the Ubuntu package won't work
+wget http://geos.refractions.net/geos-2.2.3.tar.bz2
+tar xvjf geos-2.2.3.tar.bz2
+cd geos-2.2.3
+./configure && make && sudo make install
+
+## Proj 4.5.0
+wget ftp://ftp.remotesensing.org/proj/proj-4.5.0.tar.gz
+tar xvzf proj-4.5.0.tar.gz
+cd proj-4.5.0
+./configure && make && sudo make install
+
+## PostGIS 1.2.1
+# Depends on Proj and GEOS for some operations
+wget http://postgis.refractions.net/download/postgis-1.2.1.tar.gz
+tar xvzf postgis-1.2.1.tar.gz
+cd postgis-1.2.1
+./configure && make && sudo make install
+
+
+Python and Python Packages
+--------------------------
+
+## Python 2.5.x <http://www.python.org/>
+# I like a nice, clean, private install in $HOME
+# All the commands below assume Python is installed in $HOME
+# Adjust as necessary
+wget http://www.python.org/ftp/python/2.5/Python-2.5.tar.bz2
+tar xvjf Python-2.5.tar.bz2
+cd Python-2.5
+./configure --prefix=$HOME
+make && make install
+
+## setuptools <http://peak.telecommunity.com/DevCenter/setuptools>
+wget http://peak.telecommunity.com/dist/ez_setup.py
+$HOME/bin/python2.5 ez_setup.py
+
+## Note: At this point you may be able to use setuptools to install the Python
+## packages below automatically (except the PCL). Try one of the following 
+## first (use login:password guest:guest for Subversion if it asks):
+# Just the byCycle core:
+$HOME/bin/easy_install-2.5 -Z byCycleCore  
+# Core plus Trip Planner Web app:
+$HOME/bin/easy_install-2.5 -Z byCycleTripPlanner
+
+## If that worked, skip down to installing the PCL
+
+## psycopg2 DBAPI module <http://initd.org/tracker/psycopg/wiki/PsycopgTwo>
+easy_install -UZ psycopg2
+
+## SQLAlchemy (latest) <http://www.sqlalchemy.org/>
+$HOME/bin/easy_install-2.5 -UZ SQLAlchemy
+
+## zope.interface
+wget http://www.zope.org/Products/ZopeInterface/3.3.0/zope.interface-3.3.0.tar.gz
+tar xvzf zope.interface-3.3.0.tar.gz
+cd zope.interface-3.3.0
+$HOME/bin/python2.5 setup.py install
+
+## Python Cartographic Library (PCL) - Core 0.11.0
+# Depends on Proj and GEOS for some operations
+# Depends on zope.interface
+wget http://gispython.org/downloads/gispy/PCL-0.11.0.tar.gz
+tar xvzf PCL-0.11.0.tar.gz
+cd PCL-0.11.0/PCL-Core
+$HOME/bin/python2.5 setup.py install
+
+
+Deployment
+----------
+
+## Apache <http://httpd.apache.org/>
+# Note: Not required for a dev environment--use Paste server
+
+## mod_python OR mod_proxy (this is an open question)
+
+
+Installation of byCycle Core
+============================
+
+## Try using easy_install first:
+$HOME/bin/easy_install-2.5 -Z byCycleCore
+
+## If that doesn't work, do it the old fashioned way:
+
+## Check out the code:
+# May require a password? Use guest:guest
+svn co http://guest:guest@svn.bycycle.org/byCycle/core/branches/enterprise/byCycle byCycle
+
+# Move the byCycle directory to $PATH/python2.5/site-packages (substitute 
+# $PATH with path to your Python installation)
+mv byCycle $HOME/lib/python2.5/site-packages
+
+
+Installation of Trip Planner Web Application
+============================================
+
+TODO: This probably belongs in a different document--i.e., with the Pylons 
+app. That doc should start out by saying, "First, install the byCycle core and
+its dependencies using the instructions at..."
+
+## Try using easy_install first:
+$HOME/bin/easy_install-2.5 -Z byCycleTripPlanner
+
+## If that doesn't work, do it the old fashioned way:
+
+## Pylons (latest) <http://pylonshq.com/>
+$HOME/bin/easy_install-2.5 -UZ Pylons
+
+## Check out the Trip Planner Pylons Web application:
+# Note: Even though the branch is called dojo, Prototype is used in the app. 
+# This will be renamed soon (and, incidentally, will be merged to trunk soon 
+# as well).
+svn co http://svn.bycycle.org/byCycle/apps/web/tripplanner/branches/dojo tripplanner
+
+## In either case, try firing up the Web app. If you easy_installed, you will
+## have to navigate to wherever easy_install put the package 
+## (something like /path/to/python/lib/site-packages/byCycleTripPlanner)
+cd tripplanner
+./script/serve
+# If that doesn't work, you may need to adjust the prefix variable in the serve
+# script.
+
+## Google Map
+# If you want to view the Google Map on a local installation, you will need a
+# Google Maps API key for the domain name it runs under.
+#  <http://www.google.com/apis/maps/>.
+
+
+Testing
+=======
+
+...
+
+
+Data
+====
+
+[Warning: This part needs some updating.]
+
+Under certain circumstances, the package will be provided with the database
+and routing matrix included. In this case, you shouldn't have to do anything
+else.
+
+When the data is not supplied, here's what you do to add a new data mode and
+its associated travel modes to the model:
+
+- Make sure you have shp2pgsql (part of PostGIS) installed first and that
+  it is on your PATH
+
+- Make a new directory in the model for the data and associated scripts
+  'mkdir byCycle/model/timbuktu'
+
+- Create a directory to hold your data files
+  'mkdir byCycle/model/timbuktu/data'
+
+- Put your data files for import (e.g., timbuktu.shp, timbuktu.dbf) in a
+  subdirectory of the data directory. It doesn't really matter what the
+  directory is called; just make it something meaningful for you and something
+  that will distinguish it from any future versions of your data.
+
+- Copy the files __init__.py and bicycle.py from byCycle/model/portlandor to
+  byCycle/model/timbuktu/
+
+- Copy the files shp2pgsql.py and tables.py from byCycle/model/portlandor/data
+  to byCycle/model/timbuktu/data
+
+- Here's where it gets hard: now you have to modify tables.py and shp2pgsql.py
+  to be able to import your data. How you will do this depends on your data. If
+  your data is similar to other datasets we've seen, then it will be fairly
+  easy; if not, it might be hard, possibly very hard (or just tedious and
+  annoying).
+
+- If you get past the above step, you now need to modify __init__.py and
+  bicycle.py. You will modify __init__.py to create the adjacency matrix for
+  routing. This shouldn't be too difficult. You just need to specify which
+  fields from the DB you want to use. To create the adjacency matrix, run
+  __init__.py as a script. Next, you will modify bicycle.py to create the
+  weight (or "cost" if you prefer) function using the fields that should now
+  be in the adjacency matrix.
+
+If everything went well, you should now be able to look up addresses and find
+routes using the data you imported and the files modified as detailed above.
+
+One thing to keep in mind when doing the above is to make sure you keep the
+structure the same as the other data modes in the model. In other words, you
+want the same directory structure and the same paths, except you'll
+change portlandor to timbuktu and add or remove fields as appropriate to your
+data.
+
+
+Problems and Issues
+===================
+
+If you have any problems with any of this, please feel free to contact us.
+
+Email: wyatt@bycycle.org
+
+Web Form: http://byCycle.org/contact.html
