@@ -6,26 +6,8 @@
 Command-line interface to the byCycle library.
 
 """
-import os
-def __getbyCycleImportPath(level):
-    """Get path to dir containing the byCycle package this module is part of.
-    
-    ``level`` `int`
-        How many levels up the dir containing the package is.
-        
-    TODO: In Python 2.5 I think this just becomes 
-          "from ...byCycle.model import <stuff>" or maybe
-          "from ..model import <stuff>"
-    
-    """
-    path = os.path.abspath(__file__)
-    opd = os.path.dirname
-    for i in range(level):
-        path = opd(path)
-    return path
+import os, sys
 
-import sys
-sys.path.insert(0, __getbyCycleImportPath(3))
 from byCycle.model import regions
 from byCycle.util import meter
 
