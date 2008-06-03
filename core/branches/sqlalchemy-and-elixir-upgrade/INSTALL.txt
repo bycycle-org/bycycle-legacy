@@ -1,0 +1,137 @@
+byCycle Trip Planner - Installation
++++++++++++++++++++++++++++++++++++
+
+Created 2006-01-23
+
+Env
+===
+
+projects_dir=~/Projects
+
+Dependencies
+============
+
+Packages
+--------
+
+byCycle is developed on Ubuntu, so this section is Ubuntu-centric.
+
+# On Ubuntu, you'll need to install some basic dev tools:
+sudo apt-get install build-essential flex
+
+# Subversion <http://subversion.tigris.org/>
+# On Windows, you'll almost definitely also want TortoiseSVN
+# <http://tortoisesvn.tigris.org/>
+sudo apt-get install subversion
+
+# PostgreSQL 8.2 <http://www.postgresql.org/>
+sudo apt-get install postgresql-8.2 libpq-dev postgresql-server-dev-8.2
+
+# GEOS 2.2.3
+sudo apt-get install libgeos2c2a libgeos-dev
+
+# Proj 4.5.0
+sudo apt-get install proj
+
+# PostGIS
+# Depends on Proj and GEOS for some operations
+sudo apt-get install postgresql-8.2-postgis
+
+Python
+------
+
+# Python 2.5.1 <http://www.python.org/>
+# Python 2.5.1 is the default Python on Ubuntu
+# Python dev package is needed by psycopg2
+sudo apt-get install python2.5-dev
+
+Python Packages
+---------------
+
+# The current preferred way to install byCycle for development is to use
+# virtualenv <http://pypi.python.org/pypi/virtualenv>.
+sudo easy_install virtualenv
+cd $projects_dir
+virtualenv byCycle
+cd byCycle
+mkdir src
+source bin/activate
+
+# Most of the python packages required by byCycle are automatically installed
+# when byCycle is easy_installed. The packages below must be installed
+# "manually" because the PCL isn't egg-ified and doesn't automatically
+# install its Python dependency, zope.interface (check this).
+
+# zope.interface
+easy_install -UZ zope.interface 
+
+# Python Cartographic Library (PCL) - Core 0.11.0
+# Depends on Proj and GEOS for some operations
+# Depends on libgeos-dev
+# Depends on zope.interface
+cd src
+wget http://gispython.org/downloads/gispy/PCL-0.11.0.tar.gz
+tar xvzf PCL-0.11.0.tar.gz
+cd PCL-0.11.0/PCL-Core
+python setup.py install
+
+Installation of byCycle Core
+============================
+
+# Check out the code (still in virtualenv src directory).
+# Use guest:guest credentials unless you've got an SVN login.
+svn co http://guest:guest@svn.bycycle.org/byCycle/core/trunk byCycle
+
+# Install in development mode. Installation will automatically install other
+# Python dependencies.
+cd byCycle
+python setup.py develop
+
+Testing
+-------
+
+cd core/trunk/tests
+nosetests
+
+Installation of Trip Planner Web App
+====================================
+
+TODO: This probably belongs in a different document--i.e., with the Pylons 
+app. That doc should start out by saying, "First, install the byCycle core and
+its dependencies using the instructions at..."
+
+# Check out the trip planner Web app (in virtualenv src directory).
+# Use guest:guest credentials unless you've got an SVN login.
+cd $projects_dir/src
+svn co \
+    http://guest:guest@svn.bycycle.org/byCycle/apps/web/tripplanner/trunk \
+    TripPlanner
+
+# Install in development mode. Installation will automatically install other
+# Python dependencies.
+cd TripPlanner
+python setup.py develop
+
+# Test it out
+cd tripplanner
+paster serve --reload development.ini
+firefox http://localhost:5000/
+
+Google Map
+If you want to view the Google Map, you will need a Google Maps API key.
+<http://www.google.com/apis/maps/>.
+
+Deployment
+==========
+
+Apache 2 <http://httpd.apache.org/>
+Note: Not required for a dev environment--use Paste server
+Paste server behind mod_proxy
+
+Issues
+======
+
+If you have any problems with any of this, please feel free to contact us.
+
+Email: wyatt@bycycle.org
+
