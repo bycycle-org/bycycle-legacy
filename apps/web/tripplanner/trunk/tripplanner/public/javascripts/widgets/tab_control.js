@@ -24,7 +24,7 @@ byCycle.widget.TabControl.prototype = {
     var tab_ids_in_order = [];
     // Get the Tab buttons (usually LIs)
     var tab_buttons = this.dom_node.getElementsByClassName('tab-buttons')[0];
-    tab_buttons = tab_buttons.getElementsByClassName('tab-button');
+    tab_buttons = $A(tab_buttons.getElementsByClassName('tab-button'));
     // For each Tab button...
     tab_buttons.each((function (tab_button) {
       // ...get the link (A) inside the button
