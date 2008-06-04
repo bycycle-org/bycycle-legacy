@@ -1,0 +1,396 @@
+
+NAME byCycle
+STATUS ON
+SIZE 424 250
+
+CONFIG "PROJ_LIB" "/var/www/html/bycycle/proj"
+
+# bike_rte 2913
+EXTENT 7435935.016404 515461.081227 7897124.662268 783135.100000
+
+# bike_rte 2913->54004
+#Extent -13746369.752683 5600590.029584 -13545909.629670 5716342.754336
+
+# bike_rte 2269->54004
+#EXTENT -13746369.752683 5600590.029732 -13545909.629670 5716342.754486
+
+#EXTENT -7149753.941887 3511233.294018 -6768532.531595 4010816.527779
+#EXTENT -13730842.894953 5600590.029589 -13545909.629468 5719963.120121
+#EXTENT 7520930 596051 7728112 735363
+IMAGECOLOR 255 255 255
+UNITS FEET
+SHAPEPATH "/rlislite"
+FONTSET "fonts.list"
+
+OUTPUTFORMAT
+	NAME png
+	DRIVER "GD/PNG"
+	MIMETYPE "image/png"
+	IMAGEMODE RGBA
+	EXTENSION "png"
+	TRANSPARENT ON
+	FORMATOPTION INTERLACE=OFF
+END
+
+
+PROJECTION
+	"init=epsg:2913"
+END
+
+WEB
+	TEMPLATE "bycycle.html"
+	IMAGEPATH "/var/www/html/maps/"
+	IMAGEURL "/maps/"
+	METADATA
+	    "wms_title" "Metro/byCycle WMS Server"
+	    "wms_onlineresource" "http://mica.metro-region.org/cgi-bin/mapserv-postgis?map=/var/www/html/bycycle/bycycle.map&"
+	    "wms_srs" "EPSG:2913 EPSG:54004 EPSG:4326"
+    END
+END
+
+
+SYMBOL
+    NAME 'circle'
+    TYPE ELLIPSE
+    POINTS 1 1 END
+	FILLED TRUE
+END
+SYMBOL
+    NAME 'dcircle'
+    TYPE ELLIPSE
+    FILLED TRUE
+    POINTS 1 1 END
+	STYLE 4 2 END
+END
+SYMBOL
+    NAME "line"
+    TYPE ELLIPSE
+    POINTS 1 1 END
+    FILLED TRUE
+END
+SYMBOL
+	NAME "dashed-line"
+	TYPE ELLIPSE
+	POINTS 1 1 END
+	FILLED TRUE
+	STYLE 10 10 10 10 END
+END
+SYMBOL
+	NAME "cartoline"
+	TYPE cartoline
+	LINECAP round #[butt|round|square|triangle]
+	LINEJOIN miter #[round|miter|bevel]
+	LINEJOINMAXSIZE 2
+END 
+
+
+LAYER # RLIS county lines
+	NAME "county_lines"
+    TYPE LINE
+    STATUS DEFAULT
+    DATA "boundary/co_line"
+    PROJECTION
+        "init=epsg:2913"
+    END
+    METADATA
+        "wms_title" "County Lines"
+        "wms_srs" "EPSG:2913 EPSG:54004 EPSG:4326"
+    END
+	CLASS
+		STYLE
+			SYMBOL 'line'
+			COLOR 92 92 92
+			SIZE 6
+		END
+    END
+END # RLIS county lines
+
+
+LAYER # Pirate network
+    NAME "pirate_network"
+    TYPE LINE
+    STATUS DEFAULT
+    DATA "data/pirate/str04aug"
+    PROJECTION
+        "init=epsg:2913"
+    END
+    METADATA
+        "wms_title" "Pirate Network"
+        "wms_srs" "EPSG:2913 EPSG:54004 EPSG:4326"
+    END
+	CLASSITEM BIKEMODE
+		CLASS
+			EXPRESSION 'pb'
+			STYLE
+				SYMBOL 'dashed-line'
+				COLOR 0 0 0
+				SIZE 6
+			END
+			STYLE
+				SYMBOL 'dashed-line'
+				COLOR 0  0 255
+				SIZE 4
+			END
+			STYLE
+				SYMBOL 'dashed-line'
+				COLOR 0 0 0
+				SIZE 2
+			END
+		END
+		CLASS
+			EXPRESSION 'pm'
+			STYLE
+				SYMBOL 'dashed-line'
+				COLOR 0 0 0
+				SIZE 6
+			END
+			STYLE
+				SYMBOL 'dashed-line'
+				COLOR 128 0 255
+				SIZE 4
+			END
+			STYLE
+				SYMBOL 'dashed-line'
+				COLOR 0 0 0
+				SIZE 2
+			END
+		END
+		CLASS
+			EXPRESSION 'ca'
+			STYLE
+				SYMBOL 'line'
+				COLOR 0 0 0
+				SIZE 6
+			END
+			STYLE
+				SYMBOL 'line'
+				COLOR 255 0 0
+				SIZE 4
+			END
+		END
+		CLASS
+			EXPRESSION 'ht'
+			STYLE
+				SYMBOL 'line'
+				COLOR 0 0 0
+				SIZE 6
+			END
+			STYLE
+				SYMBOL 'line'
+				COLOR 255 128 0
+				SIZE 4
+			END
+		END
+		CLASS
+			EXPRESSION 'mt'
+			STYLE
+				SYMBOL 'line'
+				COLOR 0 0 0
+				SIZE 6
+			END
+			STYLE
+				SYMBOL 'line'
+				COLOR  255 255 0
+				SIZE 4
+			END
+		END
+		CLASS
+			EXPRESSION 'lt'
+			STYLE
+				SYMBOL 'line'
+				COLOR 0 0 0
+				SIZE 6
+			END
+			STYLE
+				SYMBOL 'line'
+				COLOR 0 255 0
+				SIZE 4
+			END
+		END
+		CLASS
+			EXPRESSION 'bl'
+			STYLE
+				SYMBOL 'line'
+				COLOR 0 0 0
+				SIZE 6
+			END
+			STYLE
+				SYMBOL 'line'
+				COLOR 0 0 255
+				SIZE 4
+			END
+		END
+		CLASS
+			EXPRESSION 'mm'
+			STYLE
+				SYMBOL 'line'
+				COLOR 0 0 0
+				SIZE 6
+			END
+			STYLE
+				SYMBOL 'line'
+				COLOR 128 0 255
+				SIZE 4
+			END
+		END
+		CLASS
+			EXPRESSION 'mu'
+			STYLE
+				SYMBOL 'line'
+				COLOR 0 0 0
+				SIZE 6
+			END
+			STYLE
+				SYMBOL 'line'
+				COLOR 128 0 255
+				SIZE 4
+			END
+		END
+END # Pirate network
+
+
+LAYER # RLIS bike layer
+    NAME "bike_rte"
+    TYPE LINE
+    STATUS DEFAULT
+    DATA "/rlislite/transit/bike_rte"
+	
+    PROJECTION
+        "init=epsg:2913"
+    END
+    METADATA
+        "wms_title" "Bike Network"
+        "wms_srs" "EPSG:2913 EPSG:54004 EPSG:4326"
+    END
+	CLASSITEM BIKEMODE
+		CLASS
+			EXPRESSION 'Planned bike lane'
+			STYLE
+				SYMBOL 'dashed-line'
+				COLOR 0 0 0
+				SIZE 6
+			END
+			STYLE
+				SYMBOL 'dashed-line'
+				COLOR 0  0 255
+				SIZE 4
+			END
+			STYLE
+				SYMBOL 'dashed-line'
+				COLOR 0 0 0
+				SIZE 2
+			END
+		END
+		CLASS
+			EXPRESSION 'Planned multi-use'
+			STYLE
+				SYMBOL 'dashed-line'
+				COLOR 0 0 0
+				SIZE 6
+			END
+			STYLE
+				SYMBOL 'dashed-line'
+				COLOR 128 0 255
+				SIZE 4
+			END
+			STYLE
+				SYMBOL 'dashed-line'
+				COLOR 0 0 0
+				SIZE 2
+			END
+		END
+		CLASS
+			EXPRESSION 'Caution area'
+			STYLE
+				SYMBOL 'line'
+				COLOR 0 0 0
+				SIZE 6
+			END
+			STYLE
+				SYMBOL 'line'
+				COLOR 255 0 0
+				SIZE 4
+			END
+		END
+		CLASS
+			EXPRESSION 'High traffic'
+			STYLE
+				SYMBOL 'line'
+				COLOR 0 0 0
+				SIZE 6
+			END
+			STYLE
+				SYMBOL 'line'
+				COLOR 255 128 0
+				SIZE 4
+			END
+		END
+		CLASS
+			EXPRESSION 'Medium traffic'
+			STYLE
+				SYMBOL 'line'
+				COLOR 0 0 0
+				SIZE 6
+			END
+			STYLE
+				SYMBOL 'line'
+				COLOR  255 255 0
+				SIZE 4
+			END
+		END
+		CLASS
+			EXPRESSION 'Low traffic'
+			STYLE
+				SYMBOL 'line'
+				COLOR 0 0 0
+				SIZE 6
+			END
+			STYLE
+				SYMBOL 'line'
+				COLOR 0 255 0
+				SIZE 4
+			END
+		END
+		CLASS
+			EXPRESSION 'Bike lane'
+			STYLE
+				SYMBOL 'line'
+				COLOR 0 0 0
+				SIZE 6
+			END
+			STYLE
+				SYMBOL 'line'
+				COLOR 0 0 255
+				SIZE 4
+			END
+		END
+		CLASS
+			EXPRESSION 'Minor multi-use'
+			STYLE
+				SYMBOL 'line'
+				COLOR 0 0 0
+				SIZE 6
+			END
+			STYLE
+				SYMBOL 'line'
+				COLOR 128 0 255
+				SIZE 4
+			END
+		END
+		CLASS
+			EXPRESSION 'Multi-use'
+			STYLE
+				SYMBOL 'line'
+				COLOR 0 0 0
+				SIZE 6
+			END
+			STYLE
+				SYMBOL 'line'
+				COLOR 128 0 255
+				SIZE 4
+			END
+		END
+END # RLIS bike layer
+
+
+END
