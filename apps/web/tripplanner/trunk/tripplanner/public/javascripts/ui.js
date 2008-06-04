@@ -70,7 +70,7 @@ byCycle.UI = (function () {
       self.bookmark_link = $('bookmark');
 
       // Display panes
-      self.display_panes = $('col-a').getElementsByClassName('display-pane');
+      self.display_panes = $A($('col-a').getElementsByClassName('display-pane'));
 
       // Messages
       self.message_pane = $('message_pane');
