@@ -40,46 +40,13 @@
   <body>
 
 
-    <div id="meta" class="noprint">
-      <div id="meta-left">
-        Region:
-        ${self.region_title()}
-        % if c.region:
-          ${h.link_to('change', h.url_for('regions'))}
-        % endif
-      </div>
-
-      <div id="meta-right">
-        <span class="attention"><a href="http://bycycle.metro-region.org/old-tripplanner" title="Use the old version if this new version doesn't work for you">Old Version</a></span>
-        &middot;
-        <a href="http://bycycle.org/projects/trip-planner/help"
-           title="Trip Planner help page (opens in new window)"
-           target="_blank"
-           >Help</a>
-        &middot;
-        <a href="http://bycycle.org/contact"
-           title="Send us your comments, questions, suggestions, etc (opens in new window)"
-           target="_blank"
-           >Feedback</a>
-        &middot;
-        <a href="http://bycycle.org/support"
-           title="Please support byCycle (opens in new window)"
-           target="_blank"
-           >Support byCycle</a>
-      </div>
-      
-      <div class="clear"></div>
-    </div>
-    <!-- /#meta -->
-
-
     <div id="wrapper">
 
 
       <!-- Masthead -->
       <div id="masthead" class="noprint">
         <h1 id="logo">
-          <a href="http://bycycle.org/" title="byCycle.org Home Page (opens in new window)" target="_blank">
+          <a href="http://bycycle.org/" title="byCycle.org Home Page">
           ${h.image_tag('logo.png', title='byCycle.org Home Page', width=150, height=25, alt='byCycle.org')}
           </a>
         </h1>
@@ -159,49 +126,15 @@
                 ${c.info}
               % else:
                 <p class="no-top-margin">
-                  This is a <span class="attention">new version</span> of the trip planner. It only works for the ${h.link_to('Portland, OR, region', h.url_for('region', id='portlandor'))}.
-                  If you have any problems with it or if you want to access other regions, the
-                  <span class="attention"><a href="http://bycycle.metro-region.org/old-tripplanner" title="Use the old version if this new version doesn't work for you">old version</a></span> is available <b><a href="http://bycycle.metro-region.org/old-tripplanner" title="Use the old version if this new version doesn't work for you">here</a></b>.
-                </p>
-
-                <p>
-                  The trip planner, though 
-                  <a href="http://bycycle.org/2007/04/29/new-version-of-trip-planner-launched/"
-                     title="Blog post about funding status"
-                     target="_blank"
-                     >essentially unfunded</a>,
-                     is under active development. Please
-                  <a href="http://bycycle.org/contact"
-                     title="Send us problems, comments, questions, &amp; suggestions (opens in new window)"
-                     target="_blank"
-                     >contact us</a>
-                     with any problems, comments, questions, or suggestions.
-                </p>
-
-                <p>
-                  If you find this application useful or would like to contribute to its improvement, please consider
-                  <a href="http://bycycle.org/support/donate"
-                     title="Support byCycle (opens in new window)"
-                     target="_blank">donating</a>,
-                  <a href="http://bycycle.org/support/buy-stuff"
-                     title="Buy byCycle stuff"
-                     target="_blank">buying our apparel and other items</a>, or
-                  <a href="http://bycycle.org/support/get-involved"
-                     title="Get Involved"
-                     target="_blank">getting involved</a>.
+                  The byCycle project has been mostly inert for the last several months. We have been making small improvements to the data, but that's about it. If you or someone you know might be interested in getting involved or even taking the lead on this project, please get in touch: <a href="mailto:wyatt@bycycle.org">wyatt@bycycle.org</a>.
                 </p>
 
                 <%include file="/widgets/paypal-button.html" />
 
-                <p>
+                <p class="no-bottom-margin noprint">
                   Users should independently verify all information presented here. This
                   service is provided <b>AS IS</b> with <b>NO WARRANTY</b> of any kind.
                   <em>Please be careful out there.</em>
-                </p>
-
-                <p class="w3c no-bottom-margin noprint">
-                  ${h.link_to(h.image_tag('valid-xhtml.png', title='W3C CSS Validator (opens in new window)', alt='Valid XHTML 1.0 Transitional', width=88, height=31), 'http://validator.w3.org/check/referer', target='_blank')}
-                  ${h.link_to(h.image_tag('valid-css.png', title='W3C Markup Validator (opens in new window)', alt='Valid CSS', width=88, height=31), 'http://jigsaw.w3.org/css-validator/check/referer', target='_blank')}
                 </p>
               % endif
             </div>
@@ -259,17 +192,17 @@
 
     <!-- Footer -->
     <div id="footer" class="noprint">
-      &copy; 2004 - 2007 <a href="http://byCycle.org/" title="byCycle Home Page (opens in new window)" target="_blank">byCycle.org</a>
+      &copy; 2004 - 2008 <a href="http://byCycle.org/" title="byCycle Home Page (opens in new window)" target="_blank">byCycle.org</a>
       &middot;
       Hosted by <a href="http://www.metro-region.org/" title="Metro regional government (opens in new window)" target="_blank">Metro</a>
       &middot;
-      Powered by <a href="http://www.python.org/" title="Python programming language (opens in new window)" target="_blank">Python</a> and
-      <a href="http://pylonshq.com/" title="Pylons Web framework (opens in new window)" target="_blank">Pylons</a>
+      Built with <a href="http://www.python.org/" title="Python programming language (opens in new window)" target="_blank">Python</a> and other <a href="http://www.opensource.org/" title="Open Source">open source</a>/<a href="http://www.fsf.org/" title="Free Software">free</a> software
       &middot;
-      <a href="http://bycycle.org/support"
-         title="Please support byCycle (opens in new window)"
-         target="_blank"
-         >Support byCycle</a>
+      Built by <a href="http://wyattbaldwin.com/">WLB</a> with support from <a href="http://laurensina.com/" title="Lauren">LSD</a> and help from many others
+      &middot;
+      <a href="mailto:contact@bycycle.org"
+         title="Send your comments, questions, suggestions, etc"
+         >Contact</a>
     </div>
     <!-- /Footer -->
 
