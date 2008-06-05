@@ -29,6 +29,8 @@ from elixir import objectstore
 from byCycle import model_path
 
 
+user = os.environ['USER']
+database = user
 session_context = objectstore.context
 
 def init(**connection_args):
@@ -43,8 +45,8 @@ def metadata_factory(name=None):
     metadata.connect(engine)
     return metadata
 
-def getConnectionUri(db_type='postgres', user=os.environ['USER'],
-                     password=None, host='localhost', database='bycycle'):
+def getConnectionUri(db_type='postgres', user=user, password=None, 
+                     host='localhost', database=database):
     """Get database connection URI (DSN)."""
     if password is None:
         pw_path = os.path.join(model_path, '.pw')
