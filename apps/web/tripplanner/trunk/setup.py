@@ -40,6 +40,9 @@ setup(
     zip_safe=False,
     install_requires=(
     'byCycleCore>=0.4a0.dev,==dev',
+    'WebHelpers==0.3',
+    'Routes==1.6.3',
+    'Beaker==0.7.2',
     'Pylons==0.9.5',
     'Mako==0.1.6',
     'Restler',
