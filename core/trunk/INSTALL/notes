@@ -8,9 +8,10 @@ createdb bycycle
 createlang plpgsql bycycle
 psql
 ALTER ROLE bycycle password 'sekret';
-vi pg_hba.conf  # Change password METHOD for local to md5 & disable the rest
-# Restart postgres
 
+vi pg_hba.conf
+# Change password METHOD for local to trust and host to md5; disable the rest
+# Restart postgres
 
 # Might need to do this for psycopg2:
 su -
@@ -19,6 +20,6 @@ su -
 LD_LIBRARY_PATH=/usr/local/pgsql/lib
 export LD_LIBRARY_PATH
 
-
 # PCL extensions (do this, then run `setup.py install`)
-$HOME/bin/python2.5 setup.py build_ext -I$HOME/include -L/home/bycycle/lib
+python2.5 setup.py build_ext -I$HOME/include -L/home/bycycle/lib
+
