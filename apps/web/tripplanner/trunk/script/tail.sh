@@ -1,3 +1,3 @@
 #!/bin/sh
-tail -f /service/tripplanner/log/main/current | tai64nlocal
+tail -f /service/tripplanner-one/log/main/current | tai64nlocal
 
