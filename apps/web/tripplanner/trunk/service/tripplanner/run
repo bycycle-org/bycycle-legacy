@@ -1,7 +1,8 @@
 #!/bin/sh
 export USER=bycycle
 exec 2>&1
-cmd='/usr/bin/env python2.5 -u serve.py'
+server_name=$1
+cmd="/usr/bin/env python2.5 -u serve.py ${server_name}"
 if test $UID -eq 0; then
     exec setuidgid bycycle $cmd
 else
