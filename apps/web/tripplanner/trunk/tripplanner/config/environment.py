@@ -20,7 +20,8 @@ def load_environment(global_conf={}, app_conf={}):
     tmpl_options = {}
     tmpl_options['myghty.log_errors'] = True
     tmpl_options['myghty.escapes'] = dict(l=webhelpers.auto_link, s=webhelpers.simple_format)
-    
+    tmpl_options['mako.filesystem_checks'] = False     
+
     # Add your own template options config options here, note that all config options will override
     # any Pylons config options
     
