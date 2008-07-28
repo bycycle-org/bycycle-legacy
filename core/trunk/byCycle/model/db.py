@@ -45,7 +45,7 @@ def metadata_factory(name=None):
     return metadata
 
 def getConnectionUri(db_type='postgres', user=user, password=None,
-                     host='localhost', database=user):
+                     host='', database=user):
     """Get database connection URI (DSN)."""
     if password is None:
         pw_path = os.path.join(model_path, '.pw')
