@@ -14,34 +14,38 @@ var byCycle = (function() {
     map_type: 'base',
     map_state: 1
   };
-  
+
   var noop = function() {};
+
+  var console_debug = function() {
+	console.debug.apply(console, arguments);
+  }
 
   var hostname = location.hostname;
   var port = location.port;
 
   // public:
   return {
-    // `debug` is a global set in the template; it's value is passed from 
+    // `debug` is a global set in the template; it's value is passed from
     // Pylons as an attribute of the global `g`
     config: debug ? dev_config : prod_config,
 
     // Used to look Google API key in gmap.js and to make queries in ui.js
     domain: (port ? [hostname, port].join(':') : hostname),
-    
+
     // Prefix for when app is mounted at other than root (/)
     prefix: byCycle_prefix,
-    
+
     // URL query parameters as a Hash
     request_params: $H(location.search.toQueryParams()),
 
     default_map_type: 'base',
 
     noop: noop,
-    
+
     // Namespace for byCycle widgets
     widget: {},
-    
+
     /**
      * Get value for variable from query string if possible, otherwise use the
      * global config value
@@ -59,6 +63,6 @@ var byCycle = (function() {
       return v;
     },
 
-    logDebug: (debug ? console.log : noop)
+    logDebug: (debug ? console_debug : noop)
   };
 })();
