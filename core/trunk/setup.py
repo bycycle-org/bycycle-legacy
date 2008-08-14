@@ -47,8 +47,8 @@ GPL.""",
     'Elixir==0.3.0',
     'zope.interface==3.3.0.1',
     'Dijkstar>=1.0',
-    'nose',
-    'simplejson==1.7.1',
+    'nose>=0.10.3',
+    'simplejson>=1.9.2',
     ),
 )
 
