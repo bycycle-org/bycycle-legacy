@@ -1,0 +1,165 @@
+byCycle Trip Planner - Installation
++++++++++++++++++++++++++++++++++++
+
+Created 2006-01-23
+
+
+Packages
+========
+
+byCycle is developed on Ubuntu and deployed to Fedora Core 9. This section
+includes the packages needed for both. 
+
+Dev Tools
+---------
+All: subversion
+Ubuntu: build-essential flex
+
+PostgreSQL 8.x
+--------------
+All: postgresql
+Ubuntu: libpq-dev postgresql-server-dev
+FC9: postgresql-server postgresql-devel
+
+GEOS 2.2.3
+----------
+Ubuntu: libgeos2c2a libgeos-dev
+FC9: geos geos-devel
+
+Proj 4.5.0
+----------
+All: proj
+FC9: proj-devel proj-epsg
+
+PostGIS
+-------
+postgis
+
+Python 2.5.1 <http://www.python.org/>
+-------------------------------------
+Python development package is needed by psycopg2
+Ubuntu: python2.5-dev
+FC9: python-devel
+
+
+Python Packages
+===============
+
+# The current preferred way to install byCycle for development is to use
+# virtualenv <http://pypi.python.org/pypi/virtualenv>.
+sudo easy_install virtualenv
+cd $projects_dir
+virtualenv byCycle
+cd byCycle
+mkdir src
+mkdir code
+source bin/activate
+
+# Most of the python packages required by byCycle are automatically installed
+# when byCycle is easy_installed, but PCL must be installed "manually" because
+# it isn't eggified or uploaded to PyPI. 
+
+# Python Cartographic Library (PCL) - Core 0.11.0
+# Depends on Proj and GEOS for some operations
+# Depends on libgeos-dev
+# Depends on zope.interface
+# On FC9, depends on proj-epsg (will segfault without it)
+cd src
+wget http://gispython.org/downloads/gispy/PCL-0.11.0.tar.gz
+tar xvzf PCL-0.11.0.tar.gz
+cd PCL-0.11.0/PCL-Core
+python setup.py install
+
+
+Installation of byCycle Core
+============================
+
+# Check out the code in virtualenv code directory. Use guest:guest credentials
+# unless you've got an SVN login.
+svn co http://guest:guest@svn.bycycle.org/byCycle/core/trunk byCycle
+
+Installation
+------------
+
+Development
+~~~~~~~~~~~
+In trunk, run `python setup.py develop`
+
+Production
+~~~~~~~~~~
+See Development
+
+Testing
+-------
+In trunk, run `nosetests`
+
+
+Installation of Trip Planner Web App
+====================================
+
+TODO: This probably belongs in a different document--i.e., with the Pylons 
+app. That doc should start out by saying, "First, install the byCycle core and
+its dependencies using the instructions at..."
+
+# Check out the trip planner Web app (in virtualenv src directory).
+# Use guest:guest credentials unless you've got an SVN login.
+cd $projects_dir/code
+svn co http://svn.bycycle.org/byCycle/apps/web/tripplanner/trunk TripPlanner
+
+Installation
+------------
+
+Development
+~~~~~~~~~~
+In trunk, run `python setup.py develop`
+
+Production
+~~~~~~~~~
+See Development
+
+Testing
+-------
+# More unit tests needed
+cd trunk/tripplanner
+paster serve --reload development.ini
+firefox http://localhost:5000/
+
+Google Map
+----------
+If you want to view the Google Map, you will need a Google Maps API key.
+<http://www.google.com/apis/maps/>.
+
+
+Configuration
+=============
+
+PostgreSQL
+----------
+
+* Edit pg_hba.conf. On FC9, this in the Postgres data directory. Set local
+  auth to trust. Set IPv4 host auth to md5.
+* Switch to postgres user
+  * createdb bycycle
+  * createuser bycycle
+  * createlang plpgsql bycycle
+  * ALTER ROLE bycycle password 'sekret';
+  * Insert lwpostgis.sql and spatial_ref_sys.sql into bycycle DB
+  * Change owner of public schema and all tables to bycycle
+* Exit from postgres user
+* Run core/trunk/byCycle/scripts/integrate.py for each region
+
+
+Deployment
+==========
+
+Apache 2 <http://httpd.apache.org/>
+Paste server behind mod_proxy
+
+
+Issues
+======
+
+If you have any problems with any of this, please feel free to contact us.
+
+Email: wyatt@bycycle.org
+
