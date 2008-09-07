@@ -22,7 +22,7 @@ byCycle.Map.google = {
 
       'prototype.bycycle.org': 'ABQIAAAAd_4WmZlgvQzchd_BQM0MPhTPU6PNPDk7LC31EIff_k4JZWpNmBQshai4v8RM5FaT-4FRWeyJA4VHaQ',
 
-      'bycycle.metro-region.org':
+      'bycycle.oregonmetro.org':
 'ABQIAAAAd_4WmZlgvQzchd_BQM0MPhR7upyhxOh7UQa5Yu3ebGZe2uQ8SxRPJtyMUYYgIBQsAROpcOySx6G1RQ',
 
       'dev.bycycle.org': 'ABQIAAAAd_4WmZlgvQzchd_BQM0MPhQSskL_eAzZotWlegWekqLPLda0sxQZNf0_IshFell3z8qP8s0Car117A',
@@ -322,10 +322,10 @@ byCycle.Map.google.Map.prototype = Object.extend(new byCycle.Map.base.Map(), {
   },
 
   makeBikeTileOverlay: function (zoom_levels) {
-    var domain = 'mica.metro-region.org';
+    var domain = 'zircon.oregonmetro.gov';
     var transparent_png = ['http://', domain,
                            '/bycycle/images/transparent.png'].join('');
-    var c = '&copy; <a href="http://www.metro-region.org/">Metro</a>';
+    var c = '&copy; <a href="http://www.oregonmetro.gov/">Metro</a>';
     var copyrights = new GCopyrightCollection(c);
     var wms_url = ['http://', domain, '/cgi-bin/mapserv-postgis',
                    '?map=/var/www/html/bycycle/bycycle.map&'].join('');
