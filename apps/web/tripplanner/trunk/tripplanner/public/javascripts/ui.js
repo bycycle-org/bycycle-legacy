@@ -1,5 +1,5 @@
 /* Namespace for User Interface objects and functions. */
-byCycle.UI = (function () {
+byCycle.UI = function () {
   // private:
   var self = null;
 
@@ -34,7 +34,9 @@ byCycle.UI = (function () {
 	  Element.show('spinner');
       byCycle.UI.setLoadingStatus('Loading...');
 	  byCycle.UI.setLoadingStatus('Initializing map...');
-      map_state && map_type.beforeLoad();
+      if (map_state) {
+        map_type.beforeLoad();
+      }
       Event.observe(window, 'load', byCycle.UI.onLoad);
     },
 
@@ -54,7 +56,7 @@ byCycle.UI = (function () {
       self.onResize();
       self.setRegion(self.region_id);
       self._createEventHandlers();
-      var zoom = parseInt(byCycle.getParamVal('zoom'));
+      var zoom = parseInt(byCycle.getParamVal('zoom'), 10);
       if (!isNaN(zoom)) {
         self.map.setZoom(zoom);
       }
@@ -83,18 +85,16 @@ byCycle.UI = (function () {
       // Map and related
       self.region_el = $('regions');
       self.map_pane = $('map_pane');
-	  
-      self.footer = $('footer');
     },
 	
     _createWidgets: function () {
       // Message fixed pane
-      var w = byCycle.widget.FixedPane;
-      self.message_fixed_pane = new w(self.message_pane, {collapsible: false});
+      var W = byCycle.widget.FixedPane;
+      self.message_fixed_pane = new W(self.message_pane, {collapsible: false});
       self.message_fixed_pane.register_listeners('close', self.showResultPane);
 	  
       // Ads fixed pane
-      var ad_pane = new w('ads', {collapsible: false, destroy_on_close: true});
+      var ad_pane = new W('ads', {collapsible: false, destroy_on_close: true});
       ad_pane.register_listeners('close', self.onHideAds);	
     },
 
@@ -108,24 +108,23 @@ byCycle.UI = (function () {
 	  }
 	  Event.observe('spinner', 'click', function (event) {
 		Event.stop(event);
-		Element.hide(self.spinner)
+		Element.hide(self.spinner);
 	  });
     },
 
     onResize: function(event) {
-      var pos = Position.cumulativeOffset(self.footer);
-	  var footer_offset = pos[1];
+      var body_offset = Element.getDimensions(document.body).height;
 
       // Resize column A
       var offset = Position.cumulativeOffset(self.message_pane)[1];
-	  offset = offset || Position.cumulativeOffset(self.result_pane)[1];
-      var height = footer_offset - offset - 10;
+      offset = offset || Position.cumulativeOffset(self.result_pane)[1];
+      var height = body_offset - offset;
       var style = {height: height + 'px'};
       self.display_panes.each(function (pane) { pane.setStyle(style); });
 
       // Resize map
       offset = Position.cumulativeOffset(self.map_pane)[1];
-      height = footer_offset - offset;
+      height = body_offset - offset;
       self.map.setSize({h: height});
     },
 
@@ -135,7 +134,9 @@ byCycle.UI = (function () {
     },
 
     onHideAds: function (event) {
-      event && Event.stop(event);
+      if (event) {
+        Event.stop(event);
+      }
       var ids = ['input_container', 'bar', 'content'];
       var style = {marginRight: '0px'};
       ids.each(function (id) { $(id).setStyle(style); });
@@ -149,7 +150,9 @@ byCycle.UI = (function () {
       sub_pane = sub_pane || self.info_pane;
       self.display_panes.each(Element.hide);
       self.message_panes.each(Element.hide);
-	  content && sub_pane.update(content);
+	  if (content) {
+            sub_pane.update(content);
+          }
 	  sub_pane.show();
       self.message_pane.show();
     },
@@ -198,4 +201,5 @@ byCycle.UI = (function () {
       }
     }
   };
-})();
+}();
+
