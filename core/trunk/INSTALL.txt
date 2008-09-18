@@ -7,18 +7,17 @@ Created 2006-01-23
 Packages
 ========
 
-byCycle is developed on Ubuntu and deployed to Fedora Core 9. This section
-includes the packages needed for both. 
+byCycle is developed on Ubuntu 8.04  and deployed to Fedora Core 9. This
+section includes the packages needed for both. 
 
 Dev Tools
 ---------
 All: subversion
-Ubuntu: build-essential flex
 
 PostgreSQL 8.x
 --------------
 All: postgresql
-Ubuntu: libpq-dev postgresql-server-dev
+Ubuntu: libpq-dev postgresql-server-dev-8.3
 FC9: postgresql-server postgresql-devel
 
 GEOS 2.2.3
@@ -33,13 +32,18 @@ FC9: proj-devel proj-epsg
 
 PostGIS
 -------
-postgis
+All: postgis
+Ubuntu: postgresql-8.3-postgis
 
 Python 2.5.1 <http://www.python.org/>
 -------------------------------------
 Python development package is needed by psycopg2
 Ubuntu: python2.5-dev
 FC9: python-devel
+
+One-liner for Ubuntu
+--------------------
+sudo apt-get install postgresql libpq-dev postgresql-server-dev-8.3 libgeos2c2a libgeos-dev proj postgresql-8.3-postgis postgis python2.5-dev
 
 
 Python Packages
@@ -48,11 +52,11 @@ Python Packages
 # The current preferred way to install byCycle for development is to use
 # virtualenv <http://pypi.python.org/pypi/virtualenv>.
 sudo easy_install virtualenv
-cd $projects_dir
+cd <some project directory>
 virtualenv byCycle
 cd byCycle
 mkdir src
-mkdir code
+mkdir repo
 source bin/activate
 
 # Most of the python packages required by byCycle are automatically installed
@@ -80,10 +84,13 @@ svn co http://guest:guest@code.bycycle.org/byCycle/core/trunk byCycle
 
 Installation
 ------------
+You'll need to create the file repo/core/trunk/byCycle/model/.pw containing
+a single line with your PostgreSQL password. See Configuration section below
+for more info on setting up Postgres.
 
 Development
 ~~~~~~~~~~~
-In trunk, run `python setup.py develop`
+In repo/core/trunk, run `python setup.py develop`
 
 Production
 ~~~~~~~~~~
@@ -101,9 +108,9 @@ TODO: This probably belongs in a different document--i.e., with the Pylons
 app. That doc should start out by saying, "First, install the byCycle core and
 its dependencies using the instructions at..."
 
-# Check out the trip planner Web app (in virtualenv src directory).
+# Check out the trip planner Web app (in virtualenv repo directory).
 # Use guest:guest credentials unless you've got an SVN login.
-cd $projects_dir/code
+cd repo
 svn co http://code.bycycle.org/byCycle/apps/web/tripplanner/trunk TripPlanner
 
 Installation
@@ -111,7 +118,7 @@ Installation
 
 Development
 ~~~~~~~~~~
-In trunk, run `python setup.py develop`
+In repo/core/trunk, run `python setup.py develop`
 
 Production
 ~~~~~~~~~
@@ -136,18 +143,40 @@ Configuration
 PostgreSQL
 ----------
 
-* Edit pg_hba.conf. On FC9, this in the Postgres data directory. Set local
-  auth to trust. Set IPv4 host auth to md5.
-* Switch to postgres user
-  * createdb bycycle
-  * createuser bycycle
-  * createlang plpgsql bycycle
-  * ALTER ROLE bycycle password 'sekret';
-  * Insert lwpostgis.sql and spatial_ref_sys.sql into bycycle DB
-  * Change owner of public schema and all tables to bycycle
-* Exit from postgres user
-* Run core/trunk/byCycle/scripts/integrate.py for each region
+* Edit pg_hba.conf. On Ubuntu, this is at /etc/postgresql/8.3/main/pg_hba.conf.
+  On FC9, this in the Postgres data directory.
 
+  * Set local auth to trust (not the Database administrative login by UNIX 
+    sockets; the one below that)
+
+  * Make sure IPv4 host auth is set to md5
+
+* Switch to postgres user
+  * `createdb bycycle`
+
+  * `createuser bycycle` (n, n, n in response to prompts)
+
+  * `createlang plpgsql bycycle`
+
+  * `psql -d bycycle` then `ALTER ROLE bycycle password 'sekret';`
+
+  * Insert lwpostgis.sql and spatial_ref_sys.sql into bycycle DB. These files
+    are in /usr/share/postgresql-8.3-postgis on Ubuntu.
+    * `psql -d bycycle < lwpostgis.sql`
+    * `psql -d bycycle < spatial_ref_sys.sql`
+
+  * Change owner of public schema and all tables to bycycle
+    * `psql -d bycycle`
+    * `ALTER SCHEMA public OWNER TO bycycle;`
+    * `ALTER TABLE geometry_columns OWNER TO bycycle;`
+    * `ALTER TABLE spatial_ref_sys OWNER TO bycycle;`
+
+* Exit from postgres user
+
+* Run core/trunk/byCycle/scripts/integrate.py for each region. The following
+  is an example for Portland, OR.
+  * `cd repo/core/trunk/byCycle/scripts`
+  * `./integrate.py -r portlandor -d portlandor/pirate -l str06oct`
 
 Deployment
 ==========
