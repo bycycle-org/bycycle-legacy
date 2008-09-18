@@ -26,32 +26,34 @@ setup(
     # This, in effect, creates an alias to the latest 0.4 dev version
     download_url='http://guest:guest@code.bycycle.org/apps/web/tripplanner/trunk#egg=byCycleTripPlanner-dev',
     classifiers=[
-    'Development Status :: 3 - Alpha',
-    'Environment :: Web Environment',
-    'Framework :: Pylons',
-    'Intended Audience :: Developers',
-    'License :: GPLv3',
-    'Natural Language :: English',
-    'Programming Language :: Python',
-    'Topic :: Other/Nonlisted Topic',
-    'Topic :: Scientific/Engineering :: GIS',
+        'Development Status :: 3 - Alpha',
+        'Environment :: Web Environment',
+        'Framework :: Pylons',
+        'Intended Audience :: Developers',
+        'License :: OSI Approved :: GNU General Public License (GPL)',
+        'Natural Language :: English',
+        'Operating System :: POSIX :: Linux',
+        'Programming Language :: Python',
+        'Topic :: Education',
+        'Topic :: Scientific/Engineering :: GIS',
     ],
     packages=find_packages(),
     zip_safe=False,
     install_requires=(
-    'byCycleCore>=0.4a0.dev,==dev',
-    'WebHelpers==0.3',
-    'Routes==1.6.3',
-    'Beaker==0.7.2',
-    'Mako==0.2.2',
-    'Restler==0.1.1.1',
-    'Pylons==0.9.5',
+        'byCycleCore>=0.4a0.dev,==dev',
+        'WebHelpers==0.3',
+        'Routes==1.6.3',
+        'Beaker==0.7.2',
+        'Mako==0.2.2',
+        'Restler==0.1.1.1',
+        'Pylons==0.9.5',
     ),
     test_suite = 'nose.collector',
     package_data={'tripplanner': ['i18n/*/LC_MESSAGES/*.mo']},
     entry_points="""
     [paste.app_factory]
     main=tripplanner:make_app
+
     [paste.app_install]
     main=paste.script.appinstall:Installer
     """,
