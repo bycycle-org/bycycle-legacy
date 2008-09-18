@@ -151,32 +151,34 @@ PostgreSQL
 
   * Make sure IPv4 host auth is set to md5
 
-* Switch to postgres user
-  * `createdb bycycle`
+* Switch to postgres user ($USER refers to the OS username of the user you
+  will be running byCycle under)
+  * `createdb $USER`
 
-  * `createuser bycycle` (n, n, n in response to prompts)
+  * `createuser $USER` (n, n, n in response to prompts)
 
-  * `createlang plpgsql bycycle`
+  * `createlang plpgsql $USER`
 
-  * `psql -d bycycle` then `ALTER ROLE bycycle password 'sekret';`
+  * `psql -d $USER` then `ALTER ROLE $USER password 'sekret';`
 
   * Insert lwpostgis.sql and spatial_ref_sys.sql into bycycle DB. These files
     are in /usr/share/postgresql-8.3-postgis on Ubuntu.
-    * `psql -d bycycle < lwpostgis.sql`
-    * `psql -d bycycle < spatial_ref_sys.sql`
+    * `psql -d $USER < lwpostgis.sql`
+    * `psql -d $USER < spatial_ref_sys.sql`
 
-  * Change owner of public schema and all tables to bycycle
-    * `psql -d bycycle`
-    * `ALTER SCHEMA public OWNER TO bycycle;`
-    * `ALTER TABLE geometry_columns OWNER TO bycycle;`
-    * `ALTER TABLE spatial_ref_sys OWNER TO bycycle;`
+  * Change owner of public schema and all tables to $USER
+    * `psql -d $USER`
+    * `ALTER DATABASE $USER OWNER TO $USER;`
+    * `ALTER SCHEMA public OWNER TO $USER;`
+    * `ALTER TABLE geometry_columns OWNER TO $USER;`
+    * `ALTER TABLE spatial_ref_sys OWNER TO $USER;`
 
 * Exit from postgres user
 
 * Run core/trunk/byCycle/scripts/integrate.py for each region. The following
   is an example for Portland, OR.
   * `cd repo/core/trunk/byCycle/scripts`
-  * `./integrate.py -r portlandor -d portlandor/pirate -l str06oct`
+  * `./integrate.py -r portlandor -d pirate -l str06oct`
 
 Deployment
 ==========
