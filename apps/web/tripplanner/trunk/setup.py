@@ -16,7 +16,7 @@ from setuptools import setup, find_packages
 setup(
     name='byCycleTripPlanner',
     version='0.4a0',
-    description='byCycle Trip Planner -- Pylons version',
+    description='byCycle Trip Planner',
     long_description='byCycle Trip Planner Web Application',
     license='Free For Home Use',
     author='Wyatt L Baldwin, byCycle.org',
@@ -24,13 +24,13 @@ setup(
     keywords='bicycle bike cycyle trip planner route finder',
     url='http://bycycle.org/',
     # This, in effect, creates an alias to the latest 0.4 dev version
-    download_url='http://guest:guest@svn.bycycle.org/apps/web/tripplanner/trunk#egg=byCycleTripPlanner-dev',
+    download_url='http://guest:guest@code.bycycle.org/apps/web/tripplanner/trunk#egg=byCycleTripPlanner-dev',
     classifiers=[
     'Development Status :: 3 - Alpha',
     'Environment :: Web Environment',
-    'Framework :: Paste',
+    'Framework :: Pylons',
     'Intended Audience :: Developers',
-    'License :: Free For Home Use',
+    'License :: GPLv3',
     'Natural Language :: English',
     'Programming Language :: Python',
     'Topic :: Other/Nonlisted Topic',
