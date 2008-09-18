@@ -16,7 +16,7 @@ from setuptools import setup, find_packages
 setup(
     name='byCycleCore',
     version='0.4a0',
-    description='byCycle Core Services -- PostgreSQL/PostGIS/SQLAlchemy version',
+    description='byCycle Core Services',
     long_description="""\
 Address normalization, geocoding, routing and other GIS-related services. We
 still have not decided on a license, but it will most likely end up being the
@@ -26,11 +26,13 @@ GPL.""",
     author_email='wyatt@byCycle.org',
     keywords='bicycle bike cycyle trip planner route finder',
     url='http://bycycle.org/',
+    # This, in effect, creates an alias to the latest 0.4 dev version
+    download_url='http://guest:guest@code.bycycle.org/core/trunk#egg=byCycleCore-dev',
     classifiers=[
         'Development Status :: 3 - Alpha',
         'Environment :: Console',
         'Intended Audience :: Developers',
-        'License :: Free For Home Use',
+        'License :: GPLv3',
         'Natural Language :: English',
         'Programming Language :: Python',
         'Topic :: Other/Nonlisted Topic',
