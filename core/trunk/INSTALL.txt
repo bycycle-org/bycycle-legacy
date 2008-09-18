@@ -76,7 +76,7 @@ Installation of byCycle Core
 
 # Check out the code in virtualenv code directory. Use guest:guest credentials
 # unless you've got an SVN login.
-svn co http://guest:guest@svn.bycycle.org/byCycle/core/trunk byCycle
+svn co http://guest:guest@code.bycycle.org/byCycle/core/trunk byCycle
 
 Installation
 ------------
@@ -104,7 +104,7 @@ its dependencies using the instructions at..."
 # Check out the trip planner Web app (in virtualenv src directory).
 # Use guest:guest credentials unless you've got an SVN login.
 cd $projects_dir/code
-svn co http://svn.bycycle.org/byCycle/apps/web/tripplanner/trunk TripPlanner
+svn co http://code.bycycle.org/byCycle/apps/web/tripplanner/trunk TripPlanner
 
 Installation
 ------------
