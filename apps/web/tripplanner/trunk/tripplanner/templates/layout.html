@@ -183,14 +183,6 @@
       <!-- /Content -->
 
 
-      <!-- Ads -->
-      <%call expr="fixed_pane(id='ads', classes=['noprint'])">
-        ${self.ads()}
-        ${h.javascript_include_tag('ads')}
-      </%call>
-      <!-- /Ads -->
-
-
     </div>
     <!-- /Wrapper -->
 
@@ -262,25 +254,6 @@
 <%def name="map_controls()"></%def>
 <%def name="javascript_includes()"></%def>
 <%def name="javascript()"></%def>
-
-<%def name="ads()">
-  <% region = c.region %>
-  % if region and region.ads:
-    <div id="region-ads">
-      <h2>Local Stuff</h2>
-      % for ad in region.ads:
-        <div class="region-ad">
-          <a href="${ad.href}"
-             title="${ad.title}"
-             target="byCycle-ad-link"
-             >${ad.link_text}</a>
-          <br/>
-          ${ad.text}
-        </div>
-      % endfor
-    </div>
-  % endif
-</%def>
 
 <%def name="errors()">
   <div class="errors">

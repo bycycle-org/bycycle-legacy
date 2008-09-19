@@ -92,10 +92,6 @@ byCycle.UI = function () {
       var W = byCycle.widget.FixedPane;
       self.message_fixed_pane = new W(self.message_pane, {collapsible: false});
       self.message_fixed_pane.register_listeners('close', self.showResultPane);
-	  
-      // Ads fixed pane
-      var ad_pane = new W('ads', {collapsible: false, destroy_on_close: true});
-      ad_pane.register_listeners('close', self.onHideAds);	
     },
 
     /* Events ****************************************************************/
@@ -131,15 +127,6 @@ byCycle.UI = function () {
     onUnload: function(event) {
       document.body.style.display = 'none';
       self.map.onUnload();
-    },
-
-    onHideAds: function (event) {
-      if (event) {
-        Event.stop(event);
-      }
-      var ids = ['input_container', 'bar', 'content'];
-      var style = {marginRight: '0px'};
-      ids.each(function (id) { $(id).setStyle(style); });
     },
 
     handleMapClick: function (event) {},
