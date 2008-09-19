@@ -4,15 +4,13 @@
 byCycle.UI.Query = Class.create()
 byCycle.UI.Query.prototype = {
   initialize: function(service, form, result_list,
-                       opts /* processing_message='Processing...'
-                               input=undefined */) {
+                       opts /* input=undefined */) {
     if (arguments.length == 0) return;
     this.ui = byCycle.UI;
     this.service = service;
     this.form = form;
     this.result_list = result_list;
     if (opts) {
-      this.processing_message = opts.processing_message || 'Processing...';
       this.input = opts.input;  // Hash or undefined
     }
   },
@@ -35,7 +33,6 @@ byCycle.UI.Query.prototype = {
     // Base version should not raise errors
     this.start_ms = new Date().getTime();
     Element.show(this.ui.spinner);
-    this.ui.status.innerHTML = this.processing_message;
     Element.hide(this.ui.message_pane);
   },
 
@@ -49,7 +46,7 @@ byCycle.UI.Query.prototype = {
     var bookmark_params = Object.extend({}, params);
     delete bookmark_params.commit;
     var q_str = Hash.toQueryString(bookmark_params);
-    this.ui.bookmark_link.href = [url, q_str].join('?');
+    //this.ui.bookmark_link.href = [url, q_str].join('?');
 
     params.format = 'json';
     var args = {
@@ -65,7 +62,6 @@ byCycle.UI.Query.prototype = {
   },
 
   onLoading: function(request) {
-    this.ui.status.update(this.processing_message);
     this.ui.spinner.show();
   },
 
@@ -102,7 +98,6 @@ byCycle.UI.Query.prototype = {
   onComplete: function(request) {
     this.ui.spinner.hide();
     this.http_status = request.status;
-    this.ui.status.update(this.getElapsedTimeMessage());
   },
 
   onException: function(request) {
@@ -157,24 +152,7 @@ byCycle.UI.Query.prototype = {
     return result_obj;
   },
 
-  processResults: function(response, results) {},
-
-  getElapsedTimeMessage: function() {
-    var elapsed_time_msg = '';
-    if (this.http_status < 400 && this.start_ms) {
-      elapsed_time = (new Date().getTime() - this.start_ms) / 1000.0;
-      var s = '';
-      if (elapsed_time < 1) {
-        elapsed_time = ' less than 1 ';
-      } else if (elapsed_time > 1) {
-        s = 's';
-      }
-      elapsed_time_msg = ['in ', elapsed_time, ' second', s, '.'].join('');
-    }
-    var status_message = this.ui.status_messages[this.http_status || 200];
-    elapsed_time_msg = [status_message, elapsed_time_msg].join(' ');
-    return elapsed_time_msg;
-  }
+  processResults: function(response, results) {}
 };
 
 
@@ -188,13 +166,11 @@ byCycle.UI.GeocodeQuery.prototype = Object.extend(new byCycle.UI.Query(), {
 
   initialize: function(opts /* form=byCycle.UI.query_form,
                                result_list=byCycle.UI.location_list,
-                               processing_message='Locating address...',
                                input=undefined */) {
     opts = opts || {};
     var ui = byCycle.UI;
     var form = opts.form || ui.query_form;
     var result_list = opts.result_list || ui.location_list;
-    opts.processing_message = opts.processing_message || 'Looking up address...';
     this.superclass.initialize.call(this, 'geocodes', form, result_list, opts);
   },
 
@@ -235,13 +211,11 @@ byCycle.UI.RouteQuery.prototype = Object.extend(new byCycle.UI.Query(), {
 
   initialize: function(opts /* form=byCycle.UI.query_form,
                                result_list=byCycle.UI.location_list,
-                               processing_message='Finding route...',
                                input=undefined */) {
     opts = opts || {};
     var ui = byCycle.UI;
     var form = opts.form || ui.route_form;
     var result_list = opts.result_list || ui.route_list;
-    opts.processing_message = opts.processing_message || 'Finding route...';
     var service = 'routes';
     this.superclass.initialize.call(this, service, form, result_list, opts);
     this.ui.selectInputTab(service);

@@ -23,17 +23,11 @@ byCycle.UI = function () {
 
     /* Initialization ********************************************************/
 
-    setLoadingStatus: function(msg) {
-      Element.update('loading-status', msg);
-    },
-
     /**
      * Do stuff that must happen _during_ page load
      */
     beforeLoad: function() {
-	  Element.show('spinner');
-      byCycle.UI.setLoadingStatus('Loading...');
-	  byCycle.UI.setLoadingStatus('Initializing map...');
+      Element.show('spinner');
       if (map_state) {
         map_type.beforeLoad();
       }
@@ -60,14 +54,12 @@ byCycle.UI = function () {
       if (!isNaN(zoom)) {
         self.map.setZoom(zoom);
       }
-      self.spinner.hide();
-	  Element.remove('loading-status');
       self.onResize();
+      self.spinner.hide();
     },
 
     _assignUIElements: function() {
       // Bar
-      self.status = $('status');
       self.spinner = $('spinner');
       self.bookmark_link = $('bookmark');
 
@@ -86,7 +78,7 @@ byCycle.UI = function () {
       self.region_el = $('regions');
       self.map_pane = $('map_pane');
     },
-	
+
     _createWidgets: function () {
       // Message fixed pane
       var W = byCycle.widget.FixedPane;
@@ -165,8 +157,8 @@ byCycle.UI = function () {
         self._showRegionOverlays(region);
       } else {
         // Show all regions
-		var all_regions = byCycle.regions;
-		self.map.centerAndZoomToBounds(all_regions.bounds, all_regions.center);
+        var all_regions = byCycle.regions;
+	self.map.centerAndZoomToBounds(all_regions.bounds, all_regions.center);
         regions.values().each(function (r) {
           self._showRegionOverlays(r);
         });
@@ -189,4 +181,3 @@ byCycle.UI = function () {
     }
   };
 }();
-
