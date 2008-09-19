@@ -10,7 +10,7 @@ def make_map(global_conf={}, app_conf={}):
     # This route handles displaying the error page and graphics used in the
     # 404/500 error pages. It should likely stay at the top to ensure that the
     # error page is displayed properly.
-    mapper.connect('error/:action/:id', controller='error')
+    mapper.connect('error/{action}/{id}', controller='error')
 
     # Default route => Show list of regions
     mapper.connect('', controller='regions', _collection_name='regions',
