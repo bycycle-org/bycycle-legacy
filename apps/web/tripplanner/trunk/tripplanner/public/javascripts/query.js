@@ -41,7 +41,7 @@ byCycle.UI.Query.prototype = {
 
   doQuery: function() {
     // Done only if no errors in before()
-    var path = ['regions', this.ui.region_id, this.service + ';find'].join('/')
+    var path = ['regions', this.ui.region_id, this.service, 'find'].join('/')
     var url = [byCycle.prefix, path].join('');
     var params = this.input ? this.input : this.form.serialize(true);
 
@@ -334,7 +334,7 @@ byCycle.UI.RouteQuery.prototype = Object.extend(new byCycle.UI.Query(), {
       } else {
         line = drawPolyLine(ls, color);
       }
-      
+
       // Add overlays to result object
       r.overlays.push(s_marker, e_marker, line);
     });

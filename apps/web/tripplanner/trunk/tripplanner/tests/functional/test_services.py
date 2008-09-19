@@ -5,6 +5,6 @@ class TestServiceController(TestController):
         url = url_for('services', region_id='portlandor', action='find',
                       q='633 n alberta')
         print url
-        assert url == '/regions/portlandor/services;find?q=633+n+alberta'
+        assert url == '/regions/portlandor/services/find?q=633+n+alberta'
         response = self.app.get(url)
         assert response.status == 302

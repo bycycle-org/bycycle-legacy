@@ -55,7 +55,7 @@
         ${'%.2f' % total_mi} miles / ${'%.2f' % total_km} km
     </div>
     <div class="noprint reverse-directions">
-        <a href="/regions/${c.region.slug}/routes;find?q=${e_url_str}+to+${s_url_str}"
+        <a href="/regions/${c.region.slug}/routes/find?q=${e_url_str}+to+${s_url_str}"
            onclick="byCycle.UI.reverseDirections('${unquote_plus(e_url_str)}', '${unquote_plus(s_url_str)}'); return false;"
            >Reverse Directions</a>
     </div>
