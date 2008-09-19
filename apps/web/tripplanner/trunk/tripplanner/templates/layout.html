@@ -140,7 +140,7 @@
 
                 <p class="no-bottom-margin">
                   &copy; 2004-2008 byCycle.org
-                </p> 
+                </p>
               % endif
             </div>
 
@@ -200,7 +200,8 @@
     </div>
 
 
-    ${h.javascript_include_tag('map', 'gmap', 'widgets/fixed_pane', 'ui', 'regions')}
+    ${h.javascript_include_tag('map', 'gmap')}
+    ${h.javascript_include_tag('widgets/fixed_pane', 'ui', 'regions')}
     ${self.javascript_includes()}
 
 
