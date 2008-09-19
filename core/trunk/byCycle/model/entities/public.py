@@ -25,7 +25,7 @@ from byCycle import model_path
 from byCycle.model import db
 from byCycle.model.entities.util import cascade_args, encodeFloat
 
-__all__ = ['Region', 'EdgeAttr', 'Ad', 'Service', 'Geocode', 'Route']
+__all__ = ['Region', 'EdgeAttr', 'Service', 'Geocode', 'Route']
 
 
 metadata = db.metadata_factory('public')
@@ -47,7 +47,6 @@ class Region(Entity):
     has_many('edge_attrs', of_kind='EdgeAttr', order_by='id')
     has_many('geocodes', of_kind='Geocode')
     has_many('routes', of_kind='Route')
-    has_many('ads', of_kind='Ad')
 
     required_edge_attrs = [
         'length',
@@ -213,16 +212,6 @@ class EdgeAttr(Entity):
     belongs_to('region', of_kind='Region', **cascade_args)
     def __repr__(self):
         return str(self.name)
-
-
-class Ad(Entity):
-    has_field('title', String)
-    has_field('href', String)
-    has_field('link_text', String)
-    has_field('text', String)
-    belongs_to('region', of_kind='Region', **cascade_args)
-    def __str__(self):
-        return ' '.join([self.title, self.href, self.text])
 
 
 class Service(Entity):
