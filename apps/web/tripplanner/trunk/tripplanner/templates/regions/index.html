@@ -6,7 +6,7 @@
   <%call expr="parent.input_container()">
 
     <div id="region-search">
-      ${h.form(h.url_for('/regions;find'), method='get', id='query_form')}
+      ${h.form(h.url_for('/regions/find'), method='get', id='query_form')}
         % for p in request.params:
           ${h.hidden_field(p, value=request.params[p])}
         % endfor
