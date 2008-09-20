@@ -34,6 +34,11 @@ matrix_registry = {}
 class Region(DeclarativeBase):
     __tablename__ = 'region'
 
+    member_name = 'region'
+    collection_name = 'regions'
+    member_title = 'Region'
+    collection_title = 'Regions'
+
     id = Column(Integer, primary_key=True)
     title = Column(String)
     slug = Column(String)
