@@ -23,26 +23,22 @@ import os
 
 import psycopg2
 import sqlalchemy
-from sqlalchemy import MetaData, create_engine, create_session
-from elixir import objectstore
+from sqlalchemy import MetaData, orm, create_engine
 
 from byCycle import model_path
 
 
 user = os.environ['USER']
-session_context = objectstore.context
+Session = None
+metadata = MetaData()
 
 def init(**connection_args):
-    global engine, connection, cursor
+    global engine, connection, cursor, Session
     engine = create_engine(getConnectionUri(**connection_args))
     connection = engine.raw_connection()
     cursor = connection.cursor()
-
-def metadata_factory(name=None):
-    """Create and return ``metadata`` connected to the global ``engine``."""
-    metadata = MetaData(name)
-    metadata.connect(engine)
-    return metadata
+    _Session = orm.sessionmaker(autoflush=True, autocommit=True, bind=engine)
+    Session = orm.scoped_session(_Session)
 
 def getConnectionUri(db_type='postgres', user=user, password=None,
                      host='', database=user):
@@ -109,7 +105,7 @@ def createSchema(schema):
     except psycopg2.ProgrammingError:
         rollback()  # important!
     else:
-        commit()    
+        commit()
 
 def dropTable(table, cascade=False):
     # TODO: Try to make this work when the table has dependencies

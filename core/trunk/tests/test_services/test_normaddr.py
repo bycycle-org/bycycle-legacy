@@ -19,7 +19,7 @@ from sqlalchemy import *
 
 
 class TestGetCrossStreets(unittest.TestCase):
-    
+
     service = Service()
 
     def _testGood(self, addrs):
@@ -98,7 +98,7 @@ class TestGetNumberAndStreet(unittest.TestCase):
 
 class TestPortlandOR(unittest.TestCase):
 
-    region = Region.get_by(slug='portlandor')
+    region = Region.get_by_slug('portlandor')
 
     def _query(self, q, region=None):
         service = Service(region=region)
@@ -114,11 +114,11 @@ class TestPortlandOR(unittest.TestCase):
         # Get street name ID for n alberta st
         c = StreetName.c
         street_name = StreetName.selectfirst((c.prefix == 'n') &
-                                               (c.name == 'alberta') & 
+                                               (c.name == 'alberta') &
                                                (c.sttype == 'st'))
         street_name_id = street_name.id
 
-        # Get edge matching 633 n alberta st        
+        # Get edge matching 633 n alberta st
         c = Edge.c
         edge = Edge.selectfirst((c.addr_f_l <= 633) & (c.addr_t_l >= 633) &
                                   (c.street_name_id == street_name_id))
@@ -186,7 +186,7 @@ class TestPortlandOR(unittest.TestCase):
         self.assertEqual(str(oAddr.city2), 'Portland')
         self.assertEqual(str(oAddr.state2), 'OR')
         self.assertEqual(oAddr.zip_code2, 97206)
-        
+
     ### Node
 
     def test_PortlandOR_NodeAddress(self):
@@ -227,7 +227,7 @@ class TestPortlandOR(unittest.TestCase):
         self.assert_(isinstance(oAddr, address.IntersectionAddress))
         self.assertAlmostEqual(oAddr.x, -122.67334)
         self.assertAlmostEqual(oAddr.y, 45.523307)
-        
+
     ### Postal
 
     def test_PortlandOR_PostalAddress_NoRegion_CityStateZip(self):
@@ -253,7 +253,7 @@ class TestPortlandOR(unittest.TestCase):
         self.assertEqual(oAddr.city_name, 'oregon city')
         self.assertEqual(oAddr.state_code, 'or')
         self.assertEqual(oAddr.zip_code, 97206)
-        
+
     def test_PortlandOR_PostalAddress_MultiWordName_Region(self):
         q = '4807 SE Martin Luther King Jr Boulevard, oregon city or 97206'
         oAddr = self._query(q, region='portland, OR')

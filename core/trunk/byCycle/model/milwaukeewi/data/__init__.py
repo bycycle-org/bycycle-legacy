@@ -72,9 +72,6 @@ bikemodes = {
     None: None,
 }
 
-metadata = db.metadata_factory(slug)
-
-
 class Raw(Entity):
     using_options(tablename=slug)
     using_table_options(schema='raw')

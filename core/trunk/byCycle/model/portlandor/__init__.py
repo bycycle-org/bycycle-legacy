@@ -11,40 +11,52 @@
 # in the top level of this distribution. This software is provided AS IS with
 # NO WARRANTY OF ANY KIND.
 ###############################################################################
-from sqlalchemy import MetaData
-
-from elixir import Entity, options_defaults, has_field
-from elixir import Unicode, Integer, String, CHAR, Integer, Numeric, Float
+from sqlalchemy import Column, ForeignKey
+from sqlalchemy.types import Unicode, Integer, String, CHAR, Integer, Numeric, Float
 
 from byCycle.model import db
 from byCycle.model.entities import base
-from byCycle.model.entities.base import base_statements
+from byCycle.model.entities.base import DeclarativeBase
 from byCycle.model.entities.util import encodeFloat
 from byCycle.model.data.sqltypes import POINT, LINESTRING
 from byCycle.model.portlandor.data import SRID, slug
 
 from dijkstar import infinity
 
+
 __all__ = ['Edge', 'Node', 'StreetName', 'City', 'State', 'Place']
 
 
-options_defaults['shortnames'] = True
-options_defaults['inheritance'] = None
-options_defaults['table_options']['schema'] = slug
+table_args = dict(schema='portlandor')
 
-metadata = db.metadata_factory(slug)
+
+class Node(base.Node):
+    __tablename__ = 'node'
+    __table_args__ = table_args
+    __mapper_args__ = dict(polymorphic_identity='portlandor_node')
+
+    id = Column(Integer, ForeignKey('node.id'), primary_key=True)
+    geom = Column(POINT(SRID))
+
+    @property
+    def edges(self):
+        return super(Node, self).edges
 
 
 class Edge(base.Edge):
-    base_statements('Edge')
-    has_field('geom', LINESTRING(SRID))
-    has_field('permanent_id', Numeric(11, 2))
-    has_field('code', Integer)
-    has_field('bikemode', CHAR(1))  # enum('','p','t','b','l','m','h','c','x')
-    has_field('up_frac', Float)
-    has_field('abs_slope', Float)
-    has_field('cpd', Integer)
-    has_field('sscode', Integer)
+    __tablename__ = 'edge'
+    __table_args__ = table_args
+    __mapper_args__ = dict(polymorphic_identity='portlandor_edge')
+
+    id = Column(Integer, ForeignKey('edge.id'), primary_key=True)
+    geom = Column(LINESTRING(SRID))
+    permanent_id = Column(Numeric(11, 2))
+    code = Column(Integer)
+    bikemode = Column(CHAR(1))  # enum('','p','t','b','l','m','h','c','x')
+    up_frac = Column(Float)
+    abs_slope = Column(Float)
+    cpd = Column(Integer)
+    sscode = Column(Integer)
 
     def to_feet(self):
         return self.geom.length()
@@ -68,26 +80,29 @@ class Edge(base.Edge):
         return adjustments
 
 
-class Node(base.Node):
-    base_statements('Node')
-    has_field('geom', POINT(SRID))
-
-    @property
-    def edges(self):
-        return super(Node, self).edges
-
-
 class StreetName(base.StreetName):
-    base_statements('StreetName')
+    __tablename__ = 'streetname'
+    __table_args__ = table_args
+    __mapper_args__ = dict(polymorphic_identity='portlandor_streetname')
+    id = Column(Integer, ForeignKey('streetname.id'), primary_key=True)
 
 
 class City(base.City):
-    base_statements('City')
+    __tablename__ = 'city'
+    __table_args__ = table_args
+    __mapper_args__ = dict(polymorphic_identity='portlandor_city')
+    id = Column(Integer, ForeignKey('city.id'), primary_key=True)
 
 
 class State(base.State):
-    base_statements('State')
+    __tablename__ = 'state'
+    __table_args__ = table_args
+    __mapper_args__ = dict(polymorphic_identity='portlandor_state')
+    id = Column(Integer, ForeignKey('state.id'), primary_key=True)
 
 
 class Place(base.Place):
-    base_statements('Place')
+    __tablename__ = 'place'
+    __table_args__ = table_args
+    __mapper_args__ = dict(polymorphic_identity='portlandor_place')
+    id = Column(Integer, ForeignKey('place.id'), primary_key=True)

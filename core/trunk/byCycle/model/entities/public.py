@@ -14,39 +14,36 @@
 """Entities that are shared by all regions; they live in the public SCHEMA."""
 import os, marshal
 
-from sqlalchemy import func, select
-
-from elixir import Entity
-from elixir import options_defaults, using_options, using_table_options
-from elixir import has_field, belongs_to, has_many
-from elixir import Integer, String, Float
+from sqlalchemy import Column, ForeignKey, func, select
+from sqlalchemy.orm import relation
+from sqlalchemy.types import Integer, String, Float
 
 from byCycle import model_path
 from byCycle.model import db
+from byCycle.model.entities import DeclarativeBase
 from byCycle.model.entities.util import cascade_args, encodeFloat
 
 __all__ = ['Region', 'EdgeAttr', 'Service', 'Geocode', 'Route']
 
-
-metadata = db.metadata_factory('public')
-options_defaults['shortnames'] = True
 
 # A place to keep references to adjacency matrices so they don't need to be
 # continually read from disk
 matrix_registry = {}
 
 
-class Region(Entity):
-    has_field('title', String)
-    has_field('slug', String)
-    has_field('srid', Integer)
-    has_field('units', String)
-    has_field('earth_circumference', Float)
-    has_field('block_length', Float)
-    has_field('jog_length', Float)
-    has_many('edge_attrs', of_kind='EdgeAttr', order_by='id')
-    has_many('geocodes', of_kind='Geocode')
-    has_many('routes', of_kind='Route')
+class Region(DeclarativeBase):
+    __tablename__ = 'region'
+
+    id = Column(Integer, primary_key=True)
+    title = Column(String)
+    slug = Column(String)
+    srid = Column(Integer)
+    units = Column(String)
+    earth_circumference = Column(Float)
+    block_length = Column(Float)
+    jog_length = Column(Float)
+
+    edge_attrs = relation('EdgeAttr', backref='region', order_by='id')
 
     required_edge_attrs = [
         'length',
@@ -206,26 +203,28 @@ class Region(Entity):
         return '%s: %s' % (self.slug, self.title)
 
 
-class EdgeAttr(Entity):
-    using_options(tablename='edge_attrs')
-    has_field('name', String)
-    belongs_to('region', of_kind='Region', **cascade_args)
+class EdgeAttr(DeclarativeBase):
+    __tablename__ = 'edge_attrs'
+    id = Column(Integer, primary_key=True)
+    region_id = Column(Integer, ForeignKey('region.id'))
+    name = Column(String)
     def __repr__(self):
         return str(self.name)
 
 
-class Service(Entity):
-    has_field('title', String)
-    belongs_to('region', of_kind='Region', inverse='geocodes', **cascade_args)
+class Service(DeclarativeBase):
+    __tablename__ = 'service'
+    id = Column(Integer, primary_key=True)
+    region_id = Column(Integer, ForeignKey('region.id'))
 
 
-class Geocode(Entity):
-    has_field('title', String)
-    belongs_to('region', of_kind='Region', inverse='geocodes', **cascade_args)
+class Geocode(DeclarativeBase):
+    __tablename__ = 'geocode'
+    id = Column(Integer, primary_key=True)
+    region_id = Column(Integer, ForeignKey('region.id'))
 
 
-class Route(Entity):
-    has_field('title', String)
-    belongs_to('region', of_kind='Region', **cascade_args)
-
-
+class Route(DeclarativeBase):
+    __tablename__ = 'route'
+    id = Column(Integer, primary_key=True)
+    region_id = Column(Integer, ForeignKey('region.id'))
