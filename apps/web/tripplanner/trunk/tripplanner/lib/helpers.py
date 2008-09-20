@@ -1,11 +1,12 @@
-"""
-Helper functions
+from webhelpers.html.tags import (
+    link_to,
+    stylesheet_link, javascript_link, image,
+    form, end_form, submit, select, radio, text, password,
+    textarea, literal, hidden, checkbox,)
+from webhelpers.html.tools import button_to
 
-All names available in this module will be available under the Pylons h object.
-"""
-from webhelpers import *
-from pylons.helpers import log
-from pylons.i18n import get_lang, set_lang
+from routes import url_for
+
 from restler.helpers import *
 
 
