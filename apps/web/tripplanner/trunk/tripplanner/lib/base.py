@@ -12,7 +12,7 @@ from byCycle import model
 import tripplanner.lib.helpers as h
 
 
-RestController = restler.BaseController(model)
+RestController = restler.RestController(model)
 
 
 class BaseController(WSGIController): pass

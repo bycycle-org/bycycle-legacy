@@ -8,6 +8,7 @@ from tripplanner.lib.base import *
 class RegionsController(RestController):
 
     def __before__(self):
+        RestController.__before__(self)
         c.service = 'services'
 
     def index(self):
@@ -55,7 +56,7 @@ class RegionsController(RestController):
         params.pop('commit', '')
         if region_id is None:
             exc = InputError(
-                'You must select a region from the drop down list above or ' 
+                'You must select a region from the drop down list above or '
                 'by clicking one of the Xs on the map.')
             exc.title = 'Please Select a Region'
             session['exception'] = exc

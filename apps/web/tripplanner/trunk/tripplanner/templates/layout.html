@@ -1,6 +1,6 @@
 ## -*- coding: UTF-8 -*-
 % if not c.wrap:
-  ${self.body()}
+  ${next.body()}
 % else:
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 
@@ -85,7 +85,7 @@
                     % if c.service == 'geocodes' and c.http_status == 200:
                       <div class="fragment">
                         ${self.json()}
-                        ${self.body()}
+                        ${next.body()}
                       </div>
                     % endif
                     <ul id="location_list" class="result_list"><!-- INTENTIONALLY EMPTY --></ul>
@@ -118,7 +118,7 @@
                     % if c.service == 'routes' and c.http_status == 200:
                       <div class="fragment">
                         ${self.json()}
-                        ${self.body()}
+                        ${next.body()}
                       </div>
                     % endif
                     <p>
