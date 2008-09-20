@@ -6,7 +6,7 @@ byCycle.regions = (function() {
   // Initially set to sw => max_possible, ne => min_possible
   var bounds_all = {sw: {x: 180, y: 90}, ne: {x: -180, y: -90}};
 
-  var regions = $H({
+  var regions = {
     portlandor: {
       key: 'portlandor',
       bounds: {
@@ -22,12 +22,14 @@ byCycle.regions = (function() {
         ne: {x: -87.828241, y: 43.192647}
       }
     }
-  });
+  };
 
-  // Initialize other region attributes and calculate minimum bounds 
+  // Initialize other region attributes and calculate minimum bounds
   // containing all regions
-  var bounds, nw, ne, se, sw;
-  regions.values().each(function (r) {
+  var r, bounds, nw, ne, se, sw;
+  var region_values = util.values(regions);
+  for (var i = 0; i < length; ++i) {
+    r = region_values[i];
     bounds = r.bounds;
     ne = bounds.ne;
     sw = bounds.sw;
@@ -41,7 +43,7 @@ byCycle.regions = (function() {
     if (sw.y < bounds_all.sw.y) { bounds_all.sw.y = sw.y; }
     if (ne.x > bounds_all.ne.x) { bounds_all.ne.x = ne.x; }
     if (ne.y > bounds_all.ne.y) { bounds_all.ne.y = ne.y; }
-  });
+  };
 
   return {
     bounds: bounds_all,

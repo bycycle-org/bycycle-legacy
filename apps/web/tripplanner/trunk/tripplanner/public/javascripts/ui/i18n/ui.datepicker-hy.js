@@ -1,13 +1,10 @@
 /* Armenian(UTF-8) initialisation for the jQuery UI date picker plugin. */
 /* Written by Levon Zakaryan (levon.zakaryan@gmail.com)*/
 jQuery(function($){
-	$.datepicker.regional['hy'] = {
-		clearText: 'Մաքրել', clearStatus: '',
+	$.datepicker.regional['hy'] = {clearText: 'Մաքրել', clearStatus: '',
 		closeText: 'Փակել', closeStatus: '',
-		prevText: '&#x3c;Նախ.',  prevStatus: '',
-		prevBigText: '&#x3c;&#x3c;', prevBigStatus: '',
-		nextText: 'Հաջ.&#x3e;', nextStatus: '',
-		nextBigText: '&#x3e;&#x3e;', nextBigStatus: '',
+		prevText: '&lt;Նախ.',  prevStatus: '',
+		nextText: 'Հաջ.&gt;', nextStatus: '',
 		currentText: 'Այսօր', currentStatus: '',
 		monthNames: ['Հունվար','Փետրվար','Մարտ','Ապրիլ','Մայիս','Հունիս',
 		'Հուլիս','Օգոստոս','Սեպտեմբեր','Հոկտեմբեր','Նոյեմբեր','Դեկտեմբեր'],

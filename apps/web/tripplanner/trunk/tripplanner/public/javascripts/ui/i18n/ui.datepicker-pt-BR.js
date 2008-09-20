@@ -1,13 +1,10 @@
 /* Brazilian initialisation for the jQuery UI date picker plugin. */
 /* Written by Leonildo Costa Silva (leocsilva@gmail.com). */
 jQuery(function($){
-	$.datepicker.regional['pt-BR'] = {
-		clearText: 'Limpar', clearStatus: '',
+	$.datepicker.regional['pt-BR'] = {clearText: 'Limpar', clearStatus: '',
 		closeText: 'Fechar', closeStatus: '',
-		prevText: '&#x3c;Anterior', prevStatus: '',
-		prevBigText: '&#x3c;&#x3c;', prevBigStatus: '',
-		nextText: 'Pr&oacute;ximo&#x3e;', nextStatus: '',
-		nextBigText: '&#x3e;&#x3e;', nextBigStatus: '',
+		prevText: '&lt;Anterior', prevStatus: '',
+		nextText: 'Pr&oacute;ximo&gt;', nextStatus: '',
 		currentText: 'Hoje', currentStatus: '',
 		monthNames: ['Janeiro','Fevereiro','Mar&ccedil;o','Abril','Maio','Junho',
 		'Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'],

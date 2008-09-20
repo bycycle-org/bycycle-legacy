@@ -35,7 +35,7 @@ byCycle.Map.google = {
     };
     var api_key = api_keys[byCycle.domain];
     if (api_key) {
-      byCycle.util.writeScript(api_url + api_key);
+      util.writeScript(api_url + api_key);
       this.api_loaded = true;
       byCycle.logDebug('Google Maps API Loaded');
     } else {
@@ -48,10 +48,10 @@ byCycle.Map.google = {
     if (this.api_loaded && GBrowserIsCompatible()) {
       is_loadable = true;
     } else {
-      $('map_message').show();
+      $j('map_message').show();
       if (!this.api_loaded) {
-        $('map_message').update('No Google Maps API key found for ' +
-                                byCycle.domain);
+        $j('map_message').update(
+          'No Google Maps API key found for ' + byCycle.domain);
       }
     }
     return is_loadable;
@@ -179,7 +179,7 @@ byCycle.Map.google.Map.prototype = Object.extend(new byCycle.Map.base.Map(), {
   getZoom: function() {
     return this.map.getZoom();
   },
-  
+
   setZoom: function(zoom) {
     this.map.setZoom(zoom);
   },
@@ -200,8 +200,8 @@ byCycle.Map.google.Map.prototype = Object.extend(new byCycle.Map.base.Map(), {
     this.map.addOverlay(line);
     return line;
   },
-  
-  drawPolyLineFromEncodedPoints: function (points, levels, color, weight, 
+
+  drawPolyLineFromEncodedPoints: function (points, levels, color, weight,
                                            opacity) {
     var line = new GPolyline.fromEncoded({
       points: points,
@@ -213,7 +213,7 @@ byCycle.Map.google.Map.prototype = Object.extend(new byCycle.Map.base.Map(), {
       numLevels: 4
     });
     this.map.addOverlay(line);
-    return line;  
+    return line;
   },
 
   placeMarker: function(point, icon) {
@@ -384,7 +384,7 @@ byCycle.Map.google.Map.prototype = Object.extend(new byCycle.Map.base.Map(), {
     };
     layer.isPng = function() { return true; };
     layer.getOpacity = function() { return .625; };
-    
+
     return new GTileLayerOverlay(layer);
   }
 });

@@ -35,50 +35,17 @@ a:hover { color: orange; }
 
 
 /* Top level */
-#meta {
-  padding: 2px;
-  font-size: 11px;
-  background: #ddd;
-}
-#meta-left {
-  float: left;
-}
-#meta-right {
-  float: right;
-}
 #wrapper {
   position: relative;
   min-width: 600px;
 }
-#masthead, #input_container {
-  padding: 5px;
+#header {
+  padding: 2px;
+  text-align: right;
+  font-size: 85%;
 }
 #content {
-  border-top: 1px solid #99b3cc;
-}
-
-/* Masthead */
-#masthead {
-  float: left;
-  width: 150px;
-  text-align: right;
-}
-#masthead h1, #masthead h2, #masthead h3, #masthead h4 {
-  margin: 0;
-  margin-bottom: 2px;
-  padding: 0;
-  font-weight: normal;
-}
-#masthead h1 { font-size: 128%; }
-#masthead h2 { font-size: 96%; }
-#masthead h3 { font-size: 80%; }
-#masthead h4 { font-size: 72%; }
-#masthead a {
-  text-decoration: none;
-  color: #000;
-}
-#masthead a:hover {
-  color: orange;
+  /* */
 }
 
 
@@ -90,7 +57,6 @@ a:hover { color: orange; }
 #col-b {
   float: right;
   width: 69%;
-  border-left: 1px solid #99b3cc;
 }
 
 
@@ -99,16 +65,13 @@ a:hover { color: orange; }
   margin-left: 155px;
 }
 #region-search {
-  border: 1px solid #99b3cc;
+  border: 1px solid #888;
   padding: 5px;
 }
 
 /* Input Controls */
-#q {
-  width: 368px;
-}
-#s, #e {
-  width: 170px;
+#q, #s, #e {
+  width: 90%;
 }
 #swap_s_and_e a {
   text-decoration: none;
@@ -123,7 +86,7 @@ a:hover { color: orange; }
 /* Content Column A -- Results and Messages */
 #spinner {
   position: absolute;
-  left: 0px;
+  right: 0px;
   top: 0px;
 }
 .spinner {
@@ -158,7 +121,7 @@ a:hover { color: orange; }
 
 }
 .multi-list li {
-  border-top: 1px solid #99b3cc;
+  border-top: 1px solid #888;
 }
 #route_list .fixed-pane .content-pane {
   padding: 0;
@@ -182,7 +145,7 @@ a:hover { color: orange; }
 
 /* Column B -- Map, map controls, and any other map-related stuff */
 #map-controls {
-  border-bottom: 1px solid #99b3cc;
+  border-bottom: 1px solid #888;
   padding: 5px;
 }
 /* The map object is inserted here */
@@ -229,7 +192,7 @@ div.end,
 div.total-distance,
 div.reverse-directions,
 div.directions div {
-  border-bottom: 1px solid #99b3cc;
+  border-bottom: 1px solid #888;
   padding: 2px;
 }
 div.start a {

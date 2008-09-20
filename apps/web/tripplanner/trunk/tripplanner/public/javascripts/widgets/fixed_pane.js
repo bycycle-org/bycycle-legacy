@@ -3,9 +3,7 @@
  *
  * A pane instance has a title on top and can be open, collapsed, or closed.
  */
-byCycle.widget.FixedPane = Class.create();
-byCycle.widget.FixedPane.prototype = {
-
+Class(byCycle.widget, 'FixedPane', null, {
   // Default properties
   open: true,
   collapsible: true,
@@ -16,18 +14,21 @@ byCycle.widget.FixedPane.prototype = {
    * @param dom_node The DOM container for this control
    */
   initialize: function (dom_node, opts) {
-    $H(opts).each((function (item) {this[item.key] = item.value}).bind(this));
+    var self = this;
+    for (var name in opts) {
+      self[name] = opts[name];
+    }
     this.dom_node = $(dom_node);
-    this.title_bar = this.dom_node.getElementsByClassName('title-bar')[0];
-    this.title = this.title_bar.getElementsByClassName('title')[0].innerHTML;
-    this.content_pane = this.dom_node.getElementsByClassName('content-pane')[0];
+    this.title_bar = $(this.dom_node.find('.title-bar')[0]);
+    this.title = $(this.title_bar.find('.title')[0]).html();
+    this.content_pane = $(this.dom_node.find('.content-pane')[0]);
     this._create_controls();
     !this.open && this.content_pane.hide();
   },
 
   _create_controls: function () {
     if (!(this.collapsible || this.closeable)) return;
-    this.control_bar = this.title_bar.getElementsByClassName('control-bar')[0];
+    this.control_bar = $(this.title_bar.find('.control-bar')[0]);
     if (this.collapsible) {
       this._add_button('#toggle-window-contents', 'Hide window content', '_',
                        this.on_collapse);
@@ -38,13 +39,13 @@ byCycle.widget.FixedPane.prototype = {
   },
 
   _add_button: function (href, title, text, func) {
-    var a = $(document.createElement('a'));
-    a.addClassName('button');
+    var a = $('<a>');
+    a.addClass('button');
     a.href = href;
     a.title = title;
     a.innerHTML = text;
-    Event.observe(a, 'click', func.bindAsEventListener(this));
-    this.control_bar.appendChild(a);
+    a.click(func);
+    this.control_bar.append(a);
   },
 
   on_collapse: function (event) {
@@ -93,4 +94,4 @@ byCycle.widget.FixedPane.prototype = {
       listeners[i]();
     }
   }
-};
+});

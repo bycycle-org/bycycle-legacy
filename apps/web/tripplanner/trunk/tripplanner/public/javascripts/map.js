@@ -1,24 +1,22 @@
 /**
  * byCycle Map namespace
  */
-byCycle.Map = {
-  // Mapping of map type to map object
-  base: {
-    description: 'Default byCycle map type',
-    beforeLoad: function() {},
-    isLoadable: function() {
-      return true;
-    }
+NameSpace('Map', byCycle, {});
+
+
+NameSpace('base', byCycle.Map, {
+  description: 'Default byCycle map type',
+  beforeLoad: function() {},
+  isLoadable: function() {
+    return true;
   }
-  // Other map types will be registered on load
-};
+});
 
 
 /**
  * Base byCycle Map
  */
-byCycle.Map.base.Map = Class.create();
-byCycle.Map.base.Map.prototype = {
+Class(byCycle.Map.base, 'Map', null, {
   /**
    * Map Constructor
    *
@@ -33,10 +31,9 @@ byCycle.Map.base.Map.prototype = {
   },
 
   createMap: function(container) {
-    var map = document.createElement('div');
-    map.style.height = '100%';
-    map.style.overflow = 'auto';
-    container.appendChild(map);
+    var map = $j('<div>');
+    map.css({height: '100%', overflow: 'auto'});
+    container.append(map);
     this.map = map;
     this.put('Default byCycle Map Interface');
   },
@@ -46,7 +43,7 @@ byCycle.Map.base.Map.prototype = {
     div.innerHTML = '#' + (this.put_count = (this.put_count || 1)) + ' ' +
                     content;
     this.put_count += 1;
-    this.map.appendChild(div);
+    this.map.append(div);
     return div;
   },
 
@@ -59,7 +56,7 @@ byCycle.Map.base.Map.prototype = {
       this.container.style.width = dims.w + 'px';
     }
     if (typeof(dims.h) != 'undefined') {
-      this.container.style.height = dims.h + 'px';
+      this.container.height(dims.h + 'px');
     }
   },
 
@@ -142,7 +139,7 @@ byCycle.Map.base.Map.prototype = {
       x: point.x,
       y: point.y,
       toString: function() {
-        return [this.type, ' at ', this.x, ', ', this.y, 
+        return [this.type, ' at ', this.x, ', ', this.y,
         ' [', node.innerHTML, ']'].join('');
       }
     };
@@ -214,6 +211,6 @@ byCycle.Map.base.Map.prototype = {
   },
 
   addListener: function(obj, signal, func) {
-    Event.observe(obj, signal, func);
+    $j(obj).bind(signal, func);
   }
-};
+});
