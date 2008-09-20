@@ -20,9 +20,9 @@
 
     <title>byCycle.org - Bicycle Trip Planner - ${self.region_title()}</title>
 
-    ${h.stylesheet_link_tag('base')}
-    ${h.if_ie(h.stylesheet_link_tag('base_ie'))}
-    ${h.stylesheet_link_tag('print', media='print')}
+    ${h.stylesheet_link('/stylesheets/base.css')}
+    ${h.if_ie(h.stylesheet_link('/stylesheets/base_ie.css'))}
+    ${h.stylesheet_link('/stylesheets/print.css', media='print')}
     ${self.stylesheet_links()}
 
     <link rel="stylesheet" href="http://dev.jquery.com/view/tags/ui/latest/themes/flora/flora.all.css" type="text/css" media="screen" title="Flora (Default)">
@@ -172,20 +172,21 @@
 
 
       <div id="spinner" class="spinner noprint">
-        ${h.image_tag('spinner.gif', width=16, height=16, alt='Click to hide')}
+        ${h.image('spinner.gif', width=16, height=16, alt='Click to hide')}
       </div>
 
 
     </div>
     <!-- /Wrapper -->
 
-    ${h.javascript_include_tag('jquery', 'jquery-ui', 'util', 'bycycle')}
-    ${h.javascript_include_tag('map')}
+    ${h.javascript_link('/javascripts/jquery.js', '/javascripts/jquery-ui.js')}
+    ${h.javascript_link('/javascripts/util.js', '/javascripts/bycycle.js')}
+    ${h.javascript_link('/javascripts/map.js')}
     <script type="text/javascript">
       util.writeScript('/javascripts/' + byCycle.config.map_type + '.js');
     </script>
-    ${h.javascript_include_tag('ui', 'regions')}
-    ${h.javascript_include_tag('query', 'result')}
+    ${h.javascript_link('/javascripts/ui.js', '/javascripts/regions.js')}
+    ${h.javascript_link('/javascripts/query.js', '/javascripts/result.js')}
 
 
     <script type="text/javascript">

@@ -1,68 +1,71 @@
-from paste import httpexceptions
+"""Pylons middleware initialization"""
+from beaker.middleware import CacheMiddleware, SessionMiddleware
 from paste.cascade import Cascade
-from paste.urlparser import StaticURLParser
 from paste.registry import RegistryManager
-from paste.deploy.config import ConfigMiddleware, CONFIG
+from paste.urlparser import StaticURLParser
 from paste.deploy.converters import asbool
-
-from pylons.error import error_template
-from pylons.middleware import ErrorHandler, ErrorDocuments, StaticJavascripts, error_mapper
-import pylons.wsgiapp
+from pylons import config
+from pylons.middleware import ErrorHandler, StatusCodeRedirect
+from pylons.wsgiapp import PylonsApp
+from routes.middleware import RoutesMiddleware
 
 from tripplanner.config.environment import load_environment
-import tripplanner.lib.helpers
-import tripplanner.lib.app_globals as app_globals
+from tripplanner.lib.middleware import RedirectMiddleware
+
 
 def make_app(global_conf, full_stack=True, **app_conf):
-    """Create a WSGI application and return it
-    
-    global_conf is a dict representing the Paste configuration options, the
-    paste.deploy.converters should be used when parsing Paste config options
-    to ensure they're treated properly.
-    
-    """
-    # Setup the Paste CONFIG object
-    CONFIG.push_process_config({'app_conf': app_conf,
-                                'global_conf': global_conf})
+    """Create a Pylons WSGI application and return it
 
-    # Load our Pylons configuration defaults
-    config = load_environment(global_conf, app_conf)
-    config.init_app(global_conf, app_conf, package='tripplanner', template_engine='mako')
-        
-    # Load our default Pylons WSGI app and make g available
-    app = pylons.wsgiapp.PylonsApp(config, helpers=tripplanner.lib.helpers,
-                                   g=app_globals.Globals)
-    g = app.globals
-    app = ConfigMiddleware(app, {'app_conf':app_conf,
-        'global_conf':global_conf})
-    
-    # YOUR MIDDLEWARE
-    # Put your own middleware here, so that any problems are caught by the error
-    # handling middleware underneath
-    
-    # If errror handling and exception catching will be handled by middleware
-    # for multiple apps, you will want to set full_stack = False in your config
-    # file so that it can catch the problems.
+    ``global_conf``
+        The inherited configuration for this application. Normally from
+        the [DEFAULT] section of the Paste ini file.
+
+    ``full_stack``
+        Whether or not this application provides a full WSGI stack (by
+        default, meaning it handles its own exceptions and errors).
+        Disable full_stack when this application is "managed" by
+        another WSGI middleware.
+
+    ``app_conf``
+        The application's local configuration. Normally specified in
+        the [app:<name>] section of the Paste ini file (where <name>
+        defaults to main).
+
+    """
+    debug = asbool(global_conf.get('debug', False))
+
+    # Configure the Pylons environment
+    load_environment(global_conf, app_conf)
+
+    # The Pylons WSGI app
+    app = PylonsApp()
+
+    # CUSTOM MIDDLEWARE HERE (filtered by error handling middlewares)
+    app = RedirectMiddleware(app, config)
+
+    # Routing/Session/Cache Middleware
+    app = RoutesMiddleware(app, config['routes.map'])
+    app = SessionMiddleware(app, config)
+    app = CacheMiddleware(app, config)
+
     if asbool(full_stack):
-        # Change HTTPExceptions to HTTP responses
-        app = httpexceptions.make_middleware(app, global_conf)
-    
-        # Error Handling
-        app = ErrorHandler(app, global_conf, error_template=error_template, **config.errorware)
-        
-        g.error_handler = app
-    
-        if g.debug:
-            pass
-            # Display error documents for 401, 403, 404 status codes (if debug is disabled also
-            # intercepts 500)
-            #app = ErrorDocuments(app, global_conf, mapper=error_mapper, **app_conf)
-    
+        # Handle Python exceptions
+        app = ErrorHandler(app, global_conf, **config['pylons.errorware'])
+
+        # Display error documents for 401, 403, 404 status codes (and
+        # 500 when debug is disabled)
+        if debug:
+            app = StatusCodeRedirect(app)
+        else:
+            app = StatusCodeRedirect(app, [400, 401, 403, 404, 500])
+
     # Establish the Registry for this application
     app = RegistryManager(app)
-    
-    if g.debug:
-        static_app = StaticURLParser(config.paths['static_files'])
-        javascripts_app = StaticJavascripts()
-        app = Cascade([static_app, javascripts_app, app])
+
+    # Static files (If running in production, and Apache or another web
+    # server is handling this static content, remove the following 3 lines)
+    if debug:
+        static_app = StaticURLParser(config['pylons.paths']['static_files'])
+        app = Cascade([static_app, app])
+
     return app
