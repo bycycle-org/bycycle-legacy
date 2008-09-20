@@ -1,12 +1,13 @@
-byCycle.Map.openlayers = {
+NameSpace('openlayers', byCycle.Map, {
   description: 'Open Layers Map',
-  beforeLoad: function() {},
+  beforeLoad: function() {
+    util.writeScript('/javascripts/OpenLayers-2.6.js');
+  },
   isLoadable: function() { return true; }
-};
+});
 
 
-byCycle.Map.openlayers.Map = Class.create();
-byCycle.Map.openlayers.Map.prototype = Object.extend(new byCycle.Map.base.Map(), {
+Class(byCycle.Map.openlayers, 'Map', null, {
   default_zoom: 5,
 
   initialize: function(ui, container) {
@@ -15,11 +16,37 @@ byCycle.Map.openlayers.Map.prototype = Object.extend(new byCycle.Map.base.Map(),
   },
 
   createMap: function(container) {
-    var map= new OpenLayers.Map(container);
-    // OpenLayers ininitialization here
-    var wms = new OpenLayers.Layer.WMS(
-      "http://labs.metacarta.com/wms/vmap0", {'layers':'basic'});
-    map.addLayer(wms);
+    var opts = {
+      theme: null,
+      controls: [],
+      projection: 'EPSG:2913',
+      units: 'feet',
+      maxResolution: 256,
+      maxExtent: new OpenLayers.Bounds(7435781, 447887, 7904954, 877395)
+    };
+    var map = new OpenLayers.Map(container, opts);
+    map.numZoomLevels = 10;
+
+    // Events
+    container.resize(map.updateSize);
+
+    // Controls
+    map.addControl(new OpenLayers.Control.PanZoomBar({zoomWorldIcon: true}));
+    map.addControl(new OpenLayers.Control.Navigation());
+
+    var urlArray = [
+      'http://tilea.trimet.org/tilecache/tilecache.py?',
+      'http://tileb.trimet.org/tilecache/tilecache.py?',
+      'http://tilec.trimet.org/tilecache/tilecache.py?',
+      'http://tiled.trimet.org/tilecache/tilecache.py?'
+    ];
+    var map_layer = new OpenLayers.Layer.WMS("Map", urlArray, {layers: 'baseOSPN', format: 'image/png',  EXCEPTIONS: ''}, {'buffer': 0, transitionEffect: 'none'});
+    //var hybrid_layer = new trimet.layer.Hybrid("Hybrid", urlArray, {layers: 'h10',      format: 'image/jpeg', EXCEPTIONS: ''}, {'buffer': 0, transitionEffect: 'none'});
+    map.addLayers([map_layer]);
+
+    map.setCenter(new OpenLayers.LonLat(7643672, 683029), 2);
+    map.updateSize();
+
     this.map = map;
   },
 
@@ -146,9 +173,5 @@ byCycle.Map.openlayers.Map.prototype = Object.extend(new byCycle.Map.base.Map(),
 
   makePoint: function(point) {
     return point;
-  },
-
-  addListener: function(obj, signal, func) {
-
   }
 });

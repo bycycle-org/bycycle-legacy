@@ -1,13 +1,10 @@
 /* Indonesian initialisation for the jQuery UI date picker plugin. */
 /* Written by Deden Fathurahman (dedenf@gmail.com). */
 jQuery(function($){
-	$.datepicker.regional['id'] = {
-		clearText: 'kosongkan', clearStatus: 'bersihkan tanggal yang sekarang',
+	$.datepicker.regional['id'] = {clearText: 'kosongkan', clearStatus: 'bersihkan tanggal yang sekarang',
 		closeText: 'Tutup', closeStatus: 'Tutup tanpa mengubah',
-		prevText: '&#x3c;mundur', prevStatus: 'Tampilkan bulan sebelumnya',
-		prevBigText: '&#x3c;&#x3c;', prevBigStatus: '',
-		nextText: 'maju&#x3e;', nextStatus: 'Tampilkan bulan berikutnya',
-		nextBigText: '&#x3e;&#x3e;', nextBigStatus: '',
+		prevText: '&lt;mundur', prevStatus: 'Tampilkan bulan sebelumnya',
+		nextText: 'maju&gt;', nextStatus: 'Tampilkan bulan berikutnya',
 		currentText: 'hari ini', currentStatus: 'Tampilkan bulan sekarang',
 		monthNames: ['Januari','Februari','Maret','April','Mei','Juni',
 		'Juli','Agustus','September','Oktober','Nopember','Desember'],

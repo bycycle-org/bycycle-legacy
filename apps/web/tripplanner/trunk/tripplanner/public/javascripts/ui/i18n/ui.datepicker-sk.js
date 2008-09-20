@@ -1,13 +1,10 @@
 /* Slovak initialisation for the jQuery UI date picker plugin. */
 /* Written by Vojtech Rinik (vojto@hmm.sk). */
 jQuery(function($){
-	$.datepicker.regional['sk'] = {
-		clearText: 'Zmazať', clearStatus: '',
+	$.datepicker.regional['sk'] = {clearText: 'Zmazať', clearStatus: '',
 		closeText: 'Zavrieť', closeStatus: '',
-		prevText: '&#x3c;Predchádzajúci',  prevStatus: '',
-		prevBigText: '&#x3c;&#x3c;', prevBigStatus: '',
-		nextText: 'Nasledujúci&#x3e;', nextStatus: '',
-		nextBigText: '&#x3e;&#x3e;', nextBigStatus: '',
+		prevText: '&lt;Predchádzajúci',  prevStatus: '',
+		nextText: 'Nasledujúci&gt;', nextStatus: '',
 		currentText: 'Dnes', currentStatus: '',
 		monthNames: ['Január','Február','Marec','Apríl','Máj','Jún',
 		'Júl','August','September','Október','November','December'],

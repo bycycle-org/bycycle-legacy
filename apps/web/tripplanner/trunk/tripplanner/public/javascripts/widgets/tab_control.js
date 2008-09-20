@@ -1,8 +1,7 @@
 /**
  * Tabinator Tab control
  */
-byCycle.widget.TabControl = Class.create();
-byCycle.widget.TabControl.prototype = {
+Class(byCycle.widget, 'TabControl', null, {
   /**
    * @param dom_node The DOM container (or its ID) for this Tab control
    */
@@ -23,14 +22,17 @@ byCycle.widget.TabControl.prototype = {
     var tabs = {};
     var tab_ids_in_order = [];
     // Get the Tab buttons (usually LIs)
-    var tab_buttons = this.dom_node.getElementsByClassName('tab-buttons')[0];
-    tab_buttons = $A(tab_buttons.getElementsByClassName('tab-button'));
+    var tab_buttons = this.dom_node.find('.tab-buttons .tab-button');
+    console.debug(tab_buttons)
+    var self = this;
     // For each Tab button...
-    tab_buttons.each((function (tab_button) {
+    $.each(tab_buttons, function (tab_button) {
+      tab_button = $(tab_button);
       // ...get the link (A) inside the button
-      var tab_link = tab_button.getElementsByTagName('a')[0];
+      var tab_link = tab_button.find('a');
+      console.debug(tab_link);
       // ...see if the link has a Tab ID (href="#id")
-      var tab_id = this.get_tab_id(tab_link);
+      var tab_id = self.get_tab_id(tab_link);
       // ...and if it does...
       if (tab_id) {
         // ...add a new Tab to this Tab control
@@ -45,14 +47,13 @@ byCycle.widget.TabControl.prototype = {
         tab.content = $(tab_id);
         tabs[tab_id] = tab;
         tab_ids_in_order.push(tab_id);
-        Event.observe(tab_link, 'click',
-                      this.on_click.bindAsEventListener(this));
-        if (!this.first_tab) {
-          this.first_tab = tab;
+        tab_link.click(self.on_click)
+        if (!self.first_tab) {
+          self.first_tab = tab;
         }
       }
-    }).bind(this));
-    this.tabs = $H(tabs);
+    });
+    this.tabs = tabs;
     this.tab_ids_in_order = tab_ids_in_order;
   },
 
@@ -74,20 +75,22 @@ byCycle.widget.TabControl.prototype = {
 
   select_by_id: function(tab_id) {
     // Select tab programatically by ID
-    this.tabs.values().each(this.hide.bind(this));
+    $.each(util.values(this.tabs), function (tab) {
+      $(tab).hide();
+    });
     this.show(this.tabs[tab_id]);
   },
 
   hide: function(tab) {
-    tab.button.removeClassName('selected-tab-button');
-    tab.content.removeClassName('selected-tab-content');
-    tab.content.addClassName('tab-content');
+    tab.button.removeClass('selected-tab-button');
+    tab.content.removeClass('selected-tab-content');
+    tab.content.addClass('tab-content');
   },
 
   show: function(tab) {
-    tab.button.addClassName('selected-tab-button');
-    tab.content.addClassName('selected-tab-content');
-    tab.content.removeClassName('tab-content');
+    tab.button.addClass('selected-tab-button');
+    tab.content.addClass('selected-tab-content');
+    tab.content.removeClass('tab-content');
   },
 
   /**
@@ -112,4 +115,4 @@ byCycle.widget.TabControl.prototype = {
     }
     return initial_tab || this.first_tab;
   }
-};
+});

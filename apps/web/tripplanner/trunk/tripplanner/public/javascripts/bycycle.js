@@ -1,7 +1,7 @@
 /**
  * byCycle namespace
  */
-var byCycle = (function() {
+NameSpace('byCycle', window, function() {
   // private:
   var prod_config = {
     local: 0,
@@ -11,18 +11,29 @@ var byCycle = (function() {
 
   var dev_config = {
     local: 1,
-    map_type: 'base',
+    map_type: 'openlayers',
     map_state: 1
   };
 
   var noop = function() {};
 
   var console_debug = function() {
-	console.debug.apply(console, arguments);
+    console.debug.apply(console, arguments);
   }
 
   var hostname = location.hostname;
   var port = location.port;
+
+  var makeParams = function () {
+    var params = {};
+    var query_string = window.location.search.substring(1);
+    var pairs = query_string.split('&');
+    for (var name_value, i = 0; i < pairs.length; ++i) {
+      name_value = pairs[i].split('=');
+      params[name_value[0]] = name_value[1];
+    }
+    return params;
+  };
 
   // public:
   return {
@@ -37,7 +48,7 @@ var byCycle = (function() {
     prefix: byCycle_prefix,
 
     // URL query parameters as a Hash
-    request_params: $H(location.search.toQueryParams()),
+    request_params: makeParams(),
 
     default_map_type: 'base',
 
@@ -65,4 +76,4 @@ var byCycle = (function() {
 
     logDebug: (debug ? console_debug : noop)
   };
-})();
+}());

@@ -1,1 +1,1 @@
-jquery-ui-personalized-1.6rc1.min.js
+jquery-ui-personalized-1.5.2.min.js

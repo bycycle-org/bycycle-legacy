@@ -20,10 +20,12 @@
 
     <title>byCycle.org - Bicycle Trip Planner - ${self.region_title()}</title>
 
-    ${h.stylesheet_link_tag('base', 'fixed-pane')}
+    ${h.stylesheet_link_tag('base')}
     ${h.if_ie(h.stylesheet_link_tag('base_ie'))}
     ${h.stylesheet_link_tag('print', media='print')}
     ${self.stylesheet_links()}
+
+    <link rel="stylesheet" href="http://dev.jquery.com/view/tags/ui/latest/themes/flora/flora.all.css" type="text/css" media="screen" title="Flora (Default)">
 
     <script type="text/javascript">
       //<![CDATA[
@@ -32,9 +34,6 @@
       byCycle_prefix = '${h.url_for('/')}';
       //]]>
     </script>
-
-    ${h.javascript_include_tag('prototype')}
-    ${h.javascript_include_tag('bycycle', 'util')}
   </head>
 
 
@@ -44,32 +43,11 @@
     <div id="wrapper">
 
 
-      <!-- Masthead -->
-      <div id="masthead" class="noprint">
-        <h1 id="logo">
-          <a href="http://bycycle.org/" title="byCycle.org Home Page">
-          ${h.image_tag('logo.png', title='byCycle.org Home Page', width=150, height=25, alt='byCycle.org')}
-          </a>
-        </h1>
-
-        <h2 id="app-name">
-          ${h.link_to('Bicycle Trip Planner', h.url_for('/'), title='byCycle.org Bicycle Trip Planner (this page)')}
-        </h2>
-
-        <h3 id="app-version">
-          <a href="http://en.wikipedia.org/wiki/Development_stage#Beta"
-             title="Beta? (opens in new window)"
-             target="_blank"
-             >beta</a>
-        </h3>
+      <!-- Header -->
+      <div id="header">
+        <a href="http://info.bycycle.org/about" title="About byCycle.org">About</a>
       </div>
-      <!-- /Masthead -->
-
-
-      <%call expr="self.input_container()" />
-
-
-      <div class="clear"></div>
+      <!-- /Header -->
 
 
       <!-- Content -->
@@ -80,47 +58,91 @@
         <div id="col-a">
 
 
-          <!-- Message Pane -->
-          <%
-            show_msg_pane = (not c.http_status or c.info or c.exception or
-                             (c.http_status and c.http_status > 299))
-            show_error_pane = (c.exception or
-                               (c.http_status and c.http_status > 299))
-            show_info_pane = not show_error_pane
-            msg_pane_style = {'display': ('block' if show_msg_pane else 'none')}
-          %>
+          <!-- Controls -->
+            <ul id="controls" class="ui-accordion-container">
+              <!--<li>
+                <a href="#">byCycle.org</a>
 
-          <%call expr="fixed_pane(id='message_pane', classes=['display-pane'], style=msg_pane_style)">
-            <div id="info_pane" ${h.hide_element(not show_info_pane)}>
-              % if c.info:
-                ${c.info}
-              % else:
-                <p class="no-top-margin">
-                  byCycle needs your support. Spread the word. Make a donation if you can. Thanks.
-                </p>
+                <div>
+                  Welcome to the byCycle.org bicycle trip planner.
+                </div>
+              </li>-->
 
-                <%include file="/widgets/paypal-button.html" />
+              <li id="search-the-map">
+                <a href='#'>Search the Map</a>
 
-                <p class="noprint">
-                  Users should independently verify all information presented here. This
-                  service is provided <b>AS IS</b> with <b>NO WARRANTY</b> of any kind.
-                  <em>Please be careful out there.</em>
-                </p>
+                <div>
+                  <form id="query_form" method="get" action="/regions/portlandor/services/find">
+                    <div>
+                      <input id="q" type="text" value="" title="Enter an address or route" tabindex="1" name="q"/>
+                      <input type="submit" value="Search Map" title="Click to search the map" tabindex="2" name="commit"/>
+                    </div>
+                    <div class="input_label"> Enter an address or intersection -OR- pick a location from the map. </div>
+                  </form>
 
-                <p class="no-bottom-margin">
-                  &copy; 2004-2008 byCycle.org
-                </p>
-              % endif
-            </div>
+                  <div id="locations"
+                       class="${'selected-' if c.service == 'geocodes' else ''}tab-content">
+                    % if c.service == 'geocodes' and c.http_status == 200:
+                      <div class="fragment">
+                        ${self.json()}
+                        ${self.body()}
+                      </div>
+                    % endif
+                    <ul id="location_list" class="result_list"><!-- INTENTIONALLY EMPTY --></ul>
+                  </div>
+                </div>
+              </li>
 
-            <div id="error_pane" ${h.hide_element(not show_error_pane)}>
-              ${self.body()}
-            </div>
-          </%call>
-          <!-- /Message Pane -->
+              <li id="find-a-route">
+                <a href="#">Find a Route</a>
 
+                <div>
+                  <form id="route_form" method="get" action="/regions/portlandor/routes/find">
+                    <div>
+                      <input id="s" type="text" value="" title="Enter start address" tabindex="3" name="s"/>
+                      <br />
+                      <input id="e" type="text" value="" title="Enter end address" tabindex="5" name="e"/>
+                      <br />
+                      <select id="pref" tabindex="8" name="pref">
+                        <option value="default">- Route Type -</option>
+                        <option value="default">Normal</option>
+                        <option value="safer">Safer</option>
+                      </select>
+                      <br />
+                      <input type="submit" value="Find Route" title="Click to find a route" tabindex="9" name="commit"/>
+                    </div>
+                    <div class="input_label"> Enter your start and end addresses and, optionally, select a route type. </div>
+                  </form>
 
-          <%call expr="self.result_pane()" />
+                  <div id="routes">
+                    % if c.service == 'routes' and c.http_status == 200:
+                      <div class="fragment">
+                        ${self.json()}
+                        ${self.body()}
+                      </div>
+                    % endif
+                    <p>
+                      <b>Disclaimer</b>: As you are riding, please keep in mind that you
+                      don't <i>have</i> to follow the suggested route. <i>It may not be
+                      safe at any given point.</i> If you see what looks like an unsafe or
+                      undesirable stretch in the suggested route, you can decide to walk,
+                      ride on the sidewalk, or go a different way.
+                    </p>
+                    <p>
+                      Users should independently verify all information presented here.
+                      This service is provided <b>AS IS</b> with <b>NO WARRANTY</b> of any
+                      kind.
+                    </p>
+                  </div>
+                </div>
+              </li>
+
+              <li id="errors">
+                <a href="#">Errors</a>
+                <ul></ul>
+              </li>
+            </ul>
+          <!-- /Controls -->
 
 
         </div>
@@ -129,9 +151,6 @@
 
         <!-- Column B -->
         <div id="col-b">
-
-
-          <%call expr="self.map_controls()" />
 
 
           <!-- Map -->
@@ -152,7 +171,7 @@
       <!-- /Content -->
 
 
-      <div id="spinner" class="spinner noprint" style="display: none;">
+      <div id="spinner" class="spinner noprint">
         ${h.image_tag('spinner.gif', width=16, height=16, alt='Click to hide')}
       </div>
 
@@ -160,30 +179,26 @@
     </div>
     <!-- /Wrapper -->
 
-
-    <div id="map-buttons" ${h.hide_element()}>
-      <div
-        id="legend-map-button"
-        class="map-button noprint"
-        title="Pop up bike map legend"
-        >
-          <div class="map-button-inner">
-            Bike map legend
-          </div>
-      </div>
-    </div>
-
-
-    ${h.javascript_include_tag('map', 'gmap')}
-    ${h.javascript_include_tag('widgets/fixed_pane', 'ui', 'regions')}
-    ${self.javascript_includes()}
+    ${h.javascript_include_tag('jquery', 'jquery-ui', 'util', 'bycycle')}
+    ${h.javascript_include_tag('map')}
+    <script type="text/javascript">
+      util.writeScript('/javascripts/' + byCycle.config.map_type + '.js');
+    </script>
+    ${h.javascript_include_tag('ui', 'regions')}
+    ${h.javascript_include_tag('query', 'result')}
 
 
     <script type="text/javascript">
       //<![CDATA[
-      // Set up for initialization
+      window.$j = jQuery.noConflict();
+
       byCycle.UI.beforeLoad();
-      ${self.javascript()}
+      byCycle.UI.service = '${c.service}';
+      byCycle.UI.member_name = '${c.member_name}';
+      byCycle.UI.collection_name = '${c.collection_name}';
+      byCycle.UI.region_id = '${c.region.slug if c.region else ""}';
+      byCycle.UI.http_status = ${'%i' % c.http_status if c.http_status else 'undefined'};
+      byCycle.UI.q = '${c.q}';
       //]]>
     </script>
 
@@ -191,7 +206,7 @@
     <!-- TODO: Maybe we could get this dynamically the first time it's needed? -->
     <%include file="/widgets/center_marker.html" />
 
-    <%include file="_google_analytics.html" />
+    ##<%include file="_google_analytics.html" />
   </body>
 </html>
 
@@ -254,5 +269,21 @@
   </div>
 </%def>
 
+<!-- Route preference form control -->
+<%def name='route_pref()'>
+  % if c.region.slug == 'portlandor':
+    <select id="pref" name="pref" tabindex="8">
+      <option value="default">- Route Type -</option>
+      <option value="default">Normal</option>
+      <option value="safer">Safer</option>
+    </select>
+  % endif
+</%def>
+
+<%def name="json()">
+  % if c.format != 'json':
+    ${h.hidden_field(None, value=c.json, class_='json')}
+  % endif
+</%def>
 
 % endif ## if not c.wrap

@@ -5,8 +5,7 @@
  * ``result`` Object representing the result (Evaled JSON string)
  * ``service`` Service type for the result (i.e., where the result came from)
  */
-byCycle.UI.Result = Class.create();
-byCycle.UI.Result.prototype = {
+Class(byCycle.UI, 'Result', null, {
   initialize: function(id, result, service, widget) {
     this.id = id;
     this.result = result;
@@ -22,7 +21,7 @@ byCycle.UI.Result.prototype = {
 
   remove: function() {
     // Remove LI container
-    Element.remove($(this.id).parentNode);
+    $j(this.id).parentNode.remove();
     // Remove map overlays
     var removeOverlay = this.map.removeOverlay.bind(this.map);
     for (var i = 0; i < this.overlays.length; ++i) {
@@ -31,4 +30,4 @@ byCycle.UI.Result.prototype = {
     // Remove this from results list
     delete byCycle.UI.results[this.service][this.id];
   }
-}
+});
