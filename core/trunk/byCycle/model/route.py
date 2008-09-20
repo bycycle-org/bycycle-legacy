@@ -40,7 +40,7 @@ class Route(object):
                                 dst_proj=str(ll_srs))
         self.linestring_ll = linestring_ll
 
-    def to_builtin(self):
+    def to_simple_object(self):
         points = []
         for i in range(self.linestring_ll.numPoints()):
             points.append(self.linestring_ll.pointN(i))
@@ -63,12 +63,12 @@ class Route(object):
             'google_points': google_points,
             'google_levels': google_levels,
         }
-        route['start']['geocode'] = route['start']['geocode'].to_builtin()
-        route['end']['geocode'] = route['end']['geocode'].to_builtin()
+        route['start']['geocode'] = route['start']['geocode'].to_simple_object()
+        route['end']['geocode'] = route['end']['geocode'].to_simple_object()
         return route
 
     def __repr__(self):
-        return repr(self.to_builtin())
+        return repr(self.to_simple_object())
 
     def __str__(self):
         directions = []

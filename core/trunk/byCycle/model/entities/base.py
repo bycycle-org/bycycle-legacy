@@ -358,8 +358,8 @@ class Edge(DeclarativeBase):
         ]
         return joinAttrs(stuff, join_string='\n')
 
-    def to_builtin(self):
-        return super(Edge, self).to_builtin()
+    def to_simple_object(self):
+        return super(Edge, self).to_simple_object()
 
 
 class StreetName(DeclarativeBase):
@@ -384,7 +384,7 @@ class StreetName(DeclarativeBase):
         )
         return joinAttrs(attrs)
 
-    def to_builtin(self):
+    def to_simple_object(self):
         return {
             'prefix': (self.prefix or '').upper(),
             'name': self._name_for_str(),
@@ -449,7 +449,7 @@ class City(DeclarativeBase):
         else:
             return '[No City]'
 
-    def to_builtin(self):
+    def to_simple_object(self):
         return {
             'id': self.id,
             'city': str(self)
@@ -475,7 +475,7 @@ class State(DeclarativeBase):
         else:
             return '[No State]'
 
-    def to_builtin(self):
+    def to_simple_object(self):
         return {
             'id': self.id,
             'code': str(self),
@@ -529,10 +529,10 @@ class Place(DeclarativeBase):
         city_state = joinAttrs([self.city, self.state], ', ')
         return joinAttrs([city_state, str(self.zip_code or '')])
 
-    def to_builtin(self):
+    def to_simple_object(self):
         return {
-            'city': (self.city.to_builtin() if self.city is not None else None),
-            'state': (self.state.to_builtin() if self.state is not None else None),
+            'city': (self.city.to_simple_object() if self.city is not None else None),
+            'state': (self.state.to_simple_object() if self.state is not None else None),
             'zip_code': str(self.zip_code or None)
         }
 

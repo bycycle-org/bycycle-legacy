@@ -76,15 +76,15 @@ class PostalAddress(Address):
     def _get_city_id(self):
         return self.place.city_id
     def _set_city_id(self, id_):
-        self.place.city_id = id_   
+        self.place.city_id = id_
     city_id = property(_get_city_id, _set_city_id)
-    
+
     def _get_city_name(self):
         return self.place.city_name
     def _set_city_name(self, name):
-        self.place.city_name = name       
+        self.place.city_name = name
     city_name = property(_get_city_name, _set_city_name)
-    
+
     def _get_state(self):
         return self.place.state
     def _set_state(self, new_state):
@@ -94,15 +94,15 @@ class PostalAddress(Address):
     def _get_state_code(self):
         return self.place.state_code
     def _set_state_code(self, code):
-        self.place.state_code = code   
+        self.place.state_code = code
     state_code = property(_get_state_code, _set_state_code)
-    
+
     def _get_state_name(self):
         return self.place.state_name
     def _set_state_name(self, name):
-        self.place.state_name = name       
+        self.place.state_name = name
     state_name = property(_get_state_name, _set_state_name)
-    
+
     def _get_zip_code(self):
         return self.place.zip_code
     def _set_zip_code(self, new_zip_code):
@@ -114,16 +114,16 @@ class PostalAddress(Address):
         result = joinAttrs([result, self.place], '\n')
         return result
 
-    def to_builtin(self):
+    def to_simple_object(self):
         return {
             'type': self.__class__.__name__,
             'number': self.number,
             'street_name': self.street_name,
             'place': self.place
         }
-        
+
     def __repr__(self):
-        return repr(self.to_builtin())
+        return repr(self.to_simple_object())
 
 
 class EdgeAddress(PostalAddress):
@@ -138,12 +138,12 @@ class EdgeAddress(PostalAddress):
         if s == str(PostalAddress()):
             s = str(
                 '-'.join(
-                    [str(a) for a in 
+                    [str(a) for a in
                      (self.number, self.network_id, self.region_key)]
                 )
             )
         return s
-    
+
 
 class IntersectionAddress(Address):
 
@@ -255,11 +255,11 @@ class IntersectionAddress(Address):
         else:
             return self.place1
     place = property(_get_place)
-    
+
     def __str__(self):
         return joinAttrs((self.street_name, self.place), '\n')
 
-    def to_builtin(self):
+    def to_simple_object(self):
         return {
             'type': self.__class__.__name__,
             'street_name1': self.street_name1,
@@ -267,9 +267,9 @@ class IntersectionAddress(Address):
             'street_name2': self.street_name2,
             'place2': self.place2
         }
-        
+
     def __repr__(self):
-        return repr(self.to_builtin())
+        return repr(self.to_simple_object())
 
 
 class PointAddress(IntersectionAddress):
@@ -279,7 +279,7 @@ class PointAddress(IntersectionAddress):
         IntersectionAddress.__init__(self)
         self.point = Point(point=point, x=x, y=y, z=z)
         self.region_key = region_key
-        
+
     def _get_x(self):
         return self.point.x
     x = property(_get_x)
@@ -291,7 +291,7 @@ class PointAddress(IntersectionAddress):
     def _get_z(self):
         return self.point.z
     z = property(_get_z)
-    
+
     def __str__(self):
         s = IntersectionAddress.__str__(self)
         if s == str(IntersectionAddress()):

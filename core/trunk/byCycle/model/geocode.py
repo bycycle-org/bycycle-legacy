@@ -64,18 +64,18 @@ class Geocode(object):
         s = ';'.join((s_addr, id_addr))
         return quote_plus(s)
 
-    def to_builtin(self):
+    def to_simple_object(self):
         return {
             'type': self.__class__.__name__,
-            'street_name': self.address.street_name.to_builtin(),
-            'place': self.address.place.to_builtin(),
+            'street_name': self.address.street_name.to_simple_object(),
+            'place': self.address.place.to_simple_object(),
             'address': str(self.address),
             'point': self.xy_ll,
             'network_id': self.network_id
         }
 
     def __repr__(self):
-        return repr(self.to_builtin())
+        return repr(self.to_simple_object())
 
 
 class PostalGeocode(Geocode):
@@ -104,19 +104,19 @@ class PostalGeocode(Geocode):
         self.location = location
         self.edge = edge
 
-    def to_builtin(self):
+    def to_simple_object(self):
         return {
             'type': self.__class__.__name__,
             'number': self.address.number,
-            'street_name': self.address.street_name.to_builtin(),
-            'place': self.address.place.to_builtin(),
+            'street_name': self.address.street_name.to_simple_object(),
+            'place': self.address.place.to_simple_object(),
             'address': str(self.address),
             'point': {'x': self.xy_ll.x, 'y': self.xy_ll.y},
             'network_id': self.network_id
         }
 
     def __repr__(self):
-        return repr(self.to_builtin())
+        return repr(self.to_simple_object())
 
     def __eq__(self, other):
         """Compare two `PostalGeocode`s for equality """
@@ -148,22 +148,22 @@ class IntersectionGeocode(Geocode):
         Geocode.__init__(self, region, address, node.id, xy)
         self.node = node
 
-    def to_builtin(self):
+    def to_simple_object(self):
         x = (self.xy_ll.x if self.xy_ll is not None else None)
         y = (self.xy_ll.y if self.xy_ll is not None else None)
         return {
             'type': self.__class__.__name__,
-            'street_name1': self.address.street_name1.to_builtin(),
-            'street_name2': self.address.street_name2.to_builtin(),
-            'place1': self.address.place1.to_builtin(),
-            'place2': self.address.place2.to_builtin(),
+            'street_name1': self.address.street_name1.to_simple_object(),
+            'street_name2': self.address.street_name2.to_simple_object(),
+            'place1': self.address.place1.to_simple_object(),
+            'place2': self.address.place2.to_simple_object(),
             'address': str(self.address),
             'point': {'x': x, 'y': y},
             'network_id': self.network_id
         }
 
     def __repr__(self):
-        return repr(self.to_builtin())
+        return repr(self.to_simple_object())
 
     def __eq__(self, other):
         """Compare two `IntersectionGeocode`s for equality """
