@@ -107,7 +107,7 @@ def getRegionKey(region):
 
     return `string`
         Lowercase region key.
-        
+
     raise ValueError
         ``region`` is not a known region name, alias, or key.
 
@@ -132,12 +132,12 @@ def getRegionKey(region):
 def getRegion(region):
     """Get `Region` for ``region``.
 
-    If ``region`` is a `Region` or `None`, just return ``region``; if it's a 
+    If ``region`` is a `Region` or `None`, just return ``region``; if it's a
     valid region key, create a new `Region`.
 
     ``region`` `Region` | `string` | `None`
-        Either a `Region` object or a region key. 
-    
+        Either a `Region` object or a region key.
+
     return `Region` | None
 
     raise ValueError
@@ -152,7 +152,7 @@ def getRegion(region):
             if region_key == 'all':
                 _region = None
             else:
-                _region = Region.get_by(slug=region_key)
+                _region = Region.get_by_slug(region_key)
     else:
         _region = None
     return _region

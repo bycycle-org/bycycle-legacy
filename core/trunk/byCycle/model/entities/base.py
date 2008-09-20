@@ -20,60 +20,163 @@ and calling ``base_statements`` first in the subclass definition.
 """
 import sys
 
-from elixir.statements import STATEMENTS
-from elixir import Entity
-from elixir import has_field, belongs_to, has_many
-from elixir import Integer, String, CHAR, Integer
-
-from sqlalchemy import func, select
+from sqlalchemy import func, select, Column, ForeignKey
+from sqlalchemy.orm import relation
+from sqlalchemy.types import Integer, String, CHAR, Integer
+from sqlalchemy.ext.declarative import declarative_base
 
 from cartography import geometry
 
 from byCycle.util import gis, joinAttrs
+from byCycle.model.db import metadata, Session
 from byCycle.model.entities.util import cascade_args
 from byCycle.model.data.sqltypes import POINT, LINESTRING
 
-__all__ = ['Node', 'Edge', 'StreetName', 'City', 'State', 'Place']
+
+__all__ = [
+    'DeclarativeBase', 'Node', 'Edge', 'StreetName', 'City', 'State', 'Place']
 
 
-def base_statements(base_entity_name):
-    """Pseudo-statement to import the statements from a "base" entity.
+class Entity(object):
+    def __init__(self, *args, **kwargs):
+        for name in kwargs:
+            setattr(self, name, kwargs[name])
 
-    When this pseudo-statement is added as the first statement in an
-    ``Entity`` class definition, it effectively copies the statements from the
-    "base" ``Entity`` identified by ``base_entity_name`` to the "child"
-    ``Entity`` that executes the statement.
+    @classmethod
+    def q(cls):
+        return Session.query(cls)
 
-    """
-    entity = globals()[base_entity_name]
-    class_locals = sys._getframe(1).f_locals
-    statements = class_locals[STATEMENTS] = getattr(entity, STATEMENTS)[:]
+    @classmethod
+    def columns(cls):
+        return cls.__table__.columns
+
+    @classmethod
+    def all(cls):
+        return Session.query(cls).all()
+
+    @classmethod
+    def get_by_slug(cls, slug, unique=False):
+        return cls.get_by('slug', slug, unique=True)
+
+    @classmethod
+    def get_by(cls, col, values, unique=False):
+        """Get objects keyed on ``col`` and having the given ``values``.
+
+        ``col``
+            A column name
+
+        ``values``
+            A single value or sequence (`list` or `tuple`) of values.
+
+        ``unique``
+            Whether or not we expect a single value to be returned. Corresponds
+            to a UNIQUE index.
+
+        """
+        if not isinstance(values, (tuple, list)):
+            values = [values]
+        q = Session.query(cls).filter(getattr(cls, col).in_(values))
+        if unique:
+            result = q.one()
+        else:
+            objects = q.all()
+            result = objects[0] if len(objects) == 1 else objects
+        return result
+
+    def to_simple_object(self):
+        """Return an object that can be serialized by ``simplejson.dumps``."""
+        obj = dict(type=self.__class__.__name__)
+        attrs = set(self._attrs)
+        try:
+            self.__table__
+        except AttributeError:
+            pass
+        else:
+            attrs = attrs.union(set(self.__table__.columns.keys()))
+        for name in attrs:
+            value = getattr(self, name)
+            try:
+                value = value.to_simple_object()
+            except AttributeError:
+                pass
+            obj[name] = value
+        return obj
+
+    def to_json(self):
+        return simplejson.dumps(self.to_simple_object())
+
+    @staticmethod
+    def to_json_collection(instances):
+        simple_obj = {'result': [i.to_simple_object() for i in instances]}
+        return simplejson.dumps(simple_obj)
+
+    def __setattr__(self, name, value):
+        # TODO: Apparently, objects aren't ``__init__'d`` when they're pulled
+        #  from the DB. There's probably a better place for this
+        # initialization of ``_attrs``.
+        try:
+            self._attrs
+        except AttributeError:
+            self.__dict__['_attrs'] = set()
+        super(Entity, self).__setattr__(name, value)
+        if not name.startswith('_'):
+            self._attrs.add(name)
+
+    def __repr__(self):
+        try:
+            self.__table__
+        except AttributeError:
+            return object.__repr__(self)
+        else:
+            return str(self.to_simple_object())
 
 
-class Node(Entity):
-    has_field('geom', POINT(4326))
-    has_many('edges_f', of_kind='Edge', inverse='node_f')
-    has_many('edges_t', of_kind='Edge', inverse='node_t')
+DeclarativeBase = declarative_base(metadata=metadata, cls=Entity)
+
+
+class Node(DeclarativeBase):
+    __tablename__ = 'node'
+
+    id = Column(Integer, primary_key=True)
+    permanent_id = Column(Integer)
+    geom = Column(POINT(4326))
+    type = Column(String(30), nullable=False)
+
+    __mapper_args__ = dict(polymorphic_on=type, polymorphic_identity='node')
+
+    edges_f = relation('Edge', primaryjoin='Node.id == Edge.node_f_id')
+    edges_t = relation('Edge', primaryjoin='Node.id == Edge.node_t_id')
 
     @property
     def edges(self):
         return list(self.edges_f) + list(self.edges_t)
 
 
-class Edge(Entity):
-    has_field('addr_f_l', Integer)
-    has_field('addr_f_r', Integer)
-    has_field('addr_t_l', Integer)
-    has_field('addr_t_r', Integer)
-    has_field('even_side', CHAR(1)),
-    has_field('one_way', Integer)
-    has_field('permanent_id', Integer)
-    has_field('geom', LINESTRING(4326))
-    belongs_to('node_f', of_kind='Node', **cascade_args)
-    belongs_to('node_t', of_kind='Node', **cascade_args)
-    belongs_to('street_name', of_kind='StreetName', **cascade_args)
-    belongs_to('place_l', of_kind='Place', **cascade_args)
-    belongs_to('place_r', of_kind='Place', **cascade_args)
+class Edge(DeclarativeBase):
+    __tablename__ = 'edge'
+
+    id = Column(Integer, primary_key=True)
+    addr_f_l = Column(Integer)
+    addr_f_r = Column(Integer)
+    addr_t_l = Column(Integer)
+    addr_t_r = Column(Integer)
+    even_side = Column(CHAR(1))
+    one_way = Column(Integer)
+    permanent_id = Column(Integer)
+    geom = Column(LINESTRING(4326))
+    type = Column(String(30), nullable=False)
+
+    __mapper_args__ = dict(polymorphic_on=type, polymorphic_identity='edge')
+
+    node_f_id = Column(Integer, ForeignKey('node.id'))
+    node_t_id = Column(Integer, ForeignKey('node.id'))
+
+    street_name_id = Column(Integer, ForeignKey('streetname.id'))
+    place_l_id = Column(Integer, ForeignKey('place.id'))
+    place_r_id = Column(Integer, ForeignKey('place.id'))
+
+    node_f = relation('Node', primaryjoin='Edge.node_f_id == Node.id')
+    node_t = relation('Node', primaryjoin='Edge.node_t_id == Node.id')
 
     def to_feet(self):
         return self.to_miles() * 5280.0
@@ -233,7 +336,7 @@ class Edge(Entity):
                             node_f_id=node_id, node_t_id=self.node_t_id,
                             street_name=self.street_name,
                             geom=edge_t_geom)
-        
+
         RegionNode = self.node_f.__class__
         geom = self.geom
         shared_node = RegionNode(id=node_id, geom=geom.pointN(N))
@@ -259,11 +362,18 @@ class Edge(Entity):
         return super(Edge, self).to_builtin()
 
 
-class StreetName(Entity):
-    has_field('prefix', String(2))
-    has_field('name', String)
-    has_field('sttype', String(4))
-    has_field('suffix', String(2))
+class StreetName(DeclarativeBase):
+    __tablename__ = 'streetname'
+
+    id = Column(Integer, primary_key=True)
+    prefix = Column(String(2))
+    name = Column(String)
+    sttype = Column(String(4))
+    suffix = Column(String(2))
+    type = Column(String(30), nullable=False)
+
+    __mapper_args__ = dict(
+        polymorphic_on=type, polymorphic_identity='streetname')
 
     def __str__(self):
         attrs = (
@@ -324,8 +434,14 @@ class StreetName(Entity):
         return (self_attrs == other_attrs)
 
 
-class City(Entity):
-    has_field('city', String)
+class City(DeclarativeBase):
+    __tablename__ = 'city'
+
+    id = Column(Integer, primary_key=True)
+    city = Column(String)
+    type = Column(String(30), nullable=False)
+
+    __mapper_args__ = dict(polymorphic_on=type, polymorphic_identity='city')
 
     def __str__(self):
         if self.city:
@@ -343,9 +459,15 @@ class City(Entity):
         return bool(self.city)
 
 
-class State(Entity):
-    has_field('code', CHAR(2))  # Two-letter state code
-    has_field('state', String)
+class State(DeclarativeBase):
+    __tablename__ = 'state'
+
+    id = Column(Integer, primary_key=True)
+    code = Column(CHAR(2))  # Two-letter state code
+    state = Column(String)
+    type = Column(String(30), nullable=False)
+
+    __mapper_args__ = dict(polymorphic_on=type, polymorphic_identity='state')
 
     def __str__(self):
         if self.code:
@@ -365,10 +487,19 @@ class State(Entity):
 
 
 
-class Place(Entity):
-    has_field('zip_code', Integer)
-    belongs_to('city', of_kind='City', **cascade_args)
-    belongs_to('state', of_kind='State', **cascade_args)
+class Place(DeclarativeBase):
+    __tablename__ = 'place'
+
+    id = Column(Integer, primary_key=True)
+    zip_code = Column(Integer)
+    city_id = Column(Integer, ForeignKey('city.id'))
+    state_id = Column(Integer, ForeignKey('state.id'))
+    type = Column(String(30), nullable=False)
+
+    __mapper_args__ = dict(polymorphic_on=type, polymorphic_identity='place')
+
+    city = relation('City')
+    state = relation('State')
 
     def _get_city_name(self):
         return (self.city.city if self.city is not None else None)
