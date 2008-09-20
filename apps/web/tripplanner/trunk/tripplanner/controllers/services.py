@@ -37,7 +37,7 @@ class ServicesController(RestController):
         """
         q = request.params.get('q', None)
         s = request.params.get('s', None)
-        e = request.params.get('e', None)        
+        e = request.params.get('e', None)
         if q is not None:
             try:
                 # See if query looks like a route
@@ -140,7 +140,7 @@ class ServicesController(RestController):
     def _get_json_content(self, fragment=True):
         """Get a JSON string.
 
-        Assumes members have a ``to_builtin`` method. Modifies the base
+        Assumes members have a ``to_simple_object`` method. Modifies the base
         simple object before JSONification by "wrapping" it in a result
         container object.
 
@@ -176,9 +176,9 @@ class ServicesController(RestController):
             choices = []
             for choice in getattr(self, 'choices', []):
                 if isinstance(choice, Geocode):
-                    choices.append(choice.to_builtin())
+                    choices.append(choice.to_simple_object())
                 else:
-                    choices.append([m.to_builtin() for m in choice])
+                    choices.append([m.to_simple_object() for m in choice])
             if choices:
                 result['choices'] = choices
 
