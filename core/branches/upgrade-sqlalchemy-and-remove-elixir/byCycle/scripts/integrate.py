@@ -95,7 +95,13 @@ def main(argv):
     no_prompt = bool(opts.get('no_prompt', opts.get('only', False)))
     
     imp_path = 'byCycle.model.%s.data.integrator' % region
-    integrator_module = __import__(imp_path, locals(), globals(), [''])
+
+    try:
+        integrator_module = __import__(imp_path, locals(), globals(), [''])
+    except ImportError:
+        import site
+        site.addsitedir('/home/wyatt/Projects/byCycle/envs/trunk/lib/python2.5/site-packages')
+        integrator_module = __import__(imp_path, locals(), globals(), [''])
 
     integrator = integrator_module.Integrator(region, source, layer, **opts)
 
