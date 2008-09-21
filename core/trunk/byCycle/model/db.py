@@ -29,7 +29,6 @@ from byCycle import model_path
 
 
 user = os.environ['USER']
-Session = None
 metadata = MetaData()
 
 def init(**connection_args):
@@ -52,7 +51,7 @@ def getConnectionUri(db_type='postgres', user=user, password=None,
 
 def connectMetadata(metadata):
     """Connect metadata to ``engine``. Use ``md`` if specified."""
-    metadata.connect(engine)
+    metadata.bind = engine
 
 def makeSession():
     connectMetadata()
