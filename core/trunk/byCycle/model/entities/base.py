@@ -27,6 +27,8 @@ from sqlalchemy.ext.declarative import declarative_base
 
 from cartography import geometry
 
+import simplejson
+
 from byCycle.util import gis, joinAttrs
 from byCycle.model.db import metadata, Session
 from byCycle.model.entities.util import cascade_args
@@ -135,10 +137,14 @@ DeclarativeBase = declarative_base(metadata=metadata, cls=Entity)
 
 class Node(DeclarativeBase):
     __tablename__ = 'nodes'
+    __table_args__ = dict(schema='public')
 
     id = Column(Integer, primary_key=True)
     permanent_id = Column(Integer)
     geom = Column(POINT(4326))
+    discriminator = Column('type', String(50))
+
+    __mapper_args__ = {'polymorphic_on': discriminator}
 
     edges_f = relation('Edge', primaryjoin='Node.id == Edge.node_f_id')
     edges_t = relation('Edge', primaryjoin='Node.id == Edge.node_t_id')
@@ -150,6 +156,7 @@ class Node(DeclarativeBase):
 
 class Edge(DeclarativeBase):
     __tablename__ = 'edges'
+    __table_args__ = dict(schema='public')
 
     id = Column(Integer, primary_key=True)
     addr_f_l = Column(Integer)
@@ -158,18 +165,21 @@ class Edge(DeclarativeBase):
     addr_t_r = Column(Integer)
     even_side = Column(CHAR(1))
     one_way = Column(Integer)
-    permanent_id = Column(Integer)
-    geom = Column(LINESTRING(4326))
+    discriminator = Column('type', String(50))
 
-    node_f_id = Column(Integer, ForeignKey('nodes.id'))
-    node_t_id = Column(Integer, ForeignKey('nodes.id'))
+    __mapper_args__ = {'polymorphic_on': discriminator}
 
+    node_f_id = Column(Integer, ForeignKey('public.nodes.id'))
+    node_t_id = Column(Integer, ForeignKey('public.nodes.id'))
     street_name_id = Column(Integer, ForeignKey('street_names.id'))
     place_l_id = Column(Integer, ForeignKey('places.id'))
     place_r_id = Column(Integer, ForeignKey('places.id'))
 
     node_f = relation('Node', primaryjoin='Edge.node_f_id == Node.id')
     node_t = relation('Node', primaryjoin='Edge.node_t_id == Node.id')
+    street_name = relation('StreetName')
+    place_l = relation('Place', primaryjoin='Edge.place_l_id == Place.id')
+    place_r = relation('Place', primaryjoin='Edge.place_r_id == Place.id')
 
     def to_feet(self):
         return self.to_miles() * 5280.0

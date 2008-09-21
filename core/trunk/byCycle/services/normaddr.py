@@ -30,6 +30,7 @@ The service recognizes these types of addresses:
 import re
 from byCycle import services
 from byCycle.services.exceptions import ByCycleError, InputError
+from byCycle.model.db import Session
 from byCycle.model import address, regions, states, sttypes, compass
 from byCycle.model.entities import StreetName, Place
 
@@ -354,18 +355,16 @@ Another possible reason is that you entered a street name without a number. For 
         """
         name = street_name.name
         num_name = self._appendSuffixToNumberStreetName(name)
-        StreetName = self.region.module.StreetName
         if sttype in sttypes_ftoa:
             # If a full street type was entered...
             # E.g., street name is 'johnson' and street type is 'creek'
-            c = StreetName.c
-            count1 = StreetName.count((c.name == num_name) &
-                                      (c.sttype == sttype))
+            q = Session.query(StreetName)
+            count1 = q.filter_by(name=num_name).filter_by(sttype=sttype).count()
             if not count1:
                 # ...and there is no street in the DB with the name & type...
                 # i.e., there's no street named 'johnson' with type 'creek'
                 name_type = '%s %s' % (name, sttype)
-                count2 = StreetName.count(c.name == name_type)
+                count2 = q.filter_by(name=name_type).count()
                 if count2:
                     # ...but there is one with that looks like 'name type'...
                     # i.e., there's a street named 'johnson creek' with type x

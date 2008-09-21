@@ -4,7 +4,7 @@
 #
 # Geocode service.
 #
-# Copyright (C) 2006 Wyatt Baldwin, byCycle.org <wyatt@bycycle.org>.
+# Copyright (C) 2006-2008 Wyatt Baldwin, byCycle.org <wyatt@bycycle.org>.
 # All rights reserved.
 #
 # For terms of use and warranty details, please see the LICENSE file included
@@ -34,6 +34,8 @@ from sqlalchemy.sql import select, func, and_, or_
 from sqlalchemy.exceptions import InvalidRequestError
 
 from byCycle.model import db
+from byCycle.model.db import Session
+from byCycle.model import StreetName, City, State, Place
 from byCycle.model.address import *
 from byCycle.model.geocode import *
 
@@ -48,13 +50,13 @@ class GeocodeError(ByCycleError):
     title = 'Geocode Service Error'
     description = ('An error was encountered in the geocoding service. '
                    'Further information is unavailable.')
-    
+
     def __init__(self, description=None):
         ByCycleError.__init__(self, description)
 
 
 class AddressNotFoundError(GeocodeError, NotFoundError):
-    
+
     title = 'Address Not Found'
     description = 'Unable to find address.'
     explanation = """\
@@ -76,7 +78,7 @@ A few other reasons are...
 
 If you try all of these things and the address still isn't found, you can try the "find address at center" link at the top left of the map. Zoom in on the location you're interested in and center the red dot over it, then click the link. This will find the closest intersection, which is usually close enough.
 """
-    
+
     def __init__(self, address, region=None):
         desc = ['Unable to find address "%s"' % address]
         if region is not None:
@@ -86,16 +88,16 @@ If you try all of these things and the address still isn't found, you can try th
 
 
 class MultipleAddressesNotFoundError(AddressNotFoundError):
-    
+
     title = 'Addresses Not Found'
 
     def __init__(self, addresses, region=None):
         if len(addresses) == 1:
             raise AddressNotFoundError(addresses[0], region)
-        desc = ('Unable to find addresses: "%s".' % 
+        desc = ('Unable to find addresses: "%s".' %
                 '", "'.join([a for a in addresses]))
         GeocodeError.__init__(self, desc)
-    
+
 
 class MultipleMatchingAddressesError(GeocodeError):
 
@@ -151,10 +153,10 @@ class Service(services.Service):
 
         module = self.region.module
         g = globals()
-        entities = 'Edge', 'Node', 'StreetName', 'City', 'State', 'Place'
+        entities = 'Edge', 'Node'
         for name in entities:
             g[name] = getattr(module, name)
-            
+
         if isinstance(oAddr, (NodeAddress, PointAddress)):
             geocodes = self.getPointGeocodes(oAddr)
         elif isinstance(oAddr, (EdgeAddress, PostalAddress)):
@@ -216,7 +218,7 @@ class Service(services.Service):
         """
         geocodes = []
         num = oAddr.number
-        table = Edge.table
+        table = Edge.__table__
         c = Edge.c
 
         clause = [or_(
@@ -259,7 +261,7 @@ class Service(services.Service):
         database.
 
         """
-        layer_edges = Edge.table
+        layer_edges = Edge.__table__
 
         def get_node_ids(street_name, place):
             """Get `set` of node IDs for ``street_name`` and ``place``."""
@@ -290,7 +292,7 @@ class Service(services.Service):
         geocodes = []
         for node in nodes:
             edges = node.edges
-            
+
             # Score the node's edges, finding the ones that best match the
             # cross streets of the input address
             best_score1, edge1 = 0, None

@@ -193,7 +193,11 @@ class Region(DeclarativeBase):
         module = getattr(self, '_module', None)
         if module is None:
             path = 'byCycle.model.%s' % self.slug
-            module = __import__(path, locals(), globals(), [''])
+            exec 'from %s import Node, Edge' % path
+            class M(object): pass
+            module = M()
+            module.Node, module.Edge = Node, Edge
+            #module = __import__(path, locals(), globals(), [''])
             self._module = module
         return module
 

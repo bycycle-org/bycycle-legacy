@@ -18,7 +18,6 @@ This file sets up the model API by exposing all of the model classes.
 
 """
 from byCycle import model_path
-from byCycle.model.db import engine, connection, cursor
-from byCycle.model.db import Session
+from byCycle.model.db import engine, connection, cursor, Session
 from byCycle.model.entities import *
 from byCycle.model.address import *

@@ -60,7 +60,8 @@ bikemodes = {
 
 
 class Raw(DeclarativeBase):
-    __tablename__ = 'raw.%s' % slug
+    __tablename__ = slug
+    __table_args__ = dict(schema='raw')
 
     gid = Column(Integer, primary_key=True, key='id')
 
