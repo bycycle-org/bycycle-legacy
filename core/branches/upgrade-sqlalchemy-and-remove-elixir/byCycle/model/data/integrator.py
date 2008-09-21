@@ -55,7 +55,7 @@ from byCycle.model.sttypes import street_types_ftoa
 class Integrator(object):
     
     db_name = os.environ['USER']
-    base_data_path = os.path.join('/home/%s' % db_name, 'byCycleData')
+    base_data_path = os.path.join(os.environ['HOME'], 'byCycleData')
     overall_timer = meter.Timer(start_now=True)
     timer = meter.Timer(start_now=False)
     

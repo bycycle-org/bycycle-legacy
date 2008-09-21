@@ -21,6 +21,8 @@ from elixir import options_defaults, using_options, using_table_options
 from elixir import has_field, belongs_to, has_many
 from elixir import Integer, String, Float
 
+import simplejson
+
 from byCycle import model_path
 from byCycle.model import db
 from byCycle.model.entities.util import cascade_args, encodeFloat
