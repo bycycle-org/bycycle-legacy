@@ -16,7 +16,6 @@ from sqlalchemy.types import Unicode, Integer, String, CHAR, Integer, Numeric, F
 
 from byCycle.model import db
 from byCycle.model.entities import base
-from byCycle.model.entities.base import DeclarativeBase
 from byCycle.model.entities.util import encodeFloat
 from byCycle.model.data.sqltypes import POINT, LINESTRING
 from byCycle.model.portlandor.data import SRID, slug
@@ -24,32 +23,33 @@ from byCycle.model.portlandor.data import SRID, slug
 from dijkstar import infinity
 
 
-__all__ = ['Edge', 'Node']
+__all__ = ['PortlandORNode', 'PortlandOREdge']
 
 
 table_args = dict(schema='portlandor')
-mapper_args = dict(inherits=None)
 
 
-class Node(base.Node):
+class PortlandORNode(base.Node):
     __tablename__ = 'nodes'
     __table_args__ = table_args
-    __mapper_args__ = mapper_args
+    __mapper_args__ = dict(polymorphic_identity='portlandor_node')
 
-    id = Column(Integer, primary_key=True)
+    id = Column('id', Integer, ForeignKey('public.nodes.id'), primary_key=True)
     geom = Column(POINT(SRID))
 
     @property
     def edges(self):
         return super(Node, self).edges
 
+Node = PortlandORNode
 
-class Edge(base.Edge):
+
+class PortlandOREdge(base.Edge):
     __tablename__ = 'edges'
     __table_args__ = table_args
-    __mapper_args__ = mapper_args
+    __mapper_args__ = dict(polymorphic_identity='portlandor_edge')
 
-    id = Column(Integer, primary_key=True)
+    id = Column('id', Integer, ForeignKey('public.edges.id'), primary_key=True)
     geom = Column(LINESTRING(SRID))
     permanent_id = Column(Numeric(11, 2))
     code = Column(Integer)
@@ -79,3 +79,5 @@ class Edge(base.Edge):
             'up_frac': encodeFloat(row.up_frac),
         }
         return adjustments
+
+Edge = PortlandOREdge

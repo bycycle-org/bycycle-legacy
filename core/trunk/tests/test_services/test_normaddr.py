@@ -14,7 +14,7 @@
 import unittest
 from byCycle.services.normaddr import *
 from byCycle.model import address, db
-from byCycle.model.entities import Region
+from byCycle.model.entities import Region, StreetName
 from sqlalchemy import *
 
 
@@ -108,30 +108,29 @@ class TestPortlandOR(unittest.TestCase):
     ### Edge
 
     def test_PortlandOR_EdgeAddress(self):
-        r = self.region
-        StreetName = r.module.StreetName
-        Edge = r.module.Edge
+        Edge = self.region.module.Edge
+
         # Get street name ID for n alberta st
-        c = StreetName.c
-        street_name = StreetName.selectfirst((c.prefix == 'n') &
-                                               (c.name == 'alberta') &
-                                               (c.sttype == 'st'))
+        q = db.Session.query(StreetName)
+        q = q.filter_by(prefix='n').filter_by(name='alberta')
+        street_name = q.filter_by(sttype='st').first()
+        self.assert_(street_name is not None)
         street_name_id = street_name.id
 
-        # Get edge matching 633 n alberta st
-        c = Edge.c
-        edge = Edge.selectfirst((c.addr_f_l <= 633) & (c.addr_t_l >= 633) &
-                                  (c.street_name_id == street_name_id))
-        network_id = edge.id
+        # Get edge matching 633 N Alberta St
+        num = 633
+        q = db.Session.query(Edge)
+        q = q.filter(Edge.addr_f_l<=num).filter(Edge.addr_t_l>=num)
+        edge = q.filter_by(street_name_id=street_name_id).first()
+        self.assert_(edge is not None)
 
-        q = '633-%s' % network_id
+        q = '%s-%s' % (num, edge.id)
         oAddr = self._query(q, region='portlandor')
         self.assert_(isinstance(oAddr, address.EdgeAddress))
         self.assert_(isinstance(oAddr, address.PostalAddress))
-        self.assertEqual(oAddr.number, 633)
-        self.assertEqual(oAddr.network_id, network_id)
+        self.assertEqual(oAddr.number, num)
+        self.assertEqual(oAddr.network_id, edge.id)
 
-        edge = Edge.get(network_id)
         self.assertEqual(str(edge.street_name), 'N Alberta St')
 
     ### Intersection
