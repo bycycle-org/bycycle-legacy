@@ -33,8 +33,7 @@ from byCycle.model.entities.util import cascade_args
 from byCycle.model.data.sqltypes import POINT, LINESTRING
 
 
-__all__ = [
-    'DeclarativeBase', 'Node', 'Edge', 'StreetName', 'City', 'State', 'Place']
+__all__ = ['DeclarativeBase', 'Node', 'Edge']
 
 
 class Entity(object):
@@ -135,14 +134,11 @@ DeclarativeBase = declarative_base(metadata=metadata, cls=Entity)
 
 
 class Node(DeclarativeBase):
-    __tablename__ = 'node'
+    __tablename__ = 'nodes'
 
     id = Column(Integer, primary_key=True)
     permanent_id = Column(Integer)
     geom = Column(POINT(4326))
-    type = Column(String(30), nullable=False)
-
-    __mapper_args__ = dict(polymorphic_on=type, polymorphic_identity='node')
 
     edges_f = relation('Edge', primaryjoin='Node.id == Edge.node_f_id')
     edges_t = relation('Edge', primaryjoin='Node.id == Edge.node_t_id')
@@ -153,7 +149,7 @@ class Node(DeclarativeBase):
 
 
 class Edge(DeclarativeBase):
-    __tablename__ = 'edge'
+    __tablename__ = 'edges'
 
     id = Column(Integer, primary_key=True)
     addr_f_l = Column(Integer)
@@ -164,16 +160,13 @@ class Edge(DeclarativeBase):
     one_way = Column(Integer)
     permanent_id = Column(Integer)
     geom = Column(LINESTRING(4326))
-    type = Column(String(30), nullable=False)
 
-    __mapper_args__ = dict(polymorphic_on=type, polymorphic_identity='edge')
+    node_f_id = Column(Integer, ForeignKey('nodes.id'))
+    node_t_id = Column(Integer, ForeignKey('nodes.id'))
 
-    node_f_id = Column(Integer, ForeignKey('node.id'))
-    node_t_id = Column(Integer, ForeignKey('node.id'))
-
-    street_name_id = Column(Integer, ForeignKey('streetname.id'))
-    place_l_id = Column(Integer, ForeignKey('place.id'))
-    place_r_id = Column(Integer, ForeignKey('place.id'))
+    street_name_id = Column(Integer, ForeignKey('street_names.id'))
+    place_l_id = Column(Integer, ForeignKey('places.id'))
+    place_r_id = Column(Integer, ForeignKey('places.id'))
 
     node_f = relation('Node', primaryjoin='Edge.node_f_id == Node.id')
     node_t = relation('Node', primaryjoin='Edge.node_t_id == Node.id')
@@ -360,181 +353,3 @@ class Edge(DeclarativeBase):
 
     def to_simple_object(self):
         return super(Edge, self).to_simple_object()
-
-
-class StreetName(DeclarativeBase):
-    __tablename__ = 'streetname'
-
-    id = Column(Integer, primary_key=True)
-    prefix = Column(String(2))
-    name = Column(String)
-    sttype = Column(String(4))
-    suffix = Column(String(2))
-    type = Column(String(30), nullable=False)
-
-    __mapper_args__ = dict(
-        polymorphic_on=type, polymorphic_identity='streetname')
-
-    def __str__(self):
-        attrs = (
-            (self.prefix or '').upper(),
-            self._name_for_str(),
-            (self.sttype or '').title(),
-            (self.suffix or '').upper()
-        )
-        return joinAttrs(attrs)
-
-    def to_simple_object(self):
-        return {
-            'prefix': (self.prefix or '').upper(),
-            'name': self._name_for_str(),
-            'sttype': (self.sttype or '').title(),
-            'suffix': (self.suffix or '').upper()
-        }
-
-    def _name_for_str(self):
-        """Return lower case name if name starts with int, else title case."""
-        name = self.name
-        no_name = '[No Street Name]'
-        try:
-            int(name[0])
-        except ValueError:
-            name = name.title()
-        except TypeError:
-            # Street name not set (`None`)
-            if name is None:
-                name = name = no_name
-            else:
-                name = str(name)
-        except IndexError:
-            # Empty street name ('')
-            name = no_name
-        else:
-            name = name.lower()
-        return name
-
-    def __nonzero__(self):
-        """A `StreetName` must have at least a `name`."""
-        return bool(self.name)
-
-    def __eq__(self, other):
-        self_attrs = (self.prefix, self.name, self.sttype, self.suffix)
-        try:
-            other_attrs = (other.prefix, other.name, other.sttype, other.suffix)
-        except AttributeError:
-            return False
-        return (self_attrs == other_attrs)
-
-    def almostEqual(self, other):
-        self_attrs = (self.name, self.sttype)
-        try:
-            other_attrs = (other.name, other.sttype)
-        except AttributeError:
-            return False
-        return (self_attrs == other_attrs)
-
-
-class City(DeclarativeBase):
-    __tablename__ = 'city'
-
-    id = Column(Integer, primary_key=True)
-    city = Column(String)
-    type = Column(String(30), nullable=False)
-
-    __mapper_args__ = dict(polymorphic_on=type, polymorphic_identity='city')
-
-    def __str__(self):
-        if self.city:
-            return self.city.title()
-        else:
-            return '[No City]'
-
-    def to_simple_object(self):
-        return {
-            'id': self.id,
-            'city': str(self)
-        }
-
-    def __nonzero__(self):
-        return bool(self.city)
-
-
-class State(DeclarativeBase):
-    __tablename__ = 'state'
-
-    id = Column(Integer, primary_key=True)
-    code = Column(CHAR(2))  # Two-letter state code
-    state = Column(String)
-    type = Column(String(30), nullable=False)
-
-    __mapper_args__ = dict(polymorphic_on=type, polymorphic_identity='state')
-
-    def __str__(self):
-        if self.code:
-            return self.code.upper()
-        else:
-            return '[No State]'
-
-    def to_simple_object(self):
-        return {
-            'id': self.id,
-            'code': str(self),
-            'state': str(self.state or '[No State]').title()
-        }
-
-    def __nonzero__(self):
-        return bool(self.code or self.state)
-
-
-
-class Place(DeclarativeBase):
-    __tablename__ = 'place'
-
-    id = Column(Integer, primary_key=True)
-    zip_code = Column(Integer)
-    city_id = Column(Integer, ForeignKey('city.id'))
-    state_id = Column(Integer, ForeignKey('state.id'))
-    type = Column(String(30), nullable=False)
-
-    __mapper_args__ = dict(polymorphic_on=type, polymorphic_identity='place')
-
-    city = relation('City')
-    state = relation('State')
-
-    def _get_city_name(self):
-        return (self.city.city if self.city is not None else None)
-    def _set_city_name(self, name):
-        if self.city is None:
-            self.city = City()
-        self.city.city = name
-    city_name = property(_get_city_name, _set_city_name)
-
-    def _get_state_code(self):
-        return (self.state.code if self.state is not None else None)
-    def _set_state_code(self, code):
-        if self.state is None:
-            self.state = State()
-        self.state.code = code
-    state_code = property(_get_state_code, _set_state_code)
-
-    def _get_state_name(self):
-        return (self.state.state if self.state is not None else None)
-    def _set_state_name(self, name):
-        if self.state is None:
-            self.state = State()
-        self.state.state = name
-    state_name = property(_get_state_name, _set_state_name)
-
-    def __str__(self):
-        city_state = joinAttrs([self.city, self.state], ', ')
-        return joinAttrs([city_state, str(self.zip_code or '')])
-
-    def to_simple_object(self):
-        return {
-            'city': (self.city.to_simple_object() if self.city is not None else None),
-            'state': (self.state.to_simple_object() if self.state is not None else None),
-            'zip_code': str(self.zip_code or None)
-        }
-
-    def __nonzero__(self):
-        return bool(self.city or self.state or (self.zip_code is not None))

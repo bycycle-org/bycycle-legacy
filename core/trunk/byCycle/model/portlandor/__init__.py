@@ -24,18 +24,19 @@ from byCycle.model.portlandor.data import SRID, slug
 from dijkstar import infinity
 
 
-__all__ = ['Edge', 'Node', 'StreetName', 'City', 'State', 'Place']
+__all__ = ['Edge', 'Node']
 
 
 table_args = dict(schema='portlandor')
+mapper_args = dict(inherits=None)
 
 
 class Node(base.Node):
-    __tablename__ = 'node'
+    __tablename__ = 'nodes'
     __table_args__ = table_args
-    __mapper_args__ = dict(polymorphic_identity='portlandor_node')
+    __mapper_args__ = mapper_args
 
-    id = Column(Integer, ForeignKey('node.id'), primary_key=True)
+    id = Column(Integer, primary_key=True)
     geom = Column(POINT(SRID))
 
     @property
@@ -44,11 +45,11 @@ class Node(base.Node):
 
 
 class Edge(base.Edge):
-    __tablename__ = 'edge'
+    __tablename__ = 'edges'
     __table_args__ = table_args
-    __mapper_args__ = dict(polymorphic_identity='portlandor_edge')
+    __mapper_args__ = mapper_args
 
-    id = Column(Integer, ForeignKey('edge.id'), primary_key=True)
+    id = Column(Integer, primary_key=True)
     geom = Column(LINESTRING(SRID))
     permanent_id = Column(Numeric(11, 2))
     code = Column(Integer)
@@ -78,31 +79,3 @@ class Edge(base.Edge):
             'up_frac': encodeFloat(row.up_frac),
         }
         return adjustments
-
-
-class StreetName(base.StreetName):
-    __tablename__ = 'streetname'
-    __table_args__ = table_args
-    __mapper_args__ = dict(polymorphic_identity='portlandor_streetname')
-    id = Column(Integer, ForeignKey('streetname.id'), primary_key=True)
-
-
-class City(base.City):
-    __tablename__ = 'city'
-    __table_args__ = table_args
-    __mapper_args__ = dict(polymorphic_identity='portlandor_city')
-    id = Column(Integer, ForeignKey('city.id'), primary_key=True)
-
-
-class State(base.State):
-    __tablename__ = 'state'
-    __table_args__ = table_args
-    __mapper_args__ = dict(polymorphic_identity='portlandor_state')
-    id = Column(Integer, ForeignKey('state.id'), primary_key=True)
-
-
-class Place(base.Place):
-    __tablename__ = 'place'
-    __table_args__ = table_args
-    __mapper_args__ = dict(polymorphic_identity='portlandor_place')
-    id = Column(Integer, ForeignKey('place.id'), primary_key=True)
