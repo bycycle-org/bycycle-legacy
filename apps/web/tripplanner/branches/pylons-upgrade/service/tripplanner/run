@@ -1,9 +1,0 @@
-#!/bin/sh
-exec 2>&1
-cmd='/usr/bin/env python2.5 -u serve.py'
-if test $UID -eq 0; then
-    exec setuidgid bycycle $cmd
-else
-    exec $cmd
-fi
-
