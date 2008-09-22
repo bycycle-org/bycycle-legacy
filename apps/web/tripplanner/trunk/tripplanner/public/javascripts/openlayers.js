@@ -18,35 +18,41 @@ Class(byCycle.Map.openlayers, 'Map', byCycle.Map.base.Map, {
   createMap: function(container) {
     var opts = {
       theme: null,
-      controls: [],
+      controls: [
+        new OpenLayers.Control.PanZoomBar({zoomWorldIcon: true}),
+        new OpenLayers.Control.LayerSwitcher({'ascending':false}),
+        new OpenLayers.Control.Navigation(),
+        new OpenLayers.Control.OverviewMap()
+      ],
       projection: 'EPSG:2913',
       units: 'feet',
+      numZoomLevels: 10,
       maxResolution: 256,
       maxExtent: new OpenLayers.Bounds(7435781, 447887, 7904954, 877395)
     };
 
     var map = new OpenLayers.Map(container.attr('id'), opts);
-    map.numZoomLevels = 10;
 
-    // Events
-    container.resize(map.updateSize);
-
-    // Controls
-    map.addControl(new OpenLayers.Control.PanZoomBar({zoomWorldIcon: true}));
-    map.addControl(new OpenLayers.Control.Navigation());
-
-    var urlArray = [
+    var tile_urls = [
       'http://tilea.trimet.org/tilecache/tilecache.py?',
       'http://tileb.trimet.org/tilecache/tilecache.py?',
       'http://tilec.trimet.org/tilecache/tilecache.py?',
       'http://tiled.trimet.org/tilecache/tilecache.py?'
     ];
-    var map_layer = new OpenLayers.Layer.WMS("Map", urlArray, {layers: 'baseOSPN', format: 'image/png',  EXCEPTIONS: ''}, {'buffer': 0, transitionEffect: 'none'});
-    //var hybrid_layer = new trimet.layer.Hybrid("Hybrid", urlArray, {layers: 'h10',      format: 'image/jpeg', EXCEPTIONS: ''}, {'buffer': 0, transitionEffect: 'none'});
+    var map_layer = new OpenLayers.Layer.WMS(
+      'Map', tile_urls,
+      {layers: 'baseOSPN', format: 'image/png',  EXCEPTIONS: ''},
+      {buffer: 0, transitionEffect: 'none'});
+
+    // TODO: need trimet.js
+    //var hybrid_layer = new trimet.layer.Hybrid(
+      //'Hybrid', tile_urls,
+      //{layers: 'h10', format: 'image/jpeg', EXCEPTIONS: ''},
+      //{buffer: 0, transitionEffect: 'none'});
     map.addLayers([map_layer]);
 
+    // Init
     map.setCenter(new OpenLayers.LonLat(7643672, 683029), 2);
-    map.updateSize();
 
     this.map = map;
   },

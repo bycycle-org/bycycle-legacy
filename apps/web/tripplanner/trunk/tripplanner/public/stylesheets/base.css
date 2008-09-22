@@ -74,7 +74,7 @@ a:hover { color: orange; }
 
 /* Input Controls */
 #q, #s, #e {
-  width: 90%;
+  width: 99%;
 }
 #swap_s_and_e a {
   text-decoration: none;
