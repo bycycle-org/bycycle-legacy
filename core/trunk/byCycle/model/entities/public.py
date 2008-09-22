@@ -137,12 +137,9 @@ class Region(DeclarativeBase):
 
         timer.start()
         print 'Fetching edge attributes...'
-        c = self.module.Edge
-        cols = [c.id, c.node_f_id, c.node_t_id, c.one_way, c.street_name_id,
-                c.geom, c.code, c.bikemode]
-        cols += [a.name for a in self.edge_attrs]
-        rows = select(cols).execute()
-        num_edges = rows.rowcount
+        q = db.Session.query(self.module.Edge)
+        rows = q.all()
+        num_edges = len(rows)
         took()
 
         timer.start()
@@ -162,8 +159,8 @@ class Region(DeclarativeBase):
             one_way = row.one_way
 
             entry = [encodeFloat(row.geom.length())]
-            entry += [row[attr] for attr in self.required_edge_attrs[1:]]
-            entry += [row[a.name] for a in self.edge_attrs]
+            entry += [getattr(row, attr) for attr in self.required_edge_attrs[1:]]
+            entry += [getattr(row, a.name) for a in self.edge_attrs]
             for k in adjustments:
                 entry[self.edge_attrs_index[k]] = adjustments[k]
             edges[ix] = tuple(entry)
@@ -181,7 +178,7 @@ class Region(DeclarativeBase):
 
             meter.update(meter_i)
             meter_i += 1
-        rows.close()
+        db.Session.clear()
         print
         took()
 
