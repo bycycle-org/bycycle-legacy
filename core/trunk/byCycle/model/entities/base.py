@@ -140,10 +140,9 @@ class Node(DeclarativeBase):
     __table_args__ = dict(schema='public')
 
     id = Column(Integer, primary_key=True)
-    geom = Column(POINT(4326))
-    discriminator = Column('type', String(50))
+    type = Column('type', String(50))
 
-    __mapper_args__ = {'polymorphic_on': discriminator}
+    __mapper_args__ = {'polymorphic_on': type}
 
     edges_f = relation('Edge', primaryjoin='Node.id == Edge.node_f_id')
     edges_t = relation('Edge', primaryjoin='Node.id == Edge.node_t_id')
@@ -158,16 +157,15 @@ class Edge(DeclarativeBase):
     __table_args__ = dict(schema='public')
 
     id = Column(Integer, primary_key=True)
-    geom = Column(LINESTRING(4326))
     addr_f_l = Column(Integer)
     addr_f_r = Column(Integer)
     addr_t_l = Column(Integer)
     addr_t_r = Column(Integer)
     even_side = Column(CHAR(1))
     one_way = Column(Integer)
-    discriminator = Column('type', String(50))
+    type = Column('type', String(50))
 
-    __mapper_args__ = {'polymorphic_on': discriminator}
+    __mapper_args__ = {'polymorphic_on': type}
 
     node_f_id = Column(Integer, ForeignKey('public.nodes.id'))
     node_t_id = Column(Integer, ForeignKey('public.nodes.id'))

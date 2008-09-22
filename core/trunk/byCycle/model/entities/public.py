@@ -137,7 +137,7 @@ class Region(DeclarativeBase):
 
         timer.start()
         print 'Fetching edge attributes...'
-        c = self.module.Edge.c
+        c = self.module.Edge
         cols = [c.id, c.node_f_id, c.node_t_id, c.one_way, c.street_name_id,
                 c.geom, c.code, c.bikemode]
         cols += [a.name for a in self.edge_attrs]

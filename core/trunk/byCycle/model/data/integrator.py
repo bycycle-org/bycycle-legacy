@@ -48,7 +48,7 @@ from byCycle.util import meter
 
 from byCycle import model_path
 from byCycle.model import db
-from byCycle.model.entities import public
+from byCycle.model.entities import base, public
 from byCycle.model.sttypes import street_types_ftoa
 
 
@@ -191,7 +191,7 @@ class Integrator(object):
 
     def drop_schema(self):
         """Drop SCHEMA for region."""
-        for entity in (self.region_module.Node, self.region_module.Edge):
+        for entity in (self.region_module.Edge, self.region_module.Node):
             for obj in db.Session.query(entity).all():
                 db.Session.delete(obj)
         db.Session.flush()
@@ -215,10 +215,12 @@ class Integrator(object):
         db.createAllTables()
         schema = self.region_module.Edge.__table__.schema
         SRID = self.region_data_module.SRID
-        db.addGeometryColumn(self.region_module.Edge.__table__.name, SRID,
-                             'LINESTRING', schema=schema)
-        db.addGeometryColumn(self.region_module.Node.__table__.name, SRID,
-                             'POINT', schema=schema)
+        db.addGeometryColumn(
+            self.region_module.Edge.__table__.name, SRID, 'LINESTRING',
+            schema=schema)
+        db.addGeometryColumn(
+            self.region_module.Node.__table__.name, SRID,
+            'POINT', schema=schema)
 
     def transfer_street_names(self):
         """Transfer street names from raw table."""
@@ -332,20 +334,26 @@ class Integrator(object):
         raw_records_t = self.get_records(
             [c.node_t_id, func.endPoint(c.geom)], distinct=False)
 
+        base_records, records = [], []
         seen_nodes = set()
-        def collect_records(raw_records):
+        def collect_records(raw_records, id):
             for r in raw_records:
-                node_id = r[0]
-                if node_id in seen_nodes:
+                permanent_id = r[0]
+                if permanent_id in seen_nodes:
                     continue
-                seen_nodes.add(node_id)
+                seen_nodes.add(permanent_id)
                 geom = r[1]
-                db.Session.add(Node(geom=geom))
-        collect_records(raw_records_f)
-        collect_records(raw_records_t)
+                base_records.append(dict(id=id, type='%s_node' % self.region_key))
+                records.append(dict(id=id, permanent_id=permanent_id, geom=geom))
+                id += 1
+            return id
+        next_id = 1  # TODO: next available PK ID
+        next_id = collect_records(raw_records_f, next_id)
+        collect_records(raw_records_t, next_id)
 
         self.echo('Inserting %i records into node table...' % len(seen_nodes))
-        db.Session.flush()
+        self.insert_records(base.Node.__table__, base_records, 'nodes')
+        self.insert_records(Node.__table__, records, '%s.nodes' % self.region_key)
 
         self.vacuum_entity(Node)
 
@@ -354,6 +362,7 @@ class Integrator(object):
         region = self.get_or_create_region()
 
         Edge = self.region_module.Edge
+        Node = self.region_module.Node
         StreetName = public.StreetName
         Place = public.Place
         cities_atof = self.region_data_module.cities_atof
@@ -397,13 +406,17 @@ class Integrator(object):
 
         self.echo('Transferring edges...')
         i = 1
+        id = 1  # TODO: Get next PK ID
         step = 2500
         num_records = raw_records.rowcount
-        records = []
+        base_records, records = [], []
+        node_records = self.get_records((Node.id, Node.permanent_id))
+        node_map = dict([(nr[1], nr[0]) for nr in node_records])
         for r in raw_records:
-            print r.geom
             even_side = self.getEvenSide(
                 r.addr_f_l, r.addr_f_r, r.addr_t_l, r.addr_t_r)
+            node_f_id = node_map[r.node_f_id]
+            node_t_id = node_map[r.node_t_id]
             sttype = street_types_ftoa.get(r.sttype, r.sttype)
             st_name_id = street_names[(r.prefix, r.name, sttype, r.suffix)]
             city_l = cities_atof[r.city_l]
@@ -414,19 +427,24 @@ class Integrator(object):
             zr = int(r.zip_code_r) if r.zip_code_r is not None else None
             place_l_id = places[(city_l, state_l, zl)]
             place_r_id = places[(city_r, state_r, zr)]
-            record = dict(
+            base_record = dict(
+                id=id,
                 addr_f_l=r.addr_f_l or None,
                 addr_f_r=r.addr_f_r or None,
                 addr_t_l=r.addr_t_l or None,
                 addr_t_r=r.addr_t_r or None,
                 even_side=even_side,
                 one_way=one_ways[r.one_way],
-                node_f_id=r.node_f_id,
-                node_t_id=r.node_t_id,
+                node_f_id=node_f_id,
+                node_t_id=node_t_id,
                 street_name_id=st_name_id,
                 place_l_id=place_l_id,
                 place_r_id=place_r_id,
-                # fields that may have a different *type* per region:
+                type='%s_edge' % self.region_key,
+            )
+            base_records.append(base_record)
+            record = dict(
+                id=id,
                 geom=None,#r.geom.geometryN(0),
                 permanent_id=r.permanent_id,
                 bikemode=bikemodes[r.bikemode],
@@ -438,14 +456,17 @@ class Integrator(object):
             records.append(record)
             if (i % step) == 0:
                 self.echo('Inserting %s records into edge table...' % step)
-                self.insert_records(Edge.__table__, records, 'edges')
+                self.insert_records(base.Edge.__table__, base_records, 'edges')
+                self.insert_records(Edge.__table__, records, '%s.edges' % self.region_key)
                 self.echo('%i down, %i to go' % (i, num_records - i))
-                records = []
+                base_records, records = [], []
             i += 1
+            id += 1
         if records:
             self.echo('Inserting remaining records into edge table...')
-            self.insert_records(Edge.__table__, records, 'edges')
-        self.vacuum_entity(Edge)
+            self.insert_records(base.Edge.__table__, base_records, 'edges')
+            self.insert_records(Edge.__table__, records, '%s.edges' % self.region_key)
+            self.vacuum_entity(Edge)
 
     def vacuum_all_tables(self):
         """Vacuum all tables."""
