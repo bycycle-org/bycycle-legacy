@@ -4,7 +4,7 @@
 #
 # Unit tests for geocode service.
 #
-# Copyright (C) 2006 Wyatt Baldwin, byCycle.org <wyatt@bycycle.org>.
+# Copyright (C) 2006-2008 Wyatt Baldwin, byCycle.org <wyatt@bycycle.org>.
 # All rights reserved.
 #
 # For terms of use and warranty details, please see the LICENSE file included
@@ -13,6 +13,7 @@
 ################################################################################
 import unittest
 from byCycle.util import meter
+from byCycle.model import StreetName
 from byCycle.model.geocode import *
 from byCycle.services.geocode import *
 
@@ -42,22 +43,23 @@ class TestPortlandOR(unittest.TestCase):
     ### Edge
 
     def test_EdgeAddress(self):
-        # Get street name ID for n alberta st
-        StreetName = self.service.region.module.StreetName
         Edge = self.service.region.module.Edge
-        c = StreetName.c
-        street_name = StreetName.selectfirst((c.prefix == 'n') &
-                                             (c.name == 'alberta') & 
-                                             (c.sttype == 'st'))
+
+        # Get street name ID for n alberta st
+        q = db.Session.query(StreetName)
+        q = q.filter_by(prefix='n').filter_by(name='alberta')
+        street_name = q.filter_by(sttype='st').first()
+        self.assert_(street_name is not None)
         street_name_id = street_name.id
 
-        # Get edge matching 633 n alberta st        
-        c = Edge.c
-        edge = Edge.selectfirst((c.addr_f_l <= 633) & (c.addr_t_l >= 633) &
-                                (c.street_name_id == street_name_id))
-        network_id = edge.id
-        
-        q = '633-%s' % network_id
+        # Get edge matching 633 N Alberta St
+        num = 633
+        q = db.Session.query(Edge)
+        q = q.filter(Edge.addr_f_l<=num).filter(Edge.addr_t_l>=num)
+        edge = q.filter_by(street_name_id=street_name_id).first()
+        self.assert_(edge is not None)
+
+        q = '%s-%s' % (num, edge.id)
         geocode = self._query(q)
 
     def test_EdgeAddress_BadID(self):

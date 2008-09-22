@@ -51,7 +51,9 @@ class Region(DeclarativeBase):
     block_length = Column(Float)
     jog_length = Column(Float)
 
-    edge_attrs = relation('EdgeAttr', backref='region', order_by='id')
+    edge_attrs = relation(
+        'EdgeAttr', backref='region', order_by='EdgeAttr.id',
+        cascade='all, delete, delete-orphan')
 
     required_edge_attrs = [
         'length',

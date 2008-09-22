@@ -218,14 +218,13 @@ class Service(services.Service):
         """
         geocodes = []
         num = oAddr.number
-        table = Edge.__table__
-        c = Edge.c
+        q = Session.query(Edge)
 
         clause = [or_(
-            and_(num >= func.least(c.addr_f_l, c.addr_f_r),
-                 num <= func.greatest(c.addr_t_l, c.addr_t_r)),
-            and_(num >= func.least(c.addr_t_l, c.addr_t_r),
-                 num <= func.greatest(c.addr_f_l, c.addr_f_r))
+            and_(num >= func.least(Edge.addr_f_l, Edge.addr_f_r),
+                 num <= func.greatest(Edge.addr_t_l, Edge.addr_t_r)),
+            and_(num >= func.least(Edge.addr_t_l, Edge.addr_t_r),
+                 num <= func.greatest(Edge.addr_f_l, Edge.addr_f_r))
         )]
 
         try:
@@ -235,10 +234,10 @@ class Service(services.Service):
             # No network ID, so look up address by street name and place
             self.append_street_name_where_clause(clause, oAddr.street_name)
             self.append_place_where_clause(clause, oAddr.place)
-            edges = Edge.select(and_(*clause))
+            edges = q.filter(and_(*clause))
         else:
-            clause.append(c.id == network_id)
-            edges = Edge.select(and_(*clause))
+            clause.append(Edge.id == network_id)
+            edges = q.filter(and_(*clause))
 
         if not edges:
             raise AddressNotFoundError(address=oAddr, region=self.region)
@@ -266,8 +265,8 @@ class Service(services.Service):
         def get_node_ids(street_name, place):
             """Get `set` of node IDs for ``street_name`` and ``place``."""
             ids = set()
-            c = Edge.c
-            select_ = select([c.node_f_id, c.node_t_id])
+            q = Session.query(Edge)
+            select_ = q.filter([Edge.node_f_id, Edge.node_t_id])
             self.append_street_name_where_clause(select_, street_name)
             self.append_place_where_clause(select_, place)
             result = select_.execute()

@@ -140,7 +140,6 @@ class Node(DeclarativeBase):
     __table_args__ = dict(schema='public')
 
     id = Column(Integer, primary_key=True)
-    permanent_id = Column(Integer)
     geom = Column(POINT(4326))
     discriminator = Column('type', String(50))
 
@@ -159,6 +158,7 @@ class Edge(DeclarativeBase):
     __table_args__ = dict(schema='public')
 
     id = Column(Integer, primary_key=True)
+    geom = Column(LINESTRING(4326))
     addr_f_l = Column(Integer)
     addr_f_r = Column(Integer)
     addr_t_l = Column(Integer)
@@ -252,15 +252,13 @@ class Edge(DeclarativeBase):
                 dist_from_min_addr = num - min_addr
                 location = float(dist_from_min_addr) / edge_len
 
-        c = self.c
-
         # Function to get interpolated point
-        f = func.line_interpolate_point(c.geom, location)
+        f = func.line_interpolate_point(Edge.geom, location)
         # Function to get WKB version of lat/long point
         f = func.asbinary(f)
 
         # Query DB and get WKB POINT
-        select_ = select([f.label('wkb_point')], c.id == self.id)
+        select_ = select([f.label('wkb_point')], Edge.id == self.id)
         result = select_.execute()
         wkb_point = result.fetchone().wkb_point
 

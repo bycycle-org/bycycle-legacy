@@ -52,6 +52,9 @@ from byCycle.model.entities import public
 from byCycle.model.sttypes import street_types_ftoa
 
 
+db.connectMetadata()
+
+
 class Integrator(object):
 
     db_name = os.environ['USER']
@@ -61,15 +64,7 @@ class Integrator(object):
 
     def __init__(self, region_key, source, layer, no_prompt, **opts):
         self.region_key = region_key
-
-        path = 'byCycle.model.%s' % region_key
-        self.region_module = __import__(path, locals(), globals(), [''])
-
-        path = path + '.data'
-        self.region_data_module = __import__(path, locals(), globals(), [''])
-
         self.raw_table = self.region_data_module.Raw.__table__
-
         self.source = source
         self.layer = layer
         self.no_prompt = no_prompt
@@ -109,7 +104,8 @@ class Integrator(object):
         overall_time = self.overall_timer.stop()
         print 'Total time: %s' % self.getTimeWithUnits(overall_time)
 
-    #-- Actions the user may or may not want to take. --#
+    # Actions the user may or may not want to take ----------------------------
+
     def shp2sql(self):
         """Convert shapefile to raw SQL and save to file."""
         # Path to regional shapefiles (i.e., to a particular datasource for
@@ -143,66 +139,73 @@ class Integrator(object):
         self.system(sql2db_cmd)
         db.vacuum('raw.%s' % self.region_key)
 
-    def create_public_tables(self):
-        """Create public tables (shared by all regions)."""
-        public.metadata.create_all()
-
     def delete_region(self):
-        """Delete region and any dependent records (CASCADE)."""
-        Q = "DELETE FROM region WHERE slug = '%s'" % self.region_key
-        self.echo(Q)
-        db.execute(Q)
-        db.commit()
+        """Delete region and any dependent records."""
+        try:
+            region = public.Region.get_by_slug(self.region_key)
+        except sqlalchemy.orm.exc.NoResultFound:
+            pass
+        else:
+            db.Session.delete(region)
+            db.Session.flush()
 
     def get_or_create_region(self):
         """Create region."""
         public.Region.__table__.create(checkfirst=True)
         try:
-            region = public.Region.get_by(slug=self.region_key)
-        except sqlalchemy.exceptions.SQLError, e:
-            self.echo(e)
+            region = public.Region.get_by_slug(self.region_key)
+        except sqlalchemy.orm.exc.NoResultFound, e:
+            self.echo('Region %s not found.' % self.region_key)
             region = None
         if region is None:
-            mod = self.region_data_module
-            record = dict(
-                title=mod.title,
+            self.echo('Creating region %s.' % self.region_key)
+
+            data = self.region_data_module
+            region = public.Region(
+                title=data.title,
                 slug=self.region_key,
-                srid=mod.SRID,
-                units=mod.units,
-                earth_circumference=mod.earth_circumference,
-                block_length=mod.block_length,
-                jog_length=mod.jog_length,
+                srid=data.SRID,
+                units=data.units,
+                earth_circumference=data.earth_circumference,
+                block_length=data.block_length,
+                jog_length=data.jog_length,
             )
-            self.insert_records(public.Region.__table__, [record], 'region')
-            region = public.Region.get_by(slug=self.region_key)
+
+            # Add edge attributes
+            self.echo('Adding edge attributes to region.')
             region.edge_attrs = []
-            region.flush()
-            attrs = [dict(name=a, region_id=region.id) for a in mod.edge_attrs]
-            self.insert_records(public.EdgeAttr.__table__, attrs, 'edge attributes')
-            region.refresh()
+            for a in self.region_data_module.edge_attrs:
+                region.edge_attrs.append(public.EdgeAttr(name=a))
+
+            db.Session.add(region)
+            db.Session.flush()
+            db.Session.refresh(region)
         return region
 
     def drop_schema(self):
         """Drop SCHEMA for region."""
+        for entity in (self.region_module.Node, self.region_module.Edge):
+            for obj in db.Session.query(entity).all():
+                db.Session.delete(obj)
+        db.Session.flush()
         db.dropSchema(self.region_key, cascade=True)
 
     def create_schema(self):
-        """Create database SCHEMA for current region."""
+        """Create database SCHEMA for region including public tables."""
         db.createSchema(self.region_key)
-        self.region_module.metadata.create_all()
+        db.createAllTables()
 
     def drop_tables(self):
         """Drop all regional tables (not including raw)."""
         region = self.get_or_create_region()
-        md = region.module.metadata
-        for t in md.table_iterator():
-            db.dropTable(t, cascade=True)
-
+        for table in db.metadata.sorted_tables:
+            if table.schema == self.region_module.Edge.__table__.schema:
+                db.dropTable(table, cascade=True)
 
     def create_tables(self):
         """Create all regional tables. Ignores existing tables."""
         region = self.get_or_create_region()
-        region.module.metadata.create_all()
+        db.createAllTables()
         schema = self.region_module.Edge.__table__.schema
         SRID = self.region_data_module.SRID
         db.addGeometryColumn(self.region_module.Edge.__table__.name, SRID,
@@ -212,13 +215,13 @@ class Integrator(object):
 
     def transfer_street_names(self):
         """Transfer street names from raw table."""
-        StreetName = self.region_module.StreetName
+        StreetName = public.StreetName
         region = self.get_or_create_region()
         region_id = region.id
-        c = self.raw_table.c
+        c = self.region_data_module.Raw.__table__.c
         cols = map(func.lower, (c.prefix, c.name, c.sttype, c.suffix))
         raw_records = self.get_records(cols)
-        c = StreetName.c
+        c = StreetName
         cols = map(func.lower, (c.prefix, c.name, c.sttype, c.suffix))
         existing_records = self.get_records(cols)
         new_records = raw_records.difference(existing_records)
@@ -233,14 +236,14 @@ class Integrator(object):
 
     def transfer_cities(self):
         """Transfer cities from raw table."""
-        City = self.region_module.City
+        City = public.City
         cities_atof = self.region_data_module.cities_atof
-        c = self.raw_table.c
+        c = self.region_data_module.Raw.__table__.c
         raw_records_l = self.get_records([func.lower(c.city_l)])
         raw_records_r = self.get_records([func.lower(c.city_r)])
         raw_records = raw_records_l.union(raw_records_r)
         raw_records = set([(cities_atof[r[0]],) for r in raw_records])
-        existing_records = self.get_records([City.c.city])
+        existing_records = self.get_records([City.city])
         new_records = raw_records.difference(existing_records)
         records = []
         city_names = []
@@ -253,10 +256,10 @@ class Integrator(object):
 
     def transfer_states(self):
         """Transfer states."""
-        State = self.region_module.State
+        State = public.State
         states = self.region_data_module.states
         raw_records = set(states.items())
-        existing_records = self.get_records([State.c.code, State.c.state])
+        existing_records = self.get_records([State.code, State.state])
         new_records = raw_records.difference(existing_records)
         records = []
         codes = []
@@ -269,13 +272,13 @@ class Integrator(object):
 
     def transfer_places(self):
         """Create places."""
-        City = self.region_module.City
-        State = self.region_module.State
-        Place = self.region_module.Place
+        City = public.City
+        State = public.State
+        Place = public.Place
         cities_atof = self.region_data_module.cities_atof
         states = self.region_data_module.states
 
-        c = self.raw_table.c
+        c = self.region_data_module.Raw.__table__.c
         cols = (func.lower(c.city_l), c.zip_code_l)
         raw_records_l = self.get_records(cols)
         cols = (func.lower(c.city_r), c.zip_code_r)
@@ -289,20 +292,22 @@ class Integrator(object):
             return city, state, zip_code
         raw_records = set([get_city_state_and_zip(r) for r in raw_records])
 
-        places = Place.select()
+        places = db.Session.query(Place).all()
         existing_records = set([(p.city_name, p.state_code, p.zip_code) for p
                                 in places])
 
         records = []
         new_records = raw_records.difference(existing_records)
+        city_q = db.Session.query(City)
+        state_q = db.Session.query(State)
         for r in new_records:
             city_name, state_code, zc = r[0], r[1], r[2]
-            city = City.get_by(city=city_name)
-            state = State.get_by(code=state_code, state=states[state_code])
+            city = city_q.filter_by(city=city_name).one()
+            state = state_q.filter_by(code=state_code, state=states[state_code]).one()
             city_id = None if city is None else city.id
             state_id = None if state is None else state.id
-            records.append(dict(city_id=city_id, state_id=state_id,
-                                zip_code=zc))
+            records.append(
+                dict(city_id=city_id, state_id=state_id, zip_code=zc))
         self.insert_records(Place.__table__, records, 'places')
 
         self.vacuum_entity(Place)
@@ -314,29 +319,26 @@ class Integrator(object):
         region = self.get_or_create_region()
 
         self.echo('Getting columns from raw table...')
-        c = self.raw_table.c
-        raw_records_f = self.get_records([c.node_f_id,
-                                          func.startPoint(c.geom)],
-                                          distinct=False)
-        raw_records_t = self.get_records([c.node_t_id,
-                                          func.endPoint(c.geom)],
-                                          distinct=False)
+        c = self.region_data_module.Raw.__table__.c
+        raw_records_f = self.get_records(
+            [c.node_f_id, func.startPoint(c.geom)], distinct=False)
+        raw_records_t = self.get_records(
+            [c.node_t_id, func.endPoint(c.geom)], distinct=False)
 
-        records = []
-        seen_nodes = {}
+        seen_nodes = set()
         def collect_records(raw_records):
             for r in raw_records:
                 node_id = r[0]
                 if node_id in seen_nodes:
                     continue
-                seen_nodes[node_id] = 1
+                seen_nodes.add(node_id)
                 geom = r[1]
-                records.append(dict(id=node_id, geom=geom))
+                db.Session.add(Node(geom=geom))
         collect_records(raw_records_f)
         collect_records(raw_records_t)
 
-        self.echo('Inserting records into node table...')
-        self.insert_records(Node.__table__, records, 'nodes')
+        self.echo('Inserting %i records into node table...' % len(seen_nodes))
+        db.Session.flush()
 
         self.vacuum_entity(Node)
 
@@ -345,15 +347,15 @@ class Integrator(object):
         region = self.get_or_create_region()
 
         Edge = self.region_module.Edge
-        StreetName = self.region_module.StreetName
-        Place = self.region_module.Place
+        StreetName = public.StreetName
+        Place = public.Place
         cities_atof = self.region_data_module.cities_atof
         one_ways = self.region_data_module.one_ways
         bikemodes = self.region_data_module.bikemodes
         edge_attrs = self.region_data_module.edge_attrs
 
         self.echo('Getting columns from raw table...')
-        c = self.raw_table.c
+        c = self.region_data_module.Raw.__table__.c
         cols = [
             c.id, c.geom, c.node_f_id, c.node_t_id,
             c.addr_f_l, c.addr_t_l, c.addr_f_r, c.addr_t_r,
@@ -373,17 +375,17 @@ class Integrator(object):
         raw_records = select(cols).execute()
 
         self.echo('Getting street names...')
-        c = StreetName.c
-        street_names = self.get_records((c.prefix, c.name, c.sttype, c.suffix,
-                                         c.id))
-        street_names = dict([((r[0], r[1], r[2], r[3]), r[4]) for r in
-                             street_names])
+        c = StreetName
+        street_names = self.get_records(
+            (c.prefix, c.name, c.sttype, c.suffix, c.id))
+        street_names = dict(
+            [((r[0], r[1], r[2], r[3]), r[4]) for r in street_names])
         street_names[(None, None, None, None)] = None
 
         self.echo('Getting places...')
-        places = Place.select()
-        places = dict([((p.city_name, p.state_code, p.zip_code), p.id) for p
-                       in places])
+        places = db.Session.query(Place).all()
+        places = dict(
+            [((p.city_name, p.state_code, p.zip_code), p.id) for p in places])
         places[(None, None, None)] = None
 
         self.echo('Transferring edges...')
@@ -392,8 +394,9 @@ class Integrator(object):
         num_records = raw_records.rowcount
         records = []
         for r in raw_records:
-            even_side = self.getEvenSide(r.addr_f_l, r.addr_f_r, r.addr_t_l,
-                                         r.addr_t_r)
+            print r.geom
+            even_side = self.getEvenSide(
+                r.addr_f_l, r.addr_f_r, r.addr_t_l, r.addr_t_r)
             sttype = street_types_ftoa.get(r.sttype, r.sttype)
             st_name_id = street_names[(r.prefix, r.name, sttype, r.suffix)]
             city_l = cities_atof[r.city_l]
@@ -417,7 +420,7 @@ class Integrator(object):
                 place_l_id=place_l_id,
                 place_r_id=place_r_id,
                 # fields that may have a different *type* per region:
-                geom=r.geom.geometryN(0),
+                geom=None,#r.geom.geometryN(0),
                 permanent_id=r.permanent_id,
                 bikemode=bikemodes[r.bikemode],
                 code=r.code,
@@ -597,7 +600,7 @@ class Integrator(object):
         return sql_file_path
 
     def vacuum_entity(self, entity):
-        args = (entity.__table__.schema, entity.__table__.name)
+        args = (entity.__table__.schema or 'public', entity.__table__.name)
         self.echo('Vacuuming %s.%s...' % args)
         db.vacuum('%s.%s' % args)
 
@@ -609,7 +612,6 @@ class Integrator(object):
     actions = [
         shp2sql,
         shp2db,
-        create_public_tables,
         delete_region,
         get_or_create_region,
         drop_schema,
