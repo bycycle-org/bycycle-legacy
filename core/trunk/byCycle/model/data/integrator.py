@@ -139,12 +139,19 @@ class Integrator(object):
         self.system(sql2db_cmd)
         db.vacuum('raw.%s' % self.region_key)
 
+    def create_tables(self):
+        """Create all tables."""
+        db.createAllTables()
+
     def delete_region(self):
         """Delete region and any dependent records."""
         try:
             region = public.Region.get_by_slug(self.region_key)
         except sqlalchemy.orm.exc.NoResultFound:
             pass
+        except sqlalchemy.exc.ProgrammingError, e:
+            if not 'does not exist' in str(e):
+                raise
         else:
             db.Session.delete(region)
             db.Session.flush()
@@ -612,6 +619,7 @@ class Integrator(object):
     actions = [
         shp2sql,
         shp2db,
+        create_tables,
         delete_region,
         get_or_create_region,
         drop_schema,
