@@ -12,7 +12,12 @@ from byCycle import model
 import tripplanner.lib.helpers as h
 
 
-RestController = restler.RestController(model)
+class RestController(restler.RestController(model)):
+    def __call__(self, *args, **kwargs):
+        c.wrap = True
+        return WSGIController.__call__(self, *args, **kwargs)
 
 
-class BaseController(WSGIController): pass
+class BaseController(WSGIController):
+    pass
+

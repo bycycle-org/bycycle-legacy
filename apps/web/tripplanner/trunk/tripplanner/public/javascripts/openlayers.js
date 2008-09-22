@@ -7,12 +7,12 @@ NameSpace('openlayers', byCycle.Map, {
 });
 
 
-Class(byCycle.Map.openlayers, 'Map', null, {
+Class(byCycle.Map.openlayers, 'Map', byCycle.Map.base.Map, {
   default_zoom: 5,
 
   initialize: function(ui, container) {
-    this.superclass = byCycle.Map.base.Map.prototype;
-    this.superclass.initialize.apply(this, arguments);
+    var superclass = byCycle.Map.openlayers.Map.superclass;
+    superclass.initialize.apply(this, arguments);
   },
 
   createMap: function(container) {
@@ -24,7 +24,8 @@ Class(byCycle.Map.openlayers, 'Map', null, {
       maxResolution: 256,
       maxExtent: new OpenLayers.Bounds(7435781, 447887, 7904954, 877395)
     };
-    var map = new OpenLayers.Map(container, opts);
+
+    var map = new OpenLayers.Map(container.attr('id'), opts);
     map.numZoomLevels = 10;
 
     // Events

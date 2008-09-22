@@ -12,7 +12,7 @@ from restler.helpers import *
 
 def if_ie(content, join_string=''):
     """Create and Internet Explorer conditional comment section."""
-    return join_string.join(('<!--[if IE]>', content, '<![endif]-->'))
+    return literal(join_string.join(('<!--[if IE]>', content, '<![endif]-->')))
 
 
 def hide_element(cond=True, as_attr=True):
