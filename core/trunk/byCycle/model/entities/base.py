@@ -141,6 +141,7 @@ class Node(DeclarativeBase):
 
     id = Column(Integer, primary_key=True)
     type = Column('type', String(50))
+    region_id = Column(Integer, nullable=False)
 
     __mapper_args__ = {'polymorphic_on': type}
 
@@ -157,13 +158,14 @@ class Edge(DeclarativeBase):
     __table_args__ = dict(schema='public')
 
     id = Column(Integer, primary_key=True)
+    type = Column('type', String(50))
+    region_id = Column(Integer, nullable=False)
     addr_f_l = Column(Integer)
     addr_f_r = Column(Integer)
     addr_t_l = Column(Integer)
     addr_t_r = Column(Integer)
     even_side = Column(CHAR(1))
     one_way = Column(Integer)
-    type = Column('type', String(50))
 
     __mapper_args__ = {'polymorphic_on': type}
 

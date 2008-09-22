@@ -41,11 +41,12 @@ Notes:
 """
 import os, sys
 
+import psycopg2
+
 import sqlalchemy
-from sqlalchemy import func, select, and_, or_
+from sqlalchemy import func, select, text, and_, or_
 
 from byCycle.util import meter
-
 from byCycle import model_path
 from byCycle.model import db
 from byCycle.model.entities import base, public
@@ -139,9 +140,11 @@ class Integrator(object):
         self.system(sql2db_cmd)
         db.vacuum('raw.%s' % self.region_key)
 
-    def create_tables(self):
-        """Create all tables."""
-        db.createAllTables()
+    def create_public_tables(self):
+        """Create public tables."""
+        for table in db.metadata.sorted_tables:
+            if (table.schema or 'public') == 'public':
+                table.create(checkfirst=True)
 
     def delete_region(self):
         """Delete region and any dependent records."""
@@ -177,6 +180,7 @@ class Integrator(object):
                 block_length=data.block_length,
                 jog_length=data.jog_length,
             )
+            db.Session.flush()
 
             # Add edge attributes
             self.echo('Adding edge attributes to region.')
@@ -191,10 +195,19 @@ class Integrator(object):
 
     def drop_schema(self):
         """Drop SCHEMA for region."""
-        for entity in (self.region_module.Edge, self.region_module.Node):
-            for obj in db.Session.query(entity).all():
-                db.Session.delete(obj)
-        db.Session.flush()
+        self.echo('Dropping edge table for region...')
+        db.dropTable(self.region_module.Edge.__table__, cascade=True)
+        self.echo('Dropping node table for region...')
+        db.dropTable(self.region_module.Node.__table__, cascade=True)
+        Q = "DELETE FROM %s WHERE type = '%s_%s'"
+        args = ('edges', self.region_key, 'edge')
+        self.echo(Q % args)
+        db.execute(Q % args)
+        args = ('nodes', self.region_key, 'node')
+        self.echo(Q % args)
+        db.execute(Q % args)
+        db.commit()
+        self.echo('Dropping schema for region...')
         db.dropSchema(self.region_key, cascade=True)
 
     def create_schema(self):
@@ -202,14 +215,14 @@ class Integrator(object):
         db.createSchema(self.region_key)
         db.createAllTables()
 
-    def drop_tables(self):
-        """Drop all regional tables (not including raw)."""
+    def drop_schema_tables(self):
+        """Drop all regional tables (not including raw or public)."""
         region = self.get_or_create_region()
         for table in db.metadata.sorted_tables:
             if table.schema == self.region_module.Edge.__table__.schema:
                 db.dropTable(table, cascade=True)
 
-    def create_tables(self):
+    def create_schema_tables(self):
         """Create all regional tables. Ignores existing tables."""
         region = self.get_or_create_region()
         db.createAllTables()
@@ -336,6 +349,8 @@ class Integrator(object):
 
         base_records, records = [], []
         seen_nodes = set()
+        region_id = region.id
+        type = '%s_node' % self.region_key
         def collect_records(raw_records, id):
             for r in raw_records:
                 permanent_id = r[0]
@@ -343,7 +358,7 @@ class Integrator(object):
                     continue
                 seen_nodes.add(permanent_id)
                 geom = r[1]
-                base_records.append(dict(id=id, type='%s_node' % self.region_key))
+                base_records.append(dict(id=id, type=type, region_id=region_id))
                 records.append(dict(id=id, permanent_id=permanent_id, geom=geom))
                 id += 1
             return id
@@ -404,14 +419,20 @@ class Integrator(object):
             [((p.city_name, p.state_code, p.zip_code), p.id) for p in places])
         places[(None, None, None)] = None
 
-        self.echo('Transferring edges...')
         i = 1
         id = 1  # TODO: Get next PK ID
         step = 2500
         num_records = raw_records.rowcount
         base_records, records = [], []
-        node_records = self.get_records((Node.id, Node.permanent_id))
-        node_map = dict([(nr[1], nr[0]) for nr in node_records])
+        self.echo('Getting ID and permanent ID of base nodes...')
+        slug = self.region_key
+        Q = 'SELECT %s.nodes.id, %s.nodes.permanent_id FROM %s.nodes'
+        s = text(Q % (slug, slug, slug))
+        node_records = db.engine.connect().execute(s)
+        self.echo('Mapping base node permanent IDs to their IDs...')
+        node_map = dict([(nr.permanent_id, nr.id) for nr in node_records])
+        region_id = region.id
+        self.echo('Transferring edges...')
         for r in raw_records:
             even_side = self.getEvenSide(
                 r.addr_f_l, r.addr_f_r, r.addr_t_l, r.addr_t_r)
@@ -429,6 +450,8 @@ class Integrator(object):
             place_r_id = places[(city_r, state_r, zr)]
             base_record = dict(
                 id=id,
+                type='%s_edge' % self.region_key,
+                region_id=region_id,
                 addr_f_l=r.addr_f_l or None,
                 addr_f_r=r.addr_f_r or None,
                 addr_t_l=r.addr_t_l or None,
@@ -440,12 +463,11 @@ class Integrator(object):
                 street_name_id=st_name_id,
                 place_l_id=place_l_id,
                 place_r_id=place_r_id,
-                type='%s_edge' % self.region_key,
             )
             base_records.append(base_record)
             record = dict(
                 id=id,
-                geom=None,#r.geom.geometryN(0),
+                geom=r.geom.geometryN(0),
                 permanent_id=r.permanent_id,
                 bikemode=bikemodes[r.bikemode],
                 code=r.code,
@@ -528,7 +550,7 @@ class Integrator(object):
             default_is_yes = True
         default_is_no = not default_is_yes
         # Print prompt and wait for response
-        resp = raw_input('%s%s? %s '% (p, msg, choices)).strip().lower()
+        resp = raw_input('%s%s? %s '% (p, msg.rstrip('.'), choices)).strip().lower()
         # Interpret and return response
         if not resp:
             if default_is_yes:
@@ -640,13 +662,13 @@ class Integrator(object):
     actions = [
         shp2sql,
         shp2db,
-        create_tables,
+        create_public_tables,
         delete_region,
         get_or_create_region,
         drop_schema,
         create_schema,
-        drop_tables,
-        create_tables,
+        drop_schema_tables,
+        create_schema_tables,
         transfer_street_names,
         transfer_cities,
         transfer_states,
