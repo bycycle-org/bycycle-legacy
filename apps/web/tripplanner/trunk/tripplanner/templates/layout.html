@@ -22,6 +22,7 @@
 
     ${h.stylesheet_link('/stylesheets/base.css')}
     ${h.if_ie(h.stylesheet_link('/stylesheets/base_ie.css'))}
+    ${h.stylesheet_link('/javascripts/OpenLayers-2.6/theme/default/style.css')}
     ${h.stylesheet_link('/stylesheets/print.css', media='print')}
     ${self.stylesheet_links()}
 
@@ -184,7 +185,7 @@
     ${h.javascript_link('/javascripts/map.js')}
     <script type="text/javascript">
       //<![CDATA[
-      window.$ = null;
+      window.$ = null;  // In case the map's JS library uses $
       util.writeScript('/javascripts/' + byCycle.config.map_type + '.js');
       //]]>
     </script>
