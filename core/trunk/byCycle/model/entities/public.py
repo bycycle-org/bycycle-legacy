@@ -22,7 +22,7 @@ from byCycle import model_path
 from byCycle.util import joinAttrs
 from byCycle.model import db
 from byCycle.model.entities import DeclarativeBase
-from byCycle.model.entities.util import cascade_args, encodeFloat
+from byCycle.model.entities.util import cascade_arg, encodeFloat
 
 __all__ = [
     'Region', 'EdgeAttr', 'Service', 'Geocode', 'Route', 'StreetName',
@@ -53,7 +53,7 @@ class Region(DeclarativeBase):
 
     edge_attrs = relation(
         'EdgeAttr', backref='region', order_by='EdgeAttr.id',
-        cascade='all, delete, delete-orphan')
+        cascade=cascade_arg)
 
     required_edge_attrs = [
         'length',
@@ -367,8 +367,8 @@ class Place(DeclarativeBase):
     city_id = Column(Integer, ForeignKey('cities.id'))
     state_id = Column(Integer, ForeignKey('states.id'))
 
-    city = relation('City')
-    state = relation('State')
+    city = relation('City', cascade=cascade_arg)
+    state = relation('State', cascade=cascade_arg)
 
     def _get_city_name(self):
         return (self.city.city if self.city is not None else None)

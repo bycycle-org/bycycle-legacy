@@ -1,7 +1,4 @@
-cascade_args = dict(
-    constraint_kwargs={'ondelete': 'cascade'},
-    cascade='all, delete-orphan'
-)
+cascade_arg = 'all, delete-orphan'
 
 
 # These "constants" are used when creating the adjacency matrix for a region

@@ -12,7 +12,6 @@
 # NO WARRANTY OF ANY KIND.
 ###############################################################################
 from sqlalchemy import Column, ForeignKey
-from sqlalchemy.orm import relation
 from sqlalchemy.types import Unicode, Integer, String, CHAR, Integer, Numeric, Float
 
 from byCycle.model import db

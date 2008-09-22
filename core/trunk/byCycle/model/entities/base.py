@@ -31,7 +31,7 @@ import simplejson
 
 from byCycle.util import gis, joinAttrs
 from byCycle.model.db import metadata, Session
-from byCycle.model.entities.util import cascade_args
+from byCycle.model.entities.util import cascade_arg
 from byCycle.model.data.sqltypes import POINT, LINESTRING
 
 
@@ -175,11 +175,11 @@ class Edge(DeclarativeBase):
     place_l_id = Column(Integer, ForeignKey('places.id'))
     place_r_id = Column(Integer, ForeignKey('places.id'))
 
-    node_f = relation('Node', primaryjoin='Edge.node_f_id == Node.id')
-    node_t = relation('Node', primaryjoin='Edge.node_t_id == Node.id')
-    street_name = relation('StreetName')
-    place_l = relation('Place', primaryjoin='Edge.place_l_id == Place.id')
-    place_r = relation('Place', primaryjoin='Edge.place_r_id == Place.id')
+    node_f = relation('Node', primaryjoin='Edge.node_f_id == Node.id', cascade=cascade_arg)
+    node_t = relation('Node', primaryjoin='Edge.node_t_id == Node.id', cascade=cascade_arg)
+    street_name = relation('StreetName', cascade=cascade_arg)
+    place_l = relation('Place', primaryjoin='Edge.place_l_id == Place.id', cascade=cascade_arg)
+    place_r = relation('Place', primaryjoin='Edge.place_r_id == Place.id', cascade=cascade_arg)
 
     def to_feet(self):
         return self.to_miles() * 5280.0
