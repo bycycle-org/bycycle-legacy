@@ -34,7 +34,8 @@ class PortlandORNode(base.Node):
     __table_args__ = table_args
     __mapper_args__ = dict(polymorphic_identity='portlandor_node')
 
-    id = Column('id', Integer, ForeignKey('public.nodes.id'), primary_key=True)
+    id = Column(Integer, ForeignKey('public.nodes.id'), primary_key=True)
+    permanent_id = Column(Integer)
     geom = Column(POINT(SRID))
 
     @property
