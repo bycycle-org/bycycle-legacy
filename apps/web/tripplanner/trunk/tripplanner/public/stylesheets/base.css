@@ -43,6 +43,9 @@ a:hover { color: orange; }
   padding: 2px;
   text-align: right;
   font-size: 85%;
+  background-color: #eee;
+  border-bottom: 1px solid #aaa;
+  margin-bottom: 2px;
 }
 #content {
   /* */
