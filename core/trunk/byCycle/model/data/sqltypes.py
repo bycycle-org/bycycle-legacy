@@ -46,35 +46,39 @@ class Geometry(sqlalchemy.types.TypeEngine):
         """
         return 'GEOMETRY'
 
-    def convert_bind_param(self, value, engine):
+    def bind_processor(self, dialect):
         """Convert value from Python ==> database.
 
         ``value`` -- A geometry object of some kind. The database expects a
         hex string representing a WKB geometry.
 
         """
-        if value is None:
-            return None
-        else:
-            try:
-                return 'SRID=%s;%s' % (self.SRID, b2a_hex(value.toWKB()))
-            except AttributeError:
-                # If ``value`` is a string, assume it's already a proper
-                # hex-encoded value
-                return value
+        def process(value):
+            if value is None:
+                return None
+            else:
+                try:
+                    return 'SRID=%s;%s' % (self.SRID, b2a_hex(value.toWKB()))
+                except AttributeError:
+                    # If ``value`` is a string, assume it's already a proper
+                    # hex-encoded value
+                    return value
+        return process
 
-    def convert_result_value(self, value, engine):
+    def result_processor(self, dialect):
         """Convert ``value`` from database ==> Python.
 
         ``value`` `string` -- PostGIS geometry value from the database. It is
         a hex string representing a WKB geometry.
 
         """
-        if value is None:
-            return None
-        else:
-            g = geometry.Geometry.fromWKB(a2b_hex(value), srs=self.srs)
-            return g
+        def process(value):
+            if value is None:
+                return None
+            else:
+                g = geometry.Geometry.fromWKB(a2b_hex(value), srs=self.srs)
+                return g
+        return process
 
 
 class MULTILINESTRING(Geometry):
