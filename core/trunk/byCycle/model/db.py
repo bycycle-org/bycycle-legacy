@@ -49,13 +49,17 @@ def getConnectionUri(db_type='postgres', user=user, password=None,
     dburi = '%s://%s:%s@%s/%s' % (db_type, user, password, host, database)
     return dburi
 
-def connectMetadata(metadata):
+def connectMetadata(md=None):
     """Connect metadata to ``engine``. Use ``md`` if specified."""
-    metadata.bind = engine
+    (md or metadata).bind = engine
 
-def makeSession():
-    connectMetadata()
-    return create_session(bind_to=engine)
+def dropAllTables(md=None):
+    md = md or metadata
+    md.drop_all()
+
+def createAllTables(md=None):
+    md = md or metadata
+    md.create_all()
 
 def clearSession():
     del session_context.current
@@ -227,6 +231,9 @@ if __name__ == '__main__':
         print 'No action'
     else:
         print 'Action: %s' % action
-        try: args = sys.argv[2:]
-        except IndexError: args = []
+        try:
+            args = sys.argv[2:]
+        except IndexError:
+            args = []
+        model.db.connectMetadata()
         getattr(model.db, action)(*args)

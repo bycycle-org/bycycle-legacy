@@ -4,7 +4,7 @@
 #
 # Portland, OR, data integrator.
 #
-# Copyright (C) 2006, 2007 Wyatt Baldwin, byCycle.org <wyatt@bycycle.org>.
+# Copyright (C) 2006-2008 Wyatt Baldwin, byCycle.org <wyatt@bycycle.org>.
 # All rights reserved.
 #
 # For terms of use and warranty details, please see the LICENSE file included
@@ -12,11 +12,15 @@
 # NO WARRANTY OF ANY KIND.
 ###############################################################################
 from byCycle.model.data import integrator
+from byCycle.model import portlandor
+from byCycle.model.portlandor import data
 
 
 class Integrator(integrator.Integrator):
 
     def __init__(self, *args, **kwargs):
+        self.region_module = portlandor
+        self.region_data_module = data
         super(Integrator, self).__init__(*args, **kwargs)
 
     def get_state_code_for_city(self, city):

@@ -4,7 +4,7 @@
 #
 # Portland, OR, region.
 #
-# Copyright (C) 2006 Wyatt Baldwin, byCycle.org <wyatt@bycycle.org>.
+# Copyright (C) 2006-2008 Wyatt Baldwin, byCycle.org <wyatt@bycycle.org>.
 # All rights reserved.
 #
 # For terms of use and warranty details, please see the LICENSE file included
@@ -12,6 +12,7 @@
 # NO WARRANTY OF ANY KIND.
 ###############################################################################
 from sqlalchemy import Column, ForeignKey
+from sqlalchemy.orm import relation
 from sqlalchemy.types import Unicode, Integer, String, CHAR, Integer, Numeric, Float
 
 from byCycle.model import db
