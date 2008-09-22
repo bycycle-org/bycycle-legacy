@@ -183,7 +183,10 @@
     ${h.javascript_link('/javascripts/util.js', '/javascripts/bycycle.js')}
     ${h.javascript_link('/javascripts/map.js')}
     <script type="text/javascript">
+      //<![CDATA[
+      window.$ = null;
       util.writeScript('/javascripts/' + byCycle.config.map_type + '.js');
+      //]]>
     </script>
     ${h.javascript_link('/javascripts/ui.js', '/javascripts/regions.js')}
     ${h.javascript_link('/javascripts/query.js', '/javascripts/result.js')}
@@ -192,7 +195,6 @@
     <script type="text/javascript">
       //<![CDATA[
       window.$j = jQuery.noConflict();
-
       byCycle.UI.beforeLoad();
       byCycle.UI.service = '${c.service}';
       byCycle.UI.member_name = '${c.member_name}';

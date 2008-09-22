@@ -57,7 +57,7 @@ Class(byCycle.UI, 'Query', null, function () {
         error: self.onFailure,
         complete: self.onComplete
       };
-      $jj.ajax(args);
+      $j.ajax(args);
     },
 
     onLoading: function(request) {
@@ -69,7 +69,7 @@ Class(byCycle.UI, 'Query', null, function () {
       //var results = self.makeResults(response);
       // Show widget in result list for ``service``
       //var li, result_list = self.result_list;
-      //$jj.each(results, function (i, r) {
+      //$j.each(results, function (i, r) {
         //li = $j('li');
         //li.append(r.widget.dom_node);
         //result_list.append(li);
