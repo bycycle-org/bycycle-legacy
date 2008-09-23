@@ -58,8 +58,9 @@ db.connectMetadata()
 
 class Integrator(object):
 
-    db_name = os.environ['USER']
-    base_data_path = os.path.join('/home/%s' % db_name, 'byCycleData')
+    user = os.environ['USER']
+    db_name = '%s_beta' % user
+    base_data_path = os.path.join('/home/%s' % user, 'byCycleData')
     overall_timer = meter.Timer(start_now=True)
     timer = meter.Timer(start_now=False)
 
@@ -132,7 +133,7 @@ class Integrator(object):
     def shp2db(self):
         """Drop existing raw table and insert raw SQL into database."""
         # Command to import raw SQL into database
-        # Ex: psql --quiet -d ${USER }-f /path/to/portlandor_raw.sql
+        # Ex: psql --quiet -d ${USER} -f /path/to/portlandor_raw.sql
         sql2db_cmd = 'psql --quiet -d %s -f %s'  # % (database, SQL file)
         sql2db_cmd = sql2db_cmd % (self.db_name, self.get_sql_file_path())
         db.createSchema('raw')   # if it doesn't exist
