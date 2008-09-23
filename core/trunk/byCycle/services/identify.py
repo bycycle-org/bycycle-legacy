@@ -17,7 +17,7 @@ Given a region (i.e., data source), a layer within that region, and a point, fin
 
 """
 from sqlalchemy.sql import select, func
-from sqlalchemy.exceptions import InvalidRequestError
+from sqlalchemy.orm.exc import NoResultFound
 from byCycle.model import db
 from byCycle.model.point import Point
 from byCycle import services
@@ -37,10 +37,10 @@ class Service(services.Service):
 
         ``q``
             A Point object or a string representing a point.
-            
+
         ``layer``
             The layer to search
-            
+
         ``input_srid``
             The SRID of the input point represented by ``q``
 
@@ -54,12 +54,12 @@ class Service(services.Service):
         try:
             point = Point(q)
         except ValueError:
-            raise IdentifyError('Cannot identify because POINT is not valid: '
-                                '%s.' % q)
+            raise IdentifyError(
+                'Cannot identify because POINT is not valid: %s.' % q)
         region = self.region
         earth_circumference = region.earth_circumference
         Entity = getattr(region.module, layer)
-        c = Entity.c
+        c = Entity.__table__.c
         wkt = str(point)
         # Function to convert the input point to native geometry
         transform = func.transform(func.GeomFromText(wkt, input_srid),
@@ -76,14 +76,15 @@ class Service(services.Service):
         expand_dist = region.block_length
         overlaps = c.geom.op('&&')  # geometry A overlaps geom B operator
         expand = func.expand  # geometry bounds expanding function
+        db_q = db.Session.query(*cols)
         while expand_dist < earth_circumference:
             where = overlaps(expand(transform, expand_dist))
-            sel = select(cols, where, order_by=['distance'], limit=1)
-            try:
-                object = Entity.selectone(sel)
-            except InvalidRequestError:
+            obj = db_q.filter(where).order_by('distance').first()
+            if obj is None:
                 expand_dist *= 2
             else:
-                return object
-        raise IdentifyError('Could not identify feature nearest to "%s" in '
-                            'region "%s", layer "%s"' % (q, region, layer))
+                obj = db.Session.query(Entity).get(obj.id)
+                return obj
+        raise IdentifyError(
+            'Could not identify feature nearest to "%s" in region "%s", layer '
+            '"%s"' % (q, region, layer))

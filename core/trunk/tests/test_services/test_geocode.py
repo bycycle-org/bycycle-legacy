@@ -104,7 +104,8 @@ class TestPortlandOR(unittest.TestCase):
     ### Node
 
     def test_NodeAddress(self):
-        n = self.service.region.module.Node.selectfirst()
+        db_q = db.Session.query(self.service.region.module.Node)
+        n = db_q.first()
         q = str(n.id)
         geocode = self._query(q)
 

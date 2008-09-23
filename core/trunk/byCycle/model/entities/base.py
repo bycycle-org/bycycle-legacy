@@ -30,7 +30,7 @@ from cartography import geometry
 import simplejson
 
 from byCycle.util import gis, joinAttrs
-from byCycle.model.db import metadata, Session
+from byCycle.model.db import engine, metadata, Session
 from byCycle.model.entities.util import cascade_arg
 from byCycle.model.data.sqltypes import POINT, LINESTRING
 
@@ -141,10 +141,12 @@ class Node(DeclarativeBase):
 
     id = Column(Integer, primary_key=True)
     type = Column('type', String(50))
-    region_id = Column(Integer, nullable=False)
 
     __mapper_args__ = {'polymorphic_on': type}
 
+    region_id = Column(Integer, ForeignKey('regions.id'))
+
+    region = relation('Region', cascade=cascade_arg)
     edges_f = relation('Edge', primaryjoin='Node.id == Edge.node_f_id')
     edges_t = relation('Edge', primaryjoin='Node.id == Edge.node_t_id')
 
@@ -159,7 +161,6 @@ class Edge(DeclarativeBase):
 
     id = Column(Integer, primary_key=True)
     type = Column('type', String(50))
-    region_id = Column(Integer, nullable=False)
     addr_f_l = Column(Integer)
     addr_f_r = Column(Integer)
     addr_t_l = Column(Integer)
@@ -169,17 +170,23 @@ class Edge(DeclarativeBase):
 
     __mapper_args__ = {'polymorphic_on': type}
 
+    region_id = Column(Integer, ForeignKey('regions.id'))
     node_f_id = Column(Integer, ForeignKey('public.nodes.id'))
     node_t_id = Column(Integer, ForeignKey('public.nodes.id'))
     street_name_id = Column(Integer, ForeignKey('street_names.id'))
     place_l_id = Column(Integer, ForeignKey('places.id'))
     place_r_id = Column(Integer, ForeignKey('places.id'))
 
-    node_f = relation('Node', primaryjoin='Edge.node_f_id == Node.id', cascade=cascade_arg)
-    node_t = relation('Node', primaryjoin='Edge.node_t_id == Node.id', cascade=cascade_arg)
+    region = relation('Region', cascade=cascade_arg)
+    node_f = relation(
+        'Node', primaryjoin='Edge.node_f_id == Node.id', cascade=cascade_arg)
+    node_t = relation(
+        'Node', primaryjoin='Edge.node_t_id == Node.id', cascade=cascade_arg)
     street_name = relation('StreetName', cascade=cascade_arg)
-    place_l = relation('Place', primaryjoin='Edge.place_l_id == Place.id', cascade=cascade_arg)
-    place_r = relation('Place', primaryjoin='Edge.place_r_id == Place.id', cascade=cascade_arg)
+    place_l = relation(
+        'Place', primaryjoin='Edge.place_l_id == Place.id', cascade=cascade_arg)
+    place_r = relation(
+        'Place', primaryjoin='Edge.place_r_id == Place.id', cascade=cascade_arg)
 
     def to_feet(self):
         return self.to_miles() * 5280.0
@@ -252,13 +259,16 @@ class Edge(DeclarativeBase):
                 dist_from_min_addr = num - min_addr
                 location = float(dist_from_min_addr) / edge_len
 
+        _Edge = self.region.module.Edge
+
         # Function to get interpolated point
-        f = func.line_interpolate_point(Edge.geom, location)
+        f = func.line_interpolate_point(_Edge.geom, location)
         # Function to get WKB version of lat/long point
         f = func.asbinary(f)
 
         # Query DB and get WKB POINT
-        select_ = select([f.label('wkb_point')], Edge.id == self.id)
+        select_ = select(
+            [f.label('wkb_point')], _Edge.id == self.id, bind=engine)
         result = select_.execute()
         wkb_point = result.fetchone().wkb_point
 
