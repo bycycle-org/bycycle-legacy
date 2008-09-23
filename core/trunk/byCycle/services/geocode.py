@@ -31,7 +31,7 @@ the Address Normalization service (normaddr):
 """
 from sqlalchemy import orm
 from sqlalchemy.sql import select, func, and_, or_
-from sqlalchemy.exceptions import InvalidRequestError
+from sqlalchemy.orm.exc import NoResultFound
 
 from byCycle.model import db
 from byCycle.model.db import Session
@@ -234,10 +234,10 @@ class Service(services.Service):
             # No network ID, so look up address by street name and place
             self.append_street_name_where_clause(clause, oAddr.street_name)
             self.append_place_where_clause(clause, oAddr.place)
-            edges = q.filter(and_(*clause))
+            edges = q.filter(and_(*clause)).all()
         else:
             clause.append(Edge.id == network_id)
-            edges = q.filter(and_(*clause))
+            edges = q.filter(and_(*clause)).all()
 
         if not edges:
             raise AddressNotFoundError(address=oAddr, region=self.region)
@@ -261,12 +261,12 @@ class Service(services.Service):
 
         """
         layer_edges = Edge.__table__
+        q = Session.query(Node)
 
         def get_node_ids(street_name, place):
             """Get `set` of node IDs for ``street_name`` and ``place``."""
             ids = set()
-            q = Session.query(Edge)
-            select_ = q.filter([Edge.node_f_id, Edge.node_t_id])
+            select_ = select([Edge.node_f_id, Edge.node_t_id], bind=db.engine)
             self.append_street_name_where_clause(select_, street_name)
             self.append_place_where_clause(select_, place)
             result = select_.execute()
@@ -282,7 +282,7 @@ class Service(services.Service):
             raise AddressNotFoundError(address=oAddr, region=self.region)
 
         # Get node rows matching common node IDs and map to `Node` objects
-        nodes = Node.select(Node.c.id.in_(*node_ids))
+        nodes = q.filter(Node.id.in_(node_ids)).all()
 
         if not nodes:
             raise AddressNotFoundError(address=oAddr, region=self.region)
@@ -344,6 +344,8 @@ class Service(services.Service):
             Point doesn't match any nodes in the database.
 
         """
+        q = db.Session.query(Node)
+
         try:
             # Special case of `Node` ID supplied directly
             node_id = oAddr.network_id
@@ -356,8 +358,8 @@ class Service(services.Service):
                 pass
         else:
             try:
-                node = Node.selectone(Node.c.id == node_id)
-            except InvalidRequestError:
+                node = q.filter(Node.id == node_id).one()
+            except NoResultFound:
                 pass
 
         # TODO: Check the `Edge`'s street names and places for [No Name]s and
@@ -397,16 +399,17 @@ class Service(services.Service):
         for name in ('prefix', 'name', 'sttype', 'suffix'):
             val = getattr(street_name, name)
             if val:
-                clause.append(StreetName.c[name] == val)
+                clause.append(getattr(StreetName, name) == val)
         if clause:
-            result = select([StreetName.c.id], and_(*clause)).execute()
+            result = select(
+                [StreetName.id], and_(*clause), bind=db.engine).execute()
             return [r.id for r in result]
         return []
 
     def append_street_name_where_clause(self, append_to, street_name):
         if street_name:
             st_name_ids = self.get_street_name_ids(street_name)
-            clause = Edge.c.street_name_id.in_(*st_name_ids)
+            clause = Edge.street_name_id.in_(st_name_ids)
             if isinstance(append_to, (list, tuple)):
                 append_to.append(clause)
             else:
@@ -416,27 +419,30 @@ class Service(services.Service):
         """Get ``Place`` ``place``."""
         clause = []
         if place.city_name:
-            r = select([City.c.id], (City.c.city == place.city_name)).execute()
+            r = select(
+                [City.id], (City.city == place.city_name),
+                bind=db.engine).execute()
             city_id = r.fetchone().id if r.rowcount else None
-            clause.append(Place.c.city_id == city_id)
+            clause.append(Place.city_id == city_id)
         if place.state_code:
-            r = select([State.c.id], (State.c.code == place.state_code)).execute()
+            r = select(
+                [State.id], (State.code == place.state_code),
+                bind=db.engine).execute()
             state_id = r.fetchone().id if r.rowcount else None
-            clause.append(Place.c.state_id == state_id)
+            clause.append(Place.state_id == state_id)
         if place.zip_code:
-            clause.append(Place.c.zip_code == place.zip_code)
+            clause.append(Place.zip_code == place.zip_code)
         if clause:
-            result = select([Place.c.id], and_(*clause)).execute()
+            result = select([Place.id], and_(*clause), bind=db.engine).execute()
             return [r.id for r in result]
         return []
 
     def append_place_where_clause(self, append_to, place):
         if place:
             place_ids = self.get_place_ids(place)
-            c = Edge.c
             clause = or_(
-                c.place_l_id.in_(*place_ids),
-                c.place_r_id.in_(*place_ids)
+                Edge.place_l_id.in_(place_ids),
+                Edge.place_r_id.in_(place_ids)
             )
             if isinstance(append_to, (list, tuple)):
                 append_to.append(clause)
