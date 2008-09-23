@@ -53,7 +53,14 @@ class Entity(object):
 
     @classmethod
     def all(cls):
-        return Session.query(cls).all()
+        return cls.q().all()
+
+    @classmethod
+    def get(cls, id_or_ids):
+        if isinstance(id_or_ids, (list, tuple, set)):
+            return cls.q().filter(cls.id.in_(id_or_ids)).all()
+        else:
+            return cls.q().get(id_or_ids)
 
     @classmethod
     def get_by_slug(cls, slug, unique=False):
@@ -76,7 +83,7 @@ class Entity(object):
         """
         if not isinstance(values, (tuple, list)):
             values = [values]
-        q = Session.query(cls).filter(getattr(cls, col).in_(values))
+        q = cls.q().filter(getattr(cls, col).in_(values))
         if unique:
             result = q.one()
         else:
