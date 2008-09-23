@@ -68,7 +68,6 @@ byCycle.UI = function () {
         self.map_type = byCycle.Map.base;
       }
       self.map = new self.map_type.Map(self, self.map_pane);
-      self.onResize();
       self.setRegion(self.region_id);
       self.region_id = 'portlandor';
       self._createEventHandlers();
@@ -76,7 +75,6 @@ byCycle.UI = function () {
       if (!isNaN(zoom)) {
         self.map.setZoom(zoom);
       }
-      self.onResize();
       self.handleQuery();
       if (byCycle.getParamVal('bike_map')) {
         self.toggleBikeTileOverlay();
@@ -115,11 +113,11 @@ byCycle.UI = function () {
       $j(window).resize(self.onResize);
       $j(document.body).unload(self.onUnload);
       if (self.region_el) {
-	self.region_el.change(self.setRegionFromSelectBox);
-      }
+        self.region_el.change(self.setRegionFromSelectBox);
+	  }
       self.spinner.click(function (event) {
-	self.spinner.hide();
-	return false;
+	    self.spinner.hide();
+        return false;
       });
 
       // Services
@@ -133,13 +131,6 @@ byCycle.UI = function () {
         var url = '/static/regions/' + self.region_id + '/map_legend_popup.html';
         var w = window.open(url, 'bike_map_legend_window', 'status=0,toolbar=0,scrollbars=1,location=0,menubar=0,directories=0,width=755,height=490,left=0,top=0');
       });
-    },
-
-    onResize: function(event) {
-      var height = $j('body').height() - $j('header').height();
-      $j('#col-a').height(height)
-      $j('#col-b').height(height)
-      self.map.setSize({h: height});
     },
 
     onUnload: function(event) {

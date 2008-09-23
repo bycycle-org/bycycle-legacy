@@ -11,8 +11,7 @@ Class(byCycle.Map.openlayers, 'Map', byCycle.Map.base.Map, {
   default_zoom: 5,
 
   initialize: function(ui, container) {
-    var superclass = byCycle.Map.openlayers.Map.superclass;
-    superclass.initialize.apply(this, arguments);
+    this.superclass.initialize.apply(this, arguments);
   },
 
   createMap: function(container) {
