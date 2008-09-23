@@ -1,5 +1,4 @@
-svc -d /service/tripplanner-one
-svc -d /service/tripplanner-two
-svc -d /service/tripplanner-three
-svc -d /service/tripplanner-four
+for server in one two three four; do
+    /usr/local/bin/svc -d /service/tripplanner-beta-${server}
+done
 

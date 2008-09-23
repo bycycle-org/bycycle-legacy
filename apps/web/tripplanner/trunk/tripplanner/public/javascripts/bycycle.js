@@ -5,7 +5,7 @@ NameSpace('byCycle', window, function() {
   // private:
   var prod_config = {
     local: 0,
-    map_type: 'google',
+    map_type: 'openlayers',
     map_state: 1
   };
 

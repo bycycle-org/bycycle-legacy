@@ -5,7 +5,7 @@
 #
 # Data integration front end script.
 #
-# Copyright (C) 2006, 2007 Wyatt Baldwin, byCycle.org <wyatt@bycycle.org>.
+# Copyright (C) 2006-2008 Wyatt Baldwin, byCycle.org <wyatt@bycycle.org>.
 # All rights reserved.
 #
 # For terms of use and warranty details, please see the LICENSE file included
