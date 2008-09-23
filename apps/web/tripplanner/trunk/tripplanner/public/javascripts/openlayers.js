@@ -1,7 +1,7 @@
 NameSpace('openlayers', byCycle.Map, {
   description: 'Open Layers Map',
   beforeLoad: function() {
-    util.writeScript('/javascripts/OpenLayers-2.6.js');
+    util.writeScript('/javascripts/OpenLayers/OpenLayers.js');
   },
   isLoadable: function() { return true; }
 });
