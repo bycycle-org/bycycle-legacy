@@ -231,12 +231,24 @@ class Service(DeclarativeBase):
 
 class Geocode(DeclarativeBase):
     __tablename__ = 'geocodes'
+
+    member_name = 'geocode'
+    collection_name = 'geocodes'
+    member_title = 'Geocode'
+    collection_title = 'Geocodes'
+
     id = Column(Integer, primary_key=True)
     region_id = Column(Integer, ForeignKey('regions.id'))
 
 
 class Route(DeclarativeBase):
     __tablename__ = 'routes'
+
+    member_name = 'route'
+    collection_name = 'routes'
+    member_title = 'Route'
+    collection_title = 'Routes'
+
     id = Column(Integer, primary_key=True)
     region_id = Column(Integer, ForeignKey('regions.id'))
 
