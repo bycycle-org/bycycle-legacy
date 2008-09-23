@@ -34,7 +34,6 @@ from sqlalchemy.sql import select, func, and_, or_
 from sqlalchemy.orm.exc import NoResultFound
 
 from byCycle.model import db
-from byCycle.model.db import Session
 from byCycle.model import StreetName, City, State, Place
 from byCycle.model.address import *
 from byCycle.model.geocode import *
@@ -218,7 +217,7 @@ class Service(services.Service):
         """
         geocodes = []
         num = oAddr.number
-        q = Session.query(Edge)
+        q = db.Session.query(Edge)
 
         clause = [or_(
             and_(num >= func.least(Edge.addr_f_l, Edge.addr_f_r),
@@ -260,9 +259,6 @@ class Service(services.Service):
         database.
 
         """
-        layer_edges = Edge.__table__
-        q = Session.query(Node)
-
         def get_node_ids(street_name, place):
             """Get `set` of node IDs for ``street_name`` and ``place``."""
             ids = set()
@@ -282,7 +278,7 @@ class Service(services.Service):
             raise AddressNotFoundError(address=oAddr, region=self.region)
 
         # Get node rows matching common node IDs and map to `Node` objects
-        nodes = q.filter(Node.id.in_(node_ids)).all()
+        nodes = Node.get(node_ids)
 
         if not nodes:
             raise AddressNotFoundError(address=oAddr, region=self.region)
@@ -344,8 +340,6 @@ class Service(services.Service):
             Point doesn't match any nodes in the database.
 
         """
-        q = db.Session.query(Node)
-
         try:
             # Special case of `Node` ID supplied directly
             node_id = oAddr.network_id
@@ -355,20 +349,17 @@ class Service(services.Service):
             try:
                 node = id_service.query(oAddr.point, layer='Node')
             except IdentifyError:
-                pass
+                node = None
         else:
-            try:
-                node = q.filter(Node.id == node_id).one()
-            except NoResultFound:
-                pass
+            node = Node.get(node_id)
 
         # TODO: Check the `Edge`'s street names and places for [No Name]s and
         # choose the `Edge`(s) that have the least of them. Also, we should
         # pick streets that have different names from each other when creating
         # `IntersectionAddresses`s
-        try:
+        if node is not None:
             edges = node.edges
-        except UnboundLocalError:
+        else:
             raise AddressNotFoundError(region=self.region, address=oAddr)
         if len(edges) > 1:
             # `node` has multiple outgoing edges

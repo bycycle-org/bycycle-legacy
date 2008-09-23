@@ -58,36 +58,36 @@ from byCycle.services.exceptions import ByCycleError, InputError, NotFoundError
 
 
 class RouteError(ByCycleError):
-    
+
     title = 'Route Service Error'
     description = ('An error was encountered in the routing service. '
                    'Further information is unavailable')
-    
+
     def __init__(self, description=None):
         ByCycleError.__init__(self, description)
 
 
 class EmptyGraphError(RouteError):
-    
+
     title = 'Empty Routing Graph'
     description = ('The routing graph is empty, which really should not even'
                    'be possible.')
-    
+
     def __init__(self):
         RouteError.__init__(self)
 
 
 class NoRouteError(RouteError, NotFoundError):
-    
+
     title = 'Route Not Found'
-    
+
     def __init__(self, start_geocode, end_geocode, region):
         self.start_geocode = start_geocode
         self.end_geocode = end_geocode
         self.region = region
         desc = (
             'Unable to find a route from "%s" to "%s" in region "%s"' % (
-                str(start_geocode.address).replace('\n', ', '), 
+                str(start_geocode.address).replace('\n', ', '),
                 str(end_geocode.address).replace('\n', ', '),
                 region
             )
@@ -478,7 +478,7 @@ class Service(services.Service):
 
         # Get edges along path
         Edge = self.region.module.Edge
-        unordered_edges = Edge.select(Edge.c.id.in_(*edge_ids))
+        unordered_edges = Edge.get_by('id', edge_ids)
         # Make sure they're in path order
         edge_map = dict([(e.id, e) for e in unordered_edges])
         edges = []

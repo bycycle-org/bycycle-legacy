@@ -18,6 +18,7 @@ Given a region (i.e., data source), a layer within that region, and a point, fin
 """
 from sqlalchemy.sql import select, func
 from sqlalchemy.orm.exc import NoResultFound
+
 from byCycle.model import db
 from byCycle.model.point import Point
 from byCycle import services
@@ -79,12 +80,11 @@ class Service(services.Service):
         db_q = db.Session.query(*cols)
         while expand_dist < earth_circumference:
             where = overlaps(expand(transform, expand_dist))
-            obj = db_q.filter(where).order_by('distance').first()
-            if obj is None:
+            row = db_q.filter(where).order_by('distance').first()
+            if row is None:
                 expand_dist *= 2
             else:
-                obj = db.Session.query(Entity).get(obj.id)
-                return obj
+                return Entity.get(row.id)
         raise IdentifyError(
             'Could not identify feature nearest to "%s" in region "%s", layer '
             '"%s"' % (q, region, layer))
