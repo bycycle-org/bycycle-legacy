@@ -35,10 +35,15 @@ a:hover { color: orange; }
 
 
 /* Top level */
+#wrapper, #content, #col-a, #col-b {
+  height: 100%;
+}
+
 #wrapper {
   position: relative;
   min-width: 600px;
 }
+
 #header {
   padding: 2px;
   text-align: right;
@@ -47,8 +52,9 @@ a:hover { color: orange; }
   border-bottom: 1px solid #aaa;
   margin-bottom: 2px;
 }
+
 #content {
-  /* */
+  height: 100%;
 }
 
 
@@ -154,6 +160,7 @@ a:hover { color: orange; }
 /* The map object is inserted here */
 #map_pane {
   background: #d0d7de;
+  height: 100%;
 }
 #map-buttons {
   -moz-user-select: none;
