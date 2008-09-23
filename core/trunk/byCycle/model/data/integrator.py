@@ -350,20 +350,20 @@ class Integrator(object):
 
         base_records, records = [], []
         seen_nodes = set()
-        id_query = select([func.nextval('nodes_id_seq')])
-        ex = db.engine.execute
+        id_query = select([func.nextval('nodes_id_seq')], bind=db.engine)
         type = '%s_node' % self.region_key
         region_id = region.id
         def collect_records(raw_records):
             for r in raw_records:
-                id = ex(query).scalar()
+                id = id_query.scalar()
                 permanent_id = r[0]
                 if permanent_id in seen_nodes:
                     continue
                 seen_nodes.add(permanent_id)
                 geom = r[1]
                 base_records.append(dict(id=id, type=type, region_id=region_id))
-                records.append(dict(id=id, permanent_id=permanent_id, geom=geom))
+                records.append(
+                    dict(id=id, permanent_id=permanent_id, geom=geom))
         collect_records(raw_records_f)
         collect_records(raw_records_t)
 
@@ -421,8 +421,7 @@ class Integrator(object):
         places[(None, None, None)] = None
 
         i = 1
-        id_query = select([func.nextval('edges_id_seq')])
-        ex = db.engine.execute
+        id_query = select([func.nextval('edges_id_seq')], bind=db.engine)
         step = 2500
         num_records = raw_records.rowcount
         base_records, records = [], []
@@ -436,7 +435,7 @@ class Integrator(object):
         region_id = region.id
         self.echo('Transferring edges...')
         for r in raw_records:
-            id = ex(query).scalar()
+            id = id_query.scalar()
             even_side = self.getEvenSide(
                 r.addr_f_l, r.addr_f_r, r.addr_t_l, r.addr_t_r)
             node_f_id = node_map[r.node_f_id]
