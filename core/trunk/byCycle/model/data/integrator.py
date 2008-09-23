@@ -350,10 +350,13 @@ class Integrator(object):
 
         base_records, records = [], []
         seen_nodes = set()
-        region_id = region.id
+        id_query = select([func.nextval('nodes_id_seq')])
+        ex = db.engine.execute
         type = '%s_node' % self.region_key
-        def collect_records(raw_records, id):
+        region_id = region.id
+        def collect_records(raw_records):
             for r in raw_records:
+                id = ex(query).scalar()
                 permanent_id = r[0]
                 if permanent_id in seen_nodes:
                     continue
@@ -361,11 +364,8 @@ class Integrator(object):
                 geom = r[1]
                 base_records.append(dict(id=id, type=type, region_id=region_id))
                 records.append(dict(id=id, permanent_id=permanent_id, geom=geom))
-                id += 1
-            return id
-        next_id = 1  # TODO: next available PK ID
-        next_id = collect_records(raw_records_f, next_id)
-        collect_records(raw_records_t, next_id)
+        collect_records(raw_records_f)
+        collect_records(raw_records_t)
 
         self.echo('Inserting %i records into node table...' % len(seen_nodes))
         self.insert_records(base.Node.__table__, base_records, 'nodes')
@@ -421,7 +421,8 @@ class Integrator(object):
         places[(None, None, None)] = None
 
         i = 1
-        id = 1  # TODO: Get next PK ID
+        id_query = select([func.nextval('edges_id_seq')])
+        ex = db.engine.execute
         step = 2500
         num_records = raw_records.rowcount
         base_records, records = [], []
@@ -435,6 +436,7 @@ class Integrator(object):
         region_id = region.id
         self.echo('Transferring edges...')
         for r in raw_records:
+            id = ex(query).scalar()
             even_side = self.getEvenSide(
                 r.addr_f_l, r.addr_f_r, r.addr_t_l, r.addr_t_r)
             node_f_id = node_map[r.node_f_id]
@@ -484,7 +486,6 @@ class Integrator(object):
                 self.echo('%i down, %i to go' % (i, num_records - i))
                 base_records, records = [], []
             i += 1
-            id += 1
         if records:
             self.echo('Inserting remaining records into edge table...')
             self.insert_records(base.Edge.__table__, base_records, 'edges')
