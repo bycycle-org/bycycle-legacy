@@ -70,7 +70,7 @@ class Geocode(object):
             'street_name': self.address.street_name.to_simple_object(),
             'place': self.address.place.to_simple_object(),
             'address': str(self.address),
-            'point': self.xy_ll,
+            'point': self.xy,
             'network_id': self.network_id
         }
 
@@ -111,7 +111,7 @@ class PostalGeocode(Geocode):
             'street_name': self.address.street_name.to_simple_object(),
             'place': self.address.place.to_simple_object(),
             'address': str(self.address),
-            'point': {'x': self.xy_ll.x, 'y': self.xy_ll.y},
+            'point': {'x': self.xy.x, 'y': self.xy.y},
             'network_id': self.network_id
         }
 
@@ -149,8 +149,8 @@ class IntersectionGeocode(Geocode):
         self.node = node
 
     def to_simple_object(self):
-        x = (self.xy_ll.x if self.xy_ll is not None else None)
-        y = (self.xy_ll.y if self.xy_ll is not None else None)
+        x = self.xy.x
+        y = self.xy.y
         return {
             'type': self.__class__.__name__,
             'street_name1': self.address.street_name1.to_simple_object(),
