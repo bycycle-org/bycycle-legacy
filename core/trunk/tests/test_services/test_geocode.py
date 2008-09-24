@@ -27,18 +27,18 @@ class TestPortlandOR(unittest.TestCase):
 
     service = Service(region='portlandor')
 
-    def _query(self, q):
+    def _query(self, q, **kwargs):
         if not quiet:
             print '\n*****', q
             timer.start()
-        _geocode = self.service.query(q)
+        _geocode = self.service.query(q, **kwargs)
         self.assert_(isinstance(_geocode, Geocode))
         if not quiet:
             print timer.stop(), 'seconds\n'
         return _geocode
 
-    def _queryRaises(self, q, exc):
-        self.assertRaises(exc, self._query, q)
+    def _queryRaises(self, q, exc, **kwargs):
+        self.assertRaises(exc, self._query, q, **kwargs)
 
     ### Edge
 
@@ -198,6 +198,13 @@ class Test_An_Existing_Address(unittest.TestCase):
     def test_should_be_found(self):
         q = '4122 NE Sandy'
         geocode = Service(region='portlandor').query(q)
+
+    def test_should_have_specific_coordinates(self):
+        q = '1806 SE 52nd Ave, Portland'
+        geocode = Service(region='portlandor').query(q)
+        print 'x, y: %s, %s' % (geocode.xy.x, geocode.xy.y)
+        self.assert_(int(geocode.xy.x) == 7661523)
+        self.assert_(int(geocode.xy.y) == 679077)
 
 
 class DontTestMilwaukee(unittest.TestCase):
