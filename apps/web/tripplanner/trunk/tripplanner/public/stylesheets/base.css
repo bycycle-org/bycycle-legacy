@@ -159,7 +159,7 @@ a:hover { color: orange; }
 }
 /* The map object is inserted here */
 #map_pane {
-  background: #d0d7de;
+  background: #ccdafc;
   height: 100%;
 }
 #map-buttons {
