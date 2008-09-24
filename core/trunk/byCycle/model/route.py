@@ -42,11 +42,11 @@ class Route(object):
 
     def to_simple_object(self):
         points = []
-        for i in range(self.linestring_ll.numPoints()):
-            points.append(self.linestring_ll.pointN(i))
+        for i in range(self.linestring.numPoints()):
+            points.append(self.linestring.pointN(i))
         linestring = [{'x': p.x, 'y': p.y} for p in points]
         pairs = [(p.y, p.x) for p in points]
-        bounds = self.linestring_ll.envelope()
+        bounds = self.linestring.envelope()
         centroid = bounds.centroid()
         google_points, google_levels = glineenc.encode_pairs(pairs)
         route = {
