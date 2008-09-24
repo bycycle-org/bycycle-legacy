@@ -251,7 +251,6 @@ byCycle.UI = function () {
         var query_class;
         // Is the query a route?
         var waypoints = q.toLowerCase().split(' to ');
-        byCycle.logDebug(waypoints);
         if (waypoints.length > 1) {
           // Query looks like a route
           self.s_el.value = waypoints[0];
@@ -349,7 +348,7 @@ byCycle.UI = function () {
       if (choice.number) {
         addr = [choice.number, choice.network_id].join('-');
       } else {
-        addr = choice.network_id
+        addr = choice.network_id;
       }
       self.query.route_choices[i] = addr;
       dom_node.remove();

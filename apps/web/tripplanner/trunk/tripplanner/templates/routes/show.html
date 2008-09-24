@@ -6,7 +6,7 @@
 <%namespace file="/widgets/fixed-pane.html" import="fixed_pane" />
 
 <%
-    route = c.route
+    route = c.member
     distance = route.distance
     total_mi = distance['miles']
     total_km = distance['kilometers']
@@ -42,13 +42,13 @@
     <div class="start">
         <a href="${map_blowup_href}"
            title="Start of route"
-           onclick="${map_blowup_onclick % (start.xy_ll.x, start.xy_ll.y)}"
+           onclick="${map_blowup_onclick % (start.xy.x, start.xy.y)}"
            >${s_addr}</a>
     </div>
     <div class="end">
         <a href="${map_blowup_href}"
            title="End of route"
-           onclick="${map_blowup_onclick % (end.xy_ll.x, end.xy_ll.y)};"
+           onclick="${map_blowup_onclick % (end.xy.x, end.xy.y)};"
            >${e_addr}</a>
     </div>
     <div class="total-distance">
@@ -113,7 +113,7 @@
         <div class="direction ${row_class}">
             <span class="count">
                 <a href="${map_blowup_href}"
-                   onclick="${map_blowup_onclick % (end.xy_ll.x, end.xy_ll.y)}"
+                   onclick="${map_blowup_onclick % (end.xy.x, end.xy.y)}"
                    >${i + 2}</a>
             </span>
             -

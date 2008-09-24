@@ -1,11 +1,12 @@
 import sys, re
 
+import simplejson
+
 from byCycle.services.exceptions import *
 from byCycle.model.geocode import Geocode
 
 from tripplanner.lib.base import *
 from tripplanner.lib.base import __all__ as base__all__
-
 from tripplanner.controllers.regions import RegionsController
 
 __all__ = base__all__ + ['ServicesController']
@@ -23,8 +24,10 @@ If you want to provide more details about the error, please send email to:
 class ServicesController(RestController):
     """Base class for controllers that interact with back end services."""
 
-    def __before__(self):
-        c.service = self.collection_name
+    def __before__(self, format='html'):
+        RestController.__before__(self, format=format)
+        c.service = c.collection_name
+        self.region = model.Region.get_by_slug('portlandor')
 
     def find(self):
         """Generic find method. Expects ``q`` to be set in GET params.
@@ -54,11 +57,12 @@ class ServicesController(RestController):
             self.http_status = 400
             msg = 'Please enter something to search for.'
             self.exception = InputError(msg)
-            return self._render_response(template='errors',
-                                         code=self.http_status)
-        redirect_to(h.url_for(region_id=self.region.slug,
-                              controller=controller, action='find'),
-                              **dict(request.params))
+            return self._render(action=self.http_status, code=self.http_status)
+        redirect_to(
+            h.url_for(
+                region_id=self.region.slug,
+                controller=controller, action='find'),
+            **dict(request.params))
 
     def _find(self, query, service_class, block=None, **params):
         """Show the result of ``query``ing a service.
@@ -107,11 +111,11 @@ class ServicesController(RestController):
                 result[0]
             except TypeError:
                 # No, it's a single object (AKA member)
-                self.member = result
+                c.member = result
                 template = 'show'
             else:
                 # Yes
-                self.collection = result
+                c.collection = result
                 template = 'index'
 
         try:
@@ -120,6 +124,7 @@ class ServicesController(RestController):
         except AttributeError:
             pass
         else:
+            c.exception = self.exception
             template = getattr(self, '_template', 'errors')
             if self.http_status == 500:
                 if g.debug:
@@ -127,27 +132,22 @@ class ServicesController(RestController):
                 else:
                     # TODO: Make this send the request details also. Currently,
                     # it doesn't send the request URL, PATH_INFO, etc.
-                    g.error_handler.exception_handler(sys.exc_info(),
-                                                      request.environ)
+                    err_handler = g.error_handler.exception_handler
+                    err_handler(sys.exc_info(), request.environ)
 
-        return self._render_response(template=template, code=self.http_status)
+        return self._render(action=template, code=self.http_status)
 
-    def _get_html_content(self, json=True):
+    def _render_template(self, json=True, **kwargs):
         if json:
-            self.json = self._get_json_content()[0]
-        return super(ServicesController, self)._get_html_content()
+            # Inject JSON into template, so the UI can initialize from it
+            json_obj = self._get_json_object(action=kwargs['action'])
+            c.json = simplejson.dumps(json_obj)
+        return super(ServicesController, self)._render_template(**kwargs)
 
-    def _get_json_content(self, fragment=True):
-        """Get a JSON string.
-
-        Assumes members have a ``to_simple_object`` method. Modifies the base
-        simple object before JSONification by "wrapping" it in a result
-        container object.
-
-        """
+    def _get_json_object(self, action=None, wrap=True, fragment=True, block=None):
         def block(obj):
             result = {
-                'type': self.Entity.__class__.__name__,
+                'type': c.Entity.__name__,
                 'results': (obj if isinstance(obj, list) else [obj]),
             }
 
@@ -166,10 +166,11 @@ class ServicesController(RestController):
                 }
 
             if fragment:
-                wrap = self.wrap
-                self.wrap = False
-                f = super(ServicesController, self)._get_html_content()[0]
-                self.wrap = wrap
+                wrap = c.wrap
+                c.wrap = False
+                args = dict(action=action, format='html')
+                f = super(ServicesController, self)._render_template(**args)
+                c.wrap = wrap
                 result['fragment'] = f
 
             # ``choices`` may be set when HTTP status is 300
@@ -183,7 +184,7 @@ class ServicesController(RestController):
                 result['choices'] = choices
 
             return result
-        return super(ServicesController, self)._get_json_content(block=block)
+        return super(ServicesController, self)._get_json_object(block=block)
 
     def _makeRouteList(self, q):
         """Try to parse a route list from the given query, ``q``.
