@@ -199,8 +199,8 @@ class Edge(DeclarativeBase):
         return self.to_miles() * 5280.0
 
     def to_miles(self):
-        return gis.getLengthOfLineString([self.geom.pointN(n) for n in
-                                          range(self.geom.numPoints())])
+        return gis.getLengthOfLineString(
+            [self.geom.pointN(n) for n in range(self.geom.numPoints())])
 
     def to_kilometers(self):
         return self.to_miles() * 1.609344
@@ -210,12 +210,10 @@ class Edge(DeclarativeBase):
 
     def getSideNumberIsOn(self, num):
         """Determine which side of the edge, "l" or "r", ``num`` is on."""
-        # Determine odd side of edge, l or r, for convenience
-        odd_side = ('l', 'r')[self.even_side == 'l']
-        # Is ``num`` on the even or odd side of this edge?
+        odd_side = 'r' if self.even_side == 'l' else 'l'
         # FIXME: What if there's no address range on the side ``num`` is on?
         #        Right now, we return the odd side by default
-        return (odd_side, self.even_side)[int(num) % 2 == 0]
+        return odd_side if int(num) % 2 else self.even_side
 
     def getPlaceOnSideNumberIsOn(self, num):
         """Get `Place` on side ``num`` is on."""
@@ -269,13 +267,13 @@ class Edge(DeclarativeBase):
         _Edge = self.region.module.Edge
 
         # Function to get interpolated point
-        f = func.line_interpolate_point(_Edge.geom, location)
+        c = _Edge.__table__.c
+        f = func.line_interpolate_point(c.geom, location)
         # Function to get WKB version of lat/long point
         f = func.asbinary(f)
 
         # Query DB and get WKB POINT
-        select_ = select(
-            [f.label('wkb_point')], _Edge.id == self.id, bind=engine)
+        select_ = select([f.label('wkb_point')], c.id == self.id, bind=engine)
         result = select_.execute()
         wkb_point = result.fetchone().wkb_point
 
