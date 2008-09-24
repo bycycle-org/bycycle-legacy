@@ -41,7 +41,6 @@ Class(byCycle.UI, 'Query', null, function () {
       // Done only if no errors in before()
       var path = ['regions', this.ui.region_id, this.service, 'find'].join('/');
       var url = [byCycle.prefix, path].join('');
-      console.debug(url)
       var params = this.input;
 
       // TODO: Make bookmark???
@@ -66,18 +65,18 @@ Class(byCycle.UI, 'Query', null, function () {
 
     on200: function(response) {
       self.response = response;
-      //var results = self.makeResults(response);
+      var results = self.makeResults(response);
       // Show widget in result list for ``service``
-      //var li, result_list = self.result_list;
-      //$j.each(results, function (i, r) {
-        //li = $j('li');
-        //li.append(r.widget.dom_node);
-        //result_list.append(li);
-      //});
+      var li, result_list = self.result_list;
+      $j.each(results, function (i, r) {
+        li = $j('<li></li>');
+        li.append(r.widget.dom_node);
+        result_list.append(li);
+      });
       // Process the results for ``service``
       // I.e., recenter map, place markers, draw line, etc
-      //self.processResults(response, results);
-      //self.ui.is_first_result = false;
+      self.processResults(response, results);
+      self.ui.is_first_result = false;
     },
 
     onFailure: function(request) {
@@ -89,6 +88,7 @@ Class(byCycle.UI, 'Query', null, function () {
     onComplete: function(request) {
       self.ui.spinner.hide();
       self.http_status = request.status;
+      byCycle.logDebug(self.http_status);
     },
 
     onException: function(request) {
@@ -109,15 +109,15 @@ Class(byCycle.UI, 'Query', null, function () {
       // nodes).
       // Note: The fragment should consist of a set of top level elements that
       // can be transformed into widgets.
-      var div = $j('div');
-      div.html(response.fragment);
+      var div = $j('<div></div>');
+      div.html(response.result.fragment);
       var nodes = div.find('.fixed-pane');
 
       var self = this;
       var result, dom_node;
-      $j.each(response.results, function (i, r) {
+      $j.each(response.result.results, function (i, obj) {
         dom_node = nodes[i];
-        result = self.makeResult(r, dom_node);
+        result = self.makeResult(obj, dom_node);
         results.push(result);
       });
 
@@ -135,13 +135,13 @@ Class(byCycle.UI, 'Query', null, function () {
      * @return ``Result``
      */
     makeResult: function (result, dom_node) {
-      //var id = [this.service, 'result', new Date().getTime()].join('_');
-      //dom_node.id = id;
-      //var widget = new byCycle.widget.FixedPane(dom_node, {destroy_on_close: true});
-      //var result_obj = new this.ui.Result(id, result, this.service, widget);
+      var id = [this.service, 'result', new Date().getTime()].join('_');
+      dom_node.id = id;
+      var widget = {dom_node: dom_node};
+      var result_obj = new this.ui.Result(id, result, this.service, widget);
       //widget.register_listeners('close', result_obj.remove.bind(result_obj));
-      //this.ui.results[this.service][id] = result_obj;
-      //return result_obj;
+      this.ui.results[this.service][id] = result_obj;
+      return result_obj;
     },
 
     processResults: function(response, results) {}
@@ -177,13 +177,15 @@ Class(byCycle.UI, 'GeocodeQuery', byCycle.UI.Query, {
   processResults: function(response, results) {
     var zoom = this.ui.is_first_result ? this.ui.map.default_zoom : undefined;
     // For each result, place a marker on the map.
-    var content_pane;
-    var placeGeocodeMarker = this.ui.map.placeGeocodeMarker;
+    var div, content_pane, marker;
+    var map = this.ui.map;
+    var placeGeocodeMarker = map.placeGeocodeMarker;
     $j.each(results, function (i, r) {
-      //var div = $j('div');
-      //content_pane = $j('div'); //r.widget.content_pane.cloneNode(true);
-      //div.append(content_pane);
-      //r.addOverlay(placeGeocodeMarker(r.result.point, div, zoom));
+      div = $j('<div></div>');
+      content_pane = $j('<div>TEST</div>'); //r.widget.content_pane.cloneNode(true);
+      div.append(content_pane);
+      marker = placeGeocodeMarker.call(map, r.result.point, div, zoom);
+      r.addOverlay(marker);
     });
   }
 });

@@ -48,7 +48,9 @@ Class(byCycle.Map.openlayers, 'Map', byCycle.Map.base.Map, {
       //'Hybrid', tile_urls,
       //{layers: 'h10', format: 'image/jpeg', EXCEPTIONS: ''},
       //{buffer: 0, transitionEffect: 'none'});
-    map.addLayers([map_layer]);
+
+    this.marker_layer = new OpenLayers.Layer.Markers('Markers');
+    map.addLayers([map_layer, this.marker_layer]);
 
     // Init
     map.setCenter(new OpenLayers.LonLat(7643672, 683029), 2);
@@ -67,27 +69,31 @@ Class(byCycle.Map.openlayers, 'Map', byCycle.Map.base.Map, {
   },
 
   setHeight: function(height) {
-    this.setSize({w: undefined, h: height});
+    this.setSize({w: null, h: height});
   },
 
   getCenter: function() {
-    return {x: 0, y: 0};
+    var c = this.map.getCenter();
+    return {x: c.lon, y: c.lat};
   },
 
   getCenterString: function() {
-    return '0, 0';
+    var c = this.map.getCenter();
+    var x = Math.round(c.lon * 1000000) / 1000000;
+    var y = Math.round(c.lat * 1000000) / 1000000;
+    return [x, y].join(', ');
   },
 
   setCenter: function(center, zoom) {
-    //
+    this.map.setCenter(new OpenLayers.LonLat(center.x, center.y), zoom);
   },
 
   getZoom: function() {
-    return 1;
+    return this.map.getZoom();
   },
 
   setZoom: function(zoom) {
-    //
+    this.map.zoomTo(zoom);
   },
 
   /* Other */
@@ -101,7 +107,8 @@ Class(byCycle.Map.openlayers, 'Map', byCycle.Map.base.Map, {
   },
 
   addOverlay: function(overlay) {
-    //
+    // Select layer based on type of overlay
+    this.marker_layer.addMarker(overlay);
   },
 
   removeOverlay: function(overlay) {
@@ -109,18 +116,28 @@ Class(byCycle.Map.openlayers, 'Map', byCycle.Map.base.Map, {
   },
 
   drawPolyLine: function(points, color, weight, opacity) {
-    var line = {};
-    return this.addOverlay(line);
+    //var line = new GPolyline(points, color, weight, opacity);
+    //this.map.addOverlay(line);
+    //return line;
   },
 
   placeMarker: function(point, icon) {
-    var marker = {};
-    return this.addOverlay(marker);
+    var marker = new OpenLayers.Marker(
+      new OpenLayers.LonLat(point.x, point.y));
+    this.marker_layer.addMarker(marker);
+    return marker;
   },
 
   placeGeocodeMarker: function(point, node, zoom, icon) {
-    var marker = {};
-    return this.addOverlay(marker);
+    zoom = (typeof(zoom) != 'undefined' ? zoom : this.map.getZoom());
+    this.setCenter(point, zoom);
+    var marker = this.placeMarker(point, icon);
+    var coord = new OpenLayers.LonLat(point.x, point.y);
+    var self = this;
+    //GEvent.addListener(marker, "click", function() {
+      //self.map.openInfoWindow(g_lat_lng, node);
+    //});
+    return marker;
   },
 
   /**

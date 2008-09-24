@@ -23,9 +23,9 @@ Class(byCycle.UI, 'Result', null, {
     // Remove LI container
     $j(this.id).parentNode.remove();
     // Remove map overlays
-    var removeOverlay = this.map.removeOverlay.bind(this.map);
+    var self = this;
     for (var i = 0; i < this.overlays.length; ++i) {
-       removeOverlay(this.overlays[i]);
+       self.map.removeOverlay(this.overlays[i]);
     };
     // Remove this from results list
     delete byCycle.UI.results[this.service][this.id];

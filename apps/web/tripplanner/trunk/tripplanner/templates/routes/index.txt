@@ -1,4 +1,3 @@
-% for r in c.routes:
-${r}
-
+% for route in c.collection:
+    ${route}
 % endfor
