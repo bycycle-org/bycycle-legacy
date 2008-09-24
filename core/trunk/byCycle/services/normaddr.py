@@ -56,16 +56,7 @@ class Service(services.Service):
 
     name = 'address'
 
-    def __init__(self, region=None):
-        """
-
-        ``region`` `Region` | `string`
-            `Region` or region key
-
-        """
-        services.Service.__init__(self, region=region)
-
-    def query(self, q):
+    def query(self, q, **kwargs):
         """Get a normalized address for the input address.
 
         Try to parse the parts of the address in ``q``. Return an `Address` of
@@ -85,6 +76,8 @@ class Service(services.Service):
             - ``q`` cannot be parsed
 
         """
+        self.query_kwargs = kwargs
+
         original_q = q
         q = q.strip().lower()
         if not q:
@@ -175,7 +168,7 @@ class Service(services.Service):
             return point_addr
 
         if trying_id:
-            return self.query(q)
+            return self.query(q, **self.query_kwargs)
 
         # Raise an exception if we get here: address is unnormalizeable
         raise InputError(

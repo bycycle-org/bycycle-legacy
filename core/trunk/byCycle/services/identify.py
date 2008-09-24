@@ -30,10 +30,7 @@ class Service(services.Service):
 
     name = 'identify'
 
-    def __init__(self, region=None):
-        services.Service.__init__(self, region=region)
-
-    def query(self, q, layer=None, input_srid=4326):
+    def query(self, q, layer=None, input_srid=None, **kwargs):
         """Find feature in layer closest to point represented by ``q``.
 
         ``q``
@@ -52,19 +49,23 @@ class Service(services.Service):
             ``q`` can't be parsed as valid point.
 
         """
+        region = self.region
         try:
             point = Point(q)
         except ValueError:
             raise IdentifyError(
                 'Cannot identify because POINT is not valid: %s.' % q)
-        region = self.region
+        input_srid = input_srid or region.srid
         earth_circumference = region.earth_circumference
         Entity = getattr(region.module, layer)
         c = Entity.__table__.c
+        # Get "well known text" version of input ``point``
         wkt = str(point)
-        # Function to convert the input point to native geometry
-        transform = func.transform(func.GeomFromText(wkt, input_srid),
-                                   region.srid)
+        # Transform WKT point to DB geometry object
+        transform = func.GeomFromText(wkt, input_srid)
+        # Function to convert input ``point`` to native geometry
+        if input_srid != region.srid:
+            transform = func.transform(transform, region.srid)
         # Function to get the distance between input point and table points
         distance = func.distance(transform, c.geom)
         # This is what we're SELECTing--all columns in the layer plus the

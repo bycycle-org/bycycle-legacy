@@ -45,11 +45,14 @@ class Service(object):
         self._region = regions.getRegion(region)
     region = property(_get_region, _set_region)
 
-    def query(self, q):
+    def query(self, q, **kwargs):
         """Query this ``Service`` and return an object or objects.
 
         ``q`` `object`
             Query object that this ``Service`` understands
+
+        ``kwargs``
+             Typically for args that are passed through to other services.
 
         return an object or a collection of objects
 
