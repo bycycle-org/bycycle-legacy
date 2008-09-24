@@ -110,15 +110,7 @@ class Service(services.Service):
     """Route-finding Service."""
     name = 'route'
 
-    def __init__(self, region=None):
-        """
-
-        ``region`` `Region` | `string` -- Region key
-
-        """
-        services.Service.__init__(self, region=region)
-
-    def query(self, q, tmode='bicycle', pref=''):
+    def query(self, q, tmode='bicycle', pref='', **kwargs):
         """Get a route for all the addresses in ``q`` [0 ==> 1 ==> 2 ...].
 
         ``q`` list<string>
@@ -144,6 +136,8 @@ class Service(services.Service):
             No route found between start and end addresses
 
         """
+        self.query_kwargs = kwargs
+
         # Process input waypoints (does basic error checking)
         waypoints = self._getWaypoints(q)
 
@@ -238,7 +232,7 @@ class Service(services.Service):
         choices = []
         for w in waypoints:
             try:
-                geocode_ = geocode_service.query(w)
+                geocode_ = geocode_service.query(w, **self.query_kwargs)
             except geocode.AddressNotFoundError, e:
                 addresses_not_found.append(w)
             except geocode.MultipleMatchingAddressesError, e:

@@ -19,9 +19,9 @@ from byCycle.model.route import Route
 
 class Test_A_Route(unittest.TestCase):
 
-    def _query(self, q, region=None):
+    def _query(self, q, region=None, **kwargs):
         service = Service(region=region)
-        route_or_routes = service.query(q)
+        route_or_routes = service.query(q, **kwargs)
         return route_or_routes
 
     def _queryRaises(self, q, exc):
@@ -41,12 +41,12 @@ class Test_A_Route(unittest.TestCase):
 
     def test_with_coordinate_addresses_should_pass(self):
         q = ('x=-122.668104, y=45.523127', '4807 se kelly')
-        route = self._query(q, region='portlandor')
+        route = self._query(q, region='portlandor', input_srid=4326)
         q = ('4807 se kelly', 'longitude=-122.668104, latitude=45.523127')
-        route = self._query(q, region='portlandor')
+        route = self._query(q, region='portlandor', input_srid=4326)
         q = ('x=-122.668104, lat=45.523127',
              'longitude=-122.615426, latitude=45.502625')
-        route = self._query(q, region='portlandor')
+        route = self._query(q, region='portlandor', input_srid=4326)
 
     def test_with_no_place_on_first_address_should_pass_but_does_not(self):
         # FIXME: Make this NOT pass (then change the name of the test)

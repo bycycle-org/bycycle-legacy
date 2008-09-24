@@ -113,10 +113,7 @@ class Service(services.Service):
 
     name = 'geocode'
 
-    def __init__(self, region=None):
-        services.Service.__init__(self, region=region)
-
-    def query(self, q):
+    def query(self, q, **kwargs):
         """Find and return `Geocodes` in ``region`` matching the address ``q``.
 
         Choose the appropriate geocoding method based on the type of the input
@@ -143,11 +140,13 @@ class Service(services.Service):
             Multiple address found that match the input address, ``q``
 
         """
+        self.query_kwargs = kwargs
+
         # First, normalize the address, getting back an `Address` object.
         # The NA service may find a region, iff `region` isn't already set. If
         # so, we want to use that region as the region for this query.
         na_service = normaddr.Service(region=self.region)
-        oAddr = na_service.query(q)
+        oAddr = na_service.query(q, **self.query_kwargs)
         self.region = na_service.region
 
         module = self.region.module
@@ -347,7 +346,8 @@ class Service(services.Service):
             # No network ID, so look up `Node` by distance
             id_service = identify.Service(region=self.region)
             try:
-                node = id_service.query(oAddr.point, layer='Node')
+                node = id_service.query(
+                    oAddr.point, layer='Node', **self.query_kwargs)
             except IdentifyError:
                 node = None
         else:
