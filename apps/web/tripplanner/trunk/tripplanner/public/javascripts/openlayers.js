@@ -15,21 +15,25 @@ Class(byCycle.Map.openlayers, 'Map', byCycle.Map.base.Map, {
   },
 
   createMap: function(container) {
+    var region = this.ui.region;
+    var bounds = region.bounds;
     var opts = {
       theme: null,
       controls: [
         new OpenLayers.Control.MousePosition(),
         new OpenLayers.Control.PanZoomBar({zoomWorldIcon: true}),
-        new OpenLayers.Control.LayerSwitcher({'ascending':false}),
-        new OpenLayers.Control.Navigation(),
-        new OpenLayers.Control.OverviewMap(),
-        new OpenLayers.Control.KeyboardDefaults()
+        new OpenLayers.Control.LayerSwitcher(),
+        new OpenLayers.Control.Navigation()
+        //new OpenLayers.Control.OverviewMap(),
+        //new OpenLayers.Control.KeyboardDefaults()
       ],
-      projection: 'EPSG:2913',
-      units: 'feet',
+      projection: 'EPSG:' + region.srid,
+      units: region.units,
       numZoomLevels: 10,
       maxResolution: 256,
-      maxExtent: new OpenLayers.Bounds(7435781, 447887, 7904954, 877395)
+      maxExtent: new OpenLayers.Bounds(
+        bounds.sw.x, bounds.sw.y,
+        bounds.ne.x, bounds.ne.y)
     };
 
     var map = new OpenLayers.Map(container.attr('id'), opts);
