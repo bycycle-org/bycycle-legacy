@@ -22,7 +22,6 @@
 
     ${h.stylesheet_link('/stylesheets/base.css')}
     ${h.if_ie(h.stylesheet_link('/stylesheets/base_ie.css'))}
-    ${h.stylesheet_link('/javascripts/OpenLayers-2.6/theme/default/style.css')}
     ${h.stylesheet_link('/stylesheets/print.css', media='print')}
     ${self.stylesheet_links()}
 
@@ -164,6 +163,11 @@
 
       <div id="spinner" class="spinner noprint">
         ${h.image('spinner.gif', width=16, height=16, alt='Click to hide')}
+      </div>
+
+
+      <div id="errors" class="flora" title="Oops!">
+        <div id="error_content"></div>
       </div>
 
 

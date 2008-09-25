@@ -18,10 +18,12 @@ Class(byCycle.Map.openlayers, 'Map', byCycle.Map.base.Map, {
     var opts = {
       theme: null,
       controls: [
+        new OpenLayers.Control.MousePosition(),
         new OpenLayers.Control.PanZoomBar({zoomWorldIcon: true}),
         new OpenLayers.Control.LayerSwitcher({'ascending':false}),
         new OpenLayers.Control.Navigation(),
-        new OpenLayers.Control.OverviewMap()
+        new OpenLayers.Control.OverviewMap(),
+        new OpenLayers.Control.KeyboardDefaults()
       ],
       projection: 'EPSG:2913',
       units: 'feet',
@@ -49,7 +51,7 @@ Class(byCycle.Map.openlayers, 'Map', byCycle.Map.base.Map, {
       //{layers: 'h10', format: 'image/jpeg', EXCEPTIONS: ''},
       //{buffer: 0, transitionEffect: 'none'});
 
-    this.marker_layer = new OpenLayers.Layer.Markers('Markers');
+    this.marker_layer = new OpenLayers.Layer.Markers('Locations');
     map.addLayers([map_layer, this.marker_layer]);
 
     // Init
@@ -116,9 +118,9 @@ Class(byCycle.Map.openlayers, 'Map', byCycle.Map.base.Map, {
   },
 
   drawPolyLine: function(points, color, weight, opacity) {
-    //var line = new GPolyline(points, color, weight, opacity);
-    //this.map.addOverlay(line);
-    //return line;
+    var line = new OpenLayers(points, color, weight, opacity);
+    this.route_layer.addOverlay(line);
+    return line;
   },
 
   placeMarker: function(point, icon) {

@@ -39,13 +39,13 @@ Class(byCycle.UI, 'Query', null, function () {
 
     doQuery: function() {
       // Done only if no errors in before()
-      var path = ['regions', this.ui.region_id, this.service, 'find'].join('/');
+      var path = [
+        'regions', this.ui.region_id, this.service, 'find.json'].join('/');
       var url = [byCycle.prefix, path].join('');
       var params = this.input;
 
       // TODO: Make bookmark???
 
-      params.format = 'json';
       var args = {
         url: url,
         type: 'GET',
@@ -166,7 +166,7 @@ Class(byCycle.UI, 'GeocodeQuery', byCycle.UI.Query, {
   before: function() {
     this.superclass.before.apply(this, arguments);
     if (typeof this.input == 'undefined') {
-      var q = this.ui.q_el.value;
+      var q = this.ui.q_el.val();
       if (!q) {
         this.ui.q_el.focus();
         throw new Error('Please enter an address!');
@@ -202,19 +202,17 @@ Class(byCycle.UI, 'RouteQuery', byCycle.UI.Query, {
     var ui = byCycle.UI;
     var form = opts.form || ui.route_form;
     var result_list = opts.result_list || ui.route_list;
-    var service = 'routes';
-    byCycle.UI.RouteQuery.superclass.initialize.call(
-      this, service, form, result_list, opts);
-    this.ui.selectInputTab(service);
+    this.superclass.initialize.call(this, 'routes', form, result_list, opts);
+    //this.ui.selectInputTab(service);
   },
 
   before: function() {
-    this.superclass.before.call(this);
+    this.superclass.before.apply(this, arguments);
     var errors = [];
     if (typeof(this.input) == 'undefined') {
       // Use form fields for input
-      var s = this.ui.s_el.value;
-      var e = this.ui.e_el.value;
+      var s = this.ui.s_el.val();
+      var e = this.ui.e_el.val();
       if (!(s && e)) {
         if (!s) {
           errors.push('Please enter a start address');
@@ -228,6 +226,7 @@ Class(byCycle.UI, 'RouteQuery', byCycle.UI.Query, {
         }
         throw new Error(errors.join('\n'));
       }
+      this.input = {s: s, e: e};
     }
   },
 
@@ -254,46 +253,47 @@ Class(byCycle.UI, 'RouteQuery', byCycle.UI.Query, {
     var route, ls, s_e_markers, s_marker, e_marker, line;
     var ui = this.ui;
     var map = ui.map;
-    var getBoundsForPoints = map.getBoundsForPoints.bind(map);
-    var centerAndZoomToBounds = map.centerAndZoomToBounds.bind(map);
-    var placeMarkers = map.placeMarkers.bind(map);
-    var addListener = map.addListener.bind(map);
-    var showMapBlowup = map.showMapBlowup.bind(map);
+    var getBoundsForPoints = map.getBoundsForPoints;
+    var centerAndZoomToBounds = map.centerAndZoomToBounds;
+    var placeMarkers = map.placeMarkers;
+    var addListener = map.addListener;
+    var showMapBlowup = map.showMapBlowup;
     var drawPolyLine;
     if (map.drawPolyLineFromEncodedPoints) {
-      drawPolyLine = map.drawPolyLineFromEncodedPoints.bind(map);
+      drawPolyLine = map.drawPolyLineFromEncodedPoints;
     } else {
-      drawPolyLine = map.drawPolyLine.bind(map);
+      drawPolyLine = map.drawPolyLine;
     }
-    results.each(function (r) {
+    $j.each(results, function (i, r) {
       route = r.result;
       ls = route.linestring;
 
       // Zoom to linestring
       // TODO: Compute this in back end
-      centerAndZoomToBounds(route.bounds, route.center);
+      centerAndZoomToBounds.call(map, route.bounds, route.center);
 
       // Place from and to markers
-      s_e_markers = placeMarkers([ls[0], ls[ls.length - 1]],
-                                 [map.start_icon, map.end_icon]);
+      s_e_markers = placeMarkers.call(
+        map, [ls[0], ls[ls.length - 1]], [map.start_icon, map.end_icon]);
 
       // Add listeners to start and end markers
       s_marker = s_e_markers[0];
       e_marker = s_e_markers[1];
       addListener(s_marker, 'click', function() {
-        showMapBlowup(ls[0]);
+        showMapBlowup.call(map, ls[0]);
       });
       addListener(e_marker, 'click', function() {
-        showMapBlowup(ls[ls.length - 1]);
+        showMapBlowup.call(map, ls[ls.length - 1]);
       });
 
       // Draw linestring
       var line;
       var color = ui.route_line_color;
       if (map.drawPolyLineFromEncodedPoints) {
-        line = drawPolyLine(route.google_points, route.google_levels, color);
+        line = drawPolyLine.call(
+          map, route.google_points, route.google_levels, color);
       } else {
-        line = drawPolyLine(ls, color);
+        line = drawPolyLine.call(map, ls, color);
       }
 
       // Add overlays to result object

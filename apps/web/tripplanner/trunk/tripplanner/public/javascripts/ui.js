@@ -68,6 +68,7 @@ byCycle.UI = function () {
         self.map_type = byCycle.Map.base;
       }
       self.map = new self.map_type.Map(self, self.map_pane);
+	  self.onResize();
       self.setRegion(self.region_id);
       self.region_id = 'portlandor';
       self._createEventHandlers();
@@ -79,12 +80,14 @@ byCycle.UI = function () {
       if (byCycle.getParamVal('bike_map')) {
         self.toggleBikeTileOverlay();
       }
+	  self.onResize();
       self.spinner.hide();
     },
 
     _assignUIElements: function() {
       self.spinner = $j('#spinner');
       self.controls = $j('#controls');
+	  self.errors = $j('#errors');
       self.region_el = $j('#regions');
       self.map_pane = $j('#map_pane');
       // Service
@@ -105,11 +108,18 @@ byCycle.UI = function () {
 
     _createWidgets: function () {
       self.controls.accordion();
+	  self.errors.dialog({autoOpen: false});
     },
 
     /* Events ****************************************************************/
 
-    _createEventHandlers: function() {
+	onResize: function () {
+	  var offset = $j('#content').offset().top;
+	  var height = $j('body').outerHeight() - offset;
+	  $j('#content').height(height);
+	},
+
+    _createEventHandlers: function () {
       $j(window).resize(self.onResize);
       $j(document.body).unload(self.onUnload);
       if (self.region_el) {
@@ -133,7 +143,7 @@ byCycle.UI = function () {
       });
     },
 
-    onUnload: function(event) {
+    onUnload: function (event) {
       document.body.style.display = 'none';
       self.map.onUnload();
     },
@@ -188,7 +198,7 @@ byCycle.UI = function () {
     },
 
     selectInputTab: function(service) {
-      self.input_tab_control.select(service == 'routes' ? 1 : 0);
+      //self.input_tab_control.select(service == 'routes' ? 1 : 0);
     },
 
     swapStartAndEnd: function(event) {
@@ -268,6 +278,7 @@ byCycle.UI = function () {
         self.showErrors('Please enter something to search for!');
       }
       byCycle.logDebug('Left runGenericQuery');
+	  return false;
     },
 
     /* Run all queries through here for consistency. */
@@ -289,17 +300,19 @@ byCycle.UI = function () {
       self.runQuery(self.RouteQuery, event, input);
     },
 
-    showErrors: function(/* args */) {
-      var errors = [];
-      $j.each(arguments, function (i, a) { errors.push(a) });
-      byCycle.logDebug('Oops!');
-      self.spinner.hide();
-      var content = [
-          '<li class="error">',
-             errors.join('</li><li class="error">'),
-          '</li>'].join('');
-      self.controls.accordion('activate', 2 )
-      $j('#errors ul').html(content);
+	/**
+	 * @param errors A string of error messages separated by \n
+	 */
+    showErrors: function(errors) {
+	  var content = [
+		'<ul>',
+		  '<li class="error">',
+			 errors.split('\n').join('</li><li class="error">'),
+		  '</li>',
+		'</ul>'].join('');
+      $j('#error_content').html(content);
+	  self.errors.dialog('open');
+	  self.spinner.hide();
     },
 
     /**
