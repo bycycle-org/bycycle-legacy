@@ -27,7 +27,7 @@ class ServicesController(RestController):
     def __before__(self, format='html'):
         RestController.__before__(self, format=format)
         c.service = c.collection_name
-        self.region = model.Region.get_by_slug('portlandor')
+        c.region = model.Region.get_by_slug('portlandor')
 
     def find(self):
         """Generic find method. Expects ``q`` to be set in GET params.
@@ -60,7 +60,7 @@ class ServicesController(RestController):
             return self._render(action=self.http_status, code=self.http_status)
         redirect_to(
             h.url_for(
-                region_id=self.region.slug,
+                region_id=c.region.slug,
                 controller=controller, action='find'),
             **dict(request.params))
 
@@ -83,7 +83,7 @@ class ServicesController(RestController):
             E.g., for route, tmode=bike, pref=safer
 
         """
-        service = service_class(region=self.region.slug)
+        service = service_class(region=c.region.slug)
 
         try:
             result = service.query(query, **params)
