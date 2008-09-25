@@ -45,14 +45,14 @@ Class(byCycle.Map.openlayers, 'Map', byCycle.Map.base.Map, {
       {layers: 'baseOSPN', format: 'image/png',  EXCEPTIONS: ''},
       {buffer: 0, transitionEffect: 'none'});
 
-    // TODO: need trimet.js
-    //var hybrid_layer = new trimet.layer.Hybrid(
-      //'Hybrid', tile_urls,
-      //{layers: 'h10', format: 'image/jpeg', EXCEPTIONS: ''},
-      //{buffer: 0, transitionEffect: 'none'});
+    this.hybrid_layer();
+    var hybrid_layer = new HybridLayer(
+      'Satellite', tile_urls,
+      {layers: 'h10', format: 'image/jpeg', EXCEPTIONS: ''},
+      {buffer: 0, transitionEffect: 'none'});
 
     this.marker_layer = new OpenLayers.Layer.Markers('Locations');
-    map.addLayers([map_layer, this.marker_layer]);
+    map.addLayers([map_layer, hybrid_layer, this.marker_layer]);
 
     // Init
     map.setCenter(new OpenLayers.LonLat(7643672, 683029), 2);
@@ -118,9 +118,9 @@ Class(byCycle.Map.openlayers, 'Map', byCycle.Map.base.Map, {
   },
 
   drawPolyLine: function(points, color, weight, opacity) {
-    var line = new OpenLayers(points, color, weight, opacity);
-    this.route_layer.addOverlay(line);
-    return line;
+    //var line = new OpenLayers(points, color, weight, opacity);
+    //this.route_layer.addOverlay(line);
+    //return line;
   },
 
   placeMarker: function(point, icon) {
@@ -153,50 +153,67 @@ Class(byCycle.Map.openlayers, 'Map', byCycle.Map.base.Map, {
     return markers;
   },
 
-  makeRegionMarker: function() {
-
-  },
+  makeRegionMarker: function() {},
 
 
   /* Bounds */
 
-  getBoundsForPoints: function(points) {
-    var xs = [];
-    var ys = [];
-    for (var i = 0; i < points.length; ++i) {
-      var p = points[i];
-      xs.push(p.x);
-      ys.push(p.y);
-    }
-    var comp = function(a, b) { return a - b; };
-    xs.sort(comp);
-    ys.sort(comp);
-    var bounds = {
-      sw: {x: xs[0], y: ys[0]},
-      ne: {x: xs.pop(), y: ys.pop()}
-    };
-    return bounds;
-  },
-
-  /**
-   * @param bounds A set of points representing a bounding box (sw, ne)
-   * @return Center of bounding box {x: x, y: y}
-   */
-  getCenterOfBounds: function(bounds) {
-    var sw = bounds.sw;
-    var ne = bounds.ne;
-    return {x: (sw.x + ne.x) / 2.0, y: (sw.y + ne.y) / 2.0};
-  },
-
   centerAndZoomToBounds: function(bounds, center) {},
 
-  showGeocode: function(geocode) {
-
-  },
+  showGeocode: function(geocode) {},
 
   makeBounds: function(bounds) {},
 
   makePoint: function(point) {
     return point;
+  },
+
+  /**
+   * Class: trimet.layer.Hybrid
+   * A class for creating a hybrid base layer.
+   *
+   * Inherits from:
+   *  - OpenLayers.Layer.WMS
+   */
+  hybrid_layer: function () {
+    self.HybridLayer = new OpenLayers.Class(OpenLayers.Layer.WMS, {
+
+      /**
+       * Constant: LAYER_NAMES
+       * Mapping from zoom levels to wms layer names.
+       */
+      LAYER_NAMES: {
+          0: 'hTopo',
+          1: 'hTopo',
+          2: 'h20',
+          3: 'h10',
+          4: 'h10',
+          5: 'h4',
+          6: 'h4',
+          7: 'h2',
+          8: 'h1',
+          9: 'h'
+      },
+
+      /**
+       * Method: getFullRequestString
+       * Do layer name determination and call same method on parent.
+       *
+       * Parameters:
+       * newParams - {Object}
+       * altUrl - {String} Use this as the url instead of the layer's url
+       *
+       * Returns:
+       * {String}
+       */
+      getFullRequestString: function (newParams, altUrl) {
+          newParams['LAYERS'] = this.LAYER_NAMES[this.map.getZoom()];
+          return OpenLayers.Layer.WMS.prototype.getFullRequestString.apply(
+              this, [newParams, altUrl]
+          );
+      },
+
+      CLASS_NAME: 'openlayers.HybridLayer'
+    });
   }
 });
