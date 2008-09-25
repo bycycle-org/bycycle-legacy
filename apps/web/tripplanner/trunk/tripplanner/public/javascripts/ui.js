@@ -60,6 +60,8 @@ byCycle.UI = function () {
      */
     onLoad: function() {
       self = byCycle.UI;
+      self.region_id = self.region_id || 'portlandor';
+	  self.region = byCycle.regions.regions[self.region_id];
       self._assignUIElements();
       self._createWidgets();
       // If map is "on" and specified map type is loadable, use that map type.
@@ -70,7 +72,6 @@ byCycle.UI = function () {
       self.map = new self.map_type.Map(self, self.map_pane);
 	  self.onResize();
       self.setRegion(self.region_id);
-      self.region_id = 'portlandor';
       self._createEventHandlers();
       var zoom = parseInt(byCycle.getParamVal('zoom'), 10);
       if (!isNaN(zoom)) {

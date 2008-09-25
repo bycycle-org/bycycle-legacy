@@ -9,9 +9,13 @@ byCycle.regions = (function() {
   var regions = {
     portlandor: {
       key: 'portlandor',
+      units: 'feet',
+      srid: 2913,
       bounds: {
-        sw: {x: -123.485755, y: 44.885219},
-        ne: {x: -121.649618, y: 45.814153}
+        sw: {x: 7435781, y: 447887},
+        ne: {x: 7904954, y: 877395},
+        sw_ll: {x: -123.485755, y: 44.885219},
+        ne_ll: {x: -121.649618, y: 45.814153}
       }
     },
 
