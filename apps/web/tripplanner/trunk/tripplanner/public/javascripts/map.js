@@ -21,11 +21,14 @@ Class(byCycle.Map.base, 'Map', null, {
    * Map Constructor
    *
    * @param parent UI object
-   * @param container Widget that contains this map
+   * @param container Map container -- string or document.getElementById
    */
   initialize: function(ui, container) {
     if (arguments.length == 0) return;
     this.ui = ui;
+    if (typeof container == 'string') {
+      container = document.getElementById(container);
+    }
     this.container = container;
     this.createMap(container);
   },

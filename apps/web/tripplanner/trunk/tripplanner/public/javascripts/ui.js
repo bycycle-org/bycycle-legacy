@@ -19,6 +19,7 @@ byCycle.UI = function () {
     region_id: byCycle.region_id,
 	region: byCycle.region,
     map: null,
+	map_pane_id: 'map_pane',
     map_state: map_state,
     map_type: map_type,
 
@@ -68,7 +69,7 @@ byCycle.UI = function () {
       if (!(self.map_state && self.map_type.isLoadable())) {
         self.map_type = byCycle.Map.base;
       }
-      self.map = new self.map_type.Map(self, self.map_pane);
+      self.map = new self.map_type.Map(self, self.map_pane_id);
 	  self.onResize();
       self.setRegion(self.region_id);
       self._createEventHandlers();
@@ -89,7 +90,6 @@ byCycle.UI = function () {
       self.controls = $j('#controls');
 	  self.errors = $j('#errors');
       self.region_el = $j('#regions');
-      self.map_pane = $j('#map_pane');
       // Service
       self.query_pane = $j('#search-the-map');
       self.route_pane = $j('#find-a-route');
