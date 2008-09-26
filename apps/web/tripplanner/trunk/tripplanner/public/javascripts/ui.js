@@ -164,12 +164,12 @@ byCycle.UI = function () {
       var region = regions[region_id];
       if (region) {
         // Zoom to a specific region
-        self.map.centerAndZoomToBounds(region.bounds, region.center);
-        self._showRegionOverlays(region);
+        //self.map.centerAndZoomToBounds(region.bounds, region.center);
+        //self._showRegionOverlays(region);
       } else {
         // Show all regions
         var all_regions = byCycle.regions;
-	self.map.centerAndZoomToBounds(all_regions.bounds, all_regions.center);
+	    self.map.centerAndZoomToBounds(all_regions.bounds, all_regions.center);
         $j.each(util.values(regions), function (r) {
           self._showRegionOverlays(r);
         });
@@ -182,12 +182,12 @@ byCycle.UI = function () {
       if (!self.region_id && !region.marker) {
         region.marker = self.map.makeRegionMarker(region);
       } else if (use_cached) {
-        self.map.addOverlay(region.marker);
+        self.map.addOverlay(region.marker, 'locations');
       }
       if (!region.line) {
         region.line = self.map.drawPolyLine(region.linestring);
       } else if (use_cached) {
-        self.map.addOverlay(region.line);
+        self.map.addOverlay(region.line, 'routes');
       }
     },
 

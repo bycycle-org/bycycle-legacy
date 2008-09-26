@@ -9,6 +9,7 @@ byCycle.regions = (function() {
   var regions = {
     portlandor: {
       key: 'portlandor',
+      map_type: 'openlayers',
       units: 'feet',
       srid: 2913,
       bounds: {

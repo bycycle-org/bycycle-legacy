@@ -180,12 +180,13 @@ Class(byCycle.UI, 'GeocodeQuery', byCycle.UI.Query, {
     var div, content_pane, marker;
     var map = this.ui.map;
     var placeGeocodeMarker = map.placeGeocodeMarker;
+    var self = this;
     $j.each(results, function (i, r) {
       div = $j('<div></div>');
       content_pane = $j('<div>TEST</div>'); //r.widget.content_pane.cloneNode(true);
       div.append(content_pane);
       marker = placeGeocodeMarker.call(map, r.result.point, div, zoom);
-      r.addOverlay(marker);
+      r.addOverlay(marker, self.ui.map.locations_layer);
     });
   }
 });
@@ -269,7 +270,7 @@ Class(byCycle.UI, 'RouteQuery', byCycle.UI.Query, {
       ls = route.linestring;
 
       // Zoom to linestring
-      // TODO: Compute this in back end
+      // TODO: Compute this in back end???
       centerAndZoomToBounds.call(map, route.bounds, route.center);
 
       // Place from and to markers
