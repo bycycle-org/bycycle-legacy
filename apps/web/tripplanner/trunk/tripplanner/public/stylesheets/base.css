@@ -46,7 +46,6 @@ a:hover { color: orange; }
   font-size: 85%;
   background-color: #eee;
   border-bottom: 1px solid #aaa;
-  margin-bottom: 2px;
 }
 
 
@@ -60,20 +59,14 @@ a:hover { color: orange; }
 }
 #col-b {
   float: right;
-  width: 69%;
+  width: 70%;
 }
 
-
-/* Input */
-#input_container {
-  margin-left: 155px;
-}
-#region-search {
-  border: 1px solid #888;
-  padding: 5px;
-}
 
 /* Input Controls */
+#controls {
+
+}
 #q, #s, #e {
   width: 99%;
 }
@@ -99,7 +92,7 @@ a:hover { color: orange; }
   height: 16px;
   background: white;
   padding: 2px;
-  border: 1px solid #000;
+  border: 1px solid #000;map_pane
 }
 
 /* Results */

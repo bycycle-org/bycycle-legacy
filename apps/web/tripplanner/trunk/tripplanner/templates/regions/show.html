@@ -1,2 +1,56 @@
 ## -*- coding: UTF-8 -*-
 <%inherit file="/services/index.html" />
+<%namespace name="accordion" file="/widgets/accordion.html" />
+
+<%def name="controls(id='controls')">
+  <%call expr="accordion.accordion(id)">
+    <%call expr="accordion.accordion_group('Search the Map')">
+      <form id="query_form" method="get" action="/regions/portlandor/services/find">
+        <div>
+          <input id="q" type="text" value="" title="Enter an address or route" tabindex="1" name="q"/>
+          <input type="submit" value="Search Map" title="Click to search the map" tabindex="2" name="commit"/>
+        </div>
+        <div class="input_label"> Enter an address or intersection -OR- pick a location from the map. </div>
+      </form>
+
+      <div id="locations"
+           class="${'selected-' if c.service == 'geocodes' else ''}tab-content">
+        % if c.service == 'geocodes' and c.http_status == 200:
+          <div class="fragment">
+            ${self.json()}
+            ${next.body()}
+          </div>
+        % endif
+        <ul id="location_list" class="result_list"></ul>
+      </div>
+    </%call>
+
+    <%call expr="accordion.accordion_group('Find a Route')">
+      <form id="route_form" method="get" action="/regions/portlandor/routes/find">
+        <div>
+          <input id="s" type="text" value="" title="Enter start address" tabindex="3" name="s"/>
+          <br />
+          <input id="e" type="text" value="" title="Enter end address" tabindex="5" name="e"/>
+          <br />
+          <select id="pref" tabindex="8" name="pref">
+            <option value="default">- Route Type -</option>
+            <option value="default">Normal</option>
+            <option value="safer">Safer</option>
+          </select>
+          <br />
+          <input type="submit" value="Find Route" title="Click to find a route" tabindex="9" name="commit"/>
+        </div>
+        <div class="input_label"> Enter your start and end addresses and, optionally, select a route type. </div>
+      </form>
+
+      <div id="routes">
+        % if c.service == 'routes' and c.http_status == 200:
+          <div class="fragment">
+            ${self.json()}
+            ${next.body()}
+          </div>
+        % endif
+      </div>
+    </%call>
+  </%call>
+</%def>

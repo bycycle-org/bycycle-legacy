@@ -5,13 +5,11 @@ NameSpace('byCycle', window, function() {
   // private:
   var prod_config = {
     local: 0,
-    map_type: 'openlayers',
     map_state: 1
   };
 
   var dev_config = {
     local: 1,
-    map_type: 'openlayers',
     map_state: 1
   };
 
@@ -44,9 +42,6 @@ NameSpace('byCycle', window, function() {
     // Used to look Google API key in gmap.js and to make queries in ui.js
     domain: (port ? [hostname, port].join(':') : hostname),
 
-    // Prefix for when app is mounted at other than root (/)
-    prefix: byCycle_prefix,
-
     // URL query parameters as a Hash
     request_params: makeParams(),
 
@@ -65,7 +60,7 @@ NameSpace('byCycle', window, function() {
       // Override config setting with query string setting
       var v = byCycle.request_params[var_name];
       if (typeof(v) == 'undefined') {
-	// Query string override not given; use config
+	   // Query string override not given; use config
         v = byCycle.config[var_name];
       } else if (typeof(func) == 'function') {
         // Process query string value with func, iff given
