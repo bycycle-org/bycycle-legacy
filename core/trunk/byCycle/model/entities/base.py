@@ -153,7 +153,7 @@ class Node(DeclarativeBase):
 
     region_id = Column(Integer, ForeignKey('regions.id'))
 
-    region = relation('Region', cascade=cascade_arg)
+    region = relation('Region', cascade='all')
     edges_f = relation('Edge', primaryjoin='Node.id == Edge.node_f_id')
     edges_t = relation('Edge', primaryjoin='Node.id == Edge.node_t_id')
 
@@ -184,7 +184,7 @@ class Edge(DeclarativeBase):
     place_l_id = Column(Integer, ForeignKey('places.id'))
     place_r_id = Column(Integer, ForeignKey('places.id'))
 
-    region = relation('Region', cascade=cascade_arg)
+    region = relation('Region', cascade='all')
     node_f = relation(
         'Node', primaryjoin='Edge.node_f_id == Node.id', cascade=cascade_arg)
     node_t = relation(
