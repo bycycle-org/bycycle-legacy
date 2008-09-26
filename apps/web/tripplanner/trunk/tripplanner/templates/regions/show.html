@@ -2,6 +2,8 @@
 <%inherit file="/services/index.html" />
 <%namespace name="accordion" file="/widgets/accordion.html" />
 
+${next.body()}
+
 <%def name="controls(id='controls')">
   <%call expr="accordion.accordion(id)">
     <%call expr="accordion.accordion_group('Search the Map')">

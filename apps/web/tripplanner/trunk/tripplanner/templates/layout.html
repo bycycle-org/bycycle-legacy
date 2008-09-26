@@ -158,17 +158,6 @@
 <%def name="javascript_includes()"></%def>
 <%def name="javascript()"></%def>
 
-<!-- Route preference form control -->
-<%def name='route_pref()'>
-  % if c.region.slug == 'portlandor':
-    <select id="pref" name="pref" tabindex="8">
-      <option value="default">- Route Type -</option>
-      <option value="default">Normal</option>
-      <option value="safer">Safer</option>
-    </select>
-  % endif
-</%def>
-
 <%def name="json()">
   % if c.format != 'json':
     ${h.hidden(None, value=c.json, class_='json')}
