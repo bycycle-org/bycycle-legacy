@@ -17,6 +17,7 @@ Class(byCycle.Map.openlayers, 'Map', byCycle.Map.base.Map, {
   createMap: function(container) {
     var region = this.ui.region;
     var bounds = region.bounds;
+
     var opts = {
       theme: null,
       controls: [
@@ -24,7 +25,6 @@ Class(byCycle.Map.openlayers, 'Map', byCycle.Map.base.Map, {
         new OpenLayers.Control.PanZoomBar({zoomWorldIcon: true}),
         new OpenLayers.Control.LayerSwitcher(),
         new OpenLayers.Control.Navigation()
-        //new OpenLayers.Control.OverviewMap(),
         //new OpenLayers.Control.KeyboardDefaults()
       ],
       projection: 'EPSG:' + region.srid,
@@ -55,12 +55,16 @@ Class(byCycle.Map.openlayers, 'Map', byCycle.Map.base.Map, {
       {layers: 'h10', format: 'image/jpeg', EXCEPTIONS: ''},
       {buffer: 0, transitionEffect: 'none'});
 
-    this.marker_layer = new OpenLayers.Layer.Markers('Locations');
-    map.addLayers([map_layer, hybrid_layer, this.marker_layer]);
+    this.locations_layer = new OpenLayers.Layer.Markers('Locations');
+    this.routes_layer = new OpenLayers.Layer.Vector(
+      'Routes',
+      {isBaseLayer: false, isFixed: false, visibility: true});
+
+    map.addLayers([
+      map_layer, hybrid_layer, this.routes_layer, this.locations_layer]);
 
     // Init
     map.setCenter(new OpenLayers.LonLat(7643672, 683029), 2);
-
     this.map = map;
   },
 
@@ -109,40 +113,63 @@ Class(byCycle.Map.openlayers, 'Map', byCycle.Map.base.Map, {
   closeInfoWindow: function() {},
 
   showMapBlowup: function(point) {
-    //
+    //this.map.showMapBlowup(new GLatLng(point.y, point.x));
   },
 
-  addOverlay: function(overlay) {
+  addOverlay: function(overlay, layer) {
     // Select layer based on type of overlay
-    this.marker_layer.addMarker(overlay);
+    if (layer == 'routes') {
+      this.routes_layer.addMarker(overlay);
+    } else {
+       this.locations_layer.addMarker(overlay);
+    }
   },
 
   removeOverlay: function(overlay) {
-    //
+    overlay.destroy();
   },
 
   drawPolyLine: function(points, color, weight, opacity) {
-    //var line = new OpenLayers(points, color, weight, opacity);
-    //this.route_layer.addOverlay(line);
-    //return line;
+    var ol_points = [];
+    for (var point, i = 0; i < points.length; ++i) {
+      point = points[i];
+      ol_points.push(new OpenLayers.Geometry.Point(point.x, point.y));
+    }
+    var style = {
+      strokeWidth: weight || 5,
+      strokeColor: color || '#000000',
+      strokeOpacity: opacity || 0.5,
+      pointRadius: 6,
+      pointerEvents: 'visiblePainted"           '
+    };
+    var line = new OpenLayers.Geometry.LineString(ol_points);
+    var line_feature = new OpenLayers.Feature.Vector(line, null, style);
+    this.routes_layer.addFeatures([line_feature]);
+    return line_feature;
   },
 
   placeMarker: function(point, icon) {
     var marker = new OpenLayers.Marker(
       new OpenLayers.LonLat(point.x, point.y));
-    this.marker_layer.addMarker(marker);
+    this.locations_layer.addMarker(marker);
     return marker;
   },
 
   placeGeocodeMarker: function(point, node, zoom, icon) {
-    zoom = (typeof(zoom) != 'undefined' ? zoom : this.map.getZoom());
-    this.setCenter(point, zoom);
-    var marker = this.placeMarker(point, icon);
+    if (typeof zoom == 'undefined') {
+      this.setCenter(point);
+    } else {
+      this.setCenter(point, zoom);
+    }
     var coord = new OpenLayers.LonLat(point.x, point.y);
-    var self = this;
-    //GEvent.addListener(marker, "click", function() {
-      //self.map.openInfoWindow(g_lat_lng, node);
-    //});
+    var marker = this.placeMarker(point, icon);
+    var popup = new OpenLayers.Popup.FramedCloud(
+      'some_id', coord, null, node.html(), marker.icon);
+    this.map.addPopup(popup);
+    popup.hide();
+    $j(marker.events.element).click(function (event) {
+      popup.toggle();
+    });
     return marker;
   },
 
@@ -162,7 +189,13 @@ Class(byCycle.Map.openlayers, 'Map', byCycle.Map.base.Map, {
 
   /* Bounds */
 
-  centerAndZoomToBounds: function(bounds, center) {},
+  centerAndZoomToBounds: function(bounds, center) {
+    center = center || this.getCenterOfBounds(bounds);
+    center = new OpenLayers.LonLat(center.x, center.y);
+    var sw = bounds.sw, ne = bounds.ne;
+    var ol_bounds = new OpenLayers.Bounds(sw.x, sw.y, ne.x, ne.y);
+    this.map.zoomToExtent(ol_bounds);
+  },
 
   showGeocode: function(geocode) {},
 
@@ -170,6 +203,10 @@ Class(byCycle.Map.openlayers, 'Map', byCycle.Map.base.Map, {
 
   makePoint: function(point) {
     return point;
+  },
+
+  makeRegionMarker: function(region) {
+    return this.placeMarker(region.center);
   },
 
   /**
