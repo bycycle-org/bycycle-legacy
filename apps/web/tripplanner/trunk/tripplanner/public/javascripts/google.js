@@ -1,19 +1,16 @@
 /**
  * Implements the byCycle Map interface for a Google Map.
  */
-
-
-// Register this map type in the byCycle Map namespace
-byCycle.Map.google = {
+NameSpace('google', byCycle.Map, {
   description: 'Google Map',
 
-/**
- * Do map initialization that needs to happen before page is done loading.
- * For example, for Google Maps, the API init script needs to be loaded
- * inline because it does a document.write to load the actual API.
- */
+  /**
+   * Do map initialization that needs to happen before page is done loading.
+   * For example, for Google Maps, the API init script needs to be loaded
+   * inline because it does a document.write to load the actual API.
+   */
   beforeLoad: function() {
-    var api_url = 'http://maps.google.com/maps?file=api&amp;v=2.x&amp;key=';
+    var api_url = 'http://maps.google.com/maps?file=api&amp;v=2&amp;key=';
     var api_keys = {
       'tripplanner.bycycle.org': 'ABQIAAAAd_4WmZlgvQzchd_BQM0MPhQ8y5tnWrQRsyOlME1eHkOS3wQveBSeFCpOUAfP10H6ec-HcFWPgiJOCA',
 
@@ -22,7 +19,7 @@ byCycle.Map.google = {
 
       'prototype.bycycle.org': 'ABQIAAAAd_4WmZlgvQzchd_BQM0MPhTPU6PNPDk7LC31EIff_k4JZWpNmBQshai4v8RM5FaT-4FRWeyJA4VHaQ',
 
-      'bycycle.oregonmetro.org':
+      'bycycle.metro-region.org':
 'ABQIAAAAd_4WmZlgvQzchd_BQM0MPhR7upyhxOh7UQa5Yu3ebGZe2uQ8SxRPJtyMUYYgIBQsAROpcOySx6G1RQ',
 
       'dev.bycycle.org': 'ABQIAAAAd_4WmZlgvQzchd_BQM0MPhQSskL_eAzZotWlegWekqLPLda0sxQZNf0_IshFell3z8qP8s0Car117A',
@@ -56,18 +53,16 @@ byCycle.Map.google = {
     }
     return is_loadable;
   }
-};
+});
 
 
 /**
  * byCycle Google Map
  */
-byCycle.Map.google.Map = Class.create();
-byCycle.Map.google.Map.prototype = Object.extend(new byCycle.Map.base.Map(), {
+Class(byCycle.Map.google, 'Map', byCycle.Map.base.Map, {
   default_zoom: 14,
 
   initialize: function(ui, container) {
-    this.superclass = byCycle.Map.base.Map.prototype;
     this.superclass.initialize.apply(this, arguments);
     this.createIcons();
     this.createListeners();

@@ -8,15 +8,16 @@ byCycle.UI = function () {
     return map_state == '' || map_state == '0' || map_state == 'off';
   });
 
-  var map_type_name = byCycle.getParamVal('map_type').toLowerCase();
+  var map_type_name = (byCycle.request_params.map_type || '').toLowerCase();
   var map_type = (byCycle.Map[map_type_name] ||            // URL override
-                  byCycle.Map[byCycle.config.map_type] ||  // config setting
+                  byCycle.Map[byCycle.region.map_type] ||  // config setting
                   byCycle.Map.base);                       // default
   byCycle.logDebug('Map type:', map_type.description);
 
   // public:
   return {
-    region_id: null,
+    region_id: byCycle.region_id,
+	region: byCycle.region,
     map: null,
     map_state: map_state,
     map_type: map_type,
@@ -60,8 +61,6 @@ byCycle.UI = function () {
      */
     onLoad: function() {
       self = byCycle.UI;
-      self.region_id = self.region_id || 'portlandor';
-	  self.region = byCycle.regions.regions[self.region_id];
       self._assignUIElements();
       self._createWidgets();
       // If map is "on" and specified map type is loadable, use that map type.
@@ -108,7 +107,10 @@ byCycle.UI = function () {
     },
 
     _createWidgets: function () {
-      self.controls.accordion();
+      self.controls.accordion({
+		header: '.ui-accordion-header',
+		clearStyle: true
+	  });
 	  self.errors.dialog({autoOpen: false});
     },
 
@@ -159,7 +161,6 @@ byCycle.UI = function () {
     },
 
     setRegion: function(region_id) {
-      self.region_id = region_id;
       var regions = byCycle.regions.regions;
       var region = regions[region_id];
       if (region) {

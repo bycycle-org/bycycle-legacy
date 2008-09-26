@@ -15,7 +15,7 @@ Class(byCycle.Map.openlayers, 'Map', byCycle.Map.base.Map, {
   },
 
   createMap: function(container) {
-    var region = this.ui.region;
+    var region = byCycle.region;
     var bounds = region.bounds;
 
     var opts = {

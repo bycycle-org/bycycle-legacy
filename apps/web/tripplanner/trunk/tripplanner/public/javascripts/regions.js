@@ -22,10 +22,20 @@ byCycle.regions = (function() {
 
     milwaukeewi: {
       key: 'milwaukeewi',
+      map_type: 'google',
+      units: 'degrees',
+      srid: 4326,
       bounds: {
         sw: {x: -88.069888, y: 42.842059},
         ne: {x: -87.828241, y: 43.192647}
       }
+    },
+
+    default: {
+      key: 'default',
+      map_type: 'base',
+      units: 'pixels',
+      srid: -1
     }
   };
 

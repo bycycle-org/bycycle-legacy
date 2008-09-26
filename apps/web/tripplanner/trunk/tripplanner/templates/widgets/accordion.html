@@ -1,0 +1,18 @@
+## -*- coding: UTF-8 -*-
+
+<%def name="accordion(id)">
+  <div id="${id}" class="ui-accordion">
+    ${caller.body()}
+  </div>
+</%def>
+
+<%def name="accordion_group(title)">
+  <div class="ui-accordion-group">
+    <div class="ui-accordion-header">
+      <a href='#'>${title}</a>
+    </div>
+    <div class="ui-accordion-content">
+      ${caller.body()}
+    </div>
+  </div>
+</%def>
