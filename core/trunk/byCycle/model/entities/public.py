@@ -225,6 +225,12 @@ class EdgeAttr(DeclarativeBase):
 
 class Service(DeclarativeBase):
     __tablename__ = 'services'
+
+    member_name = 'service'
+    collection_name = 'services'
+    member_title = 'Service'
+    collection_title = 'Services'
+
     id = Column(Integer, primary_key=True)
     region_id = Column(Integer, ForeignKey('regions.id'))
 
