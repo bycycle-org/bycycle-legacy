@@ -243,29 +243,6 @@
 <%def name="javascript_includes()"></%def>
 <%def name="javascript()"></%def>
 
-<%def name="errors()">
-  <div class="errors">
-    <h2>${getattr(c.exception, 'title', 'Error')}</h2>
-    % if hasattr(c.exception, 'errors'):
-      % for error in c.exception.errors:
-        <p class="error">
-          ${error}
-        </p>
-      % endfor
-    % else:
-      <p class="error">
-        ${c.exception.description}
-      </p>
-    % endif
-    <% explanation = getattr(c.exception, 'explanation', None) %>
-    % if explanation is not None:
-      <div class="explanation">
-        <h3>What This Means</h3>
-        <p>${explanation.strip().replace('\n', '</p><p>')}</p>
-      </div>
-    % endif
-  </div>
-</%def>
 
 <!-- Route preference form control -->
 <%def name='route_pref()'>
