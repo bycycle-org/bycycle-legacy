@@ -33,9 +33,9 @@ byCycle.regions = (function() {
 
     default: {
       key: 'default',
-      map_type: 'base',
-      units: 'pixels',
-      srid: -1
+      map_type: 'google',
+      units: 'degrees',
+      srid: 4326
     }
   };
 

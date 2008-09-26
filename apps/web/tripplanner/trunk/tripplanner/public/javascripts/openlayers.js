@@ -36,7 +36,7 @@ Class(byCycle.Map.openlayers, 'Map', byCycle.Map.base.Map, {
         bounds.ne.x, bounds.ne.y)
     };
 
-    var map = new OpenLayers.Map(container.attr('id'), opts);
+    var map = new OpenLayers.Map(container, opts);
 
     var tile_urls = [
       'http://tilea.trimet.org/tilecache/tilecache.py?',
