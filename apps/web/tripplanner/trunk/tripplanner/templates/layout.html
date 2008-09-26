@@ -171,7 +171,7 @@
 
 <%def name="json()">
   % if c.format != 'json':
-    ${h.hidden_field(None, value=c.json, class_='json')}
+    ${h.hidden(None, value=c.json, class_='json')}
   % endif
 </%def>
 
