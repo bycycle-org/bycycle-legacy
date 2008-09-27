@@ -53,7 +53,7 @@ Class(byCycle.Map.openlayers, 'Map', byCycle.Map.base.Map, {
       {layers: 'h10', format: 'image/jpeg', EXCEPTIONS: ''},
       {buffer: 0, transitionEffect: 'none'});
 
-    this.locations_layer = new OpenLayers.Layer.Vector('Locations');
+    this.locations_layer = new OpenLayers.Layer.Markers('Locations');
 
     this.routes_layer = new OpenLayers.Layer.Vector(
       'Routes',
