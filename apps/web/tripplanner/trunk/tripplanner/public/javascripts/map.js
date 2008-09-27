@@ -34,9 +34,10 @@ Class(byCycle.Map.base, 'Map', null, {
   },
 
   createMap: function(container) {
+    this.container = $j(container);
     var map = $j('<div>');
     map.css({height: '100%', overflow: 'auto'});
-    container.append(map);
+    this.container.append(map);
     this.map = map;
     this.put('Default byCycle Map Interface');
   },

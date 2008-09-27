@@ -45,10 +45,8 @@ NameSpace('google', byCycle.Map, {
     if (this.api_loaded && GBrowserIsCompatible()) {
       is_loadable = true;
     } else {
-      $j('map_message').show();
       if (!this.api_loaded) {
-        $j('map_message').update(
-          'No Google Maps API key found for ' + byCycle.domain);
+        byCycle.UI.showErrors('No Google Maps API key found for ' + byCycle.domain);
       }
     }
     return is_loadable;
@@ -252,19 +250,20 @@ Class(byCycle.Map.google, 'Map', byCycle.Map.base.Map, {
     return markers;
   },
 
-  makeRegionMarker: function(region) {
+  makeRegionMarker: function(region_key, center) {
     var icon = new GIcon();
     icon.image = byCycle.prefix + 'images/x.png';
     icon.iconSize = new GSize(17, 19);
     icon.iconAnchor = new GPoint(9, 10);
     icon.infoWindowAnchor = new GPoint(9, 10);
     icon.infoShadowAnchor = new GPoint(9, 10);
-    var marker = this.placeMarker(region.center, icon);
+    var marker = this.placeMarker(center, icon);
     var self = this;
     GEvent.addListener(marker, 'click', function() {
-      var params = byCycle.request_params.toQueryString();
-      var location = [byCycle.prefix, 'regions/', region.key];
-      if (params) { location.push('?', params); }
+      var location = [byCycle.prefix, 'regions/', region_key];
+      if (byCycle.query_string) {
+        location.push('?', byCycle.query_string);
+      }
       window.location = location.join('');
     });
     return marker;
@@ -314,72 +313,5 @@ Class(byCycle.Map.google, 'Map', byCycle.Map.base.Map, {
     }
     this.map.setCenter(new GLatLng(geocode.y, geocode.x), 14);
     self.map.openInfoWindowHtml(point, html);
-  },
-
-  makeBikeTileOverlay: function (zoom_levels) {
-    var domain = 'zircon.oregonmetro.gov';
-    var transparent_png = ['http://', domain,
-                           '/bycycle/images/transparent.png'].join('');
-    var c = '&copy; <a href="http://www.oregonmetro.gov/">Metro</a>';
-    var copyrights = new GCopyrightCollection(c);
-    var wms_url = ['http://', domain, '/cgi-bin/mapserv-postgis',
-                   '?map=/var/www/html/bycycle/bycycle.map&'].join('');
-    var layers = 'bike_rte,county_lines';
-    var tile_size = 256;
-    var tile_size_less_one = tile_size - 1;
-    var img_format = 'image/png';
-    var srs = "EPSG:4326";
-    var min_zoom = 9;
-    var url = [wms_url,
-               "SERVICE=WMS",
-               "&VERSION=1.1.1",
-               "&REQUEST=GetMap",
-               "&LAYERS=", layers,
-               "&STYLES=",
-               "&FORMAT=", img_format,
-               "&BGCOLOR=0xFFFFFF",
-               "&TRANSPARENT=TRUE",
-               "&SRS=", srs,
-               "&WIDTH=", tile_size,
-               "&HEIGHT=", tile_size].join('');
-    var sw, ne;
-
-    var pdx_bounds = byCycle.regions.regions.portlandor.bounds;
-    var pdx_sw = pdx_bounds.sw;
-    var pdx_ne = pdx_bounds.ne;
-    var bounds = new GLatLngBounds(new GLatLng(pdx_sw.lat, pdx_sw.lng),
-                                   new GLatLng(pdx_ne.lat, pdx_ne.lng));
-
-    var projection = new GMercatorProjection(zoom_levels);
-    projection.tileCheckRange = function(tile,  zoom,  tile_size) {
-      var x = tile.x * tile_size;
-      var y = tile.y * tile_size;
-      var sw_point = new GPoint(x, y + tile_size_less_one);
-      var ne_point = new GPoint(x + tile_size_less_one, y);
-      sw = this.fromPixelToLatLng(sw_point, zoom);
-      ne = this.fromPixelToLatLng(ne_point, zoom );
-      var tile_bounds = new GLatLngBounds(sw, ne);
-      if (tile_bounds.intersects(bounds)) {
-        return true;
-      } else {
-        return false;
-      }
-    };
-
-    var layer = new GTileLayer(copyrights, 0, zoom_levels - 1);
-    layer.getTileUrl = function(tile, zoom) {
-      projection.tileCheckRange(tile, zoom, tile_size);
-      if (zoom < min_zoom) {
-        var tile_url = transparent_png;
-      } else {
-        var bbox = [sw.lng(), sw.lat(), ne.lng(), ne.lat()].join(',');
-        var tile_url = [url, "&BBOX=", bbox].join('');
-      }
-      return tile_url;
-    };
-    layer.isPng = function() { return true; };
-    layer.getOpacity = function() { return .625; };
-
-    return new GTileLayerOverlay(layer);
   }
 });

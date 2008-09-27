@@ -19,6 +19,7 @@
 
     <title>byCycle.org - Bicycle Trip Planner - ${self.region_title()}</title>
 
+    ${h.stylesheet_link('/stylesheets/reset.css')}
     ${h.stylesheet_link('/stylesheets/base.css')}
     ${h.if_ie(h.stylesheet_link('/stylesheets/base_ie.css'))}
     ${h.stylesheet_link('/ui-theme/theme.css')}
@@ -32,7 +33,9 @@
 
       <!-- Header -->
       <div id="header">
-        <a href="http://info.bycycle.org/about" title="About byCycle.org">About</a>
+		${h.link_to('Home', h.url_for('/'), title='byCycle.org Home')} |
+		${h.link_to('About', h.url_for('about'), title='About byCycle.org')} |
+		${h.link_to('Help', h.url_for('help'), title='Help')}
       </div>
       <!-- /Header -->
 
@@ -87,8 +90,13 @@
 	<script type="text/javascript">
       //<![CDATA[
       byCycle.prefix = '${h.url_for('/')}';
-	  byCycle.region_id = '${c.region.slug if c.region else 'default'}';
-	  byCycle.region = byCycle.regions.regions[byCycle.region_id];
+	  byCycle.region_id = '${c.region.slug if c.region else ''}';
+	  if (byCycle.region_id) {
+		byCycle.region = byCycle.regions.regions[byCycle.region_id];
+	  } else {
+		byCycle.region_id = 'all';
+		byCycle.region = byCycle.regions[byCycle.region_id];
+	  }
       //]]>
     </script>
     <script type="text/javascript">

@@ -6,13 +6,12 @@
  * ``service`` Service type for the result (i.e., where the result came from)
  */
 Class(byCycle.UI, 'Result', null, {
-  initialize: function(id, result, service, widget) {
+  initialize: function(id, result, service) {
     this.id = id;
     this.result = result;
     this.service = service;
     this.map = byCycle.UI.map;
     this.overlays = [];
-    this.widget = widget;
   },
 
   addOverlay: function(overlay) {
