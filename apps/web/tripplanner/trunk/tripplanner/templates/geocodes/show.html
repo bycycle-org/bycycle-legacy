@@ -3,8 +3,6 @@
 
 <%! from urllib import unquote_plus %>
 
-<%namespace file="/widgets/fixed-pane.html" import="fixed_pane" />
-
 <%
    geocode = c.member
    x, y = geocode.xy.x, geocode.xy.y
@@ -13,19 +11,9 @@
    field_addr = unquote_plus(geocode.urlStr())
 %>
 
-<%call expr="fixed_pane()">
-   <%def name="title()">
-      Location
-      <span class="small">
-         <a class="show-on-map-link"
-            href="#show-location-on-map"
-            title="Show this location on the map"
-            onclick="byCycle.UI.map.setCenter({x: ${x}, y: ${y}}); return false;"
-            >show on map</a>
-      </span>
-   </%def>
-   <div class="address">${html_addr | n}</div>
-   <div class="set_as_s_or_e">
+<div class="query-result">
+  <div class="address">${html_addr | n}</div>
+    <div class="set_as_s_or_e">
       Set as
       <a class="set-as-start"
          href="#set-as-start"
@@ -38,6 +26,13 @@
          onclick='byCycle.UI.setAsEnd("${field_addr}"); return false;'
          ><i>end</i></a>
       of route
-   </div>
-</%call>
-
+    </div>
+    <div>
+      <a class="show-on-map-link"
+        href="#show-location-on-map"
+        title="Show this location on the map"
+        onclick="byCycle.UI.map.setCenter({x: ${x}, y: ${y}}); return false;"
+        >Show on map</a>
+    </div>
+  </div>
+</div>

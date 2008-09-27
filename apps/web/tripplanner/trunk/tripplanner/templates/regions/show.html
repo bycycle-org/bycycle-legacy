@@ -4,54 +4,74 @@
 
 ${next.body()}
 
+<%def name="route_pref()"></%def>
+
 <%def name="controls(id='controls')">
   <%call expr="accordion.accordion(id)">
     <%call expr="accordion.accordion_group('Search the Map')">
-      <form id="query_form" method="get" action="/regions/portlandor/services/find">
-        <div>
-          <input id="q" type="text" value="" title="Enter an address or route" tabindex="1" name="q"/>
-          <input type="submit" value="Search Map" title="Click to search the map" tabindex="2" name="commit"/>
-        </div>
-        <div class="input_label"> Enter an address or intersection -OR- pick a location from the map. </div>
-      </form>
+      <div id="locations">
+        <ul>
+          <li class="ui-tabs-nav-item">
+            <a href="#search-the-map"><span><b>Search</b></span></a>
+          </li>
+        </ul>
 
-      <div id="locations"
-           class="${'selected-' if c.service == 'geocodes' else ''}tab-content">
-        % if c.service == 'geocodes' and c.http_status == 200:
-          <div class="fragment">
-            ${self.json()}
-            ${next.body()}
-          </div>
-        % endif
-        <ul id="location_list" class="result_list"></ul>
+        <div id="search-the-map">
+          <form id="query_form" method="get" action="/regions/portlandor/services/find">
+            <div>
+              ${h.text(
+                'q', id='q', value='', title='Enter an address or route')}
+
+              <div class="input_label">
+                <label for="q">
+                  <b>Enter address, intersection, or route</b><br />
+                  4012 SE 17th<br />
+                  SE 49th & Kelly<br />
+                  300 SE Main, Portland<br />
+                  300 SE Main 97215<br />
+                  SE 17th & Center <i>to</i> 1807 SE 53rd, Portland<br />
+                </label>
+              </div>
+
+              ${h.submit(
+                'commit', 'Search Map',
+                title='Click to search the map')}
+            </div>
+          </form>
+        </div>
       </div>
     </%call>
 
     <%call expr="accordion.accordion_group('Find a Route')">
-      <form id="route_form" method="get" action="/regions/portlandor/routes/find">
-        <div>
-          <input id="s" type="text" value="" title="Enter start address" tabindex="3" name="s"/>
-          <br />
-          <input id="e" type="text" value="" title="Enter end address" tabindex="5" name="e"/>
-          <br />
-          <select id="pref" tabindex="8" name="pref">
-            <option value="default">- Route Type -</option>
-            <option value="default">Normal</option>
-            <option value="safer">Safer</option>
-          </select>
-          <br />
-          <input type="submit" value="Find Route" title="Click to find a route" tabindex="9" name="commit"/>
-        </div>
-        <div class="input_label"> Enter your start and end addresses and, optionally, select a route type. </div>
-      </form>
-
       <div id="routes">
-        % if c.service == 'routes' and c.http_status == 200:
-          <div class="fragment">
-            ${self.json()}
-            ${next.body()}
-          </div>
-        % endif
+        <ul>
+          <li class="ui-tabs-nav-item">
+            <a href="#find-a-route"><span><b>Find Route</b></span></a>
+          </li>
+        </ul>
+
+        <div id="find-a-route">
+          <form id="route_form" method="get" action="/regions/portlandor/routes/find">
+            <div>
+              ${h.text(
+                's', id='s', value='', title='Enter start address')}
+              <br />
+              ${h.text(
+                'e', id='e', value='', title='Enter end address')}
+
+             <div class="input_label">
+                <b>Enter start and end addresses</b><br />
+                  SE 17th & Center <i>to</i> 1807 SE 53rd, Portland<br />
+              </div>
+
+              ${self.route_pref()}
+
+              ${h.submit(
+                'commit', 'Find Route',
+                title='Click to find a route')}
+            </div>
+          </form>
+        </div>
       </div>
     </%call>
   </%call>

@@ -6,7 +6,9 @@ html, body {
   overflow: hidden;
   height: 100%;
 }
-body { font-size: 80%; }
+body {
+  font-size: .8em;
+}
 body, td {
   font-family: Verdana, Helvetica, Arial, sans-serif;
   background-color: white;
@@ -68,19 +70,23 @@ a:hover { color: orange; }
 
 }
 #q, #s, #e {
-  width: 99%;
+  width: 95%;
+  text-align: left;
 }
 #swap_s_and_e a {
   text-decoration: none;
 }
 /* Input Labels */
 .input_label {
-  margin-top: 5px;
+  margin-top: 0px;
   font-size: 85%;
   color: #333;
 }
 
 /* Content Column A -- Results and Messages */
+#query-results {
+  display: none;
+}
 #spinner {
   position: absolute;
   right: 0px;
@@ -92,95 +98,30 @@ a:hover { color: orange; }
   height: 16px;
   background: white;
   padding: 2px;
-  border: 1px solid #000;map_pane
+  border: 1px solid #000;
 }
 
-/* Results */
-.display-pane h2 {
-  margin-top: 0;
-}
-#message_pane, #result_pane {
-  padding: 5px;
-  overflow: auto;
-}
-#result_pane .tab-contents {
-  padding-bottom: 0;
-}
-.result_list {
-  list-style: none;
-  padding: 0;
-  margin: 0;
-}
-.result_list li, .fragment div.fixed-pane {
-  margin-bottom: 5px;
-}
-.multi-list {
-
-}
-.multi-list li {
-  border-top: 1px solid #888;
-}
-#route_list .fixed-pane .content-pane {
-  padding: 0;
-  border-bottom: none;
-}
-.disclaimer {
-  font-size: 85%;
-  font-style: italic;
-  color: #666;
-}
 
 /* Errors */
-.errors .title_bar, .errors .title_bar td {
-  background: #fd766a;
+#error_content ul {
+  width: 96%;
 }
-.errors p.error {
-  padding: 5px;
-  border: 1px solid #fd766a;
+#error_content ul li {
+  color: red;
+  padding: .2em;
+}
+#error_content ul li.a {
+  background-color: #eee;
+}
+#error_content ul li.b {
+  background-color: #ddd;
 }
 
 
-/* Column B -- Map, map controls, and any other map-related stuff */
-#map-controls {
-  border-bottom: 1px solid #888;
-  padding: 5px;
-}
 /* The map object is inserted here */
 #map_pane {
   background: #ccdafc;
   height: 100%;
-}
-#map-buttons {
-  -moz-user-select: none;
-  color: black;
-  font-family: Arial,sans-serif;
-  font-size: small;
-  height: 19px;
-  position: absolute;
-  right: 7px;
-  top: 33px;
-}
-#map-buttons a {
-  color: black;
-  text-decoration: none;
-}
-.map-button {
-  background-color: white;
-  border: 1px solid black;
-  cursor: pointer;
-  text-align: center;
-}
-.map-button-inner {
-  padding: 0 1em;
-  border: 1px solid;
-  border-color: white rgb(176, 176, 176) rgb(176, 176, 176) white;
-}
-#legend-map-button {
-  text-align: center;
-  cursor: pointer;
-}
-.info_win {
-  width: 250px;
 }
 
 

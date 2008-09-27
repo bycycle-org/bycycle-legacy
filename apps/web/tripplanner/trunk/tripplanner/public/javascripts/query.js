@@ -5,14 +5,14 @@ Class(byCycle.UI, 'Query', null, function () {
   var self;
 
   return {
-    initialize: function(service, form, result_list,
+    initialize: function(service, form, result_container,
                          opts /* input=undefined */) {
       if (arguments.length == 0) return;
       self = this;
       this.ui = byCycle.UI;
       this.service = service;
       this.form = form;
-      this.result_list = result_list;
+      this.result_container = result_container;
       if (opts) {
         this.input = opts.input;  // Hash or undefined
       }
@@ -40,7 +40,7 @@ Class(byCycle.UI, 'Query', null, function () {
     doQuery: function() {
       // Done only if no errors in before()
       var path = [
-        'regions', this.ui.region_id, this.service, 'find.json'].join('/');
+        'regions', byCycle.region_id, this.service, 'find.json'].join('/');
       var url = [byCycle.prefix, path].join('');
       var params = this.input;
 
@@ -52,9 +52,9 @@ Class(byCycle.UI, 'Query', null, function () {
         data: params,
         dataType: 'json',
         beforeSend: self.onLoading,
+        complete: self.onComplete,
         success: self.on200,
-        error: self.onFailure,
-        complete: self.onComplete
+        error: self.onFailure
       };
       $j.ajax(args);
     },
@@ -64,17 +64,9 @@ Class(byCycle.UI, 'Query', null, function () {
     },
 
     on200: function(response) {
-      self.response = response;
-      var results = self.makeResults(response);
-      // Show widget in result list for ``service``
-      var li, result_list = self.result_list;
-      $j.each(results, function (i, r) {
-        li = $j('<li></li>');
-        li.append(r.widget.dom_node);
-        result_list.append(li);
-      });
       // Process the results for ``service``
       // I.e., recenter map, place markers, draw line, etc
+      var results = self.makeResults(response);
       self.processResults(response, results);
       self.ui.is_first_result = false;
     },
@@ -85,9 +77,10 @@ Class(byCycle.UI, 'Query', null, function () {
       self.ui.showErrors(response.fragment);
     },
 
-    onComplete: function(request) {
+    onComplete: function(response) {
       self.ui.spinner.hide();
-      self.http_status = request.status;
+      self.response = response;
+      self.http_status = response.status;
       byCycle.logDebug(self.http_status);
     },
 
@@ -103,24 +96,20 @@ Class(byCycle.UI, 'Query', null, function () {
      * @param response The response object (responseText evaled)
      */
     makeResults: function(response) {
-      var results = [];
-
       // Extract top level DOM nodes from response HTML fragment (skipping text
-      // nodes).
-      // Note: The fragment should consist of a set of top level elements that
-      // can be transformed into widgets.
-      var div = $j('<div></div>');
+      // nodes). These nodes will be inserted as the content of each result's
+      // widget.
+      var div = $j('<div id="query-results" style="display: none;"></div>');
+      $j('body').append(div);
       div.html(response.result.fragment);
-      var nodes = div.find('.fixed-pane');
-
+      var nodes = div.find('.query-result');
+      var dom_node, result, results = [];
       var self = this;
-      var result, dom_node;
       $j.each(response.result.results, function (i, obj) {
         dom_node = nodes[i];
         result = self.makeResult(obj, dom_node);
         results.push(result);
       });
-
       return results;
     },
 
@@ -137,8 +126,12 @@ Class(byCycle.UI, 'Query', null, function () {
     makeResult: function (result, dom_node) {
       var id = [this.service, 'result', new Date().getTime()].join('_');
       dom_node.id = id;
-      var widget = {dom_node: dom_node};
-      var result_obj = new this.ui.Result(id, result, this.service, widget);
+      var num_tabs = self.result_container.tabs('length');
+      self.result_container.tabs('add', '#' + id, 'Result #' + (num_tabs + 1));
+      self.result_container.tabs('select', num_tabs);
+      var li = $j(self.result_container.find('li')[num_tabs]);
+      li.addClass('ui-tabs-nav-item');
+      var result_obj = new this.ui.Result(id, result, this.service);
       //widget.register_listeners('close', result_obj.remove.bind(result_obj));
       this.ui.results[this.service][id] = result_obj;
       return result_obj;
@@ -159,8 +152,8 @@ Class(byCycle.UI, 'GeocodeQuery', byCycle.UI.Query, {
     opts = opts || {};
     var ui = byCycle.UI;
     var form = opts.form || ui.query_form;
-    var result_list = opts.result_list || ui.location_list;
-    this.superclass.initialize.call(this, 'geocodes', form, result_list, opts);
+    var result_container = opts.result_container || ui.locations_container;
+    this.superclass.initialize.call(this, 'geocodes', form, result_container, opts);
   },
 
   before: function() {

@@ -21,10 +21,10 @@ NameSpace('byCycle', window, function() {
 
   var hostname = location.hostname;
   var port = location.port;
+  var query_string = window.location.search.substring(1);
 
   var makeParams = function () {
     var params = {};
-    var query_string = window.location.search.substring(1);
     var pairs = query_string.split('&');
     for (var name_value, i = 0; i < pairs.length; ++i) {
       name_value = pairs[i].split('=');
@@ -41,6 +41,8 @@ NameSpace('byCycle', window, function() {
 
     // Used to look Google API key in gmap.js and to make queries in ui.js
     domain: (port ? [hostname, port].join(':') : hostname),
+
+	query_string: query_string,
 
     // URL query parameters as a Hash
     request_params: makeParams(),

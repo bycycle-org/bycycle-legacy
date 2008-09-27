@@ -71,7 +71,18 @@ byCycle.UI = function () {
       }
       self.map = new self.map_type.Map(self, self.map_pane_id);
 	  self.onResize();
-      self.setRegion(self.region_id);
+
+      if (self.region_id == 'all') {
+		self.setRegion(self.region_id);
+		$j.each(util.values(byCycle.regions.regions), function (i, r) {
+		  console.debug(r.center_degrees);
+		  self.map.makeRegionMarker(r.key, r.center_degrees);
+		  self.map.drawPolyLine(r.linestring_degrees);
+		});
+	  } else {
+		self.map.drawPolyLine(self.region.linestring);
+	  }
+
       self._createEventHandlers();
       var zoom = parseInt(byCycle.getParamVal('zoom'), 10);
       if (!isNaN(zoom)) {
@@ -99,11 +110,6 @@ byCycle.UI = function () {
       self.s_el = $j('#s');
       self.e_el = $j('#e');
       self.pref_el = $j('#pref');
-      self.location_list = $j('#location_list');
-      self.route_list = $j('#route_list');
-      self.bike_overlay_link = $j('#bike-overlay-link');
-      self.map_buttons = $j('#map-buttons');
-      self.legend_button = $j('#legend-map-button');
     },
 
     _createWidgets: function () {
@@ -111,6 +117,8 @@ byCycle.UI = function () {
 		header: '.ui-accordion-header',
 		clearStyle: true
 	  });
+	  self.locations_container = $j('#locations ul').tabs();
+	  self.route_container = $j('#routes ul').tabs();
 	  self.errors.dialog({autoOpen: false});
     },
 
@@ -140,10 +148,6 @@ byCycle.UI = function () {
       if (self.bike_overlay_link) {
         self.bike_overlay_link.click(self.toggleBikeTileOverlay);
       }
-      self.legend_button.click(function (event) {
-        var url = '/static/regions/' + self.region_id + '/map_legend_popup.html';
-        var w = window.open(url, 'bike_map_legend_window', 'status=0,toolbar=0,scrollbars=1,location=0,menubar=0,directories=0,width=755,height=490,left=0,top=0');
-      });
     },
 
     onUnload: function (event) {
@@ -157,40 +161,19 @@ byCycle.UI = function () {
     /* Regions ***************************************************************/
 
     setRegionFromSelectBox: function() {
-      self.setRegion($jF(self.region_el));
+      self.setRegion(self.region_el.val());
     },
 
     setRegion: function(region_id) {
-      var regions = byCycle.regions.regions;
-      var region = regions[region_id];
-      if (region) {
-        // Zoom to a specific region
-        //self.map.centerAndZoomToBounds(region.bounds, region.center);
-        //self._showRegionOverlays(region);
-      } else {
-        // Show all regions
-        var all_regions = byCycle.regions;
-	    self.map.centerAndZoomToBounds(all_regions.bounds, all_regions.center);
-        $j.each(util.values(regions), function (r) {
-          self._showRegionOverlays(r);
-        });
-      }
-    },
-
-    // Show map overlays for a region, creating and caching them first if
-    // necessary
-    _showRegionOverlays: function(region, use_cached) {
-      if (!self.region_id && !region.marker) {
-        region.marker = self.map.makeRegionMarker(region);
-      } else if (use_cached) {
-        self.map.addOverlay(region.marker, 'locations');
-      }
-      if (!region.line) {
-        region.line = self.map.drawPolyLine(region.linestring);
-      } else if (use_cached) {
-        self.map.addOverlay(region.line, 'routes');
-      }
-    },
+	  // This is only meant to be used on /regions page; that's why it uses
+	  // degrees instead of the region's native units.
+      var region = byCycle.regions.regions[region_id];
+	  if (!region) {
+		region = byCycle.regions.all;
+	  }
+	  self.map.centerAndZoomToBounds(
+		region.bounds.degrees, region.center.degrees);
+	},
 
 
     /* Services Input ********************************************************/
@@ -303,15 +286,20 @@ byCycle.UI = function () {
     },
 
 	/**
-	 * @param errors A string of error messages separated by \n
+	 * @param errors An Array of error messages or a string of error messages
+	 *               separated by a newline
 	 */
     showErrors: function(errors) {
-	  var content = [
-		'<ul>',
-		  '<li class="error">',
-			 errors.split('\n').join('</li><li class="error">'),
-		  '</li>',
-		'</ul>'].join('');
+	  if (typeof errors == 'string') {
+		errors = errors.split('\n');
+	  }
+	  var e, lis = [], row_class = 'a';
+	  for (var i = 0; i < errors.length; ++i) {
+		e = errors[i];
+		lis = lis.concat(['<li class="error ', row_class, '">', e, '</li>']);
+		row_class = (row_class == 'a' ? 'b' : 'a');
+	  }
+	  var content = ['<ul>', lis.join(''), '</ul>'].join('');
       $j('#error_content').html(content);
 	  self.errors.dialog('open');
 	  self.spinner.hide();
