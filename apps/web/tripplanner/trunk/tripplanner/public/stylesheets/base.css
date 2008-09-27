@@ -78,8 +78,8 @@ a:hover { color: orange; }
 }
 /* Input Labels */
 .input_label {
-  margin-top: 0px;
   font-size: 85%;
+  font-weight: bold;
   color: #333;
 }
 

@@ -92,6 +92,7 @@ byCycle.UI = function () {
       if (byCycle.getParamVal('bike_map')) {
         self.toggleBikeTileOverlay();
       }
+	  self.selectInputPane(self.service);
 	  self.onResize();
       self.spinner.hide();
     },
@@ -323,11 +324,10 @@ byCycle.UI = function () {
       var result = self.query.makeResult(response.result.results[i], dom_node);
       self.query.processResults('', [result])
 
-      // Remove the selected result's selection links ("show on map" & "select")
-	  console.debug(select_link.parent());
+      // Remove the selected result's "select link
       select_link.parent().remove();
 
-      // Show the title bar and "set as start or end" links
+      // Show the "set as start or end" link
       dom_node.find('.set_as_s_or_e:first').show();
 
       //self.showResultPane(self.location_list);
@@ -372,30 +372,31 @@ byCycle.UI = function () {
         self.results[result_el.id].remove();
       } catch (e) {
         if (e instanceof TypeError) {
-          // result_el wasn't registered as a `Result` (hopefully intentionally)
-          Element.remove(result_el);
+          // result_el wasn't registered as a Result (hopefully intentionally)
+          result_el.remove();
         } else {
-          byCycle.logDebug('Unhandled Exception in byCycle.UI.removeResult: ',
-                           e.name, e.message);
+          byCycle.logDebug(
+			'Unhandled Exception in byCycle.UI.removeResult: ', e.name,
+			e.message);
         }
       }
     },
 
     clearResults: function(event) {
-      event && Event.stop(event);
       if (!confirm('Remove all of your results and clear the map?')) {
         return;
       }
-      self.results.values().each(function (service_results) {
-        service_results.values().each(function (result) {
+      $j.each(util.values(self.results), function (i, service_results) {
+        $j.each(util..values(service_results), function (i, result) {
           service_results[result.id].remove();
         });
       });
+	  return false;
     },
 
     reverseDirections: function(s, e) {
-      self.s_el.value = s;
-      self.e_el.value = e;
+      self.s_el.val(s);
+      self.e_el.val(e);
       new self.RouteQuery(self.route_form).run();
     },
 
@@ -405,42 +406,19 @@ byCycle.UI = function () {
     identifyIntersectionAtCenter: function(event) {
       byCycle.logDebug('In find-intersection-at-center callback');
       var center = self.map.getCenter();
-      self.q_el.value = self.map.getCenterString();
+      self.q_el.val(self.map.getCenterString());
       self.identifyIntersection(center, event);
     },
 
     handleMapClick: function(point, event) {
-      var handler = self[$j('#map_mode').value];
-      if (typeof(handler) != 'undefined') {
+      var handler = self[$j('#map_mode').val()];
+      if (typeof handler != 'undefined') {
         handler(point);
       }
     },
 
     identifyIntersection: function(point, event) {
       self.runGeocodeQuery(event, {q: [point.x, point.y].join()});
-    },
-
-    identifyStreet: function(point, event) {
-      self.status.innerHTML = '"Identify Street" feature not implemented yet.';
-    },
-
-    toggleBikeTileOverlay: function (event) {
-      event && Event.stop(event);
-      if (self.bike_overlay_state) {
-        // Bike layer was on; turn it off
-        self.map.removeOverlay(self.bike_overlay);
-        Element.hide('map-buttons');
-        self.bike_overlay_link.value = 'Show bike map';
-      } else {
-        // Bike layer was off; turn it on
-        self.bike_overlay = self.map.makeBikeTileOverlay(20);
-        self.map.addOverlay(self.bike_overlay);
-        Element.show('map-buttons');
-        self.bike_overlay_link.value = 'Hide bike map';
-        if (self.map.getZoom() < 9) { self.map.setZoom(9); }
-        self.bike_overlay.show();
-      }
-      self.bike_overlay_state = !self.bike_overlay_state;
     }
   };
 }();
