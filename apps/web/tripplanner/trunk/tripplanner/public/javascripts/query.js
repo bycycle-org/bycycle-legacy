@@ -40,9 +40,9 @@ Class(byCycle.UI, 'Query', null, function () {
     doQuery: function() {
       // Done only if no errors in before()
       var path = [
-        'regions', byCycle.region_id, this.service, 'find.json'].join('/');
+        'regions', byCycle.region_id, self.service, 'find.json'].join('/');
       var url = [byCycle.prefix, path].join('');
-      var params = this.input;
+      var params = self.input;
 
       // TODO: Make bookmark???
 
@@ -56,7 +56,8 @@ Class(byCycle.UI, 'Query', null, function () {
         success: self.on200,
         error: self.onFailure
       };
-      $j.ajax(args);
+      self.request = $j.ajax(args);
+      self.ui.query = self;
     },
 
     onLoading: function(request) {
@@ -74,12 +75,11 @@ Class(byCycle.UI, 'Query', null, function () {
     onFailure: function(request) {
       self.ui.spinner.hide();
       eval('var response = ' + request.responseText + ';');
-      self.ui.showErrors(response.fragment);
+      self.ui.showException(response.result.fragment, false);
     },
 
-    onComplete: function(response) {
+    onComplete: function(request) {
       self.ui.spinner.hide();
-      self.response = response;
       self.http_status = response.status;
       byCycle.logDebug(self.http_status);
     },
@@ -99,8 +99,7 @@ Class(byCycle.UI, 'Query', null, function () {
       // Extract top level DOM nodes from response HTML fragment (skipping text
       // nodes). These nodes will be inserted as the content of each result's
       // widget.
-      var div = $j('<div id="query-results" style="display: none;"></div>');
-      $j('body').append(div);
+      var div = $j('<div></div>');
       div.html(response.result.fragment);
       var nodes = div.find('.query-result');
       var dom_node, result, results = [];
@@ -125,9 +124,13 @@ Class(byCycle.UI, 'Query', null, function () {
      */
     makeResult: function (result, dom_node) {
       var id = [this.service, 'result', new Date().getTime()].join('_');
-      dom_node.id = id;
+      dom_node = $j(dom_node);
+      dom_node.attr('id', id);
+      dom_node.css({display: 'none'});
+      $j('body').append(dom_node);
       var num_tabs = self.result_container.tabs('length');
-      self.result_container.tabs('add', '#' + id, 'Result #' + (num_tabs + 1));
+      self.result_container.tabs('add', '#' + id, 'Result #' + (num_tabs));
+      dom_node.css({display: 'block'});
       self.result_container.tabs('select', num_tabs);
       var li = $j(self.result_container.find('li')[num_tabs]);
       li.addClass('ui-tabs-nav-item');
@@ -147,7 +150,7 @@ Class(byCycle.UI, 'Query', null, function () {
  */
 Class(byCycle.UI, 'GeocodeQuery', byCycle.UI.Query, {
   initialize: function(opts /* form=byCycle.UI.query_form,
-                               result_list=byCycle.UI.location_list,
+                               result_container=byCycle.UI.locations_container,
                                input=undefined */) {
     opts = opts || {};
     var ui = byCycle.UI;
@@ -175,9 +178,9 @@ Class(byCycle.UI, 'GeocodeQuery', byCycle.UI.Query, {
     var placeGeocodeMarker = map.placeGeocodeMarker;
     var self = this;
     $j.each(results, function (i, r) {
-      div = $j('<div></div>');
-      content_pane = $j('<div>TEST</div>'); //r.widget.content_pane.cloneNode(true);
-      div.append(content_pane);
+      div = $j('#' + r.id);
+      div = div.clone(true);
+      div.find('.show-on-map-link').remove();
       marker = placeGeocodeMarker.call(map, r.result.point, div, zoom);
       r.addOverlay(marker, self.ui.map.locations_layer);
     });
@@ -189,15 +192,16 @@ Class(byCycle.UI, 'GeocodeQuery', byCycle.UI.Query, {
  * Route Query
  */
 Class(byCycle.UI, 'RouteQuery', byCycle.UI.Query, {
-  initialize: function(opts /* form=byCycle.UI.query_form,
-                               result_list=byCycle.UI.location_list,
+  initialize: function(opts /* form=byCycle.UI.route_form,
+                               result_container=byCycle.UI.routes_container,
                                input=undefined */) {
     opts = opts || {};
     var ui = byCycle.UI;
     var form = opts.form || ui.route_form;
-    var result_list = opts.result_list || ui.route_list;
-    this.superclass.initialize.call(this, 'routes', form, result_list, opts);
-    //this.ui.selectInputTab(service);
+    var result_container = opts.result_container || ui.routes_container;
+    var service = 'routes';
+    this.superclass.initialize.call(this, service, form, result_container, opts);
+    this.ui.selectInputPane(service);
   },
 
   before: function() {
@@ -224,11 +228,20 @@ Class(byCycle.UI, 'RouteQuery', byCycle.UI.Query, {
     }
   },
 
+  onFailure: function(request) {
+    if (request.status == 300) {
+      self.on300(request);
+    } else {
+      self.superclass.onFailure(request);
+    }
+  },
+
   on300: function(request) {
     this.superclass.on300.call(this, request);
+    eval('var response = ' + self.query.request.responseText + ';');
     var route_choices = [];
     var addr;
-    this.response.choices.each(function (c, i) {
+    $j.each(response.result, function (i, c) {
       if (typeof c == 'Array') {
         addr = null;
       } else {
@@ -244,6 +257,7 @@ Class(byCycle.UI, 'RouteQuery', byCycle.UI.Query, {
   },
 
   processResults: function(response, results) {
+    debugger;
     var route, ls, s_e_markers, s_marker, e_marker, line;
     var ui = this.ui;
     var map = ui.map;

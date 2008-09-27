@@ -4,6 +4,7 @@ from paste.cascade import Cascade
 from paste.registry import RegistryManager
 from paste.urlparser import StaticURLParser
 from paste.deploy.converters import asbool
+
 from pylons import config
 from pylons.middleware import ErrorHandler, StatusCodeRedirect
 from pylons.wsgiapp import PylonsApp
@@ -37,6 +38,8 @@ def make_app(global_conf, full_stack=True, **app_conf):
     # Configure the Pylons environment
     load_environment(global_conf, app_conf)
 
+    g = config['pylons.app_globals']
+
     # The Pylons WSGI app
     app = PylonsApp()
 
@@ -51,13 +54,7 @@ def make_app(global_conf, full_stack=True, **app_conf):
     if asbool(full_stack):
         # Handle Python exceptions
         app = ErrorHandler(app, global_conf, **config['pylons.errorware'])
-
-        # Display error documents for 401, 403, 404 status codes (and
-        # 500 when debug is disabled)
-        if debug:
-            app = StatusCodeRedirect(app)
-        else:
-            app = StatusCodeRedirect(app, [400, 401, 403, 404, 500])
+        g.error_handler = app
 
     # Establish the Registry for this application
     app = RegistryManager(app)
