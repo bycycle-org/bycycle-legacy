@@ -130,6 +130,7 @@
   </body>
 </html>
 
+<%namespace name="accordion" file="/widgets/accordion.html" />
 <%namespace name="dialog" file="/widgets/dialog.html" />
 
 <%def name="region_title()">
@@ -150,16 +151,52 @@
 
 <%def name="links()"></%def>
 
-<%def name="controls()"></%def>
+<%def name="controls()">
+  <%call expr="accordion.accordion_group('About')">
+	This is an alternative transportation trip planner and data resource.
+	Currently, the focus is on trips made <i>by bike</i>, but we are also
+	starting to add some public transit info. To learn more about byCycle,
+	${h.link_to(
+		'click here', 'http://info.bycycle.org/about',
+		title='About byCycle.org')}.
+	<br />
+	<br />
+	The
+	${h.link_to(
+	  'source code', h.url_for('code'),
+	  title='byCycle source repository (Subversion)')}
+	  for this application is licensed under the
+	${h.link_to(
+	  'GNU General Public License, v3', h.url_for('gpl'), title='License')}.
+	<br />
+	<br />
+	Their is a ${h.link_to(
+	  'project Web site', h.url_for('project'),
+	  title='byCycle project site (Trac)')}
+	  for software developers.
+	<br />
+	<br />
+	&copy; 2004-2008 byCycle.org.
+  </%call>
 
-<%def name="result_pane(classes=[])">
-  <!-- Result Pane -->
-  <div id="result_pane" class="display-pane ${' '.join(classes)}">
-    % if caller:
-      ${caller.body()}
-    % endif
-  </div>
-  <!-- /Result Pane -->
+  <%call expr="accordion.accordion_group('Support byCycle')">
+	byCycle's only funding comes from users like you. We need your support
+	to keep the trip planner up and running. You can donate through PayPal
+	by clicking the button below, or you can visit our
+	${h.link_to(
+	  'support page', 'http://info.bycycle.org/support/',
+	  title='Support byCycle')}
+	to find other ways of supporting byCycle.
+
+	<%include file="/widgets/paypal-button.html" />
+  </%call>
+
+  <%call expr="accordion.accordion_group('Contact Us')">
+	Feel free to get in touch. We're open to any sort of constructive
+	criticism. Please bear in mind, though, that this project has no funding
+	or employees. It is maintained by volunteers. Please send all feedback
+	to <a href="mailto:contact@bycycle.org">contact@bycycle.org</a>.
+  </%call>
 </%def>
 
 <%def name="errors()"></%def>
