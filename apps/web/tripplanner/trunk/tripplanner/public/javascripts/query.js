@@ -80,8 +80,7 @@ Class(byCycle.UI, 'Query', null, function () {
 
     onComplete: function(request) {
       self.ui.spinner.hide();
-      self.http_status = response.status;
-      byCycle.logDebug(self.http_status);
+      self.http_status = request.status;
     },
 
     onException: function(request) {
