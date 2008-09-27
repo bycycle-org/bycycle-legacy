@@ -103,12 +103,23 @@ a:hover { color: orange; }
 
 
 /* Errors */
+#error_content h2, #error_content h3 {
+  font-weight: bold;
+}
+#error_content h2 {
+  font-size: 110%;
+}
+#error_content h3 {
+  font-size: 105%;
+}
 #error_content ul {
   width: 96%;
 }
 #error_content ul li {
-  color: red;
   padding: .2em;
+}
+#error_content ul li.error {
+  color: red;
 }
 #error_content ul li.a {
   background-color: #eee;

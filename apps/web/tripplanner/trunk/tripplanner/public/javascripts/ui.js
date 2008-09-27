@@ -182,26 +182,26 @@ byCycle.UI = function () {
       service == 'route' ? self.s_el.focus() : self.q_el.focus();
     },
 
-    selectInputTab: function(service) {
-      //self.input_tab_control.select(service == 'routes' ? 1 : 0);
+    selectInputPane: function(service) {
+      self.controls.accordion('activate', (service == 'routes' ? 1 : 0));
     },
 
     swapStartAndEnd: function(event) {
       event && Event.stop(event);
-      var s = self.s_el.value;
-      self.s_el.value = self.e_el.value;
-      self.e_el.value = s;
+      var s = self.s_el.val();
+      self.s_el.val(self.e_el.val());
+      self.e_el.val(s);
     },
 
     setAsStart: function(addr) {
-      self.s_el.value = addr;
-      self.selectInputTab('routes');
+      self.s_el.val(addr);
+      self.selectInputPane('routes');
       self.s_el.focus();
     },
 
     setAsEnd: function(addr) {
-      self.e_el.value = addr;
-      self.selectInputTab('routes');
+      self.e_el.val(addr);
+      self.selectInputPane('routes');
       self.e_el.focus();
     },
 
@@ -305,30 +305,34 @@ byCycle.UI = function () {
 	  self.spinner.hide();
     },
 
+    showException: function(content) {
+      $j('#error_content').html(content);
+	  self.errors.dialog('open');
+	  self.spinner.hide();
+    },
+
     /**
      * Select from multiple matching geocodes
      */
     selectGeocode: function(select_link, i) {
       byCycle.logDebug('Entered selectGeocode...');
-      var response = self.query.response;
-      var dom_node = $j(select_link).up('.fixed-pane');
-      var result = self.query.makeResult(response.results[i], dom_node);
+
+      eval('var response = ' + self.query.request.responseText + ';');
+	  var select_link = $j(select_link);
+      var dom_node = select_link.parents('.query-result:first');
+      var result = self.query.makeResult(response.result.results[i], dom_node);
       self.query.processResults('', [result])
 
       // Remove the selected result's selection links ("show on map" & "select")
-      Element.remove(select_link.parentNode);
+	  console.debug(select_link.parent());
+      select_link.parent().remove();
 
       // Show the title bar and "set as start or end" links
-      dom_node.getElementsByClassName('title-bar')[0].show();
-      dom_node.getElementsByClassName('set_as_s_or_e')[0].show();
+      dom_node.find('.set_as_s_or_e:first').show();
 
-      // Append the widget to the list of locations
-      var li = document.createElement('li');
-      li.appendChild(dom_node);
-      this.location_list.appendChild(li);
-
-      self.showResultPane(self.location_list);
-      self.status.update('Added location to locations list.');
+      //self.showResultPane(self.location_list);
+	  self.controls.accordion('activate', 0);
+	  self.errors.dialog('close');
 
       if (self.is_first_result) {
         self.map.setZoom(self.map.default_zoom);
@@ -337,6 +341,7 @@ byCycle.UI = function () {
       }
 
       byCycle.logDebug('Left selectGeocode.');
+	  return false;
     },
 
     /**

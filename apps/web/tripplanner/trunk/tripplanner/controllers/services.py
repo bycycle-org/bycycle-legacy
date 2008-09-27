@@ -1,5 +1,7 @@
 import sys, re
 
+import logging
+
 import simplejson
 
 from byCycle.services.exceptions import *
@@ -11,6 +13,8 @@ from tripplanner.controllers.regions import RegionsController
 
 __all__ = base__all__ + ['ServicesController']
 
+
+log = logging.getLogger(__name__)
 
 internal_server_error_explanation = """\
 An internal error was encountered. An email has been sent to the site administrators informing them of the problem.
@@ -113,10 +117,12 @@ class ServicesController(RestController):
                 # No, it's a single object (AKA member)
                 c.member = result
                 template = 'show'
+                log.debug('Found member')
             else:
                 # Yes
                 c.collection = result
                 template = 'index'
+                log.debug('Found collection')
 
         try:
             # Was there an error?
