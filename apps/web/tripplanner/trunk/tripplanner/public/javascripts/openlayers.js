@@ -21,11 +21,9 @@ Class(byCycle.Map.openlayers, 'Map', byCycle.Map.base.Map, {
     var opts = {
       theme: null,
       controls: [
-        new OpenLayers.Control.MousePosition(),
         new OpenLayers.Control.PanZoomBar({zoomWorldIcon: true}),
         new OpenLayers.Control.LayerSwitcher(),
         new OpenLayers.Control.Navigation()
-        //new OpenLayers.Control.KeyboardDefaults()
       ],
       projection: 'EPSG:' + region.srid,
       units: region.units,
@@ -55,13 +53,26 @@ Class(byCycle.Map.openlayers, 'Map', byCycle.Map.base.Map, {
       {layers: 'h10', format: 'image/jpeg', EXCEPTIONS: ''},
       {buffer: 0, transitionEffect: 'none'});
 
-    this.locations_layer = new OpenLayers.Layer.Markers('Locations');
+    this.locations_layer = new OpenLayers.Layer.Vector('Locations');
+
     this.routes_layer = new OpenLayers.Layer.Vector(
       'Routes',
       {isBaseLayer: false, isFixed: false, visibility: true});
 
+    var bike_urls = [
+      'http://zircon.oregonmetro.gov/cgi-bin/mapserv-postgis',
+      '?map=/var/www/html/bycycle/bycycle.map'].join('');
+
+    var bike_layer = new OpenLayers.Layer.MapServer(
+      'Bike Map', bike_urls,
+      {layers: 'bike_rte,county_lines',
+       format: 'image/png',  EXCEPTIONS: ''},
+      {isBaseLayer: false, buffer: 0, transitionEffect: 'none',
+       visibility: false});
+
     map.addLayers([
-      map_layer, hybrid_layer, this.routes_layer, this.locations_layer]);
+      map_layer, hybrid_layer, this.routes_layer, this.locations_layer,
+      bike_layer]);
 
     // Init
     map.setCenter(new OpenLayers.LonLat(7643672, 683029), 2);
