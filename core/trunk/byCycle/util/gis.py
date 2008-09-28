@@ -1,35 +1,3 @@
-"""$Id$
-
-Assorted GIS functions.
-
-Copyright (C) 2006 Wyatt Baldwin, byCycle.org <wyatt@bycycle.org>
-
-All rights reserved.
-
-TERMS AND CONDITIONS FOR USE, MODIFICATION, DISTRIBUTION
-
-1. The software may be used and modified by individuals for noncommercial, 
-private use.
-
-2. The software may not be used for any commercial purpose.
-
-3. The software may not be made available as a service to the public or within 
-any organization.
-
-4. The software may not be redistributed.
-
-THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND 
-ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED 
-WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE 
-DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR 
-ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES 
-(INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; 
-LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON 
-ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT 
-(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS 
-SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-
-"""
 import math
 from math import sin, cos, acos, atan2, radians, degrees
 
@@ -37,6 +5,12 @@ from math import sin, cos, acos, atan2, radians, degrees
 earth_radius = 3959
 equator_circumference = 24902
 miles_per_degree_at_equator = equator_circumference/360
+
+
+def getCenterOfBounds(bounds):
+    sw = bounds['sw'];
+    ne = bounds['ne'];
+    return {'x': (sw['x'] + ne['x']) / 2.0, 'y': (sw['y'] + ne['y']) / 2.0};
 
 
 def getDistanceBetweenTwoPointsOnEarth(xy_a=None, xy_b=None,
@@ -86,7 +60,7 @@ def getBearingGivenStartAndEndPoints(p, q):
     dx = q.x - p.x
     dy = q.y - p.y
     deg = degrees(atan2(dx, dy))
-    while deg < 0: 
+    while deg < 0:
         deg += 360
     return deg
 
@@ -99,20 +73,20 @@ def getInterpolatedXY(linestring, length, distance_from_start):
            start of the linestring (in same units as length)
 
     @return An interpolated Point
-    
+
     """
     ls_len = len(linestring)
     if type(linestring) != type([]) or ls_len < 2: return None
     length = length or .000000000000001
     pct_from_start = distance_from_start / length
     pct_from_end = 1.0 - pct_from_start
-    
+
     if ls_len == 2:
         fxy, txy = linestring[0], linestring[-1]
         x = fxy.x * pct_from_end + txy.x * pct_from_start
         y = fxy.y * pct_from_end + txy.y * pct_from_start
     else:
-        # TODO: don't assume all the line string piece are equal length        
+        # TODO: don't assume all the line string piece are equal length
         pieces = ls_len - 1 * 1.0
         pct_per_piece = (length / pieces) / length
 
@@ -139,16 +113,16 @@ def getInterpolatedXY(linestring, length, distance_from_start):
                 else:
                     x = fxy.x * pe + txy.x * ps
                     y = fxy.y * pe + txy.y * ps
-                
+
     return Point(x=x, y=y)
 
-    
+
 def importWktGeometry(geom):
     """Return a simple Python object for the given WKT Geometry string.
 
     POINT(X Y)
     LINESTRING(X Y,X Y,X Y)
-    
+
     """
     geom_type, wkt_data = geom.split('(', 1)
     geom_type = geom_type.strip().upper()
@@ -186,12 +160,12 @@ def importWktGeometries(geoms, geom_type):
 
 
 
-    
+
 class Point(object):
     """A very simple Point class."""
     def __init__(self, x_y=None, x=None, y=None):
         """Create a new Point from the supplied 2-tuple or string.
-        
+
         @param x_y Either a 2-tuple of floats (or string representations of
                    floats), a string that will eval as such a tuple, or
                    another Point
@@ -269,10 +243,10 @@ class Point(object):
                , can be one of [comma], [space]
         @return x, y Floats
         @raise ValueError or TypeError on bad input
-        
+
         """
         err = 'Could not parse x and y from "%s"' % x_y
-        
+
         try:
             x, y = x_y.split(',')
         except ValueError:
@@ -305,12 +279,12 @@ class Point(object):
             return x, y
         except NameError:
             raise ValueError(err)
-    
-    
+
+
     def __str__(self):
         return 'POINT(%.6f %.6f)' % (self.x, self.y)
 
-    
+
     def __repr__(self):
         return "{'x': %f, 'y': %f}" % (self.x, self.y)
 

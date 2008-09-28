@@ -281,8 +281,8 @@ Class(byCycle.Map.google, 'Map', byCycle.Map.base.Map, {
     center = new GLatLng(center.y, center.x);
     var sw = bounds.sw;
     var ne = bounds.ne;
-    var gbounds = new GLatLngBounds(new GLatLng(sw.y, sw.x),
-                                    new GLatLng(ne.y, ne.x));
+    var gbounds = new GLatLngBounds(
+      new GLatLng(sw.y, sw.x), new GLatLng(ne.y, ne.x));
     this.map.setCenter(center, this.map.getBoundsZoomLevel(gbounds));
   },
 

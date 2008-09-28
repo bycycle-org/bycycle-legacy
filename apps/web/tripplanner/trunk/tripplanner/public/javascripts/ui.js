@@ -75,12 +75,13 @@ byCycle.UI = function () {
       if (self.region_id == 'all') {
 		self.setRegion(self.region_id);
 		$j.each(util.values(byCycle.regions.regions), function (i, r) {
-		  console.debug(r.center_degrees);
-		  self.map.makeRegionMarker(r.key, r.center_degrees);
-		  self.map.drawPolyLine(r.linestring_degrees);
+		  geom = r.geometry['4326'];
+		  console.debug(geom.center);
+		  self.map.makeRegionMarker(r.slug, geom.center);
+		  self.map.drawPolyLine(geom.linestring);
 		});
 	  } else {
-		self.map.drawPolyLine(self.region.linestring);
+		self.map.drawPolyLine(self.region.geometry.linestring);
 	  }
 
       self._createEventHandlers();
@@ -172,8 +173,8 @@ byCycle.UI = function () {
 	  if (!region) {
 		region = byCycle.regions.all;
 	  }
-	  self.map.centerAndZoomToBounds(
-		region.bounds.degrees, region.center.degrees);
+	  var geom = region.geometry['4326'];
+	  self.map.centerAndZoomToBounds(geom.bounds, geom.center);
 	},
 
 
