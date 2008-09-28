@@ -19,7 +19,7 @@ from sqlalchemy.orm import relation
 from sqlalchemy.types import Integer, String, CHAR, Float
 
 from byCycle import model_path
-from byCycle.util import joinAttrs
+from byCycle.util import gis, joinAttrs
 from byCycle.model import db
 from byCycle.model.entities import DeclarativeBase
 from byCycle.model.entities.util import cascade_arg, encodeFloat
@@ -50,6 +50,7 @@ class Region(DeclarativeBase):
     earth_circumference = Column(Float)
     block_length = Column(Float)
     jog_length = Column(Float)
+    map_type = Column(String)
 
     edge_attrs = relation(
         'EdgeAttr', backref='region', order_by='EdgeAttr.id',
@@ -62,6 +63,36 @@ class Region(DeclarativeBase):
         'code',
         'bikemode'
     ]
+
+    # TODO: This is Portland-specific--compute dynamically
+    bounds = {
+        'sw': {'x': 7435781, 'y': 447887},
+        'ne': {'x': 7904954, 'y': 877395}
+    }
+    bounds_degrees = {
+        'sw': {'x': -123.485755, 'y': 44.885219},
+        'ne': {'x': -121.649618, 'y': 45.814153}
+    }
+
+    def to_simple_object(self):
+        obj = super(Region, self).to_simple_object();
+        bounds_degrees = self.bounds_degrees
+        obj['geometry'] = {'4326': {}}
+        bounds = self.bounds
+        sw, ne = bounds['sw'], bounds['ne']
+        nw = {'x': sw['x'], 'y': ne['y']}
+        se = {'x': ne['x'] , 'y': sw['y']}
+        obj['geometry']['bounds'] = bounds
+        obj['geometry']['linestring'] = [nw, ne, se, sw, nw]
+        obj['geometry']['center'] = gis.getCenterOfBounds(self.bounds)
+        bounds = self.bounds_degrees
+        sw, ne = bounds['sw'], bounds['ne']
+        nw = {'x': sw['x'], 'y': ne['y']}
+        se = {'x': ne['x'] , 'y': sw['y']}
+        obj['geometry']['4326']['bounds'] = bounds
+        obj['geometry']['4326']['linestring'] = [nw, ne, se, sw, nw]
+        obj['geometry']['4326']['center'] = gis.getCenterOfBounds(self.bounds)
+        return obj
 
     @property
     def data_path(self):

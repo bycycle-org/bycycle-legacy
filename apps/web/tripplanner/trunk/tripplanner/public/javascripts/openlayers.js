@@ -16,7 +16,7 @@ Class(byCycle.Map.openlayers, 'Map', byCycle.Map.base.Map, {
 
   createMap: function(container) {
     var region = byCycle.region;
-    var bounds = region.bounds;
+    var bounds = region.geometry.bounds;
 
     var opts = {
       theme: null,
@@ -75,7 +75,7 @@ Class(byCycle.Map.openlayers, 'Map', byCycle.Map.base.Map, {
       bike_layer]);
 
     // Init
-    var bounds = byCycle.region.bounds;
+    var bounds = byCycle.region.geometry.bounds;
     map.setCenter(new OpenLayers.LonLat(bounds.x, bounds.y), 2);
     this.map = map;
   },

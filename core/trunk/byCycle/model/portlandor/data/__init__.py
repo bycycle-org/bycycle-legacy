@@ -35,6 +35,7 @@ earth_circumference = 131484672
 block_length = 260
 jog_length = block_length / 2
 edge_attrs = ['up_frac', 'abs_slope', 'cpd', 'sscode']
+map_type = 'openlayers'
 
 # States to insert into states table in insert_states()
 states = {'or': 'oregon', 'wa': 'washington'}

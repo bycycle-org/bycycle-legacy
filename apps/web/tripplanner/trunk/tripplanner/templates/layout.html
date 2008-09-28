@@ -79,6 +79,7 @@
       var debug = ${'true' if bool(g.debug) else 'false'};
       //]]>
     </script>
+
     ${h.javascript_link(
         '/javascripts/jquery.js',
         '/javascripts/jquery-ui.js',
@@ -87,46 +88,57 @@
         '/javascripts/map.js',
         '/javascripts/regions.js',
 	)}
+
 	<script type="text/javascript">
       //<![CDATA[
       byCycle.prefix = '${h.url_for('/')}';
 	  byCycle.region_id = '${c.region.slug if c.region else ''}';
+
+	  // Get regions
+	  jQuery.ajax({
+		async: false,
+		url: '/regions',
+		data: {format: 'json'},
+		dataType: 'json',
+		success: byCycle.regions.initialize
+	  });
 	  if (byCycle.region_id) {
 		byCycle.region = byCycle.regions.regions[byCycle.region_id];
 	  } else {
 		byCycle.region_id = 'all';
 		byCycle.region = byCycle.regions[byCycle.region_id];
 	  }
-      //]]>
-    </script>
-    <script type="text/javascript">
-      //<![CDATA[
-      window.$ = null;  // In case the map's JS library uses $
-      util.writeScript('/javascripts/' + byCycle.region.map_type + '.js');
-      //]]>
-    </script>
-    ${h.javascript_link(
-        '/javascripts/ui.js',
-        '/javascripts/query.js',
-        '/javascripts/result.js',
-    )}
 
-    <script type="text/javascript">
+	  // Load map type namespace
+	  window.$ = null;  // In case the map's JS library uses $
+	  util.writeScript('/javascripts/' + byCycle.region.map_type + '.js');
+      //]]>
+    </script>
+
+	${h.javascript_link(
+	  '/javascripts/ui.js',
+	  '/javascripts/query.js',
+	  '/javascripts/result.js',
+	)}
+
+	<script type="text/javascript">
       //<![CDATA[
-      window.$j = jQuery.noConflict();
-      byCycle.UI.beforeLoad();
-      byCycle.UI.service = '${c.service}';
-      byCycle.UI.member_name = '${c.member_name}';
-      byCycle.UI.collection_name = '${c.collection_name}';
-      byCycle.UI.http_status = ${'%i' % c.http_status if c.http_status else 'undefined'};
-      byCycle.UI.q = '${c.q}';
+	  window.$j = jQuery.noConflict();
+	  byCycle.UI.beforeLoad();
+	  byCycle.UI.service = '${c.service}';
+	  byCycle.UI.member_name = '${c.member_name}';
+	  byCycle.UI.collection_name = '${c.collection_name}';
+	  byCycle.UI.http_status = ${'%i' % c.http_status if c.http_status else 'undefined'};
+	  byCycle.UI.q = '${c.q}';
       //]]>
     </script>
 
     <!-- TODO: Maybe we could get this dynamically the first time it's needed? -->
     <%include file="/widgets/center_marker.html" />
 
-    ##<%include file="_google_analytics.html" />
+	% if not g.debug:
+      <%include file="_google_analytics.html" />
+	% endif
   </body>
 </html>
 
