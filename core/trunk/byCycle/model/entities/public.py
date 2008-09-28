@@ -4,7 +4,7 @@
 #
 # Public (i.e., shared) entity classes.
 #
-# Copyright (C) 2006, 2007 Wyatt Baldwin, byCycle.org <wyatt@bycycle.org>.
+# Copyright (C) 2006-2008 Wyatt Baldwin, byCycle.org <wyatt@bycycle.org>.
 # All rights reserved.
 #
 # For terms of use and warranty details, please see the LICENSE file included
@@ -17,6 +17,9 @@ import os, marshal
 from sqlalchemy import Column, ForeignKey, func, select
 from sqlalchemy.orm import relation
 from sqlalchemy.types import Integer, String, CHAR, Float
+
+from cartography import geometry
+from cartography.proj import SpatialReference
 
 from byCycle import model_path
 from byCycle.util import gis, joinAttrs
@@ -64,34 +67,48 @@ class Region(DeclarativeBase):
         'bikemode'
     ]
 
-    # TODO: This is Portland-specific--compute dynamically
-    bounds = {
-        'sw': {'x': 7435781, 'y': 447887},
-        'ne': {'x': 7904954, 'y': 877395}
-    }
-    bounds_degrees = {
-        'sw': {'x': -123.485755, 'y': 44.885219},
-        'ne': {'x': -121.649618, 'y': 45.814153}
-    }
+    def bounds(self, srid=None):
+        srs = str(SpatialReference(epsg=self.srid))
+        f = func.extent(self.module.Node.__table__.c.geom)
+        result = select([f.label('ext')], bind=db.engine).execute()
+        result = result.fetchone()
+        extent = result.ext.lstrip('BOX').strip().lstrip('(').rstrip(')')
+        sw, ne = extent.split(',')
+        sw, ne = 'POINT(%s)' % sw, 'POINT(%s)' % ne
+        sw = geometry.Geometry.fromWKT(sw, srs=srs)
+        ne = geometry.Geometry.fromWKT(ne, srs=srs)
+        if srid is not None:
+            srid = int(srid)
+            new_srs = str(SpatialReference(epsg=srid))
+            sw.transform(src_proj=srs, dst_proj=new_srs)
+            ne.transform(src_proj=srs, dst_proj=new_srs)
+        return {
+            'sw': {'x': sw.x, 'y': sw.y},
+            'ne': {'x': ne.x, 'y': ne.y}
+        }
 
     def to_simple_object(self):
+        # Append dynamically computed geometries to default simple object
         obj = super(Region, self).to_simple_object();
-        bounds_degrees = self.bounds_degrees
         obj['geometry'] = {'4326': {}}
-        bounds = self.bounds
-        sw, ne = bounds['sw'], bounds['ne']
-        nw = {'x': sw['x'], 'y': ne['y']}
-        se = {'x': ne['x'] , 'y': sw['y']}
-        obj['geometry']['bounds'] = bounds
-        obj['geometry']['linestring'] = [nw, ne, se, sw, nw]
-        obj['geometry']['center'] = gis.getCenterOfBounds(self.bounds)
-        bounds = self.bounds_degrees
-        sw, ne = bounds['sw'], bounds['ne']
-        nw = {'x': sw['x'], 'y': ne['y']}
-        se = {'x': ne['x'] , 'y': sw['y']}
-        obj['geometry']['4326']['bounds'] = bounds
-        obj['geometry']['4326']['linestring'] = [nw, ne, se, sw, nw]
-        obj['geometry']['4326']['center'] = gis.getCenterOfBounds(self.bounds)
+
+        def set_geom(geom, bounds):
+            sw, ne = bounds['sw'], bounds['ne']
+            nw = {'x': sw['x'], 'y': ne['y']}
+            se = {'x': ne['x'] , 'y': sw['y']}
+            geom['bounds'] = bounds
+            geom['linestring'] = [nw, ne, se, sw, nw]
+            geom['center'] = gis.getCenterOfBounds(bounds)
+
+        # Native bounds
+        bounds = self.bounds()
+        set_geom(obj['geometry'], bounds)
+
+        # Mercator bounds
+        srid = '4326'
+        bounds = self.bounds(srid)
+        set_geom(obj['geometry'][srid], bounds)
+
         return obj
 
     @property
