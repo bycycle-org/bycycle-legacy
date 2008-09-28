@@ -177,6 +177,9 @@ class ServicesController(RestController):
                 args = dict(action=action, format='html')
                 f = super(ServicesController, self)._render_template(**args)
                 c.wrap = wrap
+                f = f.strip().replace('\n', ' ')
+                for i in range(10, 0, -1):
+                    f = f.replace(' ' * i, ' ')
                 result['fragment'] = f
 
             # ``choices`` may be set when HTTP status is 300
