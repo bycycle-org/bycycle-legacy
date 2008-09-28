@@ -120,7 +120,7 @@ byCycle.UI = function () {
 		clearStyle: true
 	  });
 	  self.locations_container = $j('#locations ul').tabs();
-	  self.route_container = $j('#routes ul').tabs();
+	  self.routes_container = $j('#routes ul').tabs();
 	  self.errors.dialog({autoOpen: false});
     },
 
