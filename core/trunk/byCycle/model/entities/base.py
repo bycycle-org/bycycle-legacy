@@ -32,17 +32,12 @@ import simplejson
 from byCycle.util import gis, joinAttrs
 from byCycle.model.db import engine, metadata, Session
 from byCycle.model.entities.util import cascade_arg
-from byCycle.model.data.sqltypes import POINT, LINESTRING
 
 
 __all__ = ['DeclarativeBase', 'Node', 'Edge']
 
 
 class Entity(object):
-    def __init__(self, *args, **kwargs):
-        for name in kwargs:
-            setattr(self, name, kwargs[name])
-
     @classmethod
     def q(cls):
         return Session.query(cls)
