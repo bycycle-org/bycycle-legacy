@@ -75,8 +75,8 @@ Class(byCycle.Map.openlayers, 'Map', byCycle.Map.base.Map, {
       bike_layer]);
 
     // Init
-    var bounds = byCycle.region.geometry.bounds;
-    map.setCenter(new OpenLayers.LonLat(bounds.x, bounds.y), 2);
+    var center = byCycle.region.geometry.center;
+    map.setCenter(new OpenLayers.LonLat(center.x, center.y), 2);
     this.map = map;
   },
 
