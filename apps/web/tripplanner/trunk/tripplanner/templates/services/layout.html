@@ -72,6 +72,32 @@ ${next.body()}
       </div>
     </%call>
 
+    % if 0 and c.region.races:
+      <%call expr="accordion.accordion_group('Races')">
+        <div id="races">
+          <% geom = c.region.get_race_geom() %>
+          % for i, race in enumerate(c.region.races):
+            <div class="race ${['a', 'b'][i % 2]}">
+              % if race.geom:
+                <% onclick = 'byCycle.UI.map.setCenter({x: %s, y: %s})' % (
+                     geom[race.id].x, geom[race.id].y) %>
+              % else:
+                <% onclick = '' %>
+              % endif
+              ${h.link_to(
+                'Show on map', '#show-race-on-map',
+                onclick='%s;' % onclick)}
+              |
+              ${h.link_to(
+                race.title,
+                race.url, title='%s : %s' % (race.series, race.title),
+                target='byCycle_race_window')}
+            </div>
+          % endfor
+        </div>
+      </%call>
+    % endif
+
     ${parent.controls()}
   </%call>
 </%def>
