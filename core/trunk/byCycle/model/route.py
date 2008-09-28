@@ -48,7 +48,6 @@ class Route(object):
         pairs = [(p.y, p.x) for p in points]
         bounds = self.linestring.envelope()
         centroid = bounds.centroid()
-        google_points, google_levels = glineenc.encode_pairs(pairs)
         route = {
             'start': dict(self.start),
             'end': dict(self.end),
@@ -60,9 +59,11 @@ class Route(object):
             'center': {'x': centroid.x, 'y': centroid.y},
             'directions': self.directions,
             'distance': self.distance,
-            'google_points': google_points,
-            'google_levels': google_levels,
         }
+        if self.region.map_type == 'google':
+            google_points, google_levels = glineenc.encode_pairs(pairs)
+            route['google_points'] = google_points
+            route['google_levels'] = google_levels
         route['start']['geocode'] = route['start']['geocode'].to_simple_object()
         route['end']['geocode'] = route['end']['geocode'].to_simple_object()
         return route
