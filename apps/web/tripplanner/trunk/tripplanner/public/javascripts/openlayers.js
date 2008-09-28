@@ -17,10 +17,12 @@ Class(byCycle.Map.openlayers, 'Map', byCycle.Map.base.Map, {
   createMap: function(container) {
     var region = byCycle.region;
     var bounds = region.geometry.bounds;
+    console.debug(bounds)
 
     var opts = {
       theme: null,
       controls: [
+        new OpenLayers.Control.MousePosition(),
         new OpenLayers.Control.PanZoomBar({zoomWorldIcon: true}),
         new OpenLayers.Control.LayerSwitcher(),
         new OpenLayers.Control.Navigation()
@@ -33,6 +35,8 @@ Class(byCycle.Map.openlayers, 'Map', byCycle.Map.base.Map, {
         bounds.sw.x, bounds.sw.y,
         bounds.ne.x, bounds.ne.y)
     };
+    // TODO: figure out why the dynamically computed bounds above don't work
+    opts.maxExtent = new OpenLayers.Bounds(7435781, 447887, 7904954, 877395);
 
     var map = new OpenLayers.Map(container, opts);
 
