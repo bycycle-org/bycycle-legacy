@@ -120,12 +120,22 @@ byCycle.UI = function () {
 		header: '.ui-accordion-header',
 		clearStyle: true
 	  });
-	  self.locations_container = $j('#locations ul').tabs();
-	  self.routes_container = $j('#routes ul').tabs();
+
+	  self.locations_container = $j('#locations ul').tabs().
+		bind('tabsremove', function (event, ui) {
+		  self.results.geocodes[ui.panel.id].remove();
+		});
+
+	  self.routes_container = $j('#routes ul').tabs().
+		bind('tabsremove', function (event, ui) {
+		  self.results.routes[ui.panel.id].remove();
+		});
+
 	  self.errors.dialog({
 		autoOpen: false,
 		width: 400,
-		height: 400,
+		height: 300,
+		resizable: true,
 		buttons: {
 		  'OK': function () { self.errors.dialog('close');}
 		}
@@ -221,7 +231,6 @@ byCycle.UI = function () {
 		self.routes_container :
 		self.locations_container);
 	  container.tabs('remove', i);
-	  self.results[service][result_id].remove();
 	},
 
 
