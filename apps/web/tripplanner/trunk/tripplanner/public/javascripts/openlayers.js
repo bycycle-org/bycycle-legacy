@@ -22,7 +22,6 @@ Class(byCycle.Map.openlayers, 'Map', byCycle.Map.base.Map, {
     var opts = {
       theme: null,
       controls: [
-        new OpenLayers.Control.MousePosition(),
         new OpenLayers.Control.PanZoomBar({zoomWorldIcon: true}),
         new OpenLayers.Control.LayerSwitcher(),
         new OpenLayers.Control.Navigation()
@@ -33,6 +32,10 @@ Class(byCycle.Map.openlayers, 'Map', byCycle.Map.base.Map, {
       maxResolution: 256,
       maxExtent: new OpenLayers.Bounds(sw.x, sw.y, ne.x, ne.y)
     };
+
+    if (debug) {
+      opts.controls.push(new OpenLayers.Control.MousePosition());
+    }
 
     var map = new OpenLayers.Map(container, opts);
 
@@ -82,6 +85,10 @@ Class(byCycle.Map.openlayers, 'Map', byCycle.Map.base.Map, {
 
   /* Events */
 
+  addListener: function(obj, signal, func) {
+    $j(obj.events.element).bind(signal, func);
+  },
+
   onUnload: function() {},
 
   /* Size/Dimensions */
@@ -125,7 +132,10 @@ Class(byCycle.Map.openlayers, 'Map', byCycle.Map.base.Map, {
   closeInfoWindow: function() {},
 
   showMapBlowup: function(point) {
-    //this.map.showMapBlowup(new GLatLng(point.y, point.x));
+    var ll = new OpenLayers.LonLat(point.y, point.x);
+    // TODO: Show REAL map blowup, iff possible in OL (or do something
+    // equivalent)
+    byCycle.logDebug('OL showMapBlowup at', point.x, point.y);
   },
 
   addOverlay: function(overlay, layer) {
@@ -161,8 +171,8 @@ Class(byCycle.Map.openlayers, 'Map', byCycle.Map.base.Map, {
   },
 
   placeMarker: function(point, icon) {
-    var marker = new OpenLayers.Marker(
-      new OpenLayers.LonLat(point.x, point.y));
+    var ll = new OpenLayers.LonLat(point.x, point.y);
+    var marker = new OpenLayers.Marker(ll, icon);
     this.locations_layer.addMarker(marker);
     return marker;
   },
@@ -193,6 +203,14 @@ Class(byCycle.Map.openlayers, 'Map', byCycle.Map.base.Map, {
    */
   placeMarkers: function(points, icons) {
     var markers = [];
+    var len = points.length;
+    for (var i = 0; i < len; ++i) {
+      var p = points[i];
+      var ll = new OpenLayers.LonLat(p.x, p.y);
+      var marker = new OpenLayers.Marker(ll);
+      markers.push(marker);
+      this.locations_layer.addMarker(marker);
+    }
     return markers;
   },
 

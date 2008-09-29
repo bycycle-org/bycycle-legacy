@@ -20,12 +20,12 @@ Class(byCycle.UI, 'Result', null, {
 
   remove: function() {
     // Remove LI container
-    $j(this.id).parentNode.remove();
+    $j(this.id).parent().remove();
     // Remove map overlays
-    var self = this;
+    var overlay;
     for (var i = 0; i < this.overlays.length; ++i) {
-       self.map.removeOverlay(this.overlays[i]);
-    };
+      this.map.removeOverlay(this.overlays[i]);
+    }
     // Remove this from results list
     delete byCycle.UI.results[this.service][this.id];
   }

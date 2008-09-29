@@ -57,16 +57,17 @@
           <!-- Map -->
           <div id="map_pane"></div>
 
+		  <!-- Spinner -->
+		  <div id="spinner" class="spinner noprint">
+			${h.image('/images/spinner.gif', width=16, height=16, alt='*')}
+		  </div>
+
         </div>
         <!-- /Column B -->
 
         <div class="clear"></div>
       </div>
       <!-- /Content -->
-
-      <div id="spinner" class="spinner noprint">
-        ${h.image('spinner.gif', width=16, height=16, alt='Click to hide')}
-      </div>
 
       <%call expr="dialog.dialog('errors', 'Oops!')">
         <div id="error_content"></div>
