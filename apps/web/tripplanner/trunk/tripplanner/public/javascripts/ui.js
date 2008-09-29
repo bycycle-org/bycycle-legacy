@@ -96,6 +96,7 @@ byCycle.UI = function () {
 	  self.selectInputPane(self.service);
 	  self.onResize();
       self.spinner.hide();
+	  $j('#loading').remove();
     },
 
     _assignUIElements: function() {
