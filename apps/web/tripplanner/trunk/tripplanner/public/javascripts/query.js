@@ -127,17 +127,21 @@ Class(byCycle.UI, 'Query', null, {
     dom_node.css({display: 'none'});
     $j('body').append(dom_node);
     var num_tabs = this.result_container.tabs('length');
-    var content = [
+
+    // HACK: jQuery tabs should have `closable` option
+    var label = [
       '#', num_tabs, ' ',
       '<a class="ui-tabs-close-button" href="#close-tab" ',
         'onclick="byCycle.UI.closeResultTab(\'',
           this.service , '\', ', num_tabs, ', \'', id, '\')">X</a>'
     ].join('');
-    this.result_container.tabs('add', '#' + id, content);
+
+    this.result_container.tabs('add', '#' + id, label);
     dom_node.css({display: 'block'});
     this.result_container.tabs('select', num_tabs);
     var li = $j(this.result_container.find('li')[num_tabs]);
     li.addClass('ui-tabs-nav-item');
+
     var result_obj = new this.ui.Result(id, result, this.service);
     this.ui.results[this.service][id] = result_obj;
     return result_obj;
