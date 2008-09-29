@@ -49,6 +49,23 @@ a:hover { color: orange; }
   border-bottom: 1px solid #aaa;
 }
 
+#loading {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  background-color: #fff;
+  z-index: 9999999;
+  border-collapse: collapse;
+}
+#loading td {
+  text-align: center;
+  vertical-align: middle;
+  width: 100%;
+  height: 100%;
+}
+
 
 /* Content Column Layout */
 #content, #col-a, #col-b {
