@@ -121,7 +121,14 @@ byCycle.UI = function () {
 	  });
 	  self.locations_container = $j('#locations ul').tabs();
 	  self.routes_container = $j('#routes ul').tabs();
-	  self.errors.dialog({autoOpen: false});
+	  self.errors.dialog({
+		autoOpen: false,
+		width: 400,
+		height: 400,
+		buttons: {
+		  'OK': function () { self.errors.dialog('close');}
+		}
+	  });
     },
 
     /* Events ****************************************************************/
@@ -207,9 +214,14 @@ byCycle.UI = function () {
       self.e_el.focus();
     },
 
-    showResultPane: function(list_pane) {
-
-    },
+	closeResultTab: function (service, i, result_id) {
+	  var container = (
+		service == 'routes' ?
+		self.routes_container :
+		self.locations_container);
+	  container.tabs('remove', i);
+	  self.results[service][result_id].remove();
+	},
 
 
     /* Query-related *********************************************************/
@@ -225,7 +237,8 @@ byCycle.UI = function () {
 
       var query_obj = new query_class();
       if (self.http_status == 200) {
-        var pane = $j(self.collection_name == 'routes' ? 'routes' : 'locations');
+        var pane = $j(
+		  self.collection_name == 'routes' ? 'routes' : 'locations');
         var fragment = $j(pane.find('.fragment')[0]);
         var json = $j(fragment.find('.json')[0]);
         var request = {status: self.http_status, responseText: json.val()};
@@ -317,22 +330,21 @@ byCycle.UI = function () {
      * Select from multiple matching geocodes
      */
     selectGeocode: function(select_link, i) {
-      byCycle.logDebug('Entered selectGeocode...');
-
       eval('var response = ' + self.query.request.responseText + ';');
+
 	  var select_link = $j(select_link);
       var dom_node = select_link.parents('.query-result:first');
+
+      // Remove the selected result's "select link
+	  $j(dom_node.find('.select-geocode-span')[0]).remove();
+
+      // Show the "set as start or end" link
+      $j(dom_node.find('.set_as_s_or_e')[0]).show();
+
       var result = self.query.makeResult(response.result.results[i], dom_node);
       self.query.processResults('', [result])
 
-      // Remove the selected result's "select link
-      select_link.parent().remove();
-
-      // Show the "set as start or end" link
-      dom_node.find('.set_as_s_or_e:first').show();
-
-      //self.showResultPane(self.location_list);
-	  self.controls.accordion('activate', 0);
+	  self.selectInputPane('geocodes');
 	  self.errors.dialog('close');
 
       if (self.is_first_result) {
@@ -341,7 +353,6 @@ byCycle.UI = function () {
         self.is_first_result = false;
       }
 
-      byCycle.logDebug('Left selectGeocode.');
 	  return false;
     },
 

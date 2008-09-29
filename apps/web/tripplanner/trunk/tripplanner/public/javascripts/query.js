@@ -79,10 +79,10 @@ Class(byCycle.UI, 'Query', null, {
   onFailure: function(request) {
     var failure_method = this['on' + request.status]
     if (failure_method) {
-      failure_method(request);
+      failure_method.call(this, request);
     } else {
       eval('var response = ' + request.responseText + ';');
-      this.ui.showException(response.result.fragment, false);
+      this.ui.showException(response.result.fragment);
     }
   },
 
@@ -127,13 +127,18 @@ Class(byCycle.UI, 'Query', null, {
     dom_node.css({display: 'none'});
     $j('body').append(dom_node);
     var num_tabs = this.result_container.tabs('length');
-    this.result_container.tabs('add', '#' + id, 'Result #' + (num_tabs));
+    var content = [
+      '#', num_tabs, ' ',
+      '<a class="ui-tabs-close-button" href="#close-tab" ',
+        'onclick="byCycle.UI.closeResultTab(\'',
+          this.service , '\', ', num_tabs, ', \'', id, '\')">X</a>'
+    ].join('');
+    this.result_container.tabs('add', '#' + id, content);
     dom_node.css({display: 'block'});
     this.result_container.tabs('select', num_tabs);
     var li = $j(this.result_container.find('li')[num_tabs]);
     li.addClass('ui-tabs-nav-item');
     var result_obj = new this.ui.Result(id, result, this.service);
-    //widget.register_listeners('close', result_obj.remove.bind(result_obj));
     this.ui.results[this.service][id] = result_obj;
     return result_obj;
   },
@@ -224,20 +229,19 @@ Class(byCycle.UI, 'RouteQuery', byCycle.UI.Query, {
   },
 
   on300: function(request) {
-    eval('var response = ' + this.request.responseText + ';');
+    eval('var response = ' + request.responseText + ';');
+    this.ui.showException(response.result.fragment);
     var addr;
     var route_choices = [];
-    $j.each(response.result, function (i, c) {
-      if (typeof c == 'Array') {
-        addr = null;
+    console.debug('Result', response.result)
+    $j.each(response.result.choices, function (i, c) {
+      console.debug(c);
+      if (c.number) {
+        addr = [c.number, c.network_id].join('-');
       } else {
-        if (c.number) {
-          addr = [c.number, c.network_id].join('-');
-        } else {
-          addr = c.network_id
-        }
+        addr = c.network_id
       }
-      route_choices[i] = addr;
+      route_choices.push(addr);
     });
     this.route_choices = route_choices;
   },
@@ -262,17 +266,16 @@ Class(byCycle.UI, 'RouteQuery', byCycle.UI.Query, {
       route = r.result;
       ls = route.linestring;
 
-      // Zoom to linestring
-      // TODO: Compute this in back end???
+      // Zoom to route extent
       centerAndZoomToBounds.call(map, route.bounds, route.center);
 
-      // Place from and to markers
+      // Place start and end markers
       s_e_markers = placeMarkers.call(
         map, [ls[0], ls[ls.length - 1]], [map.start_icon, map.end_icon]);
-
-      // Add listeners to start and end markers
       s_marker = s_e_markers[0];
       e_marker = s_e_markers[1];
+
+      // TODO: Doesn't work in OpenLayers (no equivalent to ``showMapBlowup``??
       addListener(s_marker, 'click', function() {
         showMapBlowup.call(map, ls[0]);
       });
@@ -291,7 +294,9 @@ Class(byCycle.UI, 'RouteQuery', byCycle.UI.Query, {
       }
 
       // Add overlays to result object
-      r.overlays.push(s_marker, e_marker, line);
+      r.addOverlay(s_marker);
+      r.addOverlay(e_marker);
+      r.addOverlay(line);
     });
   }
 });

@@ -7,7 +7,7 @@ ${self.json()}
 
 <h2>${c.exception.title}</h2>
 
-<h3>Select a location</h3>
+<h3>Please select one:</h3>
 
 <ul class="result_list multi-list">
   <% last = len(c.collection) - 1 %>
@@ -57,7 +57,7 @@ ${self.json()}
         onclick="byCycle.UI.map.setCenter({x: ${x}, y: ${y}}); return false;"
         >Show on map</a>
 
-      <span>
+      <span class="select-geocode-span">
         |
         <a class="select-geocode-link"
            href="${h.url_for('find_geocodes', region_id=c.region.slug, q=field_addr)}#select-this-location"
