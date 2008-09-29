@@ -10,6 +10,14 @@ NameSpace('regions', byCycle, function() {
       regions[region_data.slug] = region;
     });
 
+    // HACK: OL doesn't like the dynamically computed bounds for its
+    // ``maxExtent`` map opt.
+    // TODO: Figure out why.
+    regions.portlandor.geometry.bounds = {
+      sw: {x: 7435781, y: 447887},
+      ne: {x: 7904954, y: 877395}
+    };
+
     // Compute data for `all` pseudo/uber-region
     var bounds_all = {sw: {x: 180, y: 90}, ne: {x: -180, y: -90}};
     var region, bounds, sw, ne;
