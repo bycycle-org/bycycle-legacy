@@ -121,6 +121,15 @@ a:hover { color: orange; }
 
 
 /* Errors */
+.ui-dialog-content {
+  overflow: auto;
+}
+#error_content {
+  padding: .4em;
+}
+#error_content h2 {
+  color: red;
+}
 #error_content h2, #error_content h3 {
   font-weight: bold;
 }
@@ -129,9 +138,6 @@ a:hover { color: orange; }
 }
 #error_content h3 {
   font-size: 105%;
-}
-#error_content ul {
-  width: 96%;
 }
 #error_content ul li {
   padding: .2em;
