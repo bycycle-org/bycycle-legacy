@@ -20,9 +20,9 @@
     <title>byCycle.org - Bicycle Trip Planner - ${self.region_title()}</title>
 
     ${h.stylesheet_link('/stylesheets/reset.css')}
+    ${h.stylesheet_link('/ui-theme/theme.css')}
     ${h.stylesheet_link('/stylesheets/base.css')}
     ${h.if_ie(h.stylesheet_link('/stylesheets/base_ie.css'))}
-    ${h.stylesheet_link('/ui-theme/theme.css')}
     ${h.stylesheet_link('/stylesheets/print.css', media='print')}
     ${self.stylesheet_links()}
   </head>
