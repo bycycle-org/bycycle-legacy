@@ -18,7 +18,7 @@ setup(
     version='0.4a0',
     description='byCycle Trip Planner',
     long_description='byCycle Trip Planner Web Application',
-    license='Free For Home Use',
+    license='GNU General Public License (GPL)',
     author='Wyatt L Baldwin, byCycle.org',
     author_email='wyatt@byCycle.org',
     keywords='bicycle bike cycyle trip planner route finder',
