@@ -76,7 +76,6 @@ byCycle.UI = function () {
 		self.setRegion(self.region_id);
 		$j.each(util.values(byCycle.regions.regions), function (i, r) {
 		  geom = r.geometry['4326'];
-		  console.debug(geom.center);
 		  self.map.makeRegionMarker(r.slug, geom.center);
 		  self.map.drawPolyLine(geom.linestring);
 		});
@@ -90,9 +89,6 @@ byCycle.UI = function () {
         self.map.setZoom(zoom);
       }
       self.handleQuery();
-      if (byCycle.getParamVal('bike_map')) {
-        self.toggleBikeTileOverlay();
-      }
 	  self.selectInputPane(self.service);
 	  self.onResize();
       self.spinner.hide();
@@ -104,7 +100,6 @@ byCycle.UI = function () {
       self.controls = $j('#controls');
 	  self.errors = $j('#errors');
       self.region_el = $j('#regions');
-      // Service
       self.query_pane = $j('#search-the-map');
       self.route_pane = $j('#find-a-route');
       self.query_form = $j('#query_form');
@@ -165,9 +160,6 @@ byCycle.UI = function () {
       $j('#swap_s_and_e').click(self.swapStartAndEnd);
       self.query_form.submit(self.runGenericQuery);
       self.route_form.submit(self.runRouteQuery);
-      if (self.bike_overlay_link) {
-        self.bike_overlay_link.click(self.toggleBikeTileOverlay);
-      }
     },
 
     onUnload: function (event) {
