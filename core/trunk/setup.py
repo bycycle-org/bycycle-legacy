@@ -21,7 +21,7 @@ setup(
 Address normalization, geocoding, routing and other GIS-related services. We
 still have not decided on a license, but it will most likely end up being the
 GPL.""",
-    license='Free For Home Use',
+    license='GNU General Public License (GPL)',
     author='Wyatt L Baldwin, byCycle.org',
     author_email='wyatt@byCycle.org',
     keywords='bicycle bike cycyle trip planner route finder',
