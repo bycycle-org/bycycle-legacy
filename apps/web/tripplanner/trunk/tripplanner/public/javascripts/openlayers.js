@@ -12,6 +12,7 @@ Class(byCycle.Map.openlayers, 'Map', byCycle.Map.base.Map, {
 
   initialize: function(ui, container) {
     this.superclass.initialize.apply(this, arguments);
+    this.createIcons();
     this.createListeners();
   },
 
@@ -81,30 +82,56 @@ Class(byCycle.Map.openlayers, 'Map', byCycle.Map.base.Map, {
     this.map = map;
   },
 
+  createIcons: function() {
+    // Center icon
+    var url = byCycle.prefix + 'images/reddot15.png';
+    var size = new OpenLayers.Size(15, 15);
+    var offset = new OpenLayers.Pixel(7, 7);
+    var center_icon = new OpenLayers.Icon(url, size, offset);
+    // Base icon for start and end of route icons
+    //var base_icon = new GIcon();
+    //base_icon.shadow = byCycle.prefix + 'images/shadow50.png';
+    //base_icon.iconSize = new GSize(20, 34);
+    //base_icon.shadowSize = new GSize(37, 34);
+    //base_icon.iconAnchor = new GPoint(9, 34);
+    //base_icon.infoWindowAnchor = new GPoint(9, 2);
+    //base_icon.infoShadowAnchor = new GPoint(18, 25);
+    // Start icon
+    //var start_icon = new GIcon(base_icon);
+    //start_icon.image = byCycle.prefix + 'images/dd-start.png';
+    // End icon
+    //var end_icon = new GIcon(base_icon);
+    //end_icon.image = byCycle.prefix + 'images/dd-end.png';
+    // Assign icons to self
+    this.center_icon = center_icon;
+    //this.start_icon = start_icon;
+    //this.end_icon = end_icon;
+  },
+
   createListeners: function() {
     var self = this;
-    self.map.events.register('moveend', self.map, function () {
+    this.map.events.register('moveend', self.map, function () {
       self.center = self.getCenter();
       var ll = new OpenLayers.LonLat(self.center.x, self.center.y);
       if (typeof self.center_marker == 'undefined') {
-        self.center_marker = new OpenLayers.Marker(ll);  //, self.center_icon);
+        self.center_marker = new OpenLayers.Marker(ll, self.center_icon);
         self.locations_layer.addMarker(self.center_marker);
         if (byCycle.region_id != 'all') {
-          var cm_node = document.getElementById('center-marker-contents');
+          var node = $j('#center-marker-contents');
+          var popup = self.addPopup('', ll, null, node.html(), self.center_icon);
           self.addListener(self.center_marker, 'click', function () {
-            byCycle.logDebug('CM clicked.');
-            //self.map.openInfoWindow(self.center, cm_node);
+            popup.show();
           });
         }
       }
       var px = self.map.getLayerPxFromLonLat(ll);
       self.center_marker.moveTo(px);
     });
-    this.addListener(self.map, 'click', function (overlay, point) {
-      //self.map.closeInfoWindow();
-      //if (point) {
-        //self.ui.handleMapClick({x: point.lng(), y: point.lat()});
-      //}
+    this.addListener(self.map, 'click', function (event) {
+      // TODO: closes popups when clicking markers
+      //$j.each(self.map.popups, function(i, p) {
+        //p.hide();
+      //});
     });
   },
 
@@ -172,6 +199,18 @@ Class(byCycle.Map.openlayers, 'Map', byCycle.Map.base.Map, {
     }
   },
 
+  addPopup: function (id, point, size, content, icon, closeable) {
+    // size can be null
+    if (typeof closeable == 'undefined') {
+      closeable = true;
+    }
+    var pop_class = OpenLayers.Popup.FramedCloud;
+    var popup = new pop_class(id, point, size, content, icon, closeable);
+    this.map.addPopup(popup);
+    popup.hide();
+    return popup;
+  },
+
   removeOverlay: function(overlay) {
     overlay.destroy();
   },
@@ -203,18 +242,11 @@ Class(byCycle.Map.openlayers, 'Map', byCycle.Map.base.Map, {
   },
 
   placeGeocodeMarker: function(point, node, zoom, icon) {
-    if (typeof zoom == 'undefined') {
-      this.setCenter(point);
-    } else {
-      this.setCenter(point, zoom);
-    }
-    var coord = new OpenLayers.LonLat(point.x, point.y);
+    this.setCenter(point, zoom);
+    var ll = new OpenLayers.LonLat(point.x, point.y);
     var marker = this.placeMarker(point, icon);
-    var popup = new OpenLayers.Popup.FramedCloud(
-      'some_id', coord, null, node.html(), marker.icon);
-    this.map.addPopup(popup);
-    popup.hide();
-    $j(marker.events.element).click(function (event) {
+    var popup = this.addPopup('', ll, null, node.html(), marker.icon);
+    this.addListener(marker, 'click', function (event) {
       popup.toggle();
     });
     return marker;
