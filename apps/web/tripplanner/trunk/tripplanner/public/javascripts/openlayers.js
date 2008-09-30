@@ -24,7 +24,8 @@ Class(byCycle.Map.openlayers, 'Map', byCycle.Map.base.Map, {
       controls: [
         new OpenLayers.Control.PanZoomBar({zoomWorldIcon: true}),
         new OpenLayers.Control.LayerSwitcher(),
-        new OpenLayers.Control.Navigation()
+        new OpenLayers.Control.Navigation(),
+        new OpenLayers.Control.MousePosition()
       ],
       projection: 'EPSG:' + region.srid,
       units: region.units,
@@ -32,10 +33,6 @@ Class(byCycle.Map.openlayers, 'Map', byCycle.Map.base.Map, {
       maxResolution: 256,
       maxExtent: new OpenLayers.Bounds(sw.x, sw.y, ne.x, ne.y)
     };
-
-    if (debug) {
-      opts.controls.push(new OpenLayers.Control.MousePosition());
-    }
 
     var map = new OpenLayers.Map(container, opts);
 

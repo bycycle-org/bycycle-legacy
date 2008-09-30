@@ -158,6 +158,10 @@ a:hover { color: orange; }
   background: #ccdafc;
   height: 100%;
 }
+.olControlMousePosition {
+  right: .4em;
+  bottom: .2em;
+}
 
 
 /* Route Summary & Directions */
