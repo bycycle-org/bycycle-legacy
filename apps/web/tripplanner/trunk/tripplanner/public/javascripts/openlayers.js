@@ -12,6 +12,7 @@ Class(byCycle.Map.openlayers, 'Map', byCycle.Map.base.Map, {
 
   initialize: function(ui, container) {
     this.superclass.initialize.apply(this, arguments);
+    this.createListeners();
   },
 
   createMap: function(container) {
@@ -78,6 +79,33 @@ Class(byCycle.Map.openlayers, 'Map', byCycle.Map.base.Map, {
     var center = byCycle.region.geometry.center;
     map.setCenter(new OpenLayers.LonLat(center.x, center.y), 2);
     this.map = map;
+  },
+
+  createListeners: function() {
+    var self = this;
+    self.map.events.register('moveend', self.map, function () {
+      self.center = self.getCenter();
+      var ll = new OpenLayers.LonLat(self.center.x, self.center.y);
+      if (typeof self.center_marker == 'undefined') {
+        self.center_marker = new OpenLayers.Marker(ll);  //, self.center_icon);
+        self.locations_layer.addMarker(self.center_marker);
+        if (byCycle.region_id != 'all') {
+          var cm_node = document.getElementById('center-marker-contents');
+          self.addListener(self.center_marker, 'click', function () {
+            byCycle.logDebug('CM clicked.');
+            //self.map.openInfoWindow(self.center, cm_node);
+          });
+        }
+      }
+      var px = self.map.getLayerPxFromLonLat(ll);
+      self.center_marker.moveTo(px);
+    });
+    this.addListener(self.map, 'click', function (overlay, point) {
+      //self.map.closeInfoWindow();
+      //if (point) {
+        //self.ui.handleMapClick({x: point.lng(), y: point.lat()});
+      //}
+    });
   },
 
   /* Events */
