@@ -112,10 +112,12 @@ Class(byCycle.Map.google, 'Map', byCycle.Map.base.Map, {
       if (typeof(self.center_marker) == 'undefined') {
         self.center_marker = new GMarker(self.center, self.center_icon);
         self.map.addOverlay(self.center_marker);
-        var cm_node = document.getElementById('center-marker-contents');
-        GEvent.addListener(self.center_marker, 'click', function () {
-          self.map.openInfoWindow(self.center, cm_node);
-        });
+        if (byCycle.region_id != 'all') {
+          var cm_node = document.getElementById('center-marker-contents');
+          GEvent.addListener(self.center_marker, 'click', function () {
+            self.map.openInfoWindow(self.center, cm_node);
+          });
+        }
       }
       self.center_marker.setPoint(self.center);
     });
