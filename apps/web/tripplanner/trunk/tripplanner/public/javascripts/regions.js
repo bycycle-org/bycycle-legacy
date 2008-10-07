@@ -5,10 +5,10 @@ NameSpace('regions', byCycle, function() {
     self = byCycle.regions;
     var regions = {};
 
-    jQuery.each(result.result, function (i, region_data) {
-      region = new self.Region(region_data);
-      regions[region_data.slug] = region;
-    });
+    for (var i = 0, region_data; i < result.result.length; ++i) {
+      region_data = result.result[i];
+      regions[region_data.slug] =  new self.Region(region_data);
+    }
 
     // HACK: OL doesn't like the dynamically computed bounds for its
     // ``maxExtent`` map opt.
@@ -30,7 +30,7 @@ NameSpace('regions', byCycle, function() {
       if (sw.y < bounds_all.sw.y) { bounds_all.sw.y = sw.y; }
       if (ne.x > bounds_all.ne.x) { bounds_all.ne.x = ne.x; }
       if (ne.y > bounds_all.ne.y) { bounds_all.ne.y = ne.y; }
-    };
+    }
     var getCenterOfBounds = byCycle.Map.base.Map.prototype.getCenterOfBounds;
     var center = getCenterOfBounds(bounds_all);
     var all = {
