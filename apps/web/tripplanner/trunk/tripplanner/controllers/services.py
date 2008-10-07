@@ -30,8 +30,8 @@ class ServicesController(RestController):
 
     def __before__(self, format='html'):
         RestController.__before__(self, format=format)
-        c.service = c.collection_name
-        c.region = model.Region.get_by_slug('portlandor')
+        self.service = self.collection_name
+        self.region = model.Region.get_by_slug('portlandor')
 
     def find(self):
         """Generic find method. Expects ``q`` to be set in GET params.
@@ -64,7 +64,7 @@ class ServicesController(RestController):
             return self._render(action=self.http_status, code=self.http_status)
         redirect_to(
             h.url_for(
-                region_id=c.region.slug,
+                region_id=self.region.slug,
                 controller=controller, action='find'),
             **dict(request.params))
 
@@ -87,7 +87,7 @@ class ServicesController(RestController):
             E.g., for route, tmode=bike, pref=safer
 
         """
-        service = service_class(region=c.region.slug)
+        service = service_class(region=self.region.slug)
 
         try:
             result = service.query(query, **params)
@@ -115,12 +115,12 @@ class ServicesController(RestController):
                 result[0]
             except TypeError:
                 # No, it's a single object (AKA member)
-                c.member = result
+                self.member = result
                 template = 'show'
                 log.debug('Found member')
             else:
                 # Yes
-                c.collection = result
+                self.collection = result
                 template = 'index'
                 log.debug('Found collection')
 
@@ -130,7 +130,7 @@ class ServicesController(RestController):
         except AttributeError:
             pass
         else:
-            c.exception = self.exception
+            self.exception = self.exception
             template = getattr(self, '_template', 'errors')
             if self.http_status == 500:
                 if g.debug:
@@ -147,13 +147,13 @@ class ServicesController(RestController):
         if json:
             # Inject JSON into template, so the UI can initialize from it
             json_obj = self._get_json_object(action=kwargs['action'])
-            c.json = simplejson.dumps(json_obj)
+            self.json = simplejson.dumps(json_obj)
         return super(ServicesController, self)._render_template(**kwargs)
 
     def _get_json_object(self, action=None, wrap=True, fragment=True, block=None):
         def block(obj):
             result = {
-                'type': c.Entity.__name__,
+                'type': self.Entity.__name__,
                 'results': (obj if isinstance(obj, list) else [obj]),
             }
 
@@ -172,11 +172,11 @@ class ServicesController(RestController):
                 }
 
             if fragment:
-                wrap = c.wrap
-                c.wrap = False
+                wrap = self.wrap
+                self.wrap = False
                 args = dict(action=action, format='html')
                 f = super(ServicesController, self)._render_template(**args)
-                c.wrap = wrap
+                self.wrap = wrap
                 f = f.strip().replace('\n', ' ')
                 for i in range(10, 0, -1):
                     f = f.replace(' ' * i, ' ')

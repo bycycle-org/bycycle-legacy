@@ -47,6 +47,6 @@ class RoutesController(ServicesController):
                 self._template = '300'
                 self.http_status = 300
                 self.title = 'Multiple Matches'
-                c.choices = exc.choices
+                self.choices = exc.choices
         return super(RoutesController, self)._find(q, service_class=Service,
                                                    block=block, **params)
