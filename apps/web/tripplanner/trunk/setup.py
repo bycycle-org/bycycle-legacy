@@ -45,7 +45,7 @@ setup(
         'Beaker>=1.0.2',
         'Routes>=1.10.1',
         'Mako==0.2.2',
-        'Restler>=0.2a13',
+        'Restler>=0.2a17',
         'Pylons>=0.9.7rc2',
     ),
     test_suite = 'nose.collector',
