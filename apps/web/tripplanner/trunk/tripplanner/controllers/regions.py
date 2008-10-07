@@ -9,7 +9,7 @@ class RegionsController(RestController):
 
     def __before__(self):
         RestController.__before__(self)
-        c.service = 'services'
+        self.service = 'services'
 
     def index(self):
         params = dict(request.params)
@@ -46,7 +46,7 @@ class RegionsController(RestController):
         """Show the ``region`` with ID or name or key ``id``."""
         id = self._get_region_id(id)
         self._set_member(id)
-        return self._render(action=c.region.slug)
+        return self._render(action=self.region.slug)
 
     def find(self):
         params = dict(request.params)
