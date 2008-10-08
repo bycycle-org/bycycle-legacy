@@ -4,155 +4,248 @@
 % else:
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 
-
 <html xmlns="http://www.w3.org/1999/xhtml">
   ${h.if_ie('<xml:namespace ns="urn:schemas-microsoft-com:vml" prefix="v"/>')}
 
   <head>
     <meta http-equiv="Content-Type" content="application/xhtml+xml; charset=utf-8" />
-
-    <meta name="author" content="Wyatt Baldwin, wyatt@byCycle.org" />
-
+    <meta name="author" content="Wyatt Lee Baldwin, wyatt@byCycle.org" />
     <meta name="keywords" content="bicycle, bike, bicycle trip planner, bicycle route finder, bike trip planner, bike route finder, bicycle route, bicycle trip, bike route, bike trip, bicycle routing, bike routing, maps, bicycle maps, bike maps, bicycle advocacy, community, sustainability, portland, oregon, milwaukee, wisconsin" />
-
     <meta name="description" content="byCycle.org Bicycle Trip Planner -- A web-based, interactive, bicycle trip planner (route finder) for the Portland, Oregon, Milwaukee, Wisconsin, and, soon, other regions." />
 
     <title>byCycle.org - Bicycle Trip Planner - ${self.region_title()}</title>
 
-    ${h.stylesheet_link('/stylesheets/reset.css')}
-    ${h.stylesheet_link('/ui-theme/theme.css')}
-    ${h.stylesheet_link('/stylesheets/base.css')}
-    ${h.if_ie(h.stylesheet_link('/stylesheets/base_ie.css'))}
-    ${h.stylesheet_link('/stylesheets/print.css', media='print')}
-    ${self.stylesheet_links()}
+    <link rel="shortcut icon" href="${h.url_for('/favicon.ico')}" type="image/x-icon" />
+
+    <style type="text/css">
+      html, body {
+        overflow: hidden;
+        height: 100%;
+      }
+      #loading {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        background-color: #fff;
+        z-index: 9999999;
+        border-collapse: collapse;
+      }
+      #loading td {
+        text-align: center;
+        vertical-align: middle;
+        width: 100%;
+        height: 100%;
+      }
+      #loading td h1 {
+        font-weight: bold;
+        font-size: 120%;
+        font-family: arial,helvetica,clean,sans-serif;
+        margin-top: .5em;
+      }
+    </style>
   </head>
 
-  <body>
+  <body class="yui-skin-sam">
 
-	<script type="text/javascript">
-      //<![CDATA[
-	  document.write([
-		'<table id="loading"><tbody><tr><td>',
-		  '<div>',
-			'<img src="/images/spinner.gif" width="16" height="16" alt="*" />',
-		  '</div>',
-		  '<div>Loading...</div>',
-		'</tbody></td></tr></table>'
-	  ].join(''));
-	  //]]>
-	</script>
+    <!-- Loading indicator... -->
+    <table id="loading">
+      <tbody>
+        <tr>
+          <td>
+            <img src="${h.url_for('/images/spinner.gif')}" width="32" height="32" alt="Loading..." />
+            <h1>Loading...</h1>
+          </td>
+        </tr>
+      </tbody>
+    </table>
 
-    <div id="wrapper">
-
-      <!-- Header -->
-      <div id="header">
-		${h.link_to('Home', h.url_for('/'), title='byCycle.org Home')} |
-		${h.link_to('About', h.url_for('about'), title='About byCycle.org')} |
-		${h.link_to('Help', h.url_for('help'), title='Help')}
-      </div>
-      <!-- /Header -->
-
-      <!-- Content -->
-      <div id="content">
-
-        <!-- Column A -->
-        <div id="col-a">
-
-          <!-- Controls -->
-          ${self.controls()}
-
-        </div>
-        <!-- /Column A -->
-
-        <!-- Column B -->
-        <div id="col-b">
-
-          <!-- Map -->
-          <div id="map_pane"></div>
-
-		  <!-- Spinner -->
-		  <div id="spinner" class="spinner noprint">
-			${h.image('/images/spinner.gif', width=16, height=16, alt='*')}
-		  </div>
-
-        </div>
-        <!-- /Column B -->
-
-        <div class="clear"></div>
-      </div>
-      <!-- /Content -->
-
-      <%call expr="dialog.dialog('errors', 'Oops!')">
-        <div id="error_content"></div>
-      </%call>
+    <div id="top">
+      ${h.link_to('Home', h.url_for('/'), title='byCycle.org Home')} |
+      ${h.link_to('About', h.url_for('about'), title='About byCycle.org')} |
+      ${h.link_to('Help', h.url_for('help'), title='Help')}
     </div>
-    <!-- /Wrapper -->
 
-	<script type="text/javascript">
+    <div id="left">
+      ${self.controls()}
+    </div>
+
+    <div id="center">
+      <div id="map_pane">
+        <!-- Map gets inserted here. -->
+      </div>
+
+      <div id="spinner" class="spinner noprint">
+        <img src="${h.url_for('/images/spinner.gif')}" width="32" height="32" alt="*" />
+      </div>
+    </div>
+
+    <%call expr="dialog.dialog('errors', 'Oops!')">
+      <div id="error_content"></div>
+    </%call>
+
+    <script type="text/javascript" src="${h.url_for('/javascripts/util.js')}" ></script>
+    ${self.javascript()}
+    <script type="text/javascript" src="http://yui.yahooapis.com/2.6.0/build/yuiloader/yuiloader-min.js" ></script>
+    <script type="text/javascript">
       //<![CDATA[
       var debug = ${'true' if bool(g.debug) else 'false'};
+      var in_production_mode = !debug;
+      var region_id = '${c.region.slug if c.region else ""}';
+
+      if (!console) {
+        console = {};
+      }
+      if (in_production_mode || !console.debug) {
+        console.debug = function () {};
+      }
+
+      var loader = new YAHOO.util.YUILoader({
+        require: [
+          'layout', 'container',
+          'dom', 'event',  'element',
+          'get', 'connection', 'json',
+          'reset', 'fonts', 'grids', 'base', 'resize'
+        ],
+        allowRollup: true,
+        combine: true,
+        onSuccess: function () {
+          console.debug('YUI loader succeeded. Initializing app...');
+
+          byCycle.prefix = '${h.url_for("/")}';${'%i' % c.http_status if c.http_status else 'null'}
+          byCycle.region_id = region_id;
+
+          YAHOO.util.Connect.asyncRequest(
+            'GET', byCycle.prefix + 'regions?format=json&wrap=off',
+            {
+              success: function (response) {
+                var result = YAHOO.lang.JSON.parse(response.responseText);
+
+                byCycle.regions.initialize(result);
+                if (byCycle.region_id) {
+                  byCycle.region = byCycle.regions.regions[byCycle.region_id];
+                } else {
+                  byCycle.region_id = 'all';
+                  byCycle.region = byCycle.regions[byCycle.region_id];
+                }
+
+                var map_state = byCycle.getParamVal('map_state', function (map_state) {
+                  // Anything but '', '0' or 'off' is on
+                  return map_state === '' || map_state == '0' || map_state == 'off';
+                });
+                var map_type_name = (byCycle.getParamVal('map_type') || '').toLowerCase();
+                map_type_name = map_type_name || byCycle.region.map_type;
+                byCycle.logDebug('Map type:', map_type_name);
+
+                byCycle.UI.map_type = byCycle.Map.base;
+                var url = [
+                  byCycle.prefix, 'javascripts/',  map_type_name,
+                  '.js'].join('');
+                YAHOO.util.Get.script(url, {
+                  onSuccess: function () {
+                    byCycle.UI.map_type = byCycle.Map[map_type_name];
+                    YAHOO.util.Event.onDOMReady(byCycle.onLoad);
+                  }
+                });
+
+                byCycle.UI.map_state = map_state;
+              }
+            }
+          );
+
+          byCycle.UI.service = '${c.service}';
+          byCycle.UI.member_name = '${c.member_name}';
+          byCycle.UI.collection_name = '${c.collection_name}';
+          byCycle.UI.http_status = ${'%i' % c.http_status if c.http_status else 'null'};
+          byCycle.UI.q = '${c.q}';
+        },
+        onFailure: function () {
+          console.debug('Error encountered when loading via YUI loader.');
+        }
+      });
+
+      var map_lib_url;
+      if (region_id == 'portlandor') {
+        map_lib_url = 'http://openlayers.org/api/OpenLayers.js';
+        loader.addModule({
+          name: 'bycycle_map_lib',
+          type: 'js',
+          fullpath: map_lib_url
+        });
+        loader.require('bycycle_map_lib');
+      }
+
+      loader.addModule({
+        name: 'bycycle_base_css',
+        type: 'css',
+        fullpath: '${h.url_for("/stylesheets/base.css")}',
+        requires: ['base']
+      });
+
+      loader.addModule({
+        name: 'bycycle_util',
+        type: 'js',
+        fullpath: '${h.url_for("/javascripts/util.js")}'
+      });
+
+      loader.addModule({
+        name: 'bycycle',
+        type: 'js',
+        fullpath: '${h.url_for("/javascripts/bycycle.js")}',
+        requires: ['bycycle_util']
+      });
+
+      loader.addModule({
+        name: 'bycycle_map',
+        type: 'js',
+        fullpath: '${h.url_for("/javascripts/map.js")}',
+        requires: ['bycycle']
+      });
+
+      loader.addModule({
+        name: 'bycycle_regions',
+        type: 'js',
+        fullpath: '${h.url_for("/javascripts/regions.js")}',
+        requires: ['bycycle_map']
+      });
+
+      loader.addModule({
+        name: 'bycycle_ui',
+        type: 'js',
+        fullpath: '${h.url_for("/javascripts/ui.js")}',
+        requires: ['bycycle_regions']
+      });
+
+      loader.addModule({
+        name: 'bycycle_query',
+        type: 'js',
+        fullpath: '${h.url_for("/javascripts/query.js")}',
+        requires: ['bycycle_ui']
+      });
+
+      loader.addModule({
+        name: 'bycycle_result',
+        type: 'js',
+        fullpath: '${h.url_for("/javascripts/result.js")}',
+        requires: ['bycycle_ui']
+      });
+
+      loader.require('bycycle_base_css');
+      //loader.require('bycycle_util');
+      loader.require('bycycle');
+      loader.require('bycycle_map');
+      loader.require('bycycle_regions');
+      loader.require('bycycle_ui');
+      loader.require('bycycle_query');
+      loader.require('bycycle_result');
+      loader.insert();
       //]]>
     </script>
 
-    ${h.javascript_link(
-        '/javascripts/jquery.js',
-        '/javascripts/jquery-ui.js',
-        '/javascripts/util.js',
-        '/javascripts/bycycle.js',
-        '/javascripts/map.js',
-        '/javascripts/regions.js',
-	)}
-
-	<script type="text/javascript">
-      //<![CDATA[
-      byCycle.prefix = '${h.url_for('/')}';
-	  byCycle.region_id = '${c.region.slug if c.region else ''}';
-
-	  // Get regions
-	  jQuery.ajax({
-		async: false,
-		url: '/regions',
-		data: {format: 'json'},
-		dataType: 'json',
-		success: byCycle.regions.initialize
-	  });
-	  if (byCycle.region_id) {
-		byCycle.region = byCycle.regions.regions[byCycle.region_id];
-	  } else {
-		byCycle.region_id = 'all';
-		byCycle.region = byCycle.regions[byCycle.region_id];
-	  }
-
-	  // Load map type namespace
-	  window.$ = null;  // In case the map's JS library uses $
-	  util.writeScript('/javascripts/' + byCycle.region.map_type + '.js');
-      //]]>
-    </script>
-
-	${h.javascript_link(
-	  '/javascripts/ui.js',
-	  '/javascripts/query.js',
-	  '/javascripts/result.js',
-	)}
-
-	<script type="text/javascript">
-      //<![CDATA[
-	  window.$j = jQuery.noConflict();
-	  byCycle.UI.beforeLoad();
-	  byCycle.UI.service = '${c.service}';
-	  byCycle.UI.member_name = '${c.member_name}';
-	  byCycle.UI.collection_name = '${c.collection_name}';
-	  byCycle.UI.http_status = ${'%i' % c.http_status if c.http_status else 'undefined'};
-	  byCycle.UI.q = '${c.q}';
-      //]]>
-    </script>
-
-    <!-- TODO: Maybe we could get this dynamically the first time it's needed? -->
-    <%include file="/widgets/center_marker.html" />
-
-	% if not g.debug:
+    % if not g.debug:
       <%include file="_google_analytics.html" />
-	% endif
+    % endif
   </body>
 </html>
 
@@ -179,56 +272,56 @@
 
 <%def name="controls()">
   <%call expr="accordion.accordion_group('About')">
-	This is an alternative transportation trip planner and data resource.
-	Currently, the focus is on trips made <i>by bike</i>, but we are also
-	starting to add some public transit info. To learn more about byCycle,
-	${h.link_to(
-		'click here', 'http://info.bycycle.org/about',
-		title='About byCycle.org')}.
-	<br />
-	<br />
-	The
-	${h.link_to(
-	  'source code', h.url_for('code'),
-	  title='byCycle source repository (Subversion)')}
-	  for this application is licensed under the
-	${h.link_to(
-	  'GNU General Public License, v3', h.url_for('gpl'), title='License')}.
-	<br />
-	<br />
-	There is a ${h.link_to(
-	  'project Web site', h.url_for('project'),
-	  title='byCycle project site (Trac)')}
-	  for software developers.
-	<br />
-	<br />
-	&copy; 2004-2008 byCycle.org.
+    This is an alternative transportation trip planner and data resource.
+    Currently, the focus is on trips made <i>by bike</i>, but we are also
+    starting to add some public transit info. To learn more about byCycle,
+    ${h.link_to(
+      'click here', 'http://info.bycycle.org/about',
+      title='About byCycle.org')}.
+    <br />
+    <br />
+    The
+    ${h.link_to(
+      'source code', h.url_for('code'),
+      title='byCycle source repository (Subversion)')}
+      for this application is licensed under the
+    ${h.link_to(
+      'GNU General Public License, v3', h.url_for('gpl'), title='License')}.
+    <br />
+    <br />
+    There is a ${h.link_to(
+      'project Web site', h.url_for('project'),
+      title='byCycle project site (Trac)')}
+      for software developers.
+    <br />
+    <br />
+    &copy; 2004-2008 byCycle.org.
   </%call>
 
   <%call expr="accordion.accordion_group('Support byCycle')">
-	byCycle's only funding comes from users like you. We need your support
-	to keep the trip planner up and running. You can donate through PayPal
-	by clicking the button below, or you can visit our
-	${h.link_to(
-	  'support page', 'http://info.bycycle.org/support/',
-	  title='Support byCycle')}
-	to find other ways of supporting byCycle.
+    byCycle's only funding comes from users like you. We need your support
+    to keep the trip planner up and running. You can donate through PayPal
+    by clicking the button below, or you can visit our
+    ${h.link_to(
+      'support page', 'http://info.bycycle.org/support/',
+      title='Support byCycle')}
+    to find other ways of supporting byCycle.
 
-	<%include file="/widgets/paypal-button.html" />
-  </%call>
+  <%include file="/widgets/paypal-button.html" />
+</%call>
 
   <%call expr="accordion.accordion_group('Contact Us')">
-	Feel free to get in touch. We're open to any sort of constructive
-	criticism. Please bear in mind, though, that this project has no funding
-	or employees. It is maintained by volunteers. Please send all feedback
-	to <a href="mailto:contact@bycycle.org">contact@bycycle.org</a>.
+    Feel free to get in touch. We're open to any sort of constructive
+    criticism. Please bear in mind, though, that this project has no funding
+    or employees. It is maintained by volunteers. Please send all feedback
+    to <a href="mailto:contact@bycycle.org">contact@bycycle.org</a>.
   </%call>
 </%def>
 
 <%def name="errors()"></%def>
 
 <%def name="map_controls()"></%def>
-<%def name="javascript_includes()"></%def>
+<%def name="javascript_links()"></%def>
 <%def name="javascript()"></%def>
 
 <%def name="json()">

@@ -54,14 +54,22 @@ NameSpace('byCycle', window, function() {
     // Namespace for byCycle widgets
     widget: {},
 
+	onLoad: function () {
+	  byCycle.UI.onLoad();
+	},
+
+	el: function (id) {
+	  return new YAHOO.util.Element(id);
+	},
+
     /**
      * Get value for variable from query string if possible, otherwise use the
      * global config value
      */
-    getParamVal: function(var_name, func) {
+    getParamVal: function (var_name, func) {
       // Override config setting with query string setting
       var v = byCycle.request_params[var_name];
-      if (typeof(v) == 'undefined') {
+      if (typeof v == 'undefined') {
 	   // Query string override not given; use config
         v = byCycle.config[var_name];
       } else if (typeof(func) == 'function') {
