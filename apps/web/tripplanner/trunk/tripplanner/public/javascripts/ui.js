@@ -266,7 +266,7 @@ NameSpace('UI', APP, function () {
     },
 
     selectInputPane: function(service) {
-      self.controls.accordion('activate', (service == 'routes' ? 1 : 0));
+      //self.controls.accordion('activate', (service == 'routes' ? 1 : 0));
     },
 
     swapStartAndEnd: function(event) {
