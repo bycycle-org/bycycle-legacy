@@ -68,7 +68,14 @@
     </div>
 
     <div id="left">
-      ${self.controls()}
+      <div id="controls" class="yui-navset">
+        <ul class="yui-nav menu">
+          ${self.controls_nav()}
+        </ul>
+        <div class="yui-content main">
+          ${self.controls()}
+        </div>
+      </div>
     </div>
 
     <div id="center">
@@ -192,8 +199,14 @@
   ${c.region.title if c.region else 'Select a region'}
 </%def>
 
+<%def name="controls_nav()">
+  <li><a href="#about-bycycle"><em>About</em></a></li>
+  <li><a href="#support-bycycle"><em>Support byCycle</em></a></li>
+  <li><a href="#contact-bycycle"><em>Contact Us</em></a></li>
+</%def>
+
 <%def name="controls()">
-  <%call expr="accordion.accordion_group('About')">
+  <div id="about-bycycle">
     This is an alternative transportation trip planner and data resource.
     Currently, the focus is on trips made <i>by bike</i>, but we are also
     starting to add some public transit info. To learn more about byCycle,
@@ -218,9 +231,9 @@
     <br />
     <br />
     &copy; 2004-2008 byCycle.org.
-  </%call>
+  </div>
 
-  <%call expr="accordion.accordion_group('Support byCycle')">
+  <div id="support-bycycle">
     byCycle's only funding comes from users like you. We need your support
     to keep the trip planner up and running. You can donate through PayPal
     by clicking the button below, or you can visit our
@@ -229,15 +242,15 @@
       title='Support byCycle')}
     to find other ways of supporting byCycle.
 
-  <%include file="/widgets/paypal-button.html" />
-</%call>
+    <%include file="/widgets/paypal-button.html" />
+  </div>
 
-  <%call expr="accordion.accordion_group('Contact Us')">
+  <div id="contact-bycycle">
     Feel free to get in touch. We're open to any sort of constructive
     criticism. Please bear in mind, though, that this project has no funding
     or employees. It is maintained by volunteers. Please send all feedback
     to <a href="mailto:contact@bycycle.org">contact@bycycle.org</a>.
-  </%call>
+  </div>
 </%def>
 
 <%def name="json()">

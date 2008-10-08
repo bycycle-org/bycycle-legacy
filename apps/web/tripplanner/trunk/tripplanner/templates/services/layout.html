@@ -7,102 +7,81 @@ ${next.body()}
 
 <%def name="route_pref()"></%def>
 
-<%def name="controls(id='controls')">
-  <div id="controls">
-    <div id="locations_panel">
-      <div class="hd">Search the Map</div>
-      <div class="bd">
-        <div id="locations" class="yui-navset">
-          <ul class="yui-nav">
-            <li class="selected">
-              <a href="#search-the-map"><em><b>Search</b></em></a>
-            </li>
-          </ul>
+<%def name="controls_nav()">
+  <li class="selected">
+    <a href="#search-the-map"><em>Search</em></a>
+  </li>
+  <li>
+    <a href="#find-a-route"><em>Trip Planner</em></a>
+  </li>
+  ${parent.controls_nav()}
+</%def>
 
-          <div id="search-the-map" class="yui-content">
-            <form id="query_form" method="get" action="/regions/portlandor/services/find">
-              <div>
-                <div class="input_label">
-                  <label for="q">
-                    Enter address, intersection, or route
-                  </label>
-                </div>
+<%def name="controls()">
+  <div id="search-the-map">
+    <div id="locations" class="yui-navset">
+      <ul class="yui-nav">
+        <li class="selected">
+          <a href="#search-map"><em>Search</em></a>
+        </li>
+      </ul>
 
-                ${h.text(
-                  'q', id='q', value='', title='Enter an address or route')}
-
-                ${h.submit(
-                  'commit', 'Search Map',
-                  title='Click to search the map')}
-              </div>
-            </form>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <div id="routes_panel">
-      <div class="hd">Find a Route</div>
-      <div class="bd">
-        <div id="routes" class="yui-navset">
-          <ul class="yui-nav">
-            <li class="selected">
-              <a href="#find-a-route"><em><b>Find Route</b></em></a>
-            </li>
-          </ul>
-
-          <div id="find-a-route" class="yui-content">
-            <form id="route_form" method="get" action="/regions/portlandor/routes/find">
-              <div>
-                <div class="input_label">
-                  <label for="s">
-                    Enter start and end addresses
-                  </label>
-                </div>
-
-                ${h.text(
-                  's', id='s', value='', title='Enter start address')}
-                <br />
-                ${h.text(
-                  'e', id='e', value='', title='Enter end address')}
-
-                ${self.route_pref()}
-
-                ${h.submit(
-                  'commit', 'Find Route',
-                  title='Click to find a route')}
-              </div>
-            </form>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    % if 0 and c.region.races:
-      <%call expr="accordion.accordion_group('Races')">
-        <div id="races">
-          <% geom = c.region.get_race_geom() %>
-          % for i, race in enumerate(c.region.races):
-            <div class="race ${['a', 'b'][i % 2]}">
-              % if race.geom:
-                <% onclick = 'APP.UI.map.setCenter({x: %s, y: %s})' % (
-                     geom[race.id].x, geom[race.id].y) %>
-              % else:
-                <% onclick = '' %>
-              % endif
-              ${h.link_to(
-                'Show on map', '#show-race-on-map',
-                onclick='%s;' % onclick)}
-              |
-              ${h.link_to(
-                race.title,
-                race.url, title='%s : %s' % (race.series, race.title),
-                target='byCycle_race_window')}
+      <div id="search-map" class="yui-content">
+        <form id="query_form" method="get" action="/regions/portlandor/services/find">
+          <div>
+            <div class="input_label">
+              <label for="q">
+                Enter address, intersection, or route
+              </label>
             </div>
-          % endfor
-        </div>
-      </%call>
-    % endif
 
-    ##${parent.controls()}
+            ${h.text(
+              'q', id='q', value='', title='Enter an address or route')}
+
+            <div class="query_submit_button">
+              ${h.submit('commit', 'Search', title='Click to search the map')}
+            </div>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <div id="find-a-route">
+    <div id="routes" class="yui-navset">
+      <ul class="yui-nav">
+        <li class="selected">
+          <a href="#find-route"><em>Plan Trip</em></a>
+        </li>
+      </ul>
+
+      <div id="find-route" class="yui-content">
+        <form id="route_form" method="get" action="/regions/portlandor/routes/find">
+          <div>
+            <div class="input_label">
+              <label for="s">
+                Enter start and end addresses
+              </label>
+            </div>
+
+            ${h.text(
+              's', id='s', value='', title='Enter start address')}
+            <br />
+            ${h.text(
+              'e', id='e', value='', title='Enter end address')}
+
+            ${self.route_pref()}
+
+            <div class="query_submit_button">
+              ${h.submit(
+                'commit', 'Find Route',
+                title='Click to find a route')}
+            </div>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  ${parent.controls()}
 </%def>

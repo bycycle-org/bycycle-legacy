@@ -113,7 +113,7 @@ NameSpace('UI', APP, function () {
 			{
 			  position: 'left',
 			  body: 'left',
-			  width: 300,
+			  width: 380,
 			  resize: true,
 			  scroll: false
 			},
@@ -129,35 +129,18 @@ NameSpace('UI', APP, function () {
 	},
 
     _createWidgets: function () {
-	  // Create accordion control to contain left panel query forms and other
-	  // controls
-      //self.controls.accordion({
-		//header: '.ui-accordion-header',
-		//clearStyle: true
-	  //});
+	  // Container in left panel for query forms and other controls
+	  self.controls = new YAHOO.widget.TabView('controls', {
+		orientation: 'left'
+	  });
 
 	  if (self.region_id != 'all') {
-		// Make tab controls for location and route results
-		self.locations_panel = new YAHOO.widget.Panel('locations_panel', {
-		  close: false,
-		  visible: true,
-		  draggable: false,
-		  underlay: 'none'
-		});
-		self.locations_panel.render();
+		// Containers for location and route results
 		self.locations_container = new YAHOO.widget.TabView('locations');
-
-		self.routes_panel = new YAHOO.widget.Panel('routes_panel', {
-		  close: false,
-		  visible: true,
-		  draggable: false,
-		  underlay: 'none'
-		});
-		self.routes_panel.render();
 		self.routes_container = new YAHOO.widget.TabView('routes');
 	  }
 
-	  // Create dialog for info and errors
+	  // Dialog for info and errors
 	  var alert_panel = new YAHOO.widget.SimpleDialog('alert_panel', {
 		fixedcenter: true,
 		visible: false,

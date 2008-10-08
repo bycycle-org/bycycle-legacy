@@ -13,10 +13,14 @@ html, body {
 }
 
 #left {
-  padding: 4px;
+  padding: 1% 9px 0 4px;
+  height: 99%;
 }
 
-#center, #map_pane {
+#controls,
+#controls.yui-navset .yui-content.main,
+#center,
+#map_pane {
   height: 100%;
 }
 
@@ -39,11 +43,16 @@ a:hover {
 }
 
 /* Input Controls */
-#controls {
-
+#controls.yui-navset ul.yui-nav li a em {
+  /* Main tab widget */
+  font-size: 95%;
+  padding: .2em .4em;
+}
+#controls.yui-navset ul.yui-nav.menu li a em {
+  font-weight: bold;
 }
 #q, #s, #e {
-  text-align: left;
+  width: 95%;
 }
 #swap_s_and_e a {
   text-decoration: none;
