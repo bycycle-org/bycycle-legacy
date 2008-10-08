@@ -67,10 +67,10 @@ a:hover {
 }
 .spinner {
   float: left;
-  width: 16px;
-  height: 16px;
+  width: 32px;
+  height: 32px;
   background: white;
-  padding: 2px;
+  padding: .5em;
   border: 1px solid #000;
 }
 
