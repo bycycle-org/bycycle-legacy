@@ -2,44 +2,47 @@
 <%inherit file="layout.html"/>
 <%namespace name="accordion" file="/widgets/accordion.html" />
 
-<%def name="controls(id='controls')">
-  <%call expr="accordion.accordion(id)">
-    <%call expr="accordion.accordion_group('Select a Region')">
-      ${h.form(h.url_for('/regions/find'), method='get')}
-        <div>
-          % for p in request.params:
-            ${h.hidden(p, request.params[p])}
-          % endfor
+<%def name="controls_nav()">
+  <li class="selected"><a href="#select-region"><em>Select a Region</em></a></li>
+  ${parent.controls_nav()}
+</%def>
 
-          <p>
-            <%
-              options = [('all', '- Select Region -')]
-              options += [(r.slug, r.title) for r in c.regions if c.regions]
-            %>
-            ${h.select('region', '', options, id='regions')}
-          </p>
+<%def name="controls()">
+  <div id="select-region">
+    ${h.form(h.url_for('/regions/find'), method='get')}
+      <div>
+        % for p in request.params:
+          ${h.hidden(p, request.params[p])}
+        % endfor
 
-          <p>
-            <b>Optional</b> search:
-            <br />
+        <p>
+          <%
+            options = [('all', '- Select Region -')]
+            options += [(r.slug, r.title) for r in c.regions if c.regions]
+          %>
+          ${h.select('region', '', options, id='regions')}
+        </p>
 
-            ${h.text('q', id='q', value=c.q, title='Enter an address or route')}
-            <br />
+        <p>
+          <b>Optional</b> search:
+          <br />
 
-            <label for="q" class="input_label">
-              <b>Address</b> (ex: <i>NE 6th and Irving</i>) or
-              <b>route</b> (ex: <i>301 W Burnside to SE 3rd &amp; Main</i>)
-            </label>
-          </p>
+          ${h.text('q', id='q', value=c.q, title='Enter an address or route')}
+          <br />
 
-          <p>
-            ${h.submit(
-              'commit', 'Go to Region', title='Go to the selected region')}
-          </p>
-        </div>
-      ${h.end_form()}
-    </%call>
+          <label for="q" class="input_label">
+            <b>Address</b> (ex: <i>NE 6th and Irving</i>) or
+            <b>route</b> (ex: <i>301 W Burnside to SE 3rd &amp; Main</i>)
+          </label>
+        </p>
 
-    ${parent.controls()}
-  </%call>
+        <p>
+          ${h.submit(
+            'commit', 'Go to Region', title='Go to the selected region')}
+        </p>
+      </div>
+    ${h.end_form()}
+  </div>
+
+  ${parent.controls()}
 </%def>
