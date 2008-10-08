@@ -1,5 +1,8 @@
-/* Namespace for User Interface objects and functions. */
-NameSpace('UI', byCycle, function () {
+/** Namespace for User Interface objects and functions.
+ *
+ * This namespace should have ZERO dependencies.
+ */
+NameSpace('UI', APP, function () {
   var self = null;
 
   return {
@@ -36,10 +39,10 @@ NameSpace('UI', byCycle, function () {
      * Do stuff that must happen once page has loaded
      */
     onLoad: function() {
-      self = byCycle.UI;
+      self = APP.UI;
 
-	  self.region_id = byCycle.region_id;
-	  self.region = byCycle.region;
+	  self.region_id = APP.region_id;
+	  self.region = APP.region;
 
       self._assignUIElements();
 
@@ -49,21 +52,15 @@ NameSpace('UI', byCycle, function () {
       // If map is "on" and specified map type is loadable, use that map type.
       // Otherwise, use the default map type (base).
       if (!(self.map_state && self.map_type.isLoadable())) {
-		console.debug(self.map_type.isLoadable());
-		byCycle.logDebug('Loading base map type');
-        self.map_type = byCycle.Map.base;
-      } else {
-	    byCycle.logDebug('Loading regional map type');
-	  }
+        self.map_type = APP.Map.base;
+      }
       self.map = new self.map_type.Map(self, self.map_pane_id);
 
       if (self.region_id == 'all') {
 		self.setRegion(self.region_id);
-		var regions = byCycle.regions.regions;
-		var region;
+		var region, regions = APP.regions.regions;
 		for (var slug in regions) {
-		  console.debug(slug);
-		  region = byCycle.regions.regions[slug];
+		  region = APP.regions.regions[slug];
 		  geom = region.geometry['4326'];
 		  self.map.makeRegionMarker(region.slug, geom.center);
 		  self.map.drawPolyLine(geom.linestring);
@@ -74,7 +71,7 @@ NameSpace('UI', byCycle, function () {
 
       //self._createEventHandlers();
 
-      //var zoom = parseInt(byCycle.getParamVal('zoom'), 10);
+      //var zoom = parseInt(APP.getParamVal('zoom'), 10);
       //if (!isNaN(zoom)) {
         //self.map.setZoom(zoom);
       //}
@@ -193,9 +190,9 @@ NameSpace('UI', byCycle, function () {
     setRegion: function(region_id) {
 	  // This is only meant to be used on /regions page; that's why it uses
 	  // degrees instead of the region's native units.
-      var region = byCycle.regions.regions[region_id];
+      var region = APP.regions.regions[region_id];
 	  if (!region) {
-		region = byCycle.regions.all;
+		region = APP.regions.all;
 	  }
 	  var geom = region.geometry['4326'];
 	  self.map.centerAndZoomToBounds(geom.bounds, geom.center);
@@ -271,7 +268,7 @@ NameSpace('UI', byCycle, function () {
     },
 
     runGenericQuery: function(event, input /* =undefined */) {
-      byCycle.logDebug('Entered runGenericQuery...');
+      APP.logDebug('Entered runGenericQuery...');
       var q = input || self.q_el.val();
       if (q) {
         var query_class;
@@ -293,7 +290,7 @@ NameSpace('UI', byCycle, function () {
         self.q_el.focus();
         self.showErrors('Please enter something to search for!');
       }
-      byCycle.logDebug('Left runGenericQuery');
+      APP.logDebug('Left runGenericQuery');
 	  return false;
     },
 
@@ -377,7 +374,7 @@ NameSpace('UI', byCycle, function () {
      * Select from multiple matching geocodes for a route
      */
     selectRouteGeocode: function(select_link, i, j) {
-      byCycle.logDebug('Entered selectRouteGeocode...');
+      APP.logDebug('Entered selectRouteGeocode...');
       var dom_node = $j(select_link).up('ul');
       var next = dom_node.next();
       var choice = self.query.response.choices[i][j];
@@ -404,8 +401,8 @@ NameSpace('UI', byCycle, function () {
           // result_el wasn't registered as a Result (hopefully intentionally)
           result_el.remove();
         } else {
-          byCycle.logDebug(
-			'Unhandled Exception in byCycle.UI.removeResult: ', e.name,
+          APP.logDebug(
+			'Unhandled Exception in APP.UI.removeResult: ', e.name,
 			e.message);
         }
       }
@@ -433,7 +430,7 @@ NameSpace('UI', byCycle, function () {
     /* Map *******************************************************************/
 
     identifyIntersectionAtCenter: function(event) {
-      byCycle.logDebug('In find-intersection-at-center callback');
+      APP.logDebug('In find-intersection-at-center callback');
       var center = self.map.getCenter();
       self.q_el.val(self.map.getCenterString());
       self.identifyIntersection(center, event);

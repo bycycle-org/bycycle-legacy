@@ -5,12 +5,12 @@
  * ``result`` Object representing the result (Evaled JSON string)
  * ``service`` Service type for the result (i.e., where the result came from)
  */
-Class(byCycle.UI, 'Result', null, {
+Class(APP.UI, 'Result', null, {
   initialize: function(id, result, service) {
     this.id = id;
     this.result = result;
     this.service = service;
-    this.map = byCycle.UI.map;
+    this.map = APP.UI.map;
     this.overlays = [];
   },
 
@@ -27,6 +27,6 @@ Class(byCycle.UI, 'Result', null, {
       this.map.removeOverlay(this.overlays[i]);
     }
     // Remove this from results list
-    delete byCycle.UI.results[this.service][this.id];
+    delete APP.UI.results[this.service][this.id];
   }
 });

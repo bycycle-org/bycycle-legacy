@@ -1,10 +1,10 @@
-NameSpace('openlayers', byCycle.Map, {
+NameSpace('openlayers', APP.Map, {
   description: 'Open Layers Map',
   isLoadable: function() { return true; }
 });
 
 
-Class(byCycle.Map.openlayers, 'Map', byCycle.Map.base.Map, {
+Class(APP.Map.openlayers, 'Map', APP.Map.base.Map, {
   default_zoom: 5,
 
   initialize: function(ui, container) {
@@ -14,7 +14,7 @@ Class(byCycle.Map.openlayers, 'Map', byCycle.Map.base.Map, {
   },
 
   createMap: function(container) {
-    var region = byCycle.region;
+    var region = APP.region;
     var bounds = region.geometry.bounds;
     var sw = bounds.sw, ne = bounds.ne;
 
@@ -74,26 +74,26 @@ Class(byCycle.Map.openlayers, 'Map', byCycle.Map.base.Map, {
       bike_layer]);
 
     // Init
-    var center = byCycle.region.geometry.center;
+    var center = APP.region.geometry.center;
     map.setCenter(new OpenLayers.LonLat(center.x, center.y), 2);
     this.map = map;
   },
 
   createIcons: function() {
     // Center icon
-    var url = byCycle.prefix + 'images/reddot15.png';
+    var url = APP.prefix + 'images/reddot15.png';
     var size = new OpenLayers.Size(15, 15);
     var offset = new OpenLayers.Pixel(7, 7);
     var center_icon = new OpenLayers.Icon(url, size, offset);
 
     // Route start icon
-    var url = byCycle.prefix + 'images/dd-startff.gif';
+    var url = APP.prefix + 'images/dd-startff.gif';
     var size = new OpenLayers.Size(21, 21);
     var offset = new OpenLayers.Pixel(11, 11);
     var start_icon = new OpenLayers.Icon(url, size, offset);
 
     // Route end icon
-    var url = byCycle.prefix + 'images/dd-endff.gif';
+    var url = APP.prefix + 'images/dd-endff.gif';
     var size = new OpenLayers.Size(21, 21);
     var offset = new OpenLayers.Pixel(11, 11);
     var end_icon = new OpenLayers.Icon(url, size, offset);
@@ -166,7 +166,7 @@ Class(byCycle.Map.openlayers, 'Map', byCycle.Map.base.Map, {
     var ll = new OpenLayers.LonLat(point.y, point.x);
     // TODO: Show REAL map blowup, iff possible in OL (or do something
     // equivalent)
-    byCycle.logDebug('OL showMapBlowup at', point.x, point.y);
+    APP.logDebug('OL showMapBlowup at', point.x, point.y);
   },
 
   addOverlay: function(overlay, layer) {

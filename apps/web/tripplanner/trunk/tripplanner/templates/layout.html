@@ -85,21 +85,14 @@
       <div id="error_content"></div>
     </%call>
 
-    <script type="text/javascript" src="${h.url_for('/javascripts/util.js')}" ></script>
-    ${self.javascript()}
+    <script type="text/javascript" src="${h.url_for('/javascripts/init.js')}" ></script>
     <script type="text/javascript" src="http://yui.yahooapis.com/2.6.0/build/yuiloader/yuiloader-min.js" ></script>
     <script type="text/javascript">
       //<![CDATA[
       var debug = ${'true' if bool(g.debug) else 'false'};
-      var in_production_mode = !debug;
-      var region_id = '${c.region.slug if c.region else ""}';
+      var my_region_id = '${c.region.slug if c.region else ""}';
 
-      if (!console) {
-        console = {};
-      }
-      if (in_production_mode || !console.debug) {
-        console.debug = function () {};
-      }
+      INIT.initialize(my_region_id);
 
       var loader = new YAHOO.util.YUILoader({
         require: [
@@ -111,134 +104,82 @@
         allowRollup: true,
         combine: true,
         onSuccess: function () {
-          console.debug('YUI loader succeeded. Initializing app...');
-
-          byCycle.prefix = '${h.url_for("/")}';${'%i' % c.http_status if c.http_status else 'null'}
-          byCycle.region_id = region_id;
-
-          YAHOO.util.Connect.asyncRequest(
-            'GET', byCycle.prefix + 'regions?format=json&wrap=off',
-            {
-              success: function (response) {
-                var result = YAHOO.lang.JSON.parse(response.responseText);
-
-                byCycle.regions.initialize(result);
-                if (byCycle.region_id) {
-                  byCycle.region = byCycle.regions.regions[byCycle.region_id];
-                } else {
-                  byCycle.region_id = 'all';
-                  byCycle.region = byCycle.regions[byCycle.region_id];
-                }
-
-                var map_state = byCycle.getParamVal('map_state', function (map_state) {
-                  // Anything but '', '0' or 'off' is on
-                  return map_state === '' || map_state == '0' || map_state == 'off';
-                });
-                var map_type_name = (byCycle.getParamVal('map_type') || '').toLowerCase();
-                map_type_name = map_type_name || byCycle.region.map_type;
-                byCycle.logDebug('Map type:', map_type_name);
-
-                byCycle.UI.map_type = byCycle.Map.base;
-                var url = [
-                  byCycle.prefix, 'javascripts/',  map_type_name,
-                  '.js'].join('');
-                YAHOO.util.Get.script(url, {
-                  onSuccess: function () {
-                    byCycle.UI.map_type = byCycle.Map[map_type_name];
-                    YAHOO.util.Event.onDOMReady(byCycle.onLoad);
-                  }
-                });
-
-                byCycle.UI.map_state = map_state;
-              }
-            }
-          );
-
-          byCycle.UI.service = '${c.service}';
-          byCycle.UI.member_name = '${c.member_name}';
-          byCycle.UI.collection_name = '${c.collection_name}';
-          byCycle.UI.http_status = ${'%i' % c.http_status if c.http_status else 'null'};
-          byCycle.UI.q = '${c.q}';
-        },
-        onFailure: function () {
-          console.debug('Error encountered when loading via YUI loader.');
+          // Called after all modules loaded are loaded by YUI. Only
+          // initialization that MUST be done here should. All other
+          // initialization should happen in or via `APP.onLoad`.
+          APP.prefix = '${h.url_for("/")}';
+          APP.region_id = my_region_id;
+          APP.UI.service = '${c.service}';
+          APP.UI.member_name = '${c.member_name}';
+          APP.UI.collection_name = '${c.collection_name}';
+          APP.UI.http_status = ${c.http_status or 'null'};
+          APP.UI.q = '${c.q}';
+          APP.onLoad();
         }
       });
 
-      var map_lib_url;
-      if (region_id == 'portlandor') {
-        map_lib_url = 'http://openlayers.org/api/OpenLayers.js';
-        loader.addModule({
-          name: 'bycycle_map_lib',
-          type: 'js',
-          fullpath: map_lib_url
-        });
-        loader.require('bycycle_map_lib');
-      }
-
       loader.addModule({
-        name: 'bycycle_base_css',
+        name: 'my_base_css',
         type: 'css',
         fullpath: '${h.url_for("/stylesheets/base.css")}',
         requires: ['base']
       });
 
       loader.addModule({
-        name: 'bycycle_util',
+        name: 'my_util',
         type: 'js',
         fullpath: '${h.url_for("/javascripts/util.js")}'
       });
 
       loader.addModule({
-        name: 'bycycle',
+        name: 'APP',
         type: 'js',
         fullpath: '${h.url_for("/javascripts/bycycle.js")}',
-        requires: ['bycycle_util']
+        requires: ['my_util']
       });
 
       loader.addModule({
-        name: 'bycycle_map',
+        name: 'my_map',
         type: 'js',
         fullpath: '${h.url_for("/javascripts/map.js")}',
-        requires: ['bycycle']
+        requires: ['APP']
       });
 
       loader.addModule({
-        name: 'bycycle_regions',
+        name: 'my_regions',
         type: 'js',
         fullpath: '${h.url_for("/javascripts/regions.js")}',
-        requires: ['bycycle_map']
+        requires: ['my_map']
       });
 
       loader.addModule({
-        name: 'bycycle_ui',
+        name: 'my_ui',
         type: 'js',
         fullpath: '${h.url_for("/javascripts/ui.js")}',
-        requires: ['bycycle_regions']
+        requires: ['my_regions']
       });
 
       loader.addModule({
-        name: 'bycycle_query',
+        name: 'my_query',
         type: 'js',
         fullpath: '${h.url_for("/javascripts/query.js")}',
-        requires: ['bycycle_ui']
+        requires: ['my_ui']
       });
 
       loader.addModule({
-        name: 'bycycle_result',
+        name: 'my_result',
         type: 'js',
         fullpath: '${h.url_for("/javascripts/result.js")}',
-        requires: ['bycycle_ui']
+        requires: ['my_ui']
       });
 
-      loader.require('bycycle_base_css');
-      //loader.require('bycycle_util');
-      loader.require('bycycle');
-      loader.require('bycycle_map');
-      loader.require('bycycle_regions');
-      loader.require('bycycle_ui');
-      loader.require('bycycle_query');
-      loader.require('bycycle_result');
+      loader.require('my_base_css');
+      loader.require('APP');
+      loader.require('my_map');
+      loader.require('my_regions');
+      loader.require('my_ui');
+      loader.require('my_query');
+      loader.require('my_result');
       loader.insert();
       //]]>
     </script>
