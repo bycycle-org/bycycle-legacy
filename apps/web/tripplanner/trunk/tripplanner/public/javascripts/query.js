@@ -1,11 +1,11 @@
 /**
  * Query Base Class
  */
-Class(byCycle.UI, 'Query', null, {
+Class(APP.UI, 'Query', null, {
   initialize: function(service, form, result_container,
                        opts /* input=undefined */) {
     if (arguments.length == 0) return;
-    this.ui = byCycle.UI;
+    this.ui = APP.UI;
     this.service = service;
     this.form = form;
     this.result_container = result_container;
@@ -36,8 +36,8 @@ Class(byCycle.UI, 'Query', null, {
   doQuery: function() {
     // Done only if no errors in before()
     var path = [
-      'regions', byCycle.region_id, this.service, 'find.json'].join('/');
-    var url = [byCycle.prefix, path].join('');
+      'regions', APP.region_id, this.service, 'find.json'].join('/');
+    var url = [APP.prefix, path].join('');
     var params = this.input;
 
     // TODO: Make bookmark???
@@ -59,13 +59,13 @@ Class(byCycle.UI, 'Query', null, {
 
   onLoading: function(request) {
     this.ui.spinner.show();
-    byCycle.logDebug('Query loading (onLoading)...');
+    APP.logDebug('Query loading (onLoading)...');
   },
 
   onComplete: function(request) {
     this.ui.spinner.hide();
     this.http_status = request.status;
-    byCycle.logDebug('Query complete with status ' + this.http_status + '.');
+    APP.logDebug('Query complete with status ' + this.http_status + '.');
   },
 
   on200: function(response) {
@@ -132,7 +132,7 @@ Class(byCycle.UI, 'Query', null, {
     var label = [
       '#', num_tabs, ' ',
       '<a class="ui-tabs-close-button" href="#close-tab" ',
-        'onclick="byCycle.UI.closeResultTab(\'',
+        'onclick="APP.UI.closeResultTab(\'',
           this.service , '\', ', num_tabs, ', \'', id, '\')">X</a>'
     ].join('');
 
@@ -154,12 +154,12 @@ Class(byCycle.UI, 'Query', null, {
 /**
  * Geocode Query
  */
-Class(byCycle.UI, 'GeocodeQuery', byCycle.UI.Query, {
-  initialize: function(opts /* form=byCycle.UI.query_form,
-                               result_container=byCycle.UI.locations_container,
+Class(APP.UI, 'GeocodeQuery', APP.UI.Query, {
+  initialize: function(opts /* form=APP.UI.query_form,
+                               result_container=APP.UI.locations_container,
                                input=undefined */) {
     opts = opts || {};
-    var ui = byCycle.UI;
+    var ui = APP.UI;
     var form = opts.form || ui.query_form;
     var result_container = opts.result_container || ui.locations_container;
     this.superclass.initialize.call(this, 'geocodes', form, result_container, opts);
@@ -195,12 +195,12 @@ Class(byCycle.UI, 'GeocodeQuery', byCycle.UI.Query, {
 /**
  * Route Query
  */
-Class(byCycle.UI, 'RouteQuery', byCycle.UI.Query, {
-  initialize: function(opts /* form=byCycle.UI.route_form,
-                               result_container=byCycle.UI.routes_container,
+Class(APP.UI, 'RouteQuery', APP.UI.Query, {
+  initialize: function(opts /* form=APP.UI.route_form,
+                               result_container=APP.UI.routes_container,
                                input=undefined */) {
     opts = opts || {};
-    var ui = byCycle.UI;
+    var ui = APP.UI;
     var form = opts.form || ui.route_form;
     var result_container = opts.result_container || ui.routes_container;
     var service = 'routes';
@@ -251,7 +251,7 @@ Class(byCycle.UI, 'RouteQuery', byCycle.UI.Query, {
   },
 
   processResults: function(response, results) {
-    byCycle.logDebug('In Route processResults...');
+    APP.logDebug('In Route processResults...');
     var route, ls, s_e_markers, s_marker, e_marker, line;
     var ui = this.ui;
     var map = ui.map;

@@ -79,7 +79,7 @@ ${next.body()}
           % for i, race in enumerate(c.region.races):
             <div class="race ${['a', 'b'][i % 2]}">
               % if race.geom:
-                <% onclick = 'byCycle.UI.map.setCenter({x: %s, y: %s})' % (
+                <% onclick = 'APP.UI.map.setCenter({x: %s, y: %s})' % (
                      geom[race.id].x, geom[race.id].y) %>
               % else:
                 <% onclick = '' %>

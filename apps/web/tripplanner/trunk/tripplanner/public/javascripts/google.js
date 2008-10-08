@@ -1,18 +1,15 @@
 /**
- * Implements the byCycle Map interface for a Google Map.
+ * Implements the Map interface for a Google Map.
  */
-NameSpace('google', byCycle.Map, {
+NameSpace('google', APP.Map, {
   description: 'Google Map',
   isLoadable: function() {
-    return GBrowserIsCompatible();
+    return GBrowserIsCompatible && GBrowserIsCompatible();
   }
 });
 
 
-/**
- * byCycle Google Map
- */
-Class(byCycle.Map.google, 'Map', byCycle.Map.base.Map, {
+Class(APP.Map.google, 'Map', APP.Map.base.Map, {
   default_zoom: 14,
 
   initialize: function(ui, container) {
@@ -37,12 +34,12 @@ Class(byCycle.Map.google, 'Map', byCycle.Map.base.Map, {
   createIcons: function() {
     // Center icon
     var center_icon = new GIcon();
-    center_icon.image = byCycle.prefix + 'images/reddot15.png';
+    center_icon.image = APP.prefix + 'images/reddot15.png';
     center_icon.iconSize = new GSize(15, 15);
     center_icon.iconAnchor = new GPoint(7, 7);
     // Base icon for start and end of route icons
     var base_icon = new GIcon();
-    base_icon.shadow = byCycle.prefix + 'images/shadow50.png';
+    base_icon.shadow = APP.prefix + 'images/shadow50.png';
     base_icon.iconSize = new GSize(20, 34);
     base_icon.shadowSize = new GSize(37, 34);
     base_icon.iconAnchor = new GPoint(9, 34);
@@ -50,10 +47,10 @@ Class(byCycle.Map.google, 'Map', byCycle.Map.base.Map, {
     base_icon.infoShadowAnchor = new GPoint(18, 25);
     // Start icon
     var start_icon = new GIcon(base_icon);
-    start_icon.image = byCycle.prefix + 'images/dd-start.png';
+    start_icon.image = APP.prefix + 'images/dd-start.png';
     // End icon
     var end_icon = new GIcon(base_icon);
-    end_icon.image = byCycle.prefix + 'images/dd-end.png';
+    end_icon.image = APP.prefix + 'images/dd-end.png';
     // Assign icons to self
     this.center_icon = center_icon;
     this.start_icon = start_icon;
@@ -67,7 +64,7 @@ Class(byCycle.Map.google, 'Map', byCycle.Map.base.Map, {
       if (typeof(self.center_marker) == 'undefined') {
         self.center_marker = new GMarker(self.center, self.center_icon);
         self.map.addOverlay(self.center_marker);
-        if (byCycle.region_id != 'all') {
+        if (APP.region_id != 'all') {
           var cm_node = document.getElementById('center-marker-contents');
           GEvent.addListener(self.center_marker, 'click', function () {
             self.map.openInfoWindow(self.center, cm_node);
@@ -209,7 +206,7 @@ Class(byCycle.Map.google, 'Map', byCycle.Map.base.Map, {
 
   makeRegionMarker: function(region_key, center) {
     var icon = new GIcon();
-    icon.image = byCycle.prefix + 'images/x.png';
+    icon.image = APP.prefix + 'images/x.png';
     icon.iconSize = new GSize(17, 19);
     icon.iconAnchor = new GPoint(9, 10);
     icon.infoWindowAnchor = new GPoint(9, 10);
@@ -217,9 +214,9 @@ Class(byCycle.Map.google, 'Map', byCycle.Map.base.Map, {
     var marker = this.placeMarker(center, icon);
     var self = this;
     GEvent.addListener(marker, 'click', function() {
-      var location = [byCycle.prefix, 'regions/', region_key];
-      if (byCycle.query_string) {
-        location.push('?', byCycle.query_string);
+      var location = [APP.prefix, 'regions/', region_key];
+      if (APP.query_string) {
+        location.push('?', APP.query_string);
       }
       window.location = location.join('');
     });

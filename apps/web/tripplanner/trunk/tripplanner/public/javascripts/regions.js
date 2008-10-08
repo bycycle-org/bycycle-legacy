@@ -1,8 +1,8 @@
-NameSpace('regions', byCycle, function() {
+NameSpace('regions', APP, function() {
   var self;
 
   var initialize = function (result) {
-    self = byCycle.regions;
+    self = APP.regions;
     var regions = {};
 
     for (var i = 0, region_data; i < result.result.length; ++i) {
@@ -31,7 +31,7 @@ NameSpace('regions', byCycle, function() {
       if (ne.x > bounds_all.ne.x) { bounds_all.ne.x = ne.x; }
       if (ne.y > bounds_all.ne.y) { bounds_all.ne.y = ne.y; }
     }
-    var getCenterOfBounds = byCycle.Map.base.Map.prototype.getCenterOfBounds;
+    var getCenterOfBounds = APP.Map.base.Map.prototype.getCenterOfBounds;
     var center = getCenterOfBounds(bounds_all);
     var all = {
         slug: 'all',
@@ -60,7 +60,7 @@ NameSpace('regions', byCycle, function() {
 }());
 
 
-Class(byCycle.regions, 'Region', null, {
+Class(APP.regions, 'Region', null, {
   initialize: function (kwargs) {
     for (var name in kwargs) {
       this[name] = kwargs[name];

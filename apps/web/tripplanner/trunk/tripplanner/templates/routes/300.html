@@ -52,7 +52,7 @@ ${self.json()}
       <a class="show-on-map-link"
         href="#show-location-on-map"
         title="Show this location on the map"
-        onclick="byCycle.UI.map.setCenter({x: ${x}, y: ${y}}); return false;"
+        onclick="APP.UI.map.setCenter({x: ${x}, y: ${y}}); return false;"
         >Show on map</a>
 
       <span class="select-geocode-span">
@@ -60,7 +60,7 @@ ${self.json()}
         <a class="select-geocode-link"
            href="${h.url_for('find_geocodes', region_id=c.region.slug, q=field_addr)}#select-this-location"
            title="Select this location"
-           onclick="byCycle.UI.selectRouteGeocode(this, ${i}, ${j}); return false;"
+           onclick="APP.UI.selectRouteGeocode(this, ${i}, ${j}); return false;"
            >Select</a>
       </span>
     </div>

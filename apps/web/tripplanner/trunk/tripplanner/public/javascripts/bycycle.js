@@ -1,8 +1,8 @@
-/**
- * byCycle namespace
+/** byCycle namespace
+ *
+ * Depends on `util` module and defines JS-library-specific utility functions.
  */
-NameSpace('byCycle', window, function() {
-  // private:
+NameSpace('APP', window, function() {
   var prod_config = {
     local: 0,
     map_state: 1
@@ -13,72 +13,53 @@ NameSpace('byCycle', window, function() {
     map_state: 1
   };
 
-  var noop = function() {};
-
-  var console_debug = function() {
-    console.debug.apply(console, arguments);
-  }
-
-  var hostname = location.hostname;
-  var port = location.port;
-  var query_string = window.location.search.substring(1);
-
-  var makeParams = function () {
-    var params = {};
-    var pairs = query_string.split('&');
-    for (var name_value, i = 0; i < pairs.length; ++i) {
-      name_value = pairs[i].split('=');
-      params[name_value[0]] = name_value[1];
-    }
-    return params;
-  };
-
-  // public:
   return {
     // `debug` is a global set in the template; it's value is passed from
-    // Pylons as an attribute of the global `g`
+    // Pylons as an attribute of the global `g`.
     config: debug ? dev_config : prod_config,
 
-    // Used to look Google API key in gmap.js and to make queries in ui.js
-    domain: (port ? [hostname, port].join(':') : hostname),
-
-	query_string: query_string,
-
-    // URL query parameters as a Hash
-    request_params: makeParams(),
-
-    default_map_type: 'base',
-
-    noop: noop,
-
-    // Namespace for byCycle widgets
-    widget: {},
-
 	onLoad: function () {
-	  byCycle.UI.onLoad();
+	  YAHOO.util.Connect.asyncRequest(
+		'GET', APP.prefix + 'regions?format=json&wrap=off',
+		{
+		  success: function (response) {
+			var result = YAHOO.lang.JSON.parse(response.responseText);
+
+			APP.regions.initialize(result);
+			if (APP.region_id) {
+			  APP.region = APP.regions.regions[APP.region_id];
+			} else {
+			  APP.region_id = 'all';
+			  APP.region = APP.regions[APP.region_id];
+			}
+
+			var map_state = util.getParamVal('map_state', function (ms) {
+			  // Convert `map_state` param value to boolean.
+			  return ms === '' || ms == '0' || ms == 'off';
+			});
+			var map_type_name = (util.getParamVal('map_type') || '');
+			map_type_name = map_type_name.toLowerCase();
+			map_type_name = map_type_name || APP.region.map_type;
+
+			APP.UI.map_state = map_state;
+			APP.UI.map_type = APP.Map.base;
+			var url = [
+			  APP.prefix, 'javascripts/',  map_type_name, '.js'].join('');
+			YAHOO.util.Get.script(url, {
+			  onSuccess: function () {
+				APP.UI.map_type = APP.Map[map_type_name];
+				APP.UI.onLoad();
+			  }
+			});
+		  }
+		}
+	  );
 	},
+
+	/* Library specific utilities */
 
 	el: function (id) {
 	  return new YAHOO.util.Element(id);
-	},
-
-    /**
-     * Get value for variable from query string if possible, otherwise use the
-     * global config value
-     */
-    getParamVal: function (var_name, func) {
-      // Override config setting with query string setting
-      var v = byCycle.request_params[var_name];
-      if (typeof v == 'undefined') {
-	   // Query string override not given; use config
-        v = byCycle.config[var_name];
-      } else if (typeof(func) == 'function') {
-        // Process query string value with func, iff given
-        v = func(v);
-      }
-      return v;
-    },
-
-    logDebug: (debug ? console_debug : noop)
+	}
   };
 }());

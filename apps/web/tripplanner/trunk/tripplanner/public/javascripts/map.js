@@ -1,11 +1,11 @@
 /**
- * byCycle Map namespace
+ * Base Map namespace
  */
-NameSpace('Map', byCycle, {});
+NameSpace('Map', APP, {});
 
 
-NameSpace('base', byCycle.Map, {
-  description: 'Default byCycle map type',
+NameSpace('base', APP.Map, {
+  description: 'Default APP map type',
   getLibraryURL: function() {
     return null;
   },
@@ -15,10 +15,7 @@ NameSpace('base', byCycle.Map, {
 });
 
 
-/**
- * Base byCycle Map
- */
-Class(byCycle.Map.base, 'Map', null, {
+Class(APP.Map.base, 'Map', null, {
   /**
    * Map Constructor
    *
@@ -41,7 +38,7 @@ Class(byCycle.Map.base, 'Map', null, {
     map.style.overflow = 'auto';
     this.container.appendChild(map);
     this.map = map;
-    this.put('Default byCycle Map Interface');
+    this.put('Default Map Interface');
   },
 
   put: function(content) {
@@ -217,6 +214,6 @@ Class(byCycle.Map.base, 'Map', null, {
   },
 
   addListener: function(id, signal, func) {
-    byCycle.el(id).on(signal, func);
+    APP.el(id).on(signal, func);
   }
 });

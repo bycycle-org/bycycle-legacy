@@ -19,12 +19,12 @@
     <a class="set-as-start"
        href="#set-as-start"
        title="Use this as the starting point of a route"
-       onclick='byCycle.UI.setAsStart("${field_addr}"); return false;'
+       onclick='APP.UI.setAsStart("${field_addr}"); return false;'
        ><i>start</i></a> or
     <a class="set-as-end"
        href="#set-as-end"
        title="Use this as the end point of a route"
-       onclick='byCycle.UI.setAsEnd("${field_addr}"); return false;'
+       onclick='APP.UI.setAsEnd("${field_addr}"); return false;'
        ><i>end</i></a>
     of route
   </div>
@@ -33,7 +33,7 @@
     <a class="show-on-map-link"
       href="#show-location-on-map"
       title="Show this location on the map"
-      onclick="byCycle.UI.map.setCenter({x: ${x}, y: ${y}}); return false;"
+      onclick="APP.UI.map.setCenter({x: ${x}, y: ${y}}); return false;"
       >Show on map</a>
   </div>
 </div>
