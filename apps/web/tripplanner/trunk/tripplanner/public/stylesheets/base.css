@@ -76,34 +76,19 @@ a:hover {
 
 
 /* Errors */
-.ui-dialog-content {
-  overflow: auto;
+ul.errors {
+  text-align: left;
 }
-#error_content {
-  padding: .4em;
+ul.errors li {
+  list-style-type: none;
 }
-#error_content h2 {
+ul.errors li.error {
   color: red;
 }
-#error_content h2, #error_content h3 {
-  font-weight: bold;
+ul.errors li.error.a {
+  background-color: #fff;
 }
-#error_content h2 {
-  font-size: 110%;
-}
-#error_content h3 {
-  font-size: 105%;
-}
-#error_content ul li {
-  padding: .2em;
-}
-#error_content ul li.error {
-  color: red;
-}
-#error_content ul li.a {
-  background-color: #eee;
-}
-#error_content ul li.b {
+ul.errors li.error.b {
   background-color: #ddd;
 }
 
