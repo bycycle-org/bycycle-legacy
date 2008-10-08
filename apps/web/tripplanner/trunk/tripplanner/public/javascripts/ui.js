@@ -45,10 +45,9 @@ NameSpace('UI', APP, function () {
 	  self.region = APP.region;
 
       self._assignUIElements();
-
 	  self.layout = self._createLayout();
+      self._createWidgets();
 
-      //self._createWidgets();
       // If map is "on" and specified map type is loadable, use that map type.
       // Otherwise, use the default map type (base).
       if (!(self.map_state && self.map_type.isLoadable())) {
@@ -77,7 +76,7 @@ NameSpace('UI', APP, function () {
       //}
       //self.handleQuery();
 	  //self.selectInputPane(self.service);
-      self.spinner.setStyle('display', 'none');
+	  self.hideSpinner();
 	  var loading_el = document.getElementById('loading');
 	  loading_el.parentNode.removeChild(loading_el);
     },
@@ -129,30 +128,44 @@ NameSpace('UI', APP, function () {
 	},
 
     _createWidgets: function () {
-      self.controls.accordion({
-		header: '.ui-accordion-header',
-		clearStyle: true
+	  // Create accordion control to contain left panel query forms and other
+	  // controls
+      //self.controls.accordion({
+		//header: '.ui-accordion-header',
+		//clearStyle: true
+	  //});
+
+	  //// Make tab control for location results
+	  //self.locations_container = $j('#locations ul').tabs().
+		//bind('tabsremove', function (event, ui) {
+		  //self.results.geocodes[ui.panel.id].remove();
+		//});
+
+	  //// Make tab control for route results
+	  //self.routes_container = $j('#routes ul').tabs().
+		//bind('tabsremove', function (event, ui) {
+		  //self.results.routes[ui.panel.id].remove();
+		//});
+
+	  // Create dialog for info and errors
+	  var alert_panel = new YAHOO.widget.SimpleDialog('alert_panel', {
+		fixedcenter: true,
+		visible: false,
+		modal: true,
+		width: '400px',
+		constraintoviewport: true,
+		icon: YAHOO.widget.SimpleDialog.ICON_WARN,
+		buttons: [
+		  {
+			text: 'OK', handler: function() { alert_panel.hide(); },
+		    isDefault: true
+		  }
+		]
 	  });
-
-	  self.locations_container = $j('#locations ul').tabs().
-		bind('tabsremove', function (event, ui) {
-		  self.results.geocodes[ui.panel.id].remove();
-		});
-
-	  self.routes_container = $j('#routes ul').tabs().
-		bind('tabsremove', function (event, ui) {
-		  self.results.routes[ui.panel.id].remove();
-		});
-
-	  self.errors.dialog({
-		autoOpen: false,
-		width: 400,
-		height: 300,
-		resizable: true,
-		buttons: {
-		  'OK': function () { self.errors.dialog('close');}
-		}
-	  });
+	  alert_panel.setHeader('Alert');
+	  alert_panel.setBody('...');
+	  alert_panel.render(document.body);
+	  self.alert_panel = alert_panel;
     },
 
     /* Events ****************************************************************/
@@ -167,7 +180,6 @@ NameSpace('UI', APP, function () {
 	    self.spinner.hide();
         return false;
       });
-
       // Services
       addListener('swap_s_and_e', 'click', self.swapStartAndEnd);
       self.query_form.on('submit', self.runGenericQuery);
@@ -179,6 +191,60 @@ NameSpace('UI', APP, function () {
     },
 
     handleMapClick: function (event) {},
+
+
+	/* UI ********************************************************************/
+
+	showSpinner: function () {
+	  self.spinner.setStyle('display', 'block');
+	},
+
+	hideSpinner: function () {
+	  self.spinner.setStyle('display', 'none');
+	},
+
+	/**
+	 * @param errors An Array of error messages or a string of error messages
+	 *               separated by a newline
+	 */
+    showErrors: function(errors) {
+	  if (typeof errors == 'string') {
+		errors = errors.split('\n');
+	  }
+	  var e, lis = [], row_class = 'a';
+	  for (var i = 0; i < errors.length; ++i) {
+		e = errors[i];
+		lis = lis.concat(['<li class="error ', row_class, '">', e, '</li>']);
+		row_class = (row_class == 'a' ? 'b' : 'a');
+	  }
+	  var content = ['<ul class="errors">', lis.join(''), '</ul>'].join('');
+	  self.showAlertPanel('Oops!', content, 'error')
+	  self.hideSpinner();
+    },
+
+    showException: function(content) {
+	  self.showAlertPanel('Achtung!', content, 'error');
+	  self.hideSpinner();
+    },
+
+	showAlertPanel: function (title, content, icon_type) {
+	  var icon;
+	  if (typeof icon_type == 'undefined') {
+		icon_type = 'warn';
+	  }
+	  var icon_types = {
+		info: YAHOO.widget.SimpleDialog.ICON_INFO,
+		warn: YAHOO.widget.SimpleDialog.ICON_WARN,
+		error: YAHOO.widget.SimpleDialog.ICON_ALARM,
+		alarm: YAHOO.widget.SimpleDialog.ICON_ALARM,
+		help: YAHOO.widget.SimpleDialog.ICON_HELP
+	  }
+	  var icon = icon_types[icon_type];
+	  self.alert_panel.setHeader(title);
+	  self.alert_panel.setBody(content);
+	  self.alert_panel.cfg.setProperty('icon', icon);
+	  self.alert_panel.show();
+	},
 
 
     /* Regions ***************************************************************/
@@ -311,33 +377,6 @@ NameSpace('UI', APP, function () {
 
     runRouteQuery: function(event, input) {
       self.runQuery(self.RouteQuery, event, input);
-    },
-
-	/**
-	 * @param errors An Array of error messages or a string of error messages
-	 *               separated by a newline
-	 */
-    showErrors: function(errors) {
-	  if (typeof errors == 'string') {
-		errors = errors.split('\n');
-	  }
-	  var e, lis = [], row_class = 'a';
-	  for (var i = 0; i < errors.length; ++i) {
-		e = errors[i];
-		lis = lis.concat(['<li class="error ', row_class, '">', e, '</li>']);
-		row_class = (row_class == 'a' ? 'b' : 'a');
-	  }
-	  var content = ['<ul>', lis.join(''), '</ul>'].join('');
-      var el = document.getElementById('error_content');
-	  el.innerHTML = content;
-	  //self.errors.dialog('open');
-	  //self.spinner.hide();
-    },
-
-    showException: function(content) {
-      $j('#error_content').html(content);
-	  self.errors.dialog('open');
-	  self.spinner.hide();
     },
 
     /**

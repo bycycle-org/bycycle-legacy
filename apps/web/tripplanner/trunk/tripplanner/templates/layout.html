@@ -81,10 +81,6 @@
       </div>
     </div>
 
-    <%call expr="dialog.dialog('errors', 'Oops!')">
-      <div id="error_content"></div>
-    </%call>
-
     <script type="text/javascript" src="${h.url_for('/javascripts/init.js')}" ></script>
     <script type="text/javascript" src="http://yui.yahooapis.com/2.6.0/build/yuiloader/yuiloader-min.js" ></script>
     <script type="text/javascript">
@@ -96,7 +92,7 @@
 
       var loader = new YAHOO.util.YUILoader({
         require: [
-          'layout', 'container',
+          'layout', 'container', 'button',
           'dom', 'event',  'element',
           'get', 'connection', 'json',
           'reset', 'fonts', 'grids', 'base', 'resize'
@@ -191,25 +187,10 @@
 </html>
 
 <%namespace name="accordion" file="/widgets/accordion.html" />
-<%namespace name="dialog" file="/widgets/dialog.html" />
 
 <%def name="region_title()">
   ${c.region.title if c.region else 'Select a region'}
 </%def>
-
-<%def name="stylesheet_links()"></%def>
-
-<%def name="input_container(classes=[])">
-  <!-- Input Container -->
-  <div id="input_container" class="noprint ${' '.join(classes)}">
-    % if caller:
-      ${caller.body()}
-    % endif
-  </div>
-  <!-- /Input Container -->
-</%def>
-
-<%def name="links()"></%def>
 
 <%def name="controls()">
   <%call expr="accordion.accordion_group('About')">
@@ -258,12 +239,6 @@
     to <a href="mailto:contact@bycycle.org">contact@bycycle.org</a>.
   </%call>
 </%def>
-
-<%def name="errors()"></%def>
-
-<%def name="map_controls()"></%def>
-<%def name="javascript_links()"></%def>
-<%def name="javascript()"></%def>
 
 <%def name="json()">
   % if c.format != 'json':

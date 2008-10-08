@@ -19,6 +19,8 @@ NameSpace('APP', window, function() {
     config: debug ? dev_config : prod_config,
 
 	onLoad: function () {
+	  // Do region-dependent initialization, which includes initializing the
+	  // main UI module.
 	  YAHOO.util.Connect.asyncRequest(
 		'GET', APP.prefix + 'regions?format=json&wrap=off',
 		{
