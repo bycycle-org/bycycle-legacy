@@ -12,15 +12,12 @@ NameSpace('UI', APP, function () {
     map: null,
 	map_pane_id: 'map_pane',
 
-    service: 'services',
+    service: null,
     query: null,  // query.Query object (not query string)
     is_first_result: true,
     result: null,
     results: {'geocodes': {}, 'routes': {}},
     http_status: null,
-    response_text: null,
-    bike_overlay: null,
-    bike_overlay_state: false,
 
     status_messages: {
       200: 'One result was found',
@@ -68,7 +65,7 @@ NameSpace('UI', APP, function () {
 		self.map.drawPolyLine(self.region.geometry.linestring);
 	  }
 
-      //self._createEventHandlers();
+      self._createEventHandlers();
 
       //var zoom = parseInt(APP.getParamVal('zoom'), 10);
       //if (!isNaN(zoom)) {
@@ -83,18 +80,22 @@ NameSpace('UI', APP, function () {
 
     _assignUIElements: function () {
 	  var Element = YAHOO.util.Element;
+	  // Common
       self.spinner = new Element('spinner');
       self.controls = new Element('controls');
 	  self.errors = new Element('errors');
       self.region_el = new Element('regions');
-      self.query_pane = new Element('search-the-map');
-      self.route_pane = new Element('find-a-route');
-      self.query_form = new Element('query_form');
-      self.route_form = new Element('route_form');
-      self.q_el = new Element('q');
-      self.s_el = new Element('s');
-      self.e_el = new Element('e');
-      self.pref_el = new Element('pref');
+	  // Service/query related
+	  if (self.region_id != 'all') {
+		self.query_pane = new Element('search-the-map');
+		self.route_pane = new Element('find-a-route');
+		self.query_form = new Element('query_form');
+		self.route_form = new Element('route_form');
+		self.q_el = new Element('q');
+		self.s_el = new Element('s');
+		self.e_el = new Element('e');
+		self.pref_el = new Element('pref');
+	  }
     },
 
 	_createLayout: function () {
@@ -135,17 +136,26 @@ NameSpace('UI', APP, function () {
 		//clearStyle: true
 	  //});
 
-	  //// Make tab control for location results
-	  //self.locations_container = $j('#locations ul').tabs().
-		//bind('tabsremove', function (event, ui) {
-		  //self.results.geocodes[ui.panel.id].remove();
-		//});
+	  if (self.region_id != 'all') {
+		// Make tab controls for location and route results
+		self.locations_panel = new YAHOO.widget.Panel('locations_panel', {
+		  close: false,
+		  visible: true,
+		  draggable: false,
+		  underlay: 'none'
+		});
+		self.locations_panel.render();
+		self.locations_container = new YAHOO.widget.TabView('locations');
 
-	  //// Make tab control for route results
-	  //self.routes_container = $j('#routes ul').tabs().
-		//bind('tabsremove', function (event, ui) {
-		  //self.results.routes[ui.panel.id].remove();
-		//});
+		self.routes_panel = new YAHOO.widget.Panel('routes_panel', {
+		  close: false,
+		  visible: true,
+		  draggable: false,
+		  underlay: 'none'
+		});
+		self.routes_panel.render();
+		self.routes_container = new YAHOO.widget.TabView('routes');
+	  }
 
 	  // Create dialog for info and errors
 	  var alert_panel = new YAHOO.widget.SimpleDialog('alert_panel', {
@@ -172,18 +182,19 @@ NameSpace('UI', APP, function () {
 
     _createEventHandlers: function () {
 	  var addListener = YAHOO.util.Event.addListener;
-	  addListener(document.body, 'unload', self.onUnload);
+	  document.body.onunload = self.onUnload;
       if (self.region_el) {
         self.region_el.on('change', self.setRegionFromSelectBox);
 	  }
       self.spinner.on('click', function (event) {
-	    self.spinner.hide();
-        return false;
+	    self.hideSpinner();
       });
       // Services
-      addListener('swap_s_and_e', 'click', self.swapStartAndEnd);
-      self.query_form.on('submit', self.runGenericQuery);
-      self.route_form.on('submit', self.runRouteQuery);
+	  if (self.region_id != 'all') {
+		//addListener('swap_s_and_e', 'click', self.swapStartAndEnd);
+		self.query_form.on('submit', self.runGenericQuery);
+		self.route_form.on('submit', self.runRouteQuery);
+	  }
     },
 
     onUnload: function (event) {
@@ -310,8 +321,8 @@ NameSpace('UI', APP, function () {
       var res = self.member_name;
 
       // E.g., query_class := GeocodeQuery
-      var query_class = [res.charAt(0).toUpperCase(), res.substr(1),
-                         'Query'].join('');
+      var query_class = [
+		res.charAt(0).toUpperCase(), res.substr(1), 'Query'].join('');
       query_class = self[query_class];
 
       var query_obj = new query_class();
