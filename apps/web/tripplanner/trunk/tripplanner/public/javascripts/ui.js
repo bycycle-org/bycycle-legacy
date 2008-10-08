@@ -1,27 +1,13 @@
 /* Namespace for User Interface objects and functions. */
-byCycle.UI = function () {
-  // private:
+NameSpace('UI', byCycle, function () {
   var self = null;
 
-  var map_state = byCycle.getParamVal('map_state', function(map_state) {
-    // Anything but '', '0' or 'off' is on
-    return map_state == '' || map_state == '0' || map_state == 'off';
-  });
-
-  var map_type_name = (byCycle.request_params.map_type || '').toLowerCase();
-  var map_type = (byCycle.Map[map_type_name] ||            // URL override
-                  byCycle.Map[byCycle.region.map_type] ||  // config setting
-                  byCycle.Map.base);                       // default
-  byCycle.logDebug('Map type:', map_type.description);
-
-  // public:
   return {
-    region_id: byCycle.region_id,
-	region: byCycle.region,
+    region_id: null,
+	region: null,
+
     map: null,
 	map_pane_id: 'map_pane',
-    map_state: map_state,
-    map_type: map_type,
 
     service: 'services',
     query: null,  // query.Query object (not query string)
@@ -47,68 +33,103 @@ byCycle.UI = function () {
     /* Initialization ********************************************************/
 
     /**
-     * Do stuff that must happen _during_ page load
-     */
-    beforeLoad: function() {
-      $j('#spinner').show();
-      if (map_state) {
-        map_type.beforeLoad();
-      }
-      $j(window).load(byCycle.UI.onLoad);
-    },
-
-    /**
      * Do stuff that must happen once page has loaded
      */
     onLoad: function() {
       self = byCycle.UI;
+
+	  self.region_id = byCycle.region_id;
+	  self.region = byCycle.region;
+
       self._assignUIElements();
-      self._createWidgets();
+
+	  self.layout = self._createLayout();
+
+      //self._createWidgets();
       // If map is "on" and specified map type is loadable, use that map type.
       // Otherwise, use the default map type (base).
       if (!(self.map_state && self.map_type.isLoadable())) {
+		console.debug(self.map_type.isLoadable());
+		byCycle.logDebug('Loading base map type');
         self.map_type = byCycle.Map.base;
-      }
+      } else {
+	    byCycle.logDebug('Loading regional map type');
+	  }
       self.map = new self.map_type.Map(self, self.map_pane_id);
-	  self.onResize();
 
       if (self.region_id == 'all') {
 		self.setRegion(self.region_id);
-		$j.each(util.values(byCycle.regions.regions), function (i, r) {
-		  geom = r.geometry['4326'];
-		  self.map.makeRegionMarker(r.slug, geom.center);
+		var regions = byCycle.regions.regions;
+		var region;
+		for (var slug in regions) {
+		  console.debug(slug);
+		  region = byCycle.regions.regions[slug];
+		  geom = region.geometry['4326'];
+		  self.map.makeRegionMarker(region.slug, geom.center);
 		  self.map.drawPolyLine(geom.linestring);
-		});
+		}
 	  } else {
 		self.map.drawPolyLine(self.region.geometry.linestring);
 	  }
 
-      self._createEventHandlers();
-      var zoom = parseInt(byCycle.getParamVal('zoom'), 10);
-      if (!isNaN(zoom)) {
-        self.map.setZoom(zoom);
-      }
-      self.handleQuery();
-	  self.selectInputPane(self.service);
-	  self.onResize();
-      self.spinner.hide();
-	  $j('#loading').remove();
+      //self._createEventHandlers();
+
+      //var zoom = parseInt(byCycle.getParamVal('zoom'), 10);
+      //if (!isNaN(zoom)) {
+        //self.map.setZoom(zoom);
+      //}
+      //self.handleQuery();
+	  //self.selectInputPane(self.service);
+      self.spinner.setStyle('display', 'none');
+	  var loading_el = document.getElementById('loading');
+	  loading_el.parentNode.removeChild(loading_el);
     },
 
-    _assignUIElements: function() {
-      self.spinner = $j('#spinner');
-      self.controls = $j('#controls');
-	  self.errors = $j('#errors');
-      self.region_el = $j('#regions');
-      self.query_pane = $j('#search-the-map');
-      self.route_pane = $j('#find-a-route');
-      self.query_form = $j('#query_form');
-      self.route_form = $j('#route_form');
-      self.q_el = $j('#q');
-      self.s_el = $j('#s');
-      self.e_el = $j('#e');
-      self.pref_el = $j('#pref');
+    _assignUIElements: function () {
+	  var Element = YAHOO.util.Element;
+      self.spinner = new Element('spinner');
+      self.controls = new Element('controls');
+	  self.errors = new Element('errors');
+      self.region_el = new Element('regions');
+      self.query_pane = new Element('search-the-map');
+      self.route_pane = new Element('find-a-route');
+      self.query_form = new Element('query_form');
+      self.route_form = new Element('route_form');
+      self.q_el = new Element('q');
+      self.s_el = new Element('s');
+      self.e_el = new Element('e');
+      self.pref_el = new Element('pref');
     },
+
+	_createLayout: function () {
+	  var layout = new YAHOO.widget.Layout({
+		minWidth: 400,
+		minHeight: 300,
+		units: [
+			{
+			  position: 'top',
+			  body: 'top',
+			  height: 22,
+			  scroll: null,
+			  zIndex: 2
+			},
+			{
+			  position: 'left',
+			  body: 'left',
+			  width: 300,
+			  resize: true,
+			  scroll: false
+			},
+			{
+			  position: 'center',
+			  body: 'center'
+			}
+		]
+	  });
+
+	  layout.render()
+	  return layout;
+	},
 
     _createWidgets: function () {
       self.controls.accordion({
@@ -139,31 +160,24 @@ byCycle.UI = function () {
 
     /* Events ****************************************************************/
 
-	onResize: function () {
-	  var offset = $j('#content').offset().top;
-	  var height = $j('body').outerHeight() - offset;
-	  $j('#content').height(height);
-	},
-
     _createEventHandlers: function () {
-      $j(window).resize(self.onResize);
-      $j(document.body).unload(self.onUnload);
+	  var addListener = YAHOO.util.Event.addListener;
+	  addListener(document.body, 'unload', self.onUnload);
       if (self.region_el) {
-        self.region_el.change(self.setRegionFromSelectBox);
+        self.region_el.on('change', self.setRegionFromSelectBox);
 	  }
-      self.spinner.click(function (event) {
+      self.spinner.on('click', function (event) {
 	    self.spinner.hide();
         return false;
       });
 
       // Services
-      $j('#swap_s_and_e').click(self.swapStartAndEnd);
-      self.query_form.submit(self.runGenericQuery);
-      self.route_form.submit(self.runRouteQuery);
+      addListener('swap_s_and_e', 'click', self.swapStartAndEnd);
+      self.query_form.on('submit', self.runGenericQuery);
+      self.route_form.on('submit', self.runRouteQuery);
     },
 
     onUnload: function (event) {
-      document.body.style.display = 'none';
       self.map.onUnload();
     },
 
@@ -317,9 +331,10 @@ byCycle.UI = function () {
 		row_class = (row_class == 'a' ? 'b' : 'a');
 	  }
 	  var content = ['<ul>', lis.join(''), '</ul>'].join('');
-      $j('#error_content').html(content);
-	  self.errors.dialog('open');
-	  self.spinner.hide();
+      var el = document.getElementById('error_content');
+	  el.innerHTML = content;
+	  //self.errors.dialog('open');
+	  //self.spinner.hide();
     },
 
     showException: function(content) {
@@ -435,4 +450,4 @@ byCycle.UI = function () {
       self.runGeocodeQuery(event, {q: [point.x, point.y].join()});
     }
   };
-}();
+}());

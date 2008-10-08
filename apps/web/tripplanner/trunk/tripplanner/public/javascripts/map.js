@@ -6,7 +6,9 @@ NameSpace('Map', byCycle, {});
 
 NameSpace('base', byCycle.Map, {
   description: 'Default byCycle map type',
-  beforeLoad: function() {},
+  getLibraryURL: function() {
+    return null;
+  },
   isLoadable: function() {
     return true;
   }
@@ -34,10 +36,10 @@ Class(byCycle.Map.base, 'Map', null, {
   },
 
   createMap: function(container) {
-    this.container = $j(container);
-    var map = $j('<div>');
-    map.css({height: '100%', overflow: 'auto'});
-    this.container.append(map);
+    var map = document.createElement('div');
+    map.style.height = '100%';
+    map.style.overflow = 'auto';
+    this.container.appendChild(map);
     this.map = map;
     this.put('Default byCycle Map Interface');
   },
@@ -47,7 +49,7 @@ Class(byCycle.Map.base, 'Map', null, {
     div.innerHTML = '#' + (this.put_count = (this.put_count || 1)) + ' ' +
                     content;
     this.put_count += 1;
-    this.map.append(div);
+    this.map.appendChild(div);
     return div;
   },
 
@@ -60,7 +62,7 @@ Class(byCycle.Map.base, 'Map', null, {
       this.container.style.width = dims.w + 'px';
     }
     if (typeof(dims.h) != 'undefined') {
-      this.container.height(dims.h + 'px');
+      this.container.style.height = dims.h + 'px';
     }
   },
 
@@ -214,7 +216,7 @@ Class(byCycle.Map.base, 'Map', null, {
     return point;
   },
 
-  addListener: function(obj, signal, func) {
-    $j(obj).bind(signal, func);
+  addListener: function(id, signal, func) {
+    byCycle.el(id).on(signal, func);
   }
 });

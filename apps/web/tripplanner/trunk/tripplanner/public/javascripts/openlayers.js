@@ -1,8 +1,5 @@
 NameSpace('openlayers', byCycle.Map, {
   description: 'Open Layers Map',
-  beforeLoad: function() {
-    util.writeScript('/javascripts/OpenLayers/OpenLayers.js');
-  },
   isLoadable: function() { return true; }
 });
 
@@ -88,24 +85,22 @@ Class(byCycle.Map.openlayers, 'Map', byCycle.Map.base.Map, {
     var size = new OpenLayers.Size(15, 15);
     var offset = new OpenLayers.Pixel(7, 7);
     var center_icon = new OpenLayers.Icon(url, size, offset);
-    // Base icon for start and end of route icons
-    //var base_icon = new GIcon();
-    //base_icon.shadow = byCycle.prefix + 'images/shadow50.png';
-    //base_icon.iconSize = new GSize(20, 34);
-    //base_icon.shadowSize = new GSize(37, 34);
-    //base_icon.iconAnchor = new GPoint(9, 34);
-    //base_icon.infoWindowAnchor = new GPoint(9, 2);
-    //base_icon.infoShadowAnchor = new GPoint(18, 25);
-    // Start icon
-    //var start_icon = new GIcon(base_icon);
-    //start_icon.image = byCycle.prefix + 'images/dd-start.png';
-    // End icon
-    //var end_icon = new GIcon(base_icon);
-    //end_icon.image = byCycle.prefix + 'images/dd-end.png';
-    // Assign icons to self
+
+    // Route start icon
+    var url = byCycle.prefix + 'images/dd-startff.gif';
+    var size = new OpenLayers.Size(21, 21);
+    var offset = new OpenLayers.Pixel(11, 11);
+    var start_icon = new OpenLayers.Icon(url, size, offset);
+
+    // Route end icon
+    var url = byCycle.prefix + 'images/dd-endff.gif';
+    var size = new OpenLayers.Size(21, 21);
+    var offset = new OpenLayers.Pixel(11, 11);
+    var end_icon = new OpenLayers.Icon(url, size, offset);
+
     this.center_icon = center_icon;
-    //this.start_icon = start_icon;
-    //this.end_icon = end_icon;
+    this.start_icon = start_icon;
+    this.end_icon = end_icon;
   },
 
   createListeners: function() {
@@ -116,30 +111,14 @@ Class(byCycle.Map.openlayers, 'Map', byCycle.Map.base.Map, {
       if (typeof self.center_marker == 'undefined') {
         self.center_marker = new OpenLayers.Marker(ll, self.center_icon);
         self.locations_layer.addMarker(self.center_marker);
-        if (byCycle.region_id != 'all') {
-          var node = $j('#center-marker-contents');
-          var popup = self.addPopup('', ll, null, node.html(), self.center_icon);
-          self.addListener(self.center_marker, 'click', function () {
-            popup.show();
-          });
-        }
       }
       var px = self.map.getLayerPxFromLonLat(ll);
       self.center_marker.moveTo(px);
     });
-    this.addListener(self.map, 'click', function (event) {
-      // TODO: closes popups when clicking markers
-      //$j.each(self.map.popups, function(i, p) {
-        //p.hide();
-      //});
-    });
+    this.map.events.triggerEvent('moveend');
   },
 
   /* Events */
-
-  addListener: function(obj, signal, func) {
-    $j(obj.events.element).bind(signal, func);
-  },
 
   onUnload: function() {},
 

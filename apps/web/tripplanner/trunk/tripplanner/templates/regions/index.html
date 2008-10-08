@@ -2,6 +2,13 @@
 <%inherit file="layout.html"/>
 <%namespace name="accordion" file="/widgets/accordion.html" />
 
+<%def name="javascript()">
+  <script type="text/javascript" src="/javascripts/bC_google_api.js"></script>
+  <script type="text/javascript">
+    util.writeScript(bC_google_api.getAPIKey());
+  </script>
+</%def>
+
 <%def name="controls(id='controls')">
   <%call expr="accordion.accordion(id)">
     <%call expr="accordion.accordion_group('Select a Region')">
