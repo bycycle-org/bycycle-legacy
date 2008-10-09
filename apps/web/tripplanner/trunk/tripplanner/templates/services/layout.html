@@ -41,6 +41,11 @@ ${next.body()}
             </div>
           </div>
         </form>
+
+        % if c.service == 'geocodes':
+          ${next.body()}
+          ${self.json()}
+        % endif
       </div>
     </div>
   </div>
@@ -77,6 +82,11 @@ ${next.body()}
             </div>
           </div>
         </form>
+
+        % if c.service == 'routes':
+          ${next.body()}
+          ${self.json()}
+        % endif
       </div>
     </div>
   </div>
