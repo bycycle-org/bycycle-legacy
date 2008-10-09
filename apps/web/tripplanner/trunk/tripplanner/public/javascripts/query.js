@@ -97,16 +97,17 @@ Class(APP.UI, 'Query', null, {
     // Extract top level DOM nodes from response HTML fragment (skipping text
     // nodes). These nodes will be inserted as the content of each result's
     // widget.
-    var div = $j('<div></div>');
-    div.html(response.result.fragment);
-    var nodes = div.find('.query-result');
+    var div = document.createElement('div');
+    div.innerHTML = response.result.fragment;
+    var nodes = div.getElementsByClassName('query-result');
     var dom_node, result, results = [];
     var self = this;
-    $j.each(response.result.results, function (i, obj) {
+    for (var i = 0, obj; i < response.result.results.length; ++i) {
+      obj = response.result.results[i];
       dom_node = nodes[i];
       result = self.makeResult(obj, dom_node);
       results.push(result);
-    });
+    }
     return results;
   },
 
@@ -251,7 +252,7 @@ Class(APP.UI, 'RouteQuery', APP.UI.Query, {
   },
 
   processResults: function(response, results) {
-    APP.logDebug('In Route processResults...');
+    util.log.debug('In Route processResults...');
     var route, ls, s_e_markers, s_marker, e_marker, line;
     var ui = this.ui;
     var map = ui.map;

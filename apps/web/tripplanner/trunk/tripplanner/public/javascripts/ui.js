@@ -8,6 +8,7 @@ NameSpace('UI', APP, function () {
   return {
     region_id: null,
 	region: null,
+	in_region: false,
 
     map: null,
 	map_pane_id: 'map_pane',
@@ -40,6 +41,7 @@ NameSpace('UI', APP, function () {
 
 	  self.region_id = APP.region_id;
 	  self.region = APP.region;
+	  self.in_region = (self.region_id != 'all');
 
       self._assignUIElements();
 	  self.layout = self._createLayout();
@@ -67,12 +69,12 @@ NameSpace('UI', APP, function () {
 
       self._createEventHandlers();
 
-      //var zoom = parseInt(APP.getParamVal('zoom'), 10);
-      //if (!isNaN(zoom)) {
-        //self.map.setZoom(zoom);
-      //}
-      //self.handleQuery();
-	  //self.selectInputPane(self.service);
+      var zoom = parseInt(util.getParamVal('zoom'), 10);
+      if (!isNaN(zoom)) {
+        self.map.setZoom(zoom);
+      }
+      self.handleQuery();
+	  self.selectInputPane(self.service);
 	  self.hideSpinner();
 	  var loading_el = document.getElementById('loading');
 	  loading_el.parentNode.removeChild(loading_el);
@@ -86,7 +88,7 @@ NameSpace('UI', APP, function () {
 	  self.errors = new Element('errors');
       self.region_el = new Element('regions');
 	  // Service/query related
-	  if (self.region_id != 'all') {
+	  if (self.in_region) {
 		self.query_pane = new Element('search-the-map');
 		self.route_pane = new Element('find-a-route');
 		self.query_form = new Element('query_form');
@@ -134,7 +136,7 @@ NameSpace('UI', APP, function () {
 		orientation: 'left'
 	  });
 
-	  if (self.region_id != 'all') {
+	  if (self.in_region) {
 		// Containers for location and route results
 		self.locations_container = new YAHOO.widget.TabView('locations');
 		self.routes_container = new YAHOO.widget.TabView('routes');
@@ -173,7 +175,7 @@ NameSpace('UI', APP, function () {
 	    self.hideSpinner();
       });
       // Services
-	  if (self.region_id != 'all') {
+	  if (self.in_region) {
 		//addListener('swap_s_and_e', 'click', self.swapStartAndEnd);
 		self.query_form.on('submit', self.runGenericQuery);
 		self.route_form.on('submit', self.runRouteQuery);
@@ -266,7 +268,9 @@ NameSpace('UI', APP, function () {
     },
 
     selectInputPane: function(service) {
-      //self.controls.accordion('activate', (service == 'routes' ? 1 : 0));
+	  if (self.in_region) {
+        self.controls.set('activeIndex', (service == 'routes' ? 1 : 0));
+	  }
     },
 
     swapStartAndEnd: function(event) {
@@ -300,7 +304,10 @@ NameSpace('UI', APP, function () {
     /* Query-related *********************************************************/
 
     handleQuery: function() {
-      if (!self.http_status) { return; }
+      if (!self.http_status) {
+		util.log.debug('HTTP status not set in `handleQuery`.');
+		return;
+	  }
       var res = self.member_name;
 
       // E.g., query_class := GeocodeQuery
@@ -310,20 +317,19 @@ NameSpace('UI', APP, function () {
 
       var query_obj = new query_class();
       if (self.http_status == 200) {
-        var pane = $j(
+        var pane = APP.el(
 		  self.collection_name == 'routes' ? 'routes' : 'locations');
-        var fragment = $j(pane.find('.fragment')[0]);
-        var json = $j(fragment.find('.json')[0]);
-        var request = {status: self.http_status, responseText: json.val()};
-        fragment.remove();
-        json.remove();
+        var fragment = pane.getElementsByClassName('query-result')[0];
+        var json = pane.getElementsByClassName('json')[0];
+        var request = {status: self.http_status, responseText: json.innerHTML};
+        fragment.parentNode.removeChild(fragment);
         query_obj.on200(request);
       } else if (self.http_status == 300) {
         var json = self.error_pane.find('.json')[0];
         var request = {status: self.http_status, responseText: json.val()};
-        json.remove();
         query_obj.on300(request);
       }
+	  json.parentNode.removeChild(json);
       self.query = query_obj;
     },
 
