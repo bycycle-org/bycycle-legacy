@@ -12,16 +12,21 @@ html, body {
   line-height: 12px;
 }
 
-#left {
-  padding: 1% 9px 0 4px;
-  height: 99%;
-}
-
-#controls,
-#controls.yui-navset .yui-content.main,
+#left,
+#controls, #controls.yui-navset .yui-content.main,
 #center,
 #map_pane {
   height: 100%;
+}
+
+#left {
+  padding: 0 9px 0 4px;
+}
+
+#controls.yui-navset .yui-content.main {
+  padding: 0 6px;
+  border-width: 0 1px;
+  overflow: auto;
 }
 
 
@@ -38,10 +43,6 @@ a:hover {
   background-color: #fff;
 }
 
-#top {
-  background-color: #fafafa;
-}
-
 /* Input Controls */
 #controls.yui-navset ul.yui-nav li a em {
   /* Main tab widget */
@@ -51,11 +52,30 @@ a:hover {
 #controls.yui-navset ul.yui-nav.menu li a em {
   font-weight: bold;
 }
-#q, #s, #e {
+#q {
+  width: 95%;
+}
+#route_form table {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  border: none;
+  border-collapse: collapse;
+}
+#route_form table td {
+  margin: 0;
+  padding: 0;
+  border: none;
+}
+#s, #e {
   width: 95%;
 }
 #swap_s_and_e a {
   text-decoration: none;
+  outline: none;
+  display: block;
+  width: 10px;
+  height: 30px;
 }
 /* Input Labels */
 .input_label {
@@ -65,9 +85,6 @@ a:hover {
 }
 
 /* Content Column A -- Results and Messages */
-#query-results {
-  display: none;
-}
 #spinner {
   position: absolute;
   right: 50%;
@@ -83,6 +100,34 @@ a:hover {
   border: 1px solid #000;
 }
 
+#controls.yui-navset .yui-content.main h1,
+#controls.yui-navset .yui-content.main h2,
+#controls.yui-navset .yui-content.main h3 {
+  margin: 0;
+  margin-bottom: .25em;
+}
+
+.query-result {
+  position: relative;
+}
+.yui-skin-sam .query-result .yui-button.yui-button-button {
+  position: absolute;
+  right: 0;
+  top: 0;
+}
+
+/* Choices list (HTTP status == 300) */
+ul.result_list {
+  padding: 0;
+  margin: 0;
+}
+ul.result_list li {
+  list-style-type: none;
+  padding: .25em;
+}
+ul.result_list li.a {
+  background-color: white;
+}
 
 /* Errors */
 ul.errors {

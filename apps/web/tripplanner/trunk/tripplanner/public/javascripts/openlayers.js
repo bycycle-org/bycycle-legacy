@@ -83,19 +83,19 @@ Class(APP.Map.openlayers, 'Map', APP.Map.base.Map, {
     // Center icon
     var url = APP.prefix + 'images/reddot15.png';
     var size = new OpenLayers.Size(15, 15);
-    var offset = new OpenLayers.Pixel(7, 7);
+    var offset = new OpenLayers.Pixel(-8, -8);
     var center_icon = new OpenLayers.Icon(url, size, offset);
 
     // Route start icon
     var url = APP.prefix + 'images/dd-startff.gif';
-    var size = new OpenLayers.Size(21, 21);
-    var offset = new OpenLayers.Pixel(11, 11);
+    var size = new OpenLayers.Size(21, 39);
+    var offset = new OpenLayers.Pixel(-11, -39);
     var start_icon = new OpenLayers.Icon(url, size, offset);
 
     // Route end icon
     var url = APP.prefix + 'images/dd-endff.gif';
-    var size = new OpenLayers.Size(21, 21);
-    var offset = new OpenLayers.Pixel(11, 11);
+    var size = new OpenLayers.Size(21, 39);
+    var offset = new OpenLayers.Pixel(-11, -39);
     var end_icon = new OpenLayers.Icon(url, size, offset);
 
     this.center_icon = center_icon;
@@ -105,7 +105,7 @@ Class(APP.Map.openlayers, 'Map', APP.Map.base.Map, {
 
   createListeners: function() {
     var self = this;
-    this.map.events.register('moveend', self.map, function () {
+    this.addListener(this.map, 'moveend', function () {
       self.center = self.getCenter();
       var ll = new OpenLayers.LonLat(self.center.x, self.center.y);
       if (typeof self.center_marker == 'undefined') {
@@ -116,11 +116,18 @@ Class(APP.Map.openlayers, 'Map', APP.Map.base.Map, {
       self.center_marker.moveTo(px);
     });
     this.map.events.triggerEvent('moveend');
+    this.addListener(this.map, 'click', function () {
+      self.hidePopups();
+    });
   },
 
   /* Events */
 
   onUnload: function() {},
+
+  addListener: function (obj, signal, fn) {
+    obj.events.register(signal, obj, fn);
+  },
 
   /* Size/Dimensions */
 
@@ -166,7 +173,7 @@ Class(APP.Map.openlayers, 'Map', APP.Map.base.Map, {
     var ll = new OpenLayers.LonLat(point.y, point.x);
     // TODO: Show REAL map blowup, iff possible in OL (or do something
     // equivalent)
-    APP.logDebug('OL showMapBlowup at', point.x, point.y);
+    util.log.debug('OL showMapBlowup at', point.x, point.y);
   },
 
   addOverlay: function(overlay, layer) {
@@ -188,6 +195,13 @@ Class(APP.Map.openlayers, 'Map', APP.Map.base.Map, {
     this.map.addPopup(popup);
     popup.hide();
     return popup;
+  },
+
+  hidePopups: function () {
+    var pops = this.map.popups;
+    for (var i = 0; i < pops.length; ++i) {
+      pops[i].hide();
+    }
   },
 
   removeOverlay: function(overlay) {
@@ -224,8 +238,8 @@ Class(APP.Map.openlayers, 'Map', APP.Map.base.Map, {
     this.setCenter(point, zoom);
     var ll = new OpenLayers.LonLat(point.x, point.y);
     var marker = this.placeMarker(point, icon);
-    var popup = this.addPopup('', ll, null, node.html(), marker.icon);
-    this.addListener(marker, 'click', function (event) {
+    var popup = this.addPopup('', ll, null, node.innerHTML, marker.icon);
+    marker.events.register('click', marker, function (event) {
       popup.toggle();
     });
     return marker;
@@ -240,10 +254,11 @@ Class(APP.Map.openlayers, 'Map', APP.Map.base.Map, {
   placeMarkers: function(points, icons) {
     var markers = [];
     var len = points.length;
-    for (var i = 0; i < len; ++i) {
-      var p = points[i];
-      var ll = new OpenLayers.LonLat(p.x, p.y);
-      var marker = new OpenLayers.Marker(ll);
+    for (var i = 0, point, icon; i < len; ++i) {
+      point = points[i];
+      icon = icons[i];
+      var ll = new OpenLayers.LonLat(point.x, point.y);
+      var marker = new OpenLayers.Marker(ll, icon);
       markers.push(marker);
       this.locations_layer.addMarker(marker);
     }

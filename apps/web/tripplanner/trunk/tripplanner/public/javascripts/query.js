@@ -3,14 +3,14 @@
  */
 Class(APP.UI, 'Query', null, {
   initialize: function(service, form, result_container,
-                       opts /* input=undefined */) {
+                       opts /* input: null */) {
     if (arguments.length == 0) return;
     this.ui = APP.UI;
     this.service = service;
     this.form = form;
     this.result_container = result_container;
     if (opts) {
-      this.input = opts.input;  // Hash or undefined
+      this.input = opts.input;
     }
   },
 
@@ -30,7 +30,7 @@ Class(APP.UI, 'Query', null, {
   before: function() {
     // Always do this
     // Base version should not raise errors
-    this.ui.spinner.show();
+    this.ui.showSpinner();
   },
 
   doQuery: function() {
@@ -38,51 +38,50 @@ Class(APP.UI, 'Query', null, {
     var path = [
       'regions', APP.region_id, this.service, 'find.json'].join('/');
     var url = [APP.prefix, path].join('');
-    var params = this.input;
+    if (this.input) {
+      url += util.objectToQueryString(this.input);
+    } else {
+      YAHOO.util.Connect.setForm(this.form.get('element'));
+    }
 
     // TODO: Make bookmark???
 
     var self = this;
-    var args = {
-      url: url,
-      type: 'GET',
-      data: params,
-      dataType: 'json',
-      beforeSend: function () { self.onLoading.apply(self, arguments); },
-      complete: function () { self.onComplete.apply(self, arguments); },
+    var callback = {
+      start: function () { self.onLoading.apply(self, arguments); },
       success: function () { self.on200.apply(self, arguments); },
-      error: function () { self.onFailure.apply(self, arguments); }
+      failure: function () { self.onFailure.apply(self, arguments); }
     };
-    this.request = $j.ajax(args);
+    this.request = YAHOO.util.Connect.asyncRequest('GET', url, callback)
+    var id = 'query-' + this.request.tId;
+    this.ui.queries[id] = this;
     this.ui.query = this;
   },
 
-  onLoading: function(request) {
-    this.ui.spinner.show();
-    APP.logDebug('Query loading (onLoading)...');
-  },
-
-  onComplete: function(request) {
-    this.ui.spinner.hide();
-    this.http_status = request.status;
-    APP.logDebug('Query complete with status ' + this.http_status + '.');
+  onLoading: function(response) {
+    this.ui.showSpinner();
   },
 
   on200: function(response) {
     // Process the results for ``service``
     // I.e., recenter map, place markers, draw line, etc
-    var results = this.makeResults(response);
+    this.ui.hideSpinner();
+    var result = YAHOO.lang.JSON.parse(response.responseText);
+    this.result = result;
+    var results = this.makeResults(result);
     this.processResults(response, results);
     this.ui.is_first_result = false;
   },
 
-  onFailure: function(request) {
-    var failure_method = this['on' + request.status]
+  onFailure: function(response) {
+    this.ui.hideSpinner();
+    var failure_method = this['on' + response.status]
     if (failure_method) {
-      failure_method.call(this, request);
+      failure_method.call(this, response);
     } else {
-      eval('var response = ' + request.responseText + ';');
-      this.ui.showException(response.result.fragment);
+      var result = YAHOO.lang.JSON.parse(response.responseText);
+      this.result = result;
+      this.ui.selectErrorTab(result.result.fragment);
     }
   },
 
@@ -93,19 +92,19 @@ Class(APP.UI, 'Query', null, {
    *
    * @param response The response object (responseText evaled)
    */
-  makeResults: function(response) {
+  makeResults: function(response_obj) {
     // Extract top level DOM nodes from response HTML fragment (skipping text
     // nodes). These nodes will be inserted as the content of each result's
     // widget.
     var div = document.createElement('div');
-    div.innerHTML = response.result.fragment;
+    div.innerHTML = response_obj.result.fragment;
     var nodes = div.getElementsByClassName('query-result');
     var dom_node, result, results = [];
-    var self = this;
-    for (var i = 0, obj; i < response.result.results.length; ++i) {
-      obj = response.result.results[i];
+    var response_results = response_obj.result.results;
+    for (var i = 0, obj; i < response_results.length; ++i) {
+      obj = response_results[i];
       dom_node = nodes[i];
-      result = self.makeResult(obj, dom_node);
+      result = this.makeResult(obj, dom_node);
       results.push(result);
     }
     return results;
@@ -118,33 +117,42 @@ Class(APP.UI, 'Query', null, {
    *
    * @param result A simple object from the evaled JSON response
    * @param dom_node A DOM node that contains the necessary elements to create
-   *        a ``FixedPane`` widget.
+   *        a result widget.
    * @return ``Result``
    */
   makeResult: function (result, dom_node) {
-    var id = [this.service, 'result', new Date().getTime()].join('_');
-    dom_node = $j(dom_node);
-    dom_node.attr('id', id);
-    dom_node.css({display: 'none'});
-    $j('body').append(dom_node);
-    var num_tabs = this.result_container.tabs('length');
+    var result_container = this.result_container;
+    var results = this.ui.results;
+    var service = this.service;
 
-    // HACK: jQuery tabs should have `closable` option
-    var label = [
-      '#', num_tabs, ' ',
-      '<a class="ui-tabs-close-button" href="#close-tab" ',
-        'onclick="APP.UI.closeResultTab(\'',
-          this.service , '\', ', num_tabs, ', \'', id, '\')">X</a>'
-    ].join('');
+    var id = [service, 'result', new Date().getTime()].join('_');
+    dom_node.id = id;
 
-    this.result_container.tabs('add', '#' + id, label);
-    dom_node.css({display: 'block'});
-    this.result_container.tabs('select', num_tabs);
-    var li = $j(this.result_container.find('li')[num_tabs]);
-    li.addClass('ui-tabs-nav-item');
+    var div = document.createElement('div');
+    div.appendChild(dom_node);
+    var num_tabs = result_container.get('tabs').length;
+    var widget = new YAHOO.widget.Tab({
+      label: '#' + num_tabs,
+      content: div.innerHTML,
+      active: true
+    });
+    result_container.addTab(widget);
 
-    var result_obj = new this.ui.Result(id, result, this.service);
-    this.ui.results[this.service][id] = result_obj;
+    new YAHOO.widget.Button({
+      id: id + '-close-button',
+      type: 'button',
+      label: 'X',
+      container: id,
+      onclick: {
+        fn: function () {
+          result_container.removeTab(widget);
+          results[service][id].remove();
+        }
+      }
+    });
+
+    var result_obj = new this.ui.Result(id, result, service, widget, result_container);
+    results[service][id] = result_obj;
     return result_obj;
   },
 
@@ -169,9 +177,9 @@ Class(APP.UI, 'GeocodeQuery', APP.UI.Query, {
   before: function() {
     this.superclass.before.apply(this, arguments);
     if (typeof this.input == 'undefined') {
-      var q = this.ui.q_el.val();
+      var q = this.ui.q_el.get('value');
       if (!q) {
-        this.ui.q_el.focus();
+        this.ui.q_el.get('element').focus();
         throw new Error('Please enter an address!');
       }
     }
@@ -181,14 +189,16 @@ Class(APP.UI, 'GeocodeQuery', APP.UI.Query, {
     // For each result, place a marker on the map.
     var zoom = this.ui.is_first_result ? this.ui.map.default_zoom : null;
     var self = this;
-    var div, content_pane, marker;
-    $j.each(results, function (i, r) {
-      div = $j('#' + r.id);
-      div = div.clone(true);
-      div.find('.show-on-map-link').remove();
+    var div, link, content_pane, marker;
+    for (var i = 0, r; i < results.length; ++i) {
+      r = results[i];
+      div = document.getElementById(r.id);
+      div = div.cloneNode(true);
+      link = div.getElementsByClassName('show-on-map-link')[0];
+      link.parentNode.removeChild(link);
       marker = self.ui.map.placeGeocodeMarker(r.result.point, div, zoom);
       r.addOverlay(marker, self.ui.map.locations_layer);
-    });
+    }
   }
 });
 
@@ -214,78 +224,77 @@ Class(APP.UI, 'RouteQuery', APP.UI.Query, {
     var errors = [];
     if (typeof this.input == 'undefined') {
       // Use form fields for input
-      var s = this.ui.s_el.val();
-      var e = this.ui.e_el.val();
+      var s = this.ui.s_el.get('value');
+      var e = this.ui.e_el.get('value');
       if (!(s && e)) {
         if (!s) {
           errors.push('Please enter a start address');
-          this.ui.s_el.focus();
+          this.ui.s_el.get('element').focus();
         }
         if (!e) {
           errors.push('Please enter an end address');
           if (s) {
-            this.ui.e_el.focus();
+            this.ui.e_el.get('element').focus();
           }
         }
         throw new Error(errors.join('\n'));
       }
-      this.input = {s: s, e: e};
     }
   },
 
-  on300: function(request) {
-    eval('var response = ' + request.responseText + ';');
-    this.ui.showException(response.result.fragment);
+  on300: function(response) {
+    var result = YAHOO.lang.JSON.parse(response.responseText);
+    this.result = result;
+    this.ui.selectErrorTab(result.result.fragment);
     var addr;
     var route_choices = [];
-    console.debug('Result', response.result)
-    $j.each(response.result.choices, function (i, c) {
-      console.debug(c);
+    var choices = result.result.choices;
+    for (var i = 0, c; i < choices.length; ++i) {
+      c = choices[i];
       if (c.number) {
         addr = [c.number, c.network_id].join('-');
       } else {
         addr = c.network_id
       }
       route_choices.push(addr);
-    });
+    }
     this.route_choices = route_choices;
   },
 
   processResults: function(response, results) {
-    util.log.debug('In Route processResults...');
     var route, ls, s_e_markers, s_marker, e_marker, line;
     var ui = this.ui;
     var map = ui.map;
-    var getBoundsForPoints = map.getBoundsForPoints;
-    var centerAndZoomToBounds = map.centerAndZoomToBounds;
-    var placeMarkers = map.placeMarkers;
-    var addListener = map.addListener;
-    var showMapBlowup = map.showMapBlowup;
     var drawPolyLine;
     if (map.drawPolyLineFromEncodedPoints) {
       drawPolyLine = map.drawPolyLineFromEncodedPoints;
     } else {
       drawPolyLine = map.drawPolyLine;
     }
-    $j.each(results, function (i, r) {
+    for (var i = 0, r; i < results.length; ++i) {
+      r = results[i];
       route = r.result;
       ls = route.linestring;
 
       // Zoom to route extent
-      centerAndZoomToBounds.call(map, route.bounds, route.center);
+      map.centerAndZoomToBounds(route.bounds, route.center);
 
       // Place start and end markers
-      s_e_markers = placeMarkers.call(
-        map, [ls[0], ls[ls.length - 1]], [map.start_icon, map.end_icon]);
+      s_e_markers = map.placeMarkers(
+        [ls[0], ls[ls.length - 1]], [map.start_icon, map.end_icon]);
       s_marker = s_e_markers[0];
       e_marker = s_e_markers[1];
 
       // TODO: Doesn't work in OpenLayers (no equivalent to ``showMapBlowup``??
-      addListener(s_marker, 'click', function() {
-        showMapBlowup.call(map, ls[0]);
+      map.addListener(s_marker, 'click', function() {
+        var point = ls[0];
+        map.setCenter(point, map.getZoom());
+        map.showMapBlowup(point);
       });
-      addListener(e_marker, 'click', function() {
-        showMapBlowup.call(map, ls[ls.length - 1]);
+      map.addListener(e_marker, 'click', function() {
+        var point = ls[ls.length - 1];
+        map.setCenter(point, map.getZoom());
+        map.showMapBlowup(point);
       });
 
       // Draw linestring
@@ -302,6 +311,6 @@ Class(APP.UI, 'RouteQuery', APP.UI.Query, {
       r.addOverlay(s_marker);
       r.addOverlay(e_marker);
       r.addOverlay(line);
-    });
+    }
   }
 });
