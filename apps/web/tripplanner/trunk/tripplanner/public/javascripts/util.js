@@ -1,22 +1,9 @@
 window.util = function () {
-  var query_string = window.location.search.substring(1);
-
-  /** Make {name: value} dict from query string **/
-  var makeParams = function () {
-    var params = {};
-    var pairs = query_string.split('&');
-    for (var name_value, i = 0; i < pairs.length; ++i) {
-      name_value = pairs[i].split('=');
-      params[name_value[0]] = name_value[1];
-    }
-    return params;
-  };
-
   var console_debug = function() {
     console.debug.apply(console, arguments);
   };
 
-  return {
+  var _public = {
 	keys: function (obj) {
 	  var keys = [];
 	  for (var key in obj) {
@@ -41,11 +28,6 @@ window.util = function () {
 	  return items;
 	},
 
-	query_string: query_string,
-
-    // URL query parameters as a Hash
-    request_params: makeParams(),
-
 	noop: function () {},
 
 	log: {
@@ -67,6 +49,28 @@ window.util = function () {
 		v = func(v);
 	  }
 	  return v;
+	},
+
+	objectToQueryString: function (obj) {
+      var params = [];
+      for (var name in obj) {
+        params.push([name, obj[name]].join('='));
+      }
+      var str = '?' + params.join('&');
+	  return str;
+	},
+
+	queryStringToObject: function (str) {
+	  if (str.charAt(0) == '?') {
+		str = str.substring(1);
+	  }
+	  var params = {};
+	  var pairs = str.split('&');
+	  for (var name_value, i = 0; i < pairs.length; ++i) {
+		name_value = pairs[i].split('=');
+		params[name_value[0]] = name_value[1];
+	  }
+	  return params;
 	},
 
 	/** Script Functions **/
@@ -139,6 +143,8 @@ window.util = function () {
 	  return new_list.join(join_string);
 	}
   };
+  _public.request_params = _public.queryStringToObject(window.location.search);
+  return _public;
 }();
 
 

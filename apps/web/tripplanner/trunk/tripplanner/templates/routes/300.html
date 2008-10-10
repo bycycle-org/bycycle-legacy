@@ -19,7 +19,7 @@ ${self.json()}
       else:
         ul_style = ''
     %>
-    <ul class="result_list multi-list" ${ul_style}>
+    <ul class="result_list" ${ul_style}>
       <% last = len(geocodes) - 1 %>
         % for j, code in enumerate(geocodes):
           <%

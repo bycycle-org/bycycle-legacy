@@ -6,10 +6,12 @@
  * ``service`` Service type for the result (i.e., where the result came from)
  */
 Class(APP.UI, 'Result', null, {
-  initialize: function(id, result, service) {
+  initialize: function(id, result, service, widget, container) {
     this.id = id;
     this.result = result;
     this.service = service;
+    this.widget = widget;
+    this.container = container;
     this.map = APP.UI.map;
     this.overlays = [];
   },
@@ -19,10 +21,8 @@ Class(APP.UI, 'Result', null, {
   },
 
   remove: function() {
-    // Remove LI container
-    $j(this.id).parent().remove();
     // Remove map overlays
-    var overlay;
+    this.container.removeTab(this.widget);
     for (var i = 0; i < this.overlays.length; ++i) {
       this.map.removeOverlay(this.overlays[i]);
     }

@@ -23,21 +23,21 @@
   tab = '&nbsp;&nbsp;&nbsp;&nbsp;'
   set_center_onclick = 'APP.UI.map.setCenter({x: %s, y: %s}); return false;'
   map_blowup_href = "#show-map-blowup"
-  map_blowup_onclick = "APP.UI.map.showMapBlowup({x: %s, y: %s}); return false;"
+  map_blowup_onclick = "APP.UI.map.setCenter({x: %s, y: %s}, APP.UI.map.getCenter()); APP.UI.map.showMapBlowup({x: %s, y: %s}); return false;"
 %>
 
 <div class="query-result">
   <div class="start">
     <a href="${map_blowup_href}"
       title="Start of route"
-      onclick="${map_blowup_onclick % (start.xy.x, start.xy.y)}"
+      onclick="${map_blowup_onclick % (start.xy.x, start.xy.y, start.xy.x, start.xy.y)}"
       >${s_addr | n}</a>
   </div>
 
   <div class="end">
     <a href="${map_blowup_href}"
       title="End of route"
-      onclick="${map_blowup_onclick % (end.xy.x, end.xy.y)};"
+      onclick="${map_blowup_onclick % (end.xy.x, end.xy.y, end.xy.x, end.xy.y)};"
       >${e_addr | n}</a>
   </div>
 
@@ -90,7 +90,7 @@
       <div class="direction ${row_class}">
         <span class="count">
           <a href="${map_blowup_href}"
-            onclick="${map_blowup_onclick % (point.x, point.y)}"
+            onclick="${map_blowup_onclick % (point.x, point.y, point.x, point.y)}"
             >${i + 1}</a>
         </span>
         -
@@ -100,9 +100,9 @@
         -
         <span class="segment_distance">${mi} mi</span>
         % if jogs:
-            <div class="jogs">
-                ${jogs}
-            </div>
+          <div class="jogs">
+            ${jogs | n}
+          </div>
         % endif
       </div>
     % endfor
@@ -110,7 +110,7 @@
     <div class="direction ${['a', 'b'][(i + 1) % 2]}">
       <span class="count">
         <a href="${map_blowup_href}"
-          onclick="${map_blowup_onclick % (end.xy.x, end.xy.y)}"
+          onclick="${map_blowup_onclick % (end.xy.x, end.xy.y, end.xy.x, end.xy.y)}"
           >${i + 2}</a>
       </span>
       -

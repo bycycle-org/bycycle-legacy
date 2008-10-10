@@ -5,6 +5,10 @@
 NameSpace('UI', APP, function () {
   var self = null;
 
+  var Event = YAHOO.util.Event;
+  var Element = YAHOO.util.Element;
+  var Dom = YAHOO.util.Dom;
+
   return {
     region_id: null,
 	region: null,
@@ -15,6 +19,7 @@ NameSpace('UI', APP, function () {
 
     service: null,
     query: null,  // query.Query object (not query string)
+	queries: {},
     is_first_result: true,
     result: null,
     results: {'geocodes': {}, 'routes': {}},
@@ -73,7 +78,9 @@ NameSpace('UI', APP, function () {
       if (!isNaN(zoom)) {
         self.map.setZoom(zoom);
       }
+
       self.handleQuery();
+
 	  self.selectInputPane(self.service);
 	  self.hideSpinner();
 	  var loading_el = document.getElementById('loading');
@@ -81,12 +88,12 @@ NameSpace('UI', APP, function () {
     },
 
     _assignUIElements: function () {
-	  var Element = YAHOO.util.Element;
+	  if (!self.in_region) {
+        self.region_el = document.getElementById('regions');
+	  }
 	  // Common
       self.spinner = new Element('spinner');
       self.controls = new Element('controls');
-	  self.errors = new Element('errors');
-      self.region_el = new Element('regions');
 	  // Service/query related
 	  if (self.in_region) {
 		self.query_pane = new Element('search-the-map');
@@ -117,11 +124,13 @@ NameSpace('UI', APP, function () {
 			  body: 'left',
 			  width: 380,
 			  resize: true,
-			  scroll: false
+			  scroll: false,
+			  gutter: '4px 0 0 0'
 			},
 			{
 			  position: 'center',
-			  body: 'center'
+			  body: 'center',
+			  gutter: '4px 0 0 0'
 			}
 		]
 	  });
@@ -166,19 +175,19 @@ NameSpace('UI', APP, function () {
     /* Events ****************************************************************/
 
     _createEventHandlers: function () {
-	  var addListener = YAHOO.util.Event.addListener;
 	  document.body.onunload = self.onUnload;
       if (self.region_el) {
-        self.region_el.on('change', self.setRegionFromSelectBox);
+	    // KLUDGE: Why doesn't YUI's on('change') work here?!?!?!
+        self.region_el.onchange = self.setRegionFromSelectBox;
 	  }
       self.spinner.on('click', function (event) {
 	    self.hideSpinner();
       });
       // Services
 	  if (self.in_region) {
-		//addListener('swap_s_and_e', 'click', self.swapStartAndEnd);
-		self.query_form.on('submit', self.runGenericQuery);
-		self.route_form.on('submit', self.runRouteQuery);
+		Event.addListener('swap_s_and_e', 'click', self.swapStartAndEnd);
+		Event.addListener('query_form_button', 'click', self.runGenericQuery);
+		Event.addListener('route_form_button', 'click', self.runRouteQuery);
 	  }
     },
 
@@ -187,6 +196,12 @@ NameSpace('UI', APP, function () {
     },
 
     handleMapClick: function (event) {},
+
+	stopEvent: function (event) {
+	  if (event) {
+		Event.stopEvent(event);
+	  }
+	},
 
 
 	/* UI ********************************************************************/
@@ -242,11 +257,26 @@ NameSpace('UI', APP, function () {
 	  self.alert_panel.show();
 	},
 
+	getErrorTab: function () {
+	  var tabview = self.controls;
+      return tabview.getTab(tabview.get('tabs').length - 1);
+	},
+
+	selectErrorTab: function (content) {
+	  var tab = self.getErrorTab();
+	  if (content) {
+        tab.set('content', content);
+	  }
+	  self.controls.set('activeTab', tab);
+	},
+
 
     /* Regions ***************************************************************/
 
     setRegionFromSelectBox: function() {
-      self.setRegion(self.region_el.val());
+	  var el = self.region_el;
+	  var val = el.options[el.selectedIndex].value;
+      self.setRegion(val);
     },
 
     setRegion: function(region_id) {
@@ -264,50 +294,45 @@ NameSpace('UI', APP, function () {
     /* Services Input ********************************************************/
 
     focusServiceElement: function(service) {
-      service == 'route' ? self.s_el.focus() : self.q_el.focus();
+	  var el = (service == 'route' ? self.s_el : self.q_el);
+	  el.get('element').focus();
     },
 
     selectInputPane: function(service) {
-	  if (self.in_region) {
+	  if (self.http_status && self.http_status != 200) {
+		self.selectErrorTab();
+	  }	else if (self.in_region) {
         self.controls.set('activeIndex', (service == 'routes' ? 1 : 0));
 	  }
     },
 
     swapStartAndEnd: function(event) {
-      event && Event.stop(event);
-      var s = self.s_el.val();
-      self.s_el.val(self.e_el.val());
-      self.e_el.val(s);
+      self.stopEvent(event);
+      var s = self.s_el.get('value');
+      self.s_el.set('value', self.e_el.get('value'));
+      self.e_el.set('value', s);
     },
 
     setAsStart: function(addr) {
-      self.s_el.val(addr);
+      self.s_el.set('value', addr);
       self.selectInputPane('routes');
-      self.s_el.focus();
+      self.s_el.get('element').focus();
     },
 
     setAsEnd: function(addr) {
-      self.e_el.val(addr);
+      self.e_el.set('value', addr);
       self.selectInputPane('routes');
-      self.e_el.focus();
+      self.e_el.get('element').focus();
     },
-
-	closeResultTab: function (service, i, result_id) {
-	  var container = (
-		service == 'routes' ?
-		self.routes_container :
-		self.locations_container);
-	  container.tabs('remove', i);
-	},
 
 
     /* Query-related *********************************************************/
 
     handleQuery: function() {
-      if (!self.http_status) {
-		util.log.debug('HTTP status not set in `handleQuery`.');
-		return;
-	  }
+	  var status = self.http_status;
+      if (!status) { return; }
+	  if (status != 200 && status != 300) { return; }
+
       var res = self.member_name;
 
       // E.g., query_class := GeocodeQuery
@@ -316,57 +341,55 @@ NameSpace('UI', APP, function () {
       query_class = self[query_class];
 
       var query_obj = new query_class();
+
+	  var pane = APP.el(
+		self.collection_name == 'routes' ? 'routes' : 'locations');
+	  var json = pane.getElementsByClassName('json')[0];
+	  var request = {status: self.http_status, responseText: json.value};
+
       if (self.http_status == 200) {
-        var pane = APP.el(
-		  self.collection_name == 'routes' ? 'routes' : 'locations');
         var fragment = pane.getElementsByClassName('query-result')[0];
-        var json = pane.getElementsByClassName('json')[0];
-        var request = {status: self.http_status, responseText: json.innerHTML};
         fragment.parentNode.removeChild(fragment);
         query_obj.on200(request);
       } else if (self.http_status == 300) {
-        var json = self.error_pane.find('.json')[0];
-        var request = {status: self.http_status, responseText: json.val()};
-        query_obj.on300(request);
+        var fn = query_obj.on300 || query_obj.onFailure;
+		fn.call(query_obj, request);
       }
+
 	  json.parentNode.removeChild(json);
       self.query = query_obj;
     },
 
     runGenericQuery: function(event, input /* =undefined */) {
-      APP.logDebug('Entered runGenericQuery...');
-      var q = input || self.q_el.val();
+	  self.stopEvent(event);
+      var q = input || self.q_el.get('value');
       if (q) {
         var query_class;
         // Is the query a route?
         var waypoints = q.toLowerCase().split(' to ');
         if (waypoints.length > 1) {
           // Query looks like a route
-          self.s_el.value = waypoints[0];
-          self.e_el.value = waypoints[1];
+          self.s_el.set('value', waypoints[0]);
+          self.e_el.set('value', waypoints[1]);
           // Override using ``s`` and ``e``
           query_class = self.RouteQuery;
         } else {
           // Query doesn't look like a route; default to geocode query
           query_class = self.GeocodeQuery;
         }
-        input = {q: q};
         self.runQuery(query_class, event, input);
       } else {
-        self.q_el.focus();
         self.showErrors('Please enter something to search for!');
+		// TODO: Make this work--error dialog appears to grab focus.
+        self.q_el.get('element').focus();
       }
-      APP.logDebug('Left runGenericQuery');
-	  return false;
     },
 
     /* Run all queries through here for consistency. */
     runQuery: function(query_class,
                        event /* =undefined */,
                        input /* =undefined */) {
-      if (event) {
-        event.preventDefault();
-      }
+      self.stopEvent(event);
       self.query = new query_class({input: input});
       self.query.run();
     },
@@ -383,40 +406,42 @@ NameSpace('UI', APP, function () {
      * Select from multiple matching geocodes
      */
     selectGeocode: function(select_link, i) {
-      eval('var response = ' + self.query.request.responseText + ';');
+	  var query = self.queries['query-' + self.query.request.tId];
+	  var query_result = query.result;
 
-	  var select_link = $j(select_link);
-      var dom_node = select_link.parents('.query-result:first');
+      var dom_node = Dom.getAncestorByClassName(select_link, 'query-result');
 
       // Remove the selected result's "select link
-	  $j(dom_node.find('.select-geocode-span')[0]).remove();
+	  var span = dom_node.getElementsByClassName('select-geocode-span')[0];
+	  span.parentNode.removeChild(span);
 
-      // Show the "set as start or end" link
-      $j(dom_node.find('.set_as_s_or_e')[0]).show();
+      //// Show the "set as start or end" link
+      var link = dom_node.getElementsByClassName('set_as_s_or_e')[0];
+	  link = new Element(link);
+	  link.setStyle('display', 'block');
 
-      var result = self.query.makeResult(response.result.results[i], dom_node);
+      var result = self.query.makeResult(query_result.result.results[i], dom_node);
       self.query.processResults('', [result])
 
 	  self.selectInputPane('geocodes');
-	  self.errors.dialog('close');
+	  dom_node.parentNode.removeChild(dom_node);
 
       if (self.is_first_result) {
         self.map.setZoom(self.map.default_zoom);
       } else {
         self.is_first_result = false;
       }
-
-	  return false;
     },
 
     /**
      * Select from multiple matching geocodes for a route
      */
     selectRouteGeocode: function(select_link, i, j) {
-      APP.logDebug('Entered selectRouteGeocode...');
-      var dom_node = $j(select_link).up('ul');
-      var next = dom_node.next();
-      var choice = self.query.response.choices[i][j];
+	  var query = self.queries['query-' + self.query.request.tId];
+	  var query_result = query.result;
+	  var dom_node = Dom.getAncestorByTagName(select_link, 'ul');
+      var next = Dom.getNextSibling(dom_node);
+      var choice = query_result.result.choices[i][j];
       var addr;
       if (choice.number) {
         addr = [choice.number, choice.network_id].join('-');
@@ -424,9 +449,10 @@ NameSpace('UI', APP, function () {
         addr = choice.network_id;
       }
       self.query.route_choices[i] = addr;
-      dom_node.remove();
+      dom_node.parentNode.removeChild(dom_node);
       if (next) {
-        next.show();
+		next = new Element(next);
+        next.setStyle('display', 'block');
       } else {
         self.runRouteQuery(null, {q: self.query.route_choices.join(' to ')});
       }
@@ -438,9 +464,9 @@ NameSpace('UI', APP, function () {
       } catch (e) {
         if (e instanceof TypeError) {
           // result_el wasn't registered as a Result (hopefully intentionally)
-          result_el.remove();
+          result_el.parentNode.removeChild(result_el);
         } else {
-          APP.logDebug(
+          util.log.debug(
 			'Unhandled Exception in APP.UI.removeResult: ', e.name,
 			e.message);
         }
@@ -448,20 +474,24 @@ NameSpace('UI', APP, function () {
     },
 
     clearResults: function(event) {
+	  self.stopEvent(event);
       if (!confirm('Remove all of your results and clear the map?')) {
         return;
       }
-      $j.each(util.values(self.results), function (i, service_results) {
-        $j.each(util..values(service_results), function (i, result) {
-          service_results[result.id].remove();
-        });
-      });
-	  return false;
+	  var results = self.results;
+	  var service_results, result;
+	  for (var service in results) {
+		service_results = results[service];
+		for (var i = 0; i < service_results.length; ++i) {
+		  result = service_results[i];
+		  result.remove();
+		}
+	  }
     },
 
     reverseDirections: function(s, e) {
-      self.s_el.val(s);
-      self.e_el.val(e);
+      self.s_el.set('value', s);
+      self.e_el.set('value', e);
       new self.RouteQuery(self.route_form).run();
     },
 
@@ -469,21 +499,17 @@ NameSpace('UI', APP, function () {
     /* Map *******************************************************************/
 
     identifyIntersectionAtCenter: function(event) {
-      APP.logDebug('In find-intersection-at-center callback');
       var center = self.map.getCenter();
-      self.q_el.val(self.map.getCenterString());
+      self.q_el.set('value', self.map.getCenterString());
       self.identifyIntersection(center, event);
     },
 
     handleMapClick: function(point, event) {
-      var handler = self[$j('#map_mode').val()];
-      if (typeof handler != 'undefined') {
-        handler(point);
-      }
+	  //
     },
 
     identifyIntersection: function(point, event) {
-      self.runGeocodeQuery(event, {q: [point.x, point.y].join()});
+      self.runGeocodeQuery(event, {q: [point.x, point.y].join(',')});
     }
   };
 }());

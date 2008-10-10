@@ -6,10 +6,10 @@ ${next.body()}
 <%def name="route_pref()"></%def>
 
 <%def name="controls_nav()">
-  <li class="selected">
+  <li class="${'selected' if (c.service != 'routes' and c.http_status == 200) else ''}">
     <a href="#search-the-map"><em>Search</em></a>
   </li>
-  <li>
+  <li class="${'selected' if (c.service == 'routes' and c.http_status == 200) else ''}">
     <a href="#find-a-route"><em>Trip Planner</em></a>
   </li>
   ${parent.controls_nav()}
@@ -36,14 +36,19 @@ ${next.body()}
             ${h.text(
               'q', id='q', value='', title='Enter an address or route')}
 
-            <div class="query_submit_button">
-              ${h.submit('commit', 'Search', title='Click to search the map')}
+            <div class="query_button_container">
+              ${h.submit(
+                'commit', 'Search',
+                id='query_form_button',
+                title='Click to search the map')}
             </div>
           </div>
         </form>
 
         % if c.service == 'geocodes':
-          ${next.body()}
+          % if c.http_status == 200:
+            ${next.body()}
+          % endif
           ${self.json()}
         % endif
       </div>
@@ -67,24 +72,39 @@ ${next.body()}
               </label>
             </div>
 
-            ${h.text(
-              's', id='s', value='', title='Enter start address')}
-            <br />
-            ${h.text(
-              'e', id='e', value='', title='Enter end address')}
+            <table>
+              <tbody>
+                <tr>
+                  <td>
+                    ${h.text(
+                      's', id='s', value='', title='Enter start address')}
+                  </td>
+                  <td rowspan="2">
+                    <a id="swap_s_and_e" href="#swap-start-and-end" title="Swap start and end addresses"><img src="${h.url_for('/images/swap_s_and_e.gif')}" width="10" height="30" /></a>
+                  </td>
+                </tr>
+                <tr>
+                  <td>
+                    ${h.text(
+                      'e', id='e', value='', title='Enter end address')}
+                  </td>
+                </tr>
+              </tbody>
+            </table>
 
-            ${self.route_pref()}
-
-            <div class="query_submit_button">
+            <div class="query_button_container">
               ${h.submit(
                 'commit', 'Find Route',
+                id='route_form_button',
                 title='Click to find a route')}
             </div>
           </div>
         </form>
 
         % if c.service == 'routes':
-          ${next.body()}
+          % if c.http_status == 200:
+            ${next.body()}
+          % endif
           ${self.json()}
         % endif
       </div>
