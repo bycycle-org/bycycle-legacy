@@ -406,8 +406,7 @@ NameSpace('UI', APP, function () {
      * Select from multiple matching geocodes
      */
     selectGeocode: function(select_link, i) {
-	  var query = self.queries['query-' + self.query.request.tId];
-	  var query_result = query.result;
+	  var query_result = self.query.result;
 
       var dom_node = Dom.getAncestorByClassName(select_link, 'query-result');
 
@@ -437,8 +436,7 @@ NameSpace('UI', APP, function () {
      * Select from multiple matching geocodes for a route
      */
     selectRouteGeocode: function(select_link, i, j) {
-	  var query = self.queries['query-' + self.query.request.tId];
-	  var query_result = query.result;
+	  var query_result = self.query.result;
 	  var dom_node = Dom.getAncestorByTagName(select_link, 'ul');
       var next = Dom.getNextSibling(dom_node);
       var choice = query_result.result.choices[i][j];
