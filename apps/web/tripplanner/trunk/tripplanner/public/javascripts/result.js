@@ -21,12 +21,13 @@ Class(APP.UI, 'Result', null, {
   },
 
   remove: function() {
-    // Remove map overlays
+    // Remove widget
     this.container.removeTab(this.widget);
+    // Remove map overlays
     for (var i = 0; i < this.overlays.length; ++i) {
       this.map.removeOverlay(this.overlays[i]);
     }
-    // Remove this from results list
+    // Remove this Result from results list
     delete APP.UI.results[this.service][this.id];
   }
 });

@@ -355,7 +355,7 @@ NameSpace('UI', APP, function () {
       this.query = query_obj;
     },
 
-    runGenericQuery: function(event, input /* =undefined */) {
+    runGenericQuery: function(event, self, input /* =undefined */) {
       this.stopEvent(event);
       var q = input || this.q_el.get('value');
       if (q) {
@@ -393,7 +393,7 @@ NameSpace('UI', APP, function () {
       this.runQuery(this.GeocodeQuery, event, input);
     },
 
-    runRouteQuery: function(event, input) {
+    runRouteQuery: function(event, self, input) {
       this.runQuery(this.RouteQuery, event, input);
     },
 
@@ -447,22 +447,7 @@ NameSpace('UI', APP, function () {
         next = new Element(next);
         next.setStyle('display', 'block');
       } else {
-        this.runRouteQuery(null, {q: this.query.route_choices.join(' to ')});
-      }
-    },
-
-    removeResult: function(result_el) {
-      try {
-        this.results[result_el.id].remove();
-      } catch (e) {
-        if (e instanceof TypeError) {
-          // result_el wasn't registered as a Result (hopefully intentionally)
-          result_el.parentNode.removeChild(result_el);
-        } else {
-          util.log.debug(
-            'Unhandled Exception in APP.UI.removeResult: ', e.name,
-            e.message);
-        }
+        this.runRouteQuery(null, this, {q: this.query.route_choices.join(' to ')});
       }
     },
 

@@ -54,6 +54,14 @@ Class(APP.Map.base, 'Map', null, {
     this.map.innerHTML = '';
   },
 
+  get_start_icon: function () {
+    return this.start_icon;
+  },
+
+  get_end_icon: function () {
+    return this.end_icon;
+  },
+
   setSize: function(dims) {
     if (typeof(dims.w) != 'undefined') {
       this.container.style.width = dims.w + 'px';
