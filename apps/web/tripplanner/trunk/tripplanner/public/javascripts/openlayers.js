@@ -103,6 +103,14 @@ Class(APP.Map.openlayers, 'Map', APP.Map.base.Map, {
     this.end_icon = end_icon;
   },
 
+  get_start_icon: function () {
+    return this.start_icon.clone();
+  },
+
+  get_end_icon: function () {
+    return this.end_icon.clone();
+  },
+
   createListeners: function() {
     var self = this;
     this.addListener(this.map, 'moveend', function () {

@@ -145,7 +145,6 @@ Class(APP.UI, 'Query', null, {
       container: id,
       onclick: {
         fn: function () {
-          result_container.removeTab(widget);
           results[service][id].remove();
         }
       }
@@ -281,7 +280,8 @@ Class(APP.UI, 'RouteQuery', APP.UI.Query, {
 
       // Place start and end markers
       s_e_markers = map.placeMarkers(
-        [ls[0], ls[ls.length - 1]], [map.start_icon, map.end_icon]);
+        [ls[0], ls[ls.length - 1]],
+        [map.get_start_icon(), map.get_end_icon()]);
       s_marker = s_e_markers[0];
       e_marker = s_e_markers[1];
 
@@ -302,7 +302,7 @@ Class(APP.UI, 'RouteQuery', APP.UI.Query, {
       var color = ui.route_line_color;
       if (map.drawPolyLineFromEncodedPoints) {
         line = drawPolyLine.call(
-          map, route.google_points, route.google_levels, color);
+        map, route.google_points, route.google_levels, color);
       } else {
         line = drawPolyLine.call(map, ls, color);
       }
