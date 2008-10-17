@@ -18,50 +18,47 @@ NameSpace('APP', window, function() {
     // Pylons as an attribute of the global `g`.
     config: debug ? dev_config : prod_config,
 
-	onLoad: function () {
-	  // Do region-dependent initialization, which includes initializing the
-	  // main UI module.
-	  YAHOO.util.Connect.asyncRequest(
-		'GET', APP.prefix + 'regions?format=json&wrap=off',
-		{
-		  success: function (response) {
-			var result = YAHOO.lang.JSON.parse(response.responseText);
+    onLoad: function () {
+      // Do region-dependent initialization, which includes initializing the
+      // main UI module.
+      var url = APP.prefix + 'regions?format=json&wrap=off';
+      YAHOO.util.Connect.asyncRequest('GET', url, {
+        success: function (response) {
+          var result = YAHOO.lang.JSON.parse(response.responseText);
 
-			APP.regions.initialize(result);
-			if (APP.region_id) {
-			  APP.region = APP.regions.regions[APP.region_id];
-			} else {
-			  APP.region_id = 'all';
-			  APP.region = APP.regions[APP.region_id];
-			}
+          APP.regions.initialize(result);
+          if (APP.region_id) {
+            APP.region = APP.regions.regions[APP.region_id];
+          } else {
+            APP.region_id = 'all';
+            APP.region = APP.regions[APP.region_id];
+          }
 
-			var map_state = util.getParamVal('map_state', function (ms) {
-			  // Convert `map_state` param value to boolean.
-			  return ms === '' || ms == '0' || ms == 'off';
-			});
-			var map_type_name = (util.getParamVal('map_type') || '');
-			map_type_name = map_type_name.toLowerCase();
-			map_type_name = map_type_name || APP.region.map_type;
+          var map_state = util.getParamVal('map_state', function (ms) {
+            // Convert `map_state` param value to boolean.
+            return ms === '' || ms == '0' || ms == 'off';
+          });
+          var map_type_name = (util.getParamVal('map_type') || '');
+          map_type_name = map_type_name.toLowerCase();
+          map_type_name = map_type_name || APP.region.map_type;
 
-			APP.UI.map_state = map_state;
-			APP.UI.map_type = APP.Map.base;
-			var url = [
-			  APP.prefix, 'javascripts/',  map_type_name, '.js'].join('');
-			YAHOO.util.Get.script(url, {
-			  onSuccess: function () {
-				APP.UI.map_type = APP.Map[map_type_name];
-				APP.UI.onLoad();
-			  }
-			});
-		  }
-		}
-	  );
-	},
+          APP.UI.map_state = map_state;
+          APP.UI.map_type = APP.Map.base;
+          var url = [APP.prefix, 'javascripts/',  map_type_name, '.js'].join('');
+          YAHOO.util.Get.script(url, {
+            onSuccess: function () {
+              APP.UI.map_type = APP.Map[map_type_name];
+              APP.UI.onLoad();
+            }
+          });
+        }
+      });
+    },
 
-	/* Library specific utilities */
+    /* Library specific utilities */
 
-	el: function (id) {
-	  return new YAHOO.util.Element(id);
-	}
+    el: function (id) {
+      return new Element(id);
+    }
   };
 }());
