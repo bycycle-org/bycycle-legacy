@@ -44,11 +44,11 @@ GPL.""",
     install_requires=(
         'zope.interface==3.3.0.1',
         'PCL-Core==0.11.0',
-        'psycopg2==2.0.8',
-        'SQLAlchemy>=0.5rc1',
+        'psycopg2>=2.0.8',
+        'SQLAlchemy>=0.5rc2',
         'Dijkstar>=1.0',
-        'nose>=0.10.3',
-        'simplejson>=2.0.1',
+        'nose>=0.10.4',
+        'simplejson>=2.0.3',
         ),
 )
 
