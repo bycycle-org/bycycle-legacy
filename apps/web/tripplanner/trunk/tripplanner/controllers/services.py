@@ -31,8 +31,6 @@ class ServicesController(RestController):
     def __before__(self, format='html'):
         RestController.__before__(self, format=format)
         self.service = self.collection_name
-        # HACK: Restler should handle this!
-        c.service = self.collection_name
         self.region = model.Region.get_by_slug('portlandor')
 
     def find(self):
