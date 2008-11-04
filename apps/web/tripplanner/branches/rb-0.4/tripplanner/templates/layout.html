@@ -183,6 +183,13 @@
       <!-- /Content -->
 
 
+      <!-- Ads -->
+      <div id="ads" class="noprint">
+        ${self.ads()}
+      </div>
+      <!-- /Ads -->
+
+
     </div>
     <!-- /Wrapper -->
 
@@ -255,6 +262,16 @@
 <%def name="map_controls()"></%def>
 <%def name="javascript_includes()"></%def>
 <%def name="javascript()"></%def>
+
+<%def name="ads()">
+  <div class="ad banner">
+    <a href="http://www.myvega.com/" title="Vega"><img src="${h.url_for('/images/ads/oi_vega.jpg')}" width="120" height="90" alt="Vega" /></a>
+  </div>
+  <div class="ad banner">
+    <a href="http://www.veganbodybuilding.com/" title="Vegan Body Building"><img src="${h.url_for('/images/ads/oi_vbb.jpg')}" width="120" height="90" alt="Vegan Body Building" /></a>
+  </div>
+  ${h.javascript_include_tag('ads')}
+</%def>
 
 <%def name="errors()">
   <div class="errors">
