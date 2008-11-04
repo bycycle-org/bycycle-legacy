@@ -17,11 +17,8 @@ setup(
     name='byCycleCore',
     version='0.4a0',
     description='byCycle Core Services',
-    long_description="""\
-Address normalization, geocoding, routing and other GIS-related services. We
-still have not decided on a license, but it will most likely end up being the
-GPL.""",
-    license='Free For Home Use',
+    long_description='Address normalization, geocoding, routing and other GIS-related services.',
+    license='GPLv3',
     author='Wyatt L Baldwin, byCycle.org',
     author_email='wyatt@byCycle.org',
     keywords='bicycle bike cycyle trip planner route finder',
@@ -48,8 +45,8 @@ GPL.""",
         'SQLAlchemy==0.3.7',
         'Elixir==0.3.0',
         'Dijkstar>=1.0',
-        'nose>=0.10.3',
-        'simplejson>=1.9.2',
+        'nose>=0.10.4',
+        'simplejson>=2.0.4',
         ),
 )
 
