@@ -18,7 +18,7 @@ setup(
     version='0.4a0',
     description='byCycle Trip Planner',
     long_description='byCycle Trip Planner Web Application',
-    license='Free For Home Use',
+    license='GPLv3',
     author='Wyatt L Baldwin, byCycle.org',
     author_email='wyatt@byCycle.org',
     keywords='bicycle bike cycyle trip planner route finder',
@@ -42,7 +42,7 @@ setup(
     install_requires=(
         'byCycleCore>=0.4a0.dev,==dev',
         'WebHelpers==0.3',
-        'Routes>=1.9.2',
+        'Routes>=1.10.1',
         'Beaker==0.7.2',
         'Mako==0.2.2',
         'Restler==0.1.1.1',
