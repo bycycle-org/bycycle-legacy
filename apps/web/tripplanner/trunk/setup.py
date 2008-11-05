@@ -41,11 +41,12 @@ setup(
     zip_safe=False,
     install_requires=(
         'byCycleCore>=0.4a0.dev,==dev',
-        'simplejson>=2.0.3',
+        'simplejson>=2.0.4',
         'Beaker>=1.0.3',
         'Routes>=1.10.1',
         'Mako==0.2.2',
         'Restler>=0.2a18',
+        'WebHelpers>=0.6.3',
         'Pylons>=0.9.7rc2',
     ),
     test_suite = 'nose.collector',

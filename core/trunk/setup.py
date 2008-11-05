@@ -48,7 +48,7 @@ GPL.""",
         'SQLAlchemy>=0.5rc2',
         'Dijkstar>=1.0',
         'nose>=0.10.4',
-        'simplejson>=2.0.3',
+        'simplejson>=2.0.4',
         ),
 )
 
