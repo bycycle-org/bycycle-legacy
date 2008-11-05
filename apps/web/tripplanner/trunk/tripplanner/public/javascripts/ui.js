@@ -5,6 +5,7 @@ NameSpace('UI', APP, function () {
   var Event = YAHOO.util.Event;
   var Element = YAHOO.util.Element;
   var Dom = YAHOO.util.Dom;
+  var Panel = YAHOO.widget.Panel;
 
   return {
     region_id: null,
@@ -112,21 +113,26 @@ NameSpace('UI', APP, function () {
             body: 'top',
             height: 22,
             scroll: null,
-            zIndex: 2
+            zIndex: 2,
+            gutter: '0 0 4px 0'
           },
           {
             position: 'left',
             body: 'left',
-            width: 380,
+            width: 300,
             resize: true,
-            scroll: false,
-            gutter: '4px 0 0 0'
+            scroll: false
           },
           {
             position: 'center',
-            body: 'center',
-            gutter: '4px 0 0 0'
-          }
+            body: 'center'
+          },
+          {
+            position: 'right',
+            body: 'right',
+            width: 120,
+            scroll: false
+          },
         ]
       });
 
@@ -135,16 +141,58 @@ NameSpace('UI', APP, function () {
     },
 
     _createWidgets: function () {
-      // Container in left panel for query forms and other controls
-      this.controls = new YAHOO.widget.TabView('controls', {
-        orientation: 'left'
-      });
+      var panels = []
 
       if (this.in_region) {
         // Containers for location and route results
-        this.locations_container = new YAHOO.widget.TabView('locations');
-        this.routes_container = new YAHOO.widget.TabView('routes');
+        this.locations_container = new Panel('locations', {
+          visible: true,
+          close: false,
+          draggable: false,
+          underlay: 'none'
+        });
+        panels.push(this.locations_container);
+        this.locations_container.render();
+
+        this.routes_container = new Panel('routes', {
+          visible: true,
+          close: false,
+          draggable: false,
+          underlay: 'none'
+        });
+        panels.push(this.routes_container);
+        this.routes_container.render();
+      } else {
+        var regions_panel = new Panel('select-region', {
+          visible: true,
+          close: false,
+          draggable: false,
+          underlay: 'none'
+        });
+        panels.push(regions_panel);
+        regions_panel.render();
       }
+
+      var panel_ids = [
+        'about-bycycle',
+        'support-bycycle',
+        'contact-bycycle',
+        'oops',
+      ];
+
+      for (var i = 0, panel_id, panel; i < panel_ids.length; ++i) {
+        panel_id = panel_ids[i];
+        panel = new Panel(panel_id, {
+          visible: false,
+          draggable: false,
+          underlay: 'none'
+        });
+        panels.push(panel);
+        panel.render();
+      }
+
+      this.controls = new YAHOO.widget.OverlayManager();
+      this.controls.register(panels);
 
       // Dialog for info and errors
       var alert_panel = new YAHOO.widget.SimpleDialog('alert_panel', {
@@ -180,9 +228,9 @@ NameSpace('UI', APP, function () {
       }, this, true);
       // Services
       if (this.in_region) {
-        Event.addListener('swap_s_and_e', 'click', this.swapStartAndEnd, this, true);
-        Event.addListener('query_form_button', 'click', this.runGenericQuery, this, true);
-        Event.addListener('route_form_button', 'click', this.runRouteQuery, this, true);
+        Event.addListener('swap_s_and_e', 'click', this.swapStartAndEnd, true);
+        Event.addListener('query_form_button', 'click', this.runGenericQuery, true);
+        Event.addListener('route_form_button', 'click', this.runRouteQuery, true);
       }
     },
 
@@ -297,7 +345,7 @@ NameSpace('UI', APP, function () {
       if (this.http_status && this.http_status != 200) {
         this.selectErrorTab();
       } else if (this.in_region) {
-        this.controls.set('activeIndex', (service == 'routes' ? 1 : 0));
+        //this.controls.set('activeIndex', (service == 'routes' ? 1 : 0));
       }
     },
 

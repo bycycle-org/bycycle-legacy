@@ -68,13 +68,8 @@
     </div>
 
     <div id="left">
-      <div id="controls" class="yui-navset">
-        <ul class="yui-nav menu">
-          ${self.controls_nav()}
-        </ul>
-        <div class="yui-content main">
-          ${self.controls()}
-        </div>
+      <div id="controls">
+        ${self.controls()}
       </div>
     </div>
 
@@ -88,6 +83,12 @@
       </div>
     </div>
 
+    <div id="right">
+      <div id="ads">
+        ${self.ads()}
+      </div>
+    </div>
+
     <script type="text/javascript" src="${h.url_for('/javascripts/init.js')}" ></script>
     <script type="text/javascript" src="http://yui.yahooapis.com/2.6.0/build/yuiloader/yuiloader-min.js" ></script>
     <script type="text/javascript">
@@ -95,6 +96,7 @@
       var debug = ${'true' if bool(g.debug) else 'false'};
       var my_region_id = '${c.region.slug if c.region else ""}';
 
+      // Does stuff that MUST happen during page load.
       INIT.initialize(my_region_id);
 
       var loader = new YAHOO.util.YUILoader({
@@ -197,69 +199,95 @@
   ${c.region.title if c.region else 'Select a region'}
 </%def>
 
-<%def name="controls_nav()">
-  <li><a href="#about-bycycle"><em>About</em></a></li>
-  <li><a href="#support-bycycle"><em>Support byCycle</em></a></li>
-  <li><a href="#contact-bycycle"><em>Contact Us</em></a></li>
-  <li class="${'selected' if c.http_status and c.http_status != 200 else ''}">
-    <a href="#oops"><em>Oops!</em></a>
-  </li>
+<%def name="menu()">
+
+</%def>
+
+<%def name="make_panel(id, title=None, visible=True)">
+  <% visibility = 'visible' if visible else 'hidden' %>
+
+  <div id="${id}" style="visibility: ${visibility}">
+    <% title = caller.header() if hasattr(caller, 'header') else title %>
+
+    % if title is not None:
+      <div class="hd">${title}</div>
+    % endif
+
+    <div class="bd">
+      ${caller.body()}
+    </div>
+
+    % if hasattr(caller, 'footer'):
+     <div class="ft">${caller.footer()}</div>
+    % endif
+  </div>
 </%def>
 
 <%def name="controls()">
-  <div id="about-bycycle">
-    This is an alternative transportation trip planner and data resource.
-    Currently, the focus is on trips made <i>by bike</i>, but we are also
-    starting to add some public transit info. To learn more about byCycle,
-    ${h.link_to(
-      'click here', 'http://info.bycycle.org/about',
-      title='About byCycle.org')}.
-    <br />
-    <br />
-    The
-    ${h.link_to(
-      'source code', h.url_for('code'),
-      title='byCycle source repository (Subversion)')}
-      for this application is licensed under the
-    ${h.link_to(
-      'GNU General Public License, v3', h.url_for('gpl'), title='License')}.
-    <br />
-    <br />
-    There is a ${h.link_to(
-      'project Web site', h.url_for('project'),
-      title='byCycle project site (Trac)')}
-      for software developers.
-    <br />
-    <br />
-    &copy; 2004-2008 byCycle.org.
-  </div>
+  <%call expr="make_panel('about-bycycle', title='About', visible=False)">
+    <p>
+      This is an alternative transportation trip planner and data resource.
+      Currently, the focus is on trips made <i>by bike</i>, but we are also
+      starting to add some public transit info. To learn more about byCycle,
+      ${h.link_to(
+        'click here', 'http://info.bycycle.org/about',
+        title='About byCycle.org')}.
+    </p>
 
-  <div id="support-bycycle">
-    byCycle's only funding comes from users like you. We need your support
-    to keep the trip planner up and running. You can donate through PayPal
-    by clicking the button below, or you can visit our
+    <p>
+      The
+      ${h.link_to(
+        'source code', h.url_for('code'),
+        title='byCycle source repository (Subversion)')}
+      for this application is licensed under the
+      ${h.link_to(
+        'GNU General Public License, v3', h.url_for('gpl'), title='License')}.
+    </p>
+
+    <p>
+      There is a
+      ${h.link_to(
+        'project Web site', h.url_for('project'),
+        title='byCycle project site (Trac)')}
+      for software developers.
+    </p>
+
+    <%def name="footer()">
+      &copy; 2004-2008 byCycle.org.
+    </%def>
+  </%call>
+
+  <%call expr="make_panel('support-bycycle', title='Support byCycle', visible=False)">
+    byCycle's only funding comes from users like you. We need your support to
+    keep the trip planner up and running. You can donate through PayPal by
+    clicking the button below, or you can visit our
+
     ${h.link_to(
       'support page', 'http://info.bycycle.org/support/',
       title='Support byCycle')}
+
     to find other ways of supporting byCycle.
 
     <%include file="/widgets/paypal-button.html" />
-  </div>
+  </%call>
 
-  <div id="contact-bycycle">
+  <%call expr="make_panel('contact-bycycle', title='Contact Us', visible=False)">
     Feel free to get in touch. We're open to any sort of constructive
     criticism. Please bear in mind, though, that this project has no funding
     or employees. It is maintained by volunteers. Please send all feedback
     to <a href="mailto:contact@bycycle.org">contact@bycycle.org</a>.
-  </div>
+  </%call>
 
-  <div id="oops">
+  <% visible = c.http_status and c.http_status != 200 %>
+  <%call expr="make_panel('oops', title='Oops!', visible=visible)">
     % if c.http_status != 200:
       ${next.body()}
-    % else:
-      Everything's fine.
     % endif
-  </div>
+  </%call>
+</%def>
+
+<%def name="ads()">
+  Ads go here.
 </%def>
 
 <%def name="json()">
