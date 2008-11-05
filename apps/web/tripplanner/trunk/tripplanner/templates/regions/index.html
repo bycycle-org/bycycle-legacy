@@ -2,12 +2,12 @@
 <%inherit file="layout.html"/>
 
 <%def name="controls_nav()">
-  <li class="selected"><a href="#select-region"><em>Select a Region</em></a></li>
+  <li class="selected"><a href="#select-region"><em></em></a></li>
   ${parent.controls_nav()}
 </%def>
 
 <%def name="controls()">
-  <div id="select-region">
+  <%call expr="self.make_panel('select-region', title='Select a Region!')">
     ${h.form(h.url_for('/regions/find'), method='get')}
       <div>
         % for p in request.params:
@@ -41,7 +41,7 @@
         </p>
       </div>
     ${h.end_form()}
-  </div>
+  </%call>
 
   ${parent.controls()}
 </%def>

@@ -13,20 +13,33 @@ html, body {
 }
 
 #left,
-#controls, #controls.yui-navset .yui-content.main,
+#controls,
+#controls .yui-panel-container,
+#controls .yui-panel,
 #center,
-#map_pane {
+#map_pane
+{
   height: 100%;
 }
 
-#left {
-  padding: 0 9px 0 4px;
+#controls .yui-panel-container {
+  width: 95%;
+}
+#controls .yui-panel .bd {
+  height: 100%;
+}
+#controls .yui-panel-container {
+  margin-right: 4px;
+}
+#controls .yui-panel,
+#controls .yui-panel .hd,
+#controls .yui-panel .bd
+{
+  border: none;
 }
 
-#controls.yui-navset .yui-content.main {
-  padding: 0 6px;
-  border-width: 0 1px;
-  overflow: auto;
+#controls {
+
 }
 
 
@@ -44,14 +57,6 @@ a:hover {
 }
 
 /* Input Controls */
-#controls.yui-navset ul.yui-nav li a em {
-  /* Main tab widget */
-  font-size: 95%;
-  padding: .2em .4em;
-}
-#controls.yui-navset ul.yui-nav.menu li a em {
-  font-weight: bold;
-}
 #q {
   width: 95%;
 }
@@ -98,13 +103,6 @@ a:hover {
   background: white;
   padding: .5em;
   border: 1px solid #000;
-}
-
-#controls.yui-navset .yui-content.main h1,
-#controls.yui-navset .yui-content.main h2,
-#controls.yui-navset .yui-content.main h3 {
-  margin: 0;
-  margin-bottom: .25em;
 }
 
 .query-result {
