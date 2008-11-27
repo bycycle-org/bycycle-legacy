@@ -1,10 +1,10 @@
-NameSpace('openlayers', APP.Map, {
+NameSpace('openlayers', app.Map, {
   description: 'Open Layers Map',
   isLoadable: function() { return true; }
 });
 
 
-Class(APP.Map.openlayers, 'Map', APP.Map.base.Map, {
+Class(app.Map.openlayers, 'Map', app.Map.base.Map, {
   default_zoom: 5,
 
   initialize: function(ui, container) {
@@ -14,7 +14,7 @@ Class(APP.Map.openlayers, 'Map', APP.Map.base.Map, {
   },
 
   createMap: function(container) {
-    var region = APP.region;
+    var region = app.region;
     var bounds = region.geometry.bounds;
     var sw = bounds.sw, ne = bounds.ne;
 
@@ -74,26 +74,26 @@ Class(APP.Map.openlayers, 'Map', APP.Map.base.Map, {
       bike_layer]);
 
     // Init
-    var center = APP.region.geometry.center;
+    var center = app.region.geometry.center;
     map.setCenter(new OpenLayers.LonLat(center.x, center.y), 2);
     this.map = map;
   },
 
   createIcons: function() {
     // Center icon
-    var url = APP.prefix + 'images/reddot15.png';
+    var url = app.prefix + 'images/reddot15.png';
     var size = new OpenLayers.Size(15, 15);
     var offset = new OpenLayers.Pixel(-8, -8);
     var center_icon = new OpenLayers.Icon(url, size, offset);
 
     // Route start icon
-    var url = APP.prefix + 'images/dd-startff.gif';
+    var url = app.prefix + 'images/dd-startff.gif';
     var size = new OpenLayers.Size(21, 39);
     var offset = new OpenLayers.Pixel(-11, -39);
     var start_icon = new OpenLayers.Icon(url, size, offset);
 
     // Route end icon
-    var url = APP.prefix + 'images/dd-endff.gif';
+    var url = app.prefix + 'images/dd-endff.gif';
     var size = new OpenLayers.Size(21, 39);
     var offset = new OpenLayers.Pixel(-11, -39);
     var end_icon = new OpenLayers.Icon(url, size, offset);

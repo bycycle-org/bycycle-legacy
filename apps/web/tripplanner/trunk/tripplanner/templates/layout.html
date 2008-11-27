@@ -111,15 +111,15 @@
         onSuccess: function () {
           // Called after all modules loaded are loaded by YUI. Only
           // initialization that MUST be done here should. All other
-          // initialization should happen in or via `APP.onLoad`.
-          APP.prefix = '${h.url_for("/")}';
-          APP.region_id = my_region_id;
-          APP.UI.service = '${c.service}';
-          APP.UI.member_name = '${c.member_name}';
-          APP.UI.collection_name = '${c.collection_name}';
-          APP.UI.http_status = ${c.http_status or 'null'};
-          APP.UI.q = '${c.q}';
-          APP.onLoad();
+          // initialization should happen in or via `app.onLoad`.
+          app.prefix = '${h.url_for("/")}';
+          app.region_id = my_region_id;
+          app.ui.service = '${c.service}';
+          app.ui.member_name = '${c.member_name}';
+          app.ui.collection_name = '${c.collection_name}';
+          app.ui.http_status = ${c.http_status or 'null'};
+          app.ui.q = '${c.q}';
+          app.onLoad();
         }
       });
 
@@ -137,7 +137,7 @@
       });
 
       loader.addModule({
-        name: 'APP',
+        name: 'app',
         type: 'js',
         fullpath: '${h.url_for("/javascripts/bycycle.js")}',
         requires: ['my_util']
@@ -147,7 +147,7 @@
         name: 'my_map',
         type: 'js',
         fullpath: '${h.url_for("/javascripts/map.js")}',
-        requires: ['APP']
+        requires: ['app']
       });
 
       loader.addModule({
@@ -179,7 +179,7 @@
       });
 
       loader.require('my_base_css');
-      loader.require('APP');
+      loader.require('app');
       loader.require('my_map');
       loader.require('my_regions');
       loader.require('my_ui');

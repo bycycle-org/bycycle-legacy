@@ -1,11 +1,11 @@
 /**
  * Query Base Class
  */
-Class(APP.UI, 'Query', null, {
+Class(app.ui, 'Query', null, {
   initialize: function(service, form, result_container,
                        opts /* input: null */) {
     if (arguments.length == 0) return;
-    this.ui = APP.UI;
+    this.ui = app.ui;
     this.service = service;
     this.form = form;
     this.result_container = result_container;
@@ -36,8 +36,8 @@ Class(APP.UI, 'Query', null, {
   doQuery: function() {
     // Done only if no errors in before()
     var path = [
-      'regions', APP.region_id, this.service, 'find.json'].join('/');
-    var url = [APP.prefix, path].join('');
+      'regions', app.region_id, this.service, 'find.json'].join('/');
+    var url = [app.prefix, path].join('');
     if (this.input) {
       url += util.objectToQueryString(this.input);
     } else {
@@ -162,12 +162,12 @@ Class(APP.UI, 'Query', null, {
 /**
  * Geocode Query
  */
-Class(APP.UI, 'GeocodeQuery', APP.UI.Query, {
-  initialize: function(opts /* form=APP.UI.query_form,
-                               result_container=APP.UI.locations_container,
+Class(app.ui, 'GeocodeQuery', app.ui.Query, {
+  initialize: function(opts /* form=app.ui.query_form,
+                               result_container=app.ui.locations_container,
                                input=undefined */) {
     opts = opts || {};
-    var ui = APP.UI;
+    var ui = app.ui;
     var form = opts.form || ui.query_form;
     var result_container = opts.result_container || ui.locations_container;
     this.superclass.initialize.call(this, 'geocodes', form, result_container, opts);
@@ -205,12 +205,12 @@ Class(APP.UI, 'GeocodeQuery', APP.UI.Query, {
 /**
  * Route Query
  */
-Class(APP.UI, 'RouteQuery', APP.UI.Query, {
-  initialize: function(opts /* form=APP.UI.route_form,
-                               result_container=APP.UI.routes_container,
+Class(app.ui, 'RouteQuery', app.ui.Query, {
+  initialize: function(opts /* form=app.ui.route_form,
+                               result_container=app.ui.routes_container,
                                input=undefined */) {
     opts = opts || {};
-    var ui = APP.UI;
+    var ui = app.ui;
     var form = opts.form || ui.route_form;
     var result_container = opts.result_container || ui.routes_container;
     var service = 'routes';

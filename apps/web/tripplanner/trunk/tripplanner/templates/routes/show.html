@@ -21,9 +21,9 @@
   s_url_str = start.urlStr()
   e_url_str = end.urlStr()
   tab = '&nbsp;&nbsp;&nbsp;&nbsp;'
-  set_center_onclick = 'APP.UI.map.setCenter({x: %s, y: %s}); return false;'
+  set_center_onclick = 'app.ui.map.setCenter({x: %s, y: %s}); return false;'
   map_blowup_href = "#show-map-blowup"
-  map_blowup_onclick = "APP.UI.map.setCenter({x: %s, y: %s}, APP.UI.map.getCenter()); APP.UI.map.showMapBlowup({x: %s, y: %s}); return false;"
+  map_blowup_onclick = "app.ui.map.setCenter({x: %s, y: %s}, app.ui.map.getCenter()); app.ui.map.showMapBlowup({x: %s, y: %s}); return false;"
 %>
 
 <div class="query-result">
@@ -47,7 +47,7 @@
 
   <div class="noprint reverse-directions">
     <a href="/regions/${c.region.slug}/routes/find?q=${e_url_str}+to+${s_url_str}"
-      onclick="APP.UI.reverseDirections('${unquote_plus(e_url_str)}', '${unquote_plus(s_url_str)}'); return false;"
+      onclick="app.ui.reverseDirections('${unquote_plus(e_url_str)}', '${unquote_plus(s_url_str)}'); return false;"
       >Reverse Directions</a>
     |
     <a class="show-on-map-link"

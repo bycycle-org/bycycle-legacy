@@ -40,12 +40,12 @@ ${self.json()}
       <a class="set-as-start"
          href="#set-as-start"
          title="Use this as the starting point of a route"
-         onclick='APP.UI.setAsStart("${field_addr | n}"); return false;'
+         onclick='app.ui.setAsStart("${field_addr | n}"); return false;'
          ><i>start</i></a> or
       <a class="set-as-end"
          href="#set-as-end"
          title="Use this as the end point of a route"
-         onclick='APP.UI.setAsEnd("${field_addr | n}"); return false;'
+         onclick='app.ui.setAsEnd("${field_addr | n}"); return false;'
          ><i>end</i></a>
       of route
     </div>
@@ -54,7 +54,7 @@ ${self.json()}
       <a class="show-on-map-link"
         href="#show-location-on-map"
         title="Show this location on the map"
-        onclick="APP.UI.map.setCenter({x: ${x}, y: ${y}}); return false;"
+        onclick="app.ui.map.setCenter({x: ${x}, y: ${y}}); return false;"
         >Show on map</a>
 
       <span class="select-geocode-span">
@@ -62,7 +62,7 @@ ${self.json()}
         <a class="select-geocode-link"
            href="${h.url_for('find_geocodes', region_id=c.region.slug, q=field_addr)}#select-this-location"
            title="Select this location"
-           onclick="APP.UI.selectGeocode(this, ${i}); return false;"
+           onclick="app.ui.selectGeocode(this, ${i}); return false;"
            >Select</a>
       </span>
     </div>

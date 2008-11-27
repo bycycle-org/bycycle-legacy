@@ -45,7 +45,7 @@ window.util = function () {
       var v = util.request_params[var_name];
       if (typeof v == 'undefined') {
         // Query string override not given; use config
-        v = APP.config[var_name];
+        v = app.config[var_name];
       } else if (typeof(func) == 'function') {
         // Process query string value with func, iff given
         v = func(v);

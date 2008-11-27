@@ -2,7 +2,7 @@
  *
  * Depends on `util` module and defines JS-library-specific utility functions.
  */
-NameSpace('APP', window, function() {
+NameSpace('app', window, function() {
   var prod_config = {
     local: 0,
     map_state: 1
@@ -21,17 +21,17 @@ NameSpace('APP', window, function() {
     onLoad: function () {
       // Do region-dependent initialization, which includes initializing the
       // main UI module.
-      var url = APP.prefix + 'regions?format=json&wrap=off';
+      var url = app.prefix + 'regions?format=json&wrap=off';
       YAHOO.util.Connect.asyncRequest('GET', url, {
         success: function (response) {
           var result = YAHOO.lang.JSON.parse(response.responseText);
 
-          APP.regions.initialize(result);
-          if (APP.region_id) {
-            APP.region = APP.regions.regions[APP.region_id];
+          app.regions.initialize(result);
+          if (app.region_id) {
+            app.region = app.regions.regions[app.region_id];
           } else {
-            APP.region_id = 'all';
-            APP.region = APP.regions[APP.region_id];
+            app.region_id = 'all';
+            app.region = app.regions[app.region_id];
           }
 
           var map_state = util.getParamVal('map_state', function (ms) {
@@ -40,15 +40,15 @@ NameSpace('APP', window, function() {
           });
           var map_type_name = (util.getParamVal('map_type') || '');
           map_type_name = map_type_name.toLowerCase();
-          map_type_name = map_type_name || APP.region.map_type;
+          map_type_name = map_type_name || app.region.map_type;
 
-          APP.UI.map_state = map_state;
-          APP.UI.map_type = APP.Map.base;
-          var url = [APP.prefix, 'javascripts/',  map_type_name, '.js'].join('');
+          app.ui.map_state = map_state;
+          app.ui.map_type = app.Map.base;
+          var url = [app.prefix, 'javascripts/',  map_type_name, '.js'].join('');
           YAHOO.util.Get.script(url, {
             onSuccess: function () {
-              APP.UI.map_type = APP.Map[map_type_name];
-              APP.UI.onLoad();
+              app.ui.map_type = app.Map[map_type_name];
+              app.ui.onLoad();
             }
           });
         }
