@@ -1,11 +1,11 @@
 /**
  * Base Map namespace
  */
-NameSpace('Map', APP, {});
+NameSpace('Map', app, {});
 
 
-NameSpace('base', APP.Map, {
-  description: 'Default APP map type',
+NameSpace('base', app.Map, {
+  description: 'Default app map type',
   getLibraryURL: function() {
     return null;
   },
@@ -15,11 +15,11 @@ NameSpace('base', APP.Map, {
 });
 
 
-Class(APP.Map.base, 'Map', null, {
+Class(app.Map.base, 'Map', null, {
   /**
    * Map Constructor
    *
-   * @param parent UI object
+   * @param parent UI namespace
    * @param container Map container -- string or document.getElementById
    */
   initialize: function(ui, container) {
@@ -222,6 +222,6 @@ Class(APP.Map.base, 'Map', null, {
   },
 
   addListener: function(id, signal, func) {
-    APP.el(id).on(signal, func);
+    app.el(id).on(signal, func);
   }
 });

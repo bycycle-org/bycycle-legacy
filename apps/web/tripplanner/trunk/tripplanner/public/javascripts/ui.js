@@ -1,7 +1,7 @@
 /** Namespace for User Interface objects and functions.
  *
  */
-NameSpace('UI', APP, function () {
+NameSpace('ui', app, function () {
   var Event = YAHOO.util.Event;
   var Element = YAHOO.util.Element;
   var Dom = YAHOO.util.Dom;
@@ -40,8 +40,8 @@ NameSpace('UI', APP, function () {
      * Do stuff that must happen once page has loaded
      */
     onLoad: function() {
-      this.region_id = APP.region_id;
-      this.region = APP.region;
+      this.region_id = app.region_id;
+      this.region = app.region;
       this.in_region = (this.region_id != 'all');
 
       this._assignUIElements();
@@ -51,15 +51,15 @@ NameSpace('UI', APP, function () {
       // If map is "on" and specified map type is loadable, use that map type.
       // Otherwise, use the default map type (base).
       if (!(this.map_state && this.map_type.isLoadable())) {
-        this.map_type = APP.Map.base;
+        this.map_type = app.Map.base;
       }
       this.map = new this.map_type.Map(this, this.map_pane_id);
 
       if (this.region_id == 'all') {
         this.setRegion(this.region_id);
-        var region, regions = APP.regions.regions;
+        var region, regions = app.regions.regions;
         for (var slug in regions) {
-          region = APP.regions.regions[slug];
+          region = app.regions.regions[slug];
           geom = region.geometry['4326'];
           this.map.makeRegionMarker(region.slug, geom.center);
           this.map.drawPolyLine(geom.linestring);
@@ -325,9 +325,9 @@ NameSpace('UI', APP, function () {
     setRegion: function(region_id) {
       // This is only meant to be used on /regions page; that's why it uses
       // degrees instead of the region's native units.
-      var region = APP.regions.regions[region_id];
+      var region = app.regions.regions[region_id];
       if (!region) {
-        region = APP.regions.all;
+        region = app.regions.all;
       }
       var geom = region.geometry['4326'];
       this.map.centerAndZoomToBounds(geom.bounds, geom.center);
@@ -385,7 +385,7 @@ NameSpace('UI', APP, function () {
 
       var query_obj = new query_class();
 
-      var pane = APP.el(
+      var pane = app.el(
         this.collection_name == 'routes' ? 'routes' : 'locations');
       var json = pane.getElementsByClassName('json')[0];
       var request = {status: this.http_status, responseText: json.value};

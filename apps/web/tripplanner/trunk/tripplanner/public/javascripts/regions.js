@@ -1,8 +1,8 @@
-NameSpace('regions', APP, function() {
+NameSpace('regions', app, function() {
   var self;
 
   var initialize = function (result) {
-    self = APP.regions;
+    self = app.regions;
     var regions = {};
 
     for (var i = 0, region_data; i < result.result.length; ++i) {
@@ -31,7 +31,7 @@ NameSpace('regions', APP, function() {
       if (ne.x > bounds_all.ne.x) { bounds_all.ne.x = ne.x; }
       if (ne.y > bounds_all.ne.y) { bounds_all.ne.y = ne.y; }
     }
-    var getCenterOfBounds = APP.Map.base.Map.prototype.getCenterOfBounds;
+    var getCenterOfBounds = app.Map.base.Map.prototype.getCenterOfBounds;
     var center = getCenterOfBounds(bounds_all);
     var all = {
         slug: 'all',
@@ -60,7 +60,7 @@ NameSpace('regions', APP, function() {
 }());
 
 
-Class(APP.regions, 'Region', null, {
+Class(app.regions, 'Region', null, {
   initialize: function (kwargs) {
     for (var name in kwargs) {
       this[name] = kwargs[name];
