@@ -45,7 +45,7 @@ class RegionsController(RestController):
     def show(self, id):
         """Show the ``region`` with ID or name or key ``id``."""
         id = self._get_region_id(id)
-        self._set_member(id)
+        self.set_member(id)
         return self._render(action=self.region.slug)
 
     def find(self):
