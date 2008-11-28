@@ -15,23 +15,29 @@ NameSpace('app', window, function() {
 
   return {
     // `debug` is a global set in the template; it's value is passed from
-    // Pylons as an attribute of the global `g`.
+    // Pylons as an attribute of the Pylons global `g`.
     config: debug ? dev_config : prod_config,
 
-    onLoad: function () {
+    initialize: function () {
       // Do region-dependent initialization, which includes initializing the
       // main UI module.
-      var url = app.prefix + 'regions?format=json&wrap=off';
-      YAHOO.util.Connect.asyncRequest('GET', url, {
+      Ext.Ajax.request({
+        method: 'GET',
+        url: app.prefix + 'regions',
+        params: {
+          format: 'json',
+          wrap: 'off'
+        },
+        scope: this,
         success: function (response) {
-          var result = YAHOO.lang.JSON.parse(response.responseText);
+          var result = Ext.util.JSON.decode(response.responseText);
 
-          app.regions.initialize(result);
+          this.regions.initialize(result);
           if (app.region_id) {
-            app.region = app.regions.regions[app.region_id];
+            this.region = this.regions.regions[this.region_id];
           } else {
-            app.region_id = 'all';
-            app.region = app.regions[app.region_id];
+            this.region_id = 'all';
+            this.region = this.regions[this.region_id];
           }
 
           var map_state = util.getParamVal('map_state', function (ms) {
@@ -40,17 +46,11 @@ NameSpace('app', window, function() {
           });
           var map_type_name = (util.getParamVal('map_type') || '');
           map_type_name = map_type_name.toLowerCase();
-          map_type_name = map_type_name || app.region.map_type;
+          map_type_name = map_type_name || this.region.map_type;
 
-          app.ui.map_state = map_state;
-          app.ui.map_type = app.Map.base;
-          var url = [app.prefix, 'javascripts/',  map_type_name, '.js'].join('');
-          YAHOO.util.Get.script(url, {
-            onSuccess: function () {
-              app.ui.map_type = app.Map[map_type_name];
-              app.ui.onLoad();
-            }
-          });
+          this.ui.map_state = map_state;
+          this.ui.map_type = this.Map[map_type_name];
+          this.ui.initialize();
         }
       });
     },
@@ -58,7 +58,7 @@ NameSpace('app', window, function() {
     /* Library specific utilities */
 
     el: function (id) {
-      return new Element(id);
+      return Ext.get(id);
     }
   };
 }());

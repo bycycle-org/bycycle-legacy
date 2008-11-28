@@ -16,50 +16,12 @@
     <title>byCycle.org - Bicycle Trip Planner - ${self.region_title()}</title>
 
     <link rel="shortcut icon" href="${h.url_for('/favicon.ico')}" type="image/x-icon" />
-
-    <style type="text/css">
-      html, body {
-        overflow: hidden;
-        height: 100%;
-      }
-      #loading {
-        position: absolute;
-        left: 0;
-        top: 0;
-        width: 100%;
-        height: 100%;
-        background-color: #fff;
-        z-index: 9999999;
-        border-collapse: collapse;
-      }
-      #loading td {
-        text-align: center;
-        vertical-align: middle;
-        width: 100%;
-        height: 100%;
-      }
-      #loading td h1 {
-        font-weight: bold;
-        font-size: 120%;
-        font-family: arial,helvetica,clean,sans-serif;
-        margin-top: .5em;
-      }
-    </style>
+    <link rel="stylesheet" type="text/css" href="${h.url_for('/ext/resources/css/ext-all.css')}" />
+    <link rel="stylesheet" type="text/css" href="${h.url_for('/stylesheets/base.css')}" />
   </head>
 
   <body class="yui-skin-sam">
-
-    <!-- Loading indicator... -->
-    <table id="loading">
-      <tbody>
-        <tr>
-          <td>
-            <img src="${h.url_for('/images/spinner.gif')}" width="32" height="32" alt="Loading..." />
-            <h1>Loading...</h1>
-          </td>
-        </tr>
-      </tbody>
-    </table>
+    ${self.loading_panel()}
 
     <div id="top">
       ${h.link_to('Home', h.url_for('/'), title='byCycle.org Home')} |
@@ -89,103 +51,43 @@
       </div>
     </div>
 
-    <script type="text/javascript" src="${h.url_for('/javascripts/init.js')}" ></script>
-    <script type="text/javascript" src="http://yui.yahooapis.com/2.6.0/build/yuiloader/yuiloader-min.js" ></script>
     <script type="text/javascript">
       //<![CDATA[
       var debug = ${'true' if bool(g.debug) else 'false'};
-      var my_region_id = '${c.region.slug if c.region else ""}';
+      //]]>
+    </script>
 
-      // Does stuff that MUST happen during page load.
-      INIT.initialize(my_region_id);
+    <script type="text/javascript" src="${h.url_for('/javascripts/init.js')}" ></script>
 
-      var loader = new YAHOO.util.YUILoader({
-        require: [
-          'layout', 'container', 'button', 'tabview',
-          'dom', 'event',  'element',
-          'get', 'connection', 'json',
-          'reset', 'fonts', 'grids', 'base', 'resize'
-        ],
-        allowRollup: true,
-        combine: true,
-        onSuccess: function () {
-          // Called after all modules loaded are loaded by YUI. Only
-          // initialization that MUST be done here should. All other
-          // initialization should happen in or via `app.onLoad`.
+    <script type="text/javascript" src="${h.url_for('/ext/adapter/ext/ext-base.js')}"></script>
+    <script type="text/javascript" src="${h.url_for('/ext/ext-all-debug.js')}"></script>
+
+    <script type="text/javascript" src="http://openlayers.org/api/OpenLayers.js"></script>
+
+    <script type="text/javascript" src="${h.url_for('/javascripts/util.js')}"></script>
+    <script type="text/javascript" src="${h.url_for('/javascripts/bycycle.js')}"></script>
+    <script type="text/javascript" src="${h.url_for('/javascripts/map.js')}"></script>
+    <script type="text/javascript" src="${h.url_for('/javascripts/regions.js')}"></script>
+    <script type="text/javascript" src="${h.url_for('/javascripts/ui.js')}"></script>
+    <script type="text/javascript" src="${h.url_for('/javascripts/query.js')}"></script>
+    <script type="text/javascript" src="${h.url_for('/javascripts/result.js')}"></script>
+    <script type="text/javascript" src="${h.url_for('/javascripts/openlayers.js')}"></script>
+
+    <script type="text/javascript">
+      //<![CDATA[
+      Ext.BLANK_IMAGE_URL = '${h.url_for("/ext/resources/images/default/s.gif")}';
+      Ext.onReady(function() {
+          // Only initialization that MUST be done here should. All other
+          // initialization should happen in or via `app.initialize`.
           app.prefix = '${h.url_for("/")}';
-          app.region_id = my_region_id;
+          app.region_id = '${c.region.slug if c.region else ""}';
           app.ui.service = '${c.service}';
           app.ui.member_name = '${c.member_name}';
           app.ui.collection_name = '${c.collection_name}';
           app.ui.http_status = ${c.http_status or 'null'};
           app.ui.q = '${c.q}';
-          app.onLoad();
-        }
+          app.initialize();
       });
-
-      loader.addModule({
-        name: 'my_base_css',
-        type: 'css',
-        fullpath: '${h.url_for("/stylesheets/base.css")}',
-        requires: ['base']
-      });
-
-      loader.addModule({
-        name: 'my_util',
-        type: 'js',
-        fullpath: '${h.url_for("/javascripts/util.js")}'
-      });
-
-      loader.addModule({
-        name: 'app',
-        type: 'js',
-        fullpath: '${h.url_for("/javascripts/bycycle.js")}',
-        requires: ['my_util']
-      });
-
-      loader.addModule({
-        name: 'my_map',
-        type: 'js',
-        fullpath: '${h.url_for("/javascripts/map.js")}',
-        requires: ['app']
-      });
-
-      loader.addModule({
-        name: 'my_regions',
-        type: 'js',
-        fullpath: '${h.url_for("/javascripts/regions.js")}',
-        requires: ['my_map']
-      });
-
-      loader.addModule({
-        name: 'my_ui',
-        type: 'js',
-        fullpath: '${h.url_for("/javascripts/ui.js")}',
-        requires: ['my_regions']
-      });
-
-      loader.addModule({
-        name: 'my_query',
-        type: 'js',
-        fullpath: '${h.url_for("/javascripts/query.js")}',
-        requires: ['my_ui']
-      });
-
-      loader.addModule({
-        name: 'my_result',
-        type: 'js',
-        fullpath: '${h.url_for("/javascripts/result.js")}',
-        requires: ['my_ui']
-      });
-
-      loader.require('my_base_css');
-      loader.require('app');
-      loader.require('my_map');
-      loader.require('my_regions');
-      loader.require('my_ui');
-      loader.require('my_query');
-      loader.require('my_result');
-      loader.insert();
       //]]>
     </script>
 
@@ -194,6 +96,21 @@
     % endif
   </body>
 </html>
+
+<%def name="loading_panel()">
+  <div id="loading_panel">
+    <table summary="Fullscreen, vertically and horizontally centered loading indicator.">
+      <tbody>
+        <tr>
+          <td>
+            <img src="${h.url_for('/images/spinner.gif')}" width="26" height="26" alt="Loading..." />
+            <h1>Loading...</h2>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</%def>
 
 <%def name="region_title()">
   ${c.region.title if c.region else 'Select a region'}
