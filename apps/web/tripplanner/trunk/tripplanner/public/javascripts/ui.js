@@ -2,10 +2,8 @@
  *
  */
 NameSpace('ui', app, function () {
-  var Event = YAHOO.util.Event;
-  var Element = YAHOO.util.Element;
-  var Dom = YAHOO.util.Dom;
-  var Panel = YAHOO.widget.Panel;
+  var Element = Ext.Element;
+  var Panel = Ext.Panel;
 
   return {
     region_id: null,
@@ -39,48 +37,47 @@ NameSpace('ui', app, function () {
     /**
      * Do stuff that must happen once page has loaded
      */
-    onLoad: function() {
+    initialize: function() {
       this.region_id = app.region_id;
       this.region = app.region;
       this.in_region = (this.region_id != 'all');
 
       this._assignUIElements();
       this.layout = this._createLayout();
-      this._createWidgets();
+      //this._createWidgets();
 
       // If map is "on" and specified map type is loadable, use that map type.
       // Otherwise, use the default map type (base).
-      if (!(this.map_state && this.map_type.isLoadable())) {
-        this.map_type = app.Map.base;
-      }
-      this.map = new this.map_type.Map(this, this.map_pane_id);
+      //if (!(this.map_state && this.map_type.isLoadable())) {
+        //this.map_type = app.Map.base;
+      //}
+      //this.map = new this.map_type.Map(this, this.map_pane_id);
 
-      if (this.region_id == 'all') {
-        this.setRegion(this.region_id);
-        var region, regions = app.regions.regions;
-        for (var slug in regions) {
-          region = app.regions.regions[slug];
-          geom = region.geometry['4326'];
-          this.map.makeRegionMarker(region.slug, geom.center);
-          this.map.drawPolyLine(geom.linestring);
-        }
-      } else {
-        this.map.drawPolyLine(this.region.geometry.linestring);
-      }
+      //if (this.region_id == 'all') {
+        //this.setRegion(this.region_id);
+        //var region, regions = app.regions.regions;
+        //for (var slug in regions) {
+          //region = app.regions.regions[slug];
+          //geom = region.geometry['4326'];
+          //this.map.makeRegionMarker(region.slug, geom.center);
+          //this.map.drawPolyLine(geom.linestring);
+        //}
+      //} else {
+        //this.map.drawPolyLine(this.region.geometry.linestring);
+      //}
 
-      this._createEventHandlers();
+      //this._createEventHandlers();
 
-      var zoom = parseInt(util.getParamVal('zoom'), 10);
-      if (!isNaN(zoom)) {
-        this.map.setZoom(zoom);
-      }
+      //var zoom = parseInt(util.getParamVal('zoom'), 10);
+      //if (!isNaN(zoom)) {
+        //this.map.setZoom(zoom);
+      //}
 
-      this.handleQuery();
+      //this.handleQuery();
 
-      this.selectInputPane(this.service);
+      //this.selectInputPane(this.service);
       this.hideSpinner();
-      var loading_el = document.getElementById('loading');
-      loading_el.parentNode.removeChild(loading_el);
+      Ext.fly('loading_panel').remove();
     },
 
     _assignUIElements: function () {
@@ -104,34 +101,31 @@ NameSpace('ui', app, function () {
     },
 
     _createLayout: function () {
-      var layout = new YAHOO.widget.Layout({
-        minWidth: 400,
-        minHeight: 300,
-        units: [
+      var layout = new Ext.Viewport({
+        layout: 'border',
+        renderTo: document.body,
+        height: '100%',
+        items: [
           {
-            position: 'top',
-            body: 'top',
-            height: 22,
-            scroll: null,
-            zIndex: 2,
-            gutter: '0 0 4px 0'
+            region: 'north',
+            contentEl: 'top',
+            autoHeight: true
           },
           {
-            position: 'left',
-            body: 'left',
+            region: 'west',
+            contentEl: 'left',
+            layout: 'card',
             width: 300,
-            resize: true,
-            scroll: false
+            split: true
           },
           {
-            position: 'center',
-            body: 'center'
+            region: 'center',
+            contentEl: 'center'
           },
           {
-            position: 'right',
-            body: 'right',
-            width: 120,
-            scroll: false
+            region: 'east',
+            contentEl: 'right',
+            width: 120
           },
         ]
       });
