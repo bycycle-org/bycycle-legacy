@@ -52,7 +52,7 @@ sudo -u bycycle \
     /home/bycycle/byCycle/core/trunk/byCycle/scripts/integrate.py \
     --region portlandor \
     --source pirate \
-    --layer str06oct \
+    --layer str \
     --no-prompt \
     || exit 4
 
