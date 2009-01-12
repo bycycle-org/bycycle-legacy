@@ -8,7 +8,7 @@
 
 <%def name="controls()">
   <%call expr="self.make_panel('select-region', title='Select a Region!')">
-    ${h.form(h.url_for('/regions/find'), method='get')}
+    <form action="${h.url_for('/regions/find')}">
       <div>
         % for p in request.params:
           ${h.hidden(p, request.params[p])}
@@ -40,7 +40,7 @@
             'commit', 'Go to Region', title='Go to the selected region')}
         </p>
       </div>
-    ${h.end_form()}
+    </form>
   </%call>
 
   ${parent.controls()}

@@ -44,7 +44,7 @@ Here's what the route service does:
 """
 import dijkstar
 
-from cartography.geometry import LineString
+from shapely.geometry import Point, LineString
 
 from byCycle.util import gis
 
@@ -512,8 +512,8 @@ class Service(services.Service):
         linestring_points = []
         for node_t_id, e in zip(node_ids[1:], edges):
             geom = e.geom  # Current edge's linestring
-            num_points = geom.numPoints()
-            points = [geom.pointN(i) for i in range(num_points)]
+            num_points = len(geom.coords)
+            points = list(geom.coords)
             if e.node_f_id == node_t_id:
                 # Moving to => from on arc; reverse geometry
                 points.reverse()
@@ -526,12 +526,12 @@ class Service(services.Service):
             # *b------e* b is bearing of first segment in edge; e is bearing
             # of last segment in edge
             _f = gis.getBearingGivenStartAndEndPoints
-            bearings.append(_f(points[0], points[1]))
-            end_bearings.append(_f(points[-2], points[-1]))
+            bearings.append(_f(Point(points[0]), Point(points[1])))
+            end_bearings.append(_f(Point(points[-2]), Point(points[-1])))
 
         # Append very last point in the route, then create overall linestring
         linestring_points.append(points[-1])
-        linestring = LineString(points=linestring_points, srs=geom.srs)
+        linestring = LineString(linestring_points)
 
         # Add the lengths of successive same-named edges and set the first of
         # the edges' length to that "stretch" length, while setting the
@@ -639,7 +639,7 @@ class Service(services.Service):
                     #dbm.append(bm)
 
             edge_count += 1
-            linestring_index += e.geom.numPoints() - 1
+            linestring_index += len(e.geom.coords) - 1
 
         return directions, linestring, distance
 

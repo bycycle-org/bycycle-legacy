@@ -61,7 +61,7 @@ class PortlandOREdge(base.Edge):
     sscode = Column(Integer)
 
     def to_feet(self):
-        return self.geom.length()
+        return self.geom.length
 
     def to_miles(self):
         return self.to_feet() / 5280.0
@@ -75,7 +75,7 @@ class PortlandOREdge(base.Edge):
     @classmethod
     def _adjustRowForMatrix(cls, row):
         adjustments = {
-            'length': encodeFloat(row.geom.length() / 5280.0),
+            'length': encodeFloat(row.geom.length / 5280.0),
             'abs_slope': encodeFloat(row.abs_slope),
             'up_frac': encodeFloat(row.up_frac),
         }

@@ -12,7 +12,8 @@
 # NO WARRANTY OF ANY KIND.
 ###############################################################################
 """Route entity."""
-from cartography.proj import SpatialReference
+from shapely.geometry import LineString
+
 from byCycle.model import glineenc
 
 __all__ = ['Route']
@@ -30,22 +31,16 @@ class Route(object):
         self.end = end
         self.directions = directions
         self.distance = distance
-
-        linestring.srs = SpatialReference(epsg=region.srid)
         self.linestring = linestring
-
-        linestring_ll = linestring.copy()
-        ll_srs = SpatialReference(epsg=4326)
-        linestring_ll.transform(src_proj=str(self.linestring.srs),
-                                dst_proj=str(ll_srs))
-        self.linestring_ll = linestring_ll
+        self.linestring_ll = LineString(region.proj(linestring.coords, inverse=True))
 
     def to_simple_object(self):
+        coords = self.linestring.coords
         points = []
-        for i in range(self.linestring.numPoints()):
-            points.append(self.linestring.pointN(i))
-        linestring = [{'x': p.x, 'y': p.y} for p in points]
-        pairs = [(p.y, p.x) for p in points]
+        for i in range(len(coords)):
+            points.append(coords(i))
+        linestring = [{'x': p[0], 'y': p[1]} for p in points]
+        pairs = [(p[0], p[1]) for p in points]
         bounds = self.linestring.envelope()
         centroid = bounds.centroid()
         route = {
