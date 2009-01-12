@@ -25,7 +25,7 @@ from sqlalchemy.orm import relation
 from sqlalchemy.types import Integer, String, CHAR, Integer
 from sqlalchemy.ext.declarative import declarative_base
 
-from cartography import geometry
+from shapely import geometry, wkt
 
 import simplejson
 
@@ -191,11 +191,10 @@ class Edge(DeclarativeBase):
         'Place', primaryjoin='Edge.place_r_id == Place.id', cascade=cascade_arg)
 
     def to_feet(self):
-        return self.to_miles() * 5280.0
+        return self.geom.length
 
     def to_miles(self):
-        return gis.getLengthOfLineString(
-            [self.geom.pointN(n) for n in range(self.geom.numPoints())])
+        return self.geom.length * 5280.0
 
     def to_kilometers(self):
         return self.to_miles() * 1.609344
@@ -223,7 +222,7 @@ class Edge(DeclarativeBase):
         try:
             self._length
         except AttributeError:
-            self._length = self.geom.length()
+            self._length = self.geom.length
         return self._length
 
     length = __len__
@@ -264,15 +263,15 @@ class Edge(DeclarativeBase):
         # Function to get interpolated point
         c = _Edge.__table__.c
         f = func.line_interpolate_point(c.geom, location)
-        # Function to get WKB version of lat/long point
-        f = func.asbinary(f)
+        # Function to get WKT version of lat/long
+        f = func.astext(f)
 
-        # Query DB and get WKB POINT
-        select_ = select([f.label('wkb_point')], c.id == self.id, bind=engine)
+        # Query DB and get WKT POINT
+        select_ = select([f.label('wkt_point')], c.id == self.id, bind=engine)
         result = select_.execute()
-        wkb_point = result.fetchone().wkb_point
+        wkt_point = result.fetchone().wkt_point
 
-        point = geometry.Geometry.fromWKB(wkb_point)
+        point = wkt.loads(wkt_point)
         return point, location
 
     def splitAtGeocode(self, geocode, node_id=-1, edge_f_id=-1, edge_t_id=-2):
@@ -312,6 +311,7 @@ class Edge(DeclarativeBase):
         The first edge is `node_f`=>``num``; the second is ``num``=>`node_t`.
         Distribute attributes of original edge to the two new edges.
 
+        ``point`` `Geometry` -- Point at location
         ``location`` `float` -- Location in range [0, 1] to split at
         ``node_id`` -- Node ID to assign the node at the split
         ``edge_f_id`` -- Edge ID to assign the `node_f`=>``num`` edge
@@ -327,16 +327,18 @@ class Edge(DeclarativeBase):
         - Return the  two new edges
 
         """
-        num_points = self.geom.numPoints()
-        points = [self.geom.pointN(i) for i in range(num_points)]
+        Point = geometry.Point
+
+        point = (point.x, point.y)
+        points = list(self.geom.coords)
+        num_points = len(points)
         N = int(num_points * location) or 1
         if N == num_points:
             N -= 1
         edge_f_points = points[:N] + [point]
         edge_t_points = [point] + points[N:]
-        srs = self.geom.srs
-        edge_f_geom = geometry.LineString(points=edge_f_points, srs=srs)
-        edge_t_geom = geometry.LineString(points=edge_t_points, srs=srs)
+        edge_f_geom = geometry.LineString(edge_f_points)
+        edge_t_geom = geometry.LineString(edge_t_points)
 
         RegionEdge = self.__class__
         edge_f = RegionEdge(id=edge_f_id,
@@ -349,12 +351,11 @@ class Edge(DeclarativeBase):
                             geom=edge_t_geom)
 
         RegionNode = self.node_f.__class__
-        geom = self.geom
-        shared_node = RegionNode(id=node_id, geom=geom.pointN(N))
-        edge_f.node_f = RegionNode(id=self.node_f_id, geom=geom.startPoint())
+        shared_node = RegionNode(id=node_id, geom=Point(points[N]))
+        edge_f.node_f = RegionNode(id=self.node_f_id, geom=Point(points[0]))
         edge_f.node_t = shared_node
         edge_t.node_f = shared_node
-        edge_t.node_t = RegionNode(id=self.node_t_id, geom=geom.endPoint())
+        edge_t.node_t = RegionNode(id=self.node_t_id, geom=Point(points[-1]))
 
         return edge_f, edge_t
 

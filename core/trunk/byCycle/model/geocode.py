@@ -12,7 +12,6 @@
 # NO WARRANTY OF ANY KIND.
 ###############################################################################
 """Geocode classes."""
-from cartography.proj import SpatialReference
 from urllib import quote_plus
 
 __all__ = ['Geocode', 'PostalGeocode', 'IntersectionGeocode']
@@ -43,10 +42,7 @@ class Geocode(object):
         self.network_id = network_id
         self.xy = xy
         if xy is not None:
-            xy.srs = SpatialReference(epsg=region.srid)
-            xy_ll = xy.copy()
-            ll_srs = SpatialReference(epsg=4326)
-            xy_ll.transform(src_proj=str(self.xy.srs), dst_proj=str(ll_srs))
+            xy_ll = region.proj(xy.x, xy.y, inverse=True)
         else:
             xy_ll = None
         self.xy_ll = xy_ll

@@ -36,10 +36,7 @@ class Edge(base.Edge):
 
     @classmethod
     def _adjustRowForMatrix(cls, row):
-        geom = row.geom
-        length = gis.getLengthOfLineString([geom.pointN(n) for n in
-                                            range(geom.numPoints())])
-
+        length = row.geom.length
         return {'length': encodeFloat(length)}
 
 

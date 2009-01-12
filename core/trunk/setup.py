@@ -42,13 +42,14 @@ GPL.""",
     packages=find_packages(),
     zip_safe=False,
     install_requires=(
-        'zope.interface==3.3.0.1',
-        'PCL-Core==0.11.0',
+        'Shapely>=1.0.11',
+        'pyproj>=1.8.5',
+        'GeoJSON>=1.0.1',
         'psycopg2>=2.0.8',
-        'SQLAlchemy>=0.5rc4',
+        'SQLAlchemy>=0.5',
         'Dijkstar>=1.0',
         'nose>=0.10.4',
-        'simplejson>=2.0.5',
+        'simplejson>=2.0.7',
         ),
 )
 

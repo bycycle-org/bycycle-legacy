@@ -12,14 +12,14 @@
 # NO WARRANTY OF ANY KIND.
 ###############################################################################
 """Entities that are shared by all regions; they live in the public SCHEMA."""
-import os, marshal, csv, datetime
+import os, marshal, datetime
 
 from sqlalchemy import Column, ForeignKey, func, select
 from sqlalchemy.orm import relation
 from sqlalchemy.types import Integer, String, CHAR, Float, Date
 
-from cartography import geometry
-from cartography.proj import SpatialReference
+from shapely import geometry
+import pyproj
 
 from byCycle import model_path
 from byCycle.util import gis, joinAttrs
@@ -36,49 +36,6 @@ __all__ = [
 # A place to keep references to adjacency matrices so they don't need to be
 # continually read from disk
 matrix_registry = {}
-
-
-class Race(DeclarativeBase):
-    __tablename__ = 'races'
-
-    id = Column(Integer, primary_key=True)
-    region_id = Column(Integer, ForeignKey('regions.id'))
-    type = Column(String)
-    series = Column(String)
-    date = Column(Date)
-    title = Column(String)
-    address = Column(String)
-    url = Column(String)
-    location = Column(String)
-    location_url = Column(String)
-    geom = Column(POINT(4326))
-
-    @classmethod
-    def etl_csv(cls, filename):
-        """Load ALL race data for ALL regions."""
-        db.connectMetadata()
-        cls.__table__.create(checkfirst=True)
-        db.addGeometryColumn(cls.__table__.name, 4326, 'POINT', schema='public')
-        reader = csv.DictReader(open(filename, 'rb'))
-        for data in reader:
-            for name in data:
-                if data[name] == 'None':
-                    data[name] = None
-
-            region = Region.get_by_slug(data['region_id'])
-            data['region_id'] = region.id
-
-            x, y = data['x'], data['y']
-            if x is not None and y is not None:
-                wkt = 'POINT(%s %s)' % (x, y)
-                data['geom'] = geometry.Geometry.fromWKT(wkt, srs=4326)
-            else:
-                data['geom'] = None
-            del data['x']
-            del data['y']
-
-            region.races.append(Race(**data))
-        db.Session.flush()
 
 
 class Region(DeclarativeBase):
@@ -103,9 +60,6 @@ class Region(DeclarativeBase):
         'EdgeAttr', backref='region', order_by='EdgeAttr.id',
         cascade=cascade_arg)
 
-    races = relation(
-        'Race', backref='region', order_by='Race.date', cascade=cascade_arg)
-
     required_edge_attrs = [
         'length',
         'street_name_id',
@@ -114,14 +68,13 @@ class Region(DeclarativeBase):
         'bikemode'
     ]
 
-    def get_race_geom(self):
-        srs = str(SpatialReference(epsg=4326))
-        new_srs = str(SpatialReference(epsg=self.srid))
-        geom = dict([(r.id, r.geom.copy()) for r in self.races if r.geom])
-        for id in geom:
-            geom[id].transform(src_proj=srs, dst_proj=new_srs)
-        print geom
-        return geom
+    @property
+    def proj(self):
+        try:
+            self._proj
+        except AttributeError:
+            self._proj = pyproj.Proj(init='epsg:%i' % self.srid)
+        return self._proj
 
     def bounds(self, srid=None):
         srs = str(SpatialReference(epsg=self.srid))
@@ -262,7 +215,7 @@ class Region(DeclarativeBase):
             node_t_id = row.node_t_id
             one_way = row.one_way
 
-            entry = [encodeFloat(row.geom.length())]
+            entry = [encodeFloat(row.geom.length)]
             entry += [getattr(row, attr) for attr in self.required_edge_attrs[1:]]
             entry += [getattr(row, a.name) for a in self.edge_attrs]
             for k in adjustments:
