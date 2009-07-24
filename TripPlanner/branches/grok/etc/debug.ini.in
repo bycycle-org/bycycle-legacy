@@ -53,7 +53,7 @@ use = egg:z3c.evalexception#ajax
 next = zope
 
 [app:zope]
-use = egg:byCycleTripPlanner
+use = egg:bycycle.tripplanner
 filter-with = translogger
 
 [server:main]
