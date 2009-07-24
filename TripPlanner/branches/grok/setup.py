@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 
 setup(
-    name='byCycleTripPlanner',
+    name='bycycle.tripplanner',
     version='0.5',
     description='',
     long_description='',
@@ -18,11 +18,12 @@ setup(
     include_package_data=True,
     zip_safe=False,
     install_requires=[
+        'bycycle.core==dev,>=0.5dev',
         'setuptools',
         'grok',
         'grokui.admin',
-        'z3c.testsetup',
         'grokcore.startup',
+        'z3c.testsetup',
     ],
     entry_points = """
     [console_scripts]
